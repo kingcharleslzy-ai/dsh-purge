@@ -1,6 +1,6 @@
 # 安装、升级与故障排查
 
-当前版本 **1.6.62**。面向用户与协助安装的 Agent。支持的安装器环境：Linux CLI/Web；macOS Desktop；Windows 11 的 PowerShell 5.1/7。完整 Windows 宿主补丁及界面验收与安装器测试分开，不能因安装通过就宣称全部功能正常。
+当前版本 **1.6.64**。面向用户与协助安装的 Agent。支持的安装器环境：Linux CLI/Web；macOS Desktop；Windows 11 的 PowerShell 5.1/7。完整 Windows 宿主补丁及界面验收与安装器测试分开，不能因安装通过就宣称全部功能正常。
 
 ## 安装前
 
@@ -168,3 +168,11 @@ macOS 不复制顶层 `Info.plist`，不创建 `.app` 路径，不通过 Finder�
 明确指定 `DSH_APP` / `DSH_EXE` 的目标校验失败后即停止，不会自动换到另一份应用。维护代码不遍历挂载卷、工作目录或任意参数的父目录；自定义安装请提供实际路径。显式请求自动发现时，仍可查询已知默认位置和系统登记，但多个有效目标需要用户选择。
 
 架构分目录运行时按当前执行进程的 `process.arch` 选择，不跨架构猜测。官方 CLI 需要 `app/runtime/primary-runtime/...`，因此新链接直接指向有效的架构子目录。已有真实目录或指向其他有效目录的链接保留；冲突明确报错，不自动覆盖。实测范围和复现步骤见 [PR #78 验收记录](pr78-runtime-integrity.md)。
+
+## 安装备份选择（1.6.64）
+
+完整历史快照默认尝试创建；首次安装没有旧插件时无需此快照。只有明确的备份目标写入故障会提供继续选项。面板先显示原因和回滚限制，用户确认后重试一次。自动安装不会自行确认。
+
+CLI 或 bootstrap 报 `BACKUP_CONFIRMATION_REQUIRED` 后，先向用户说明：继续将没有本次完整历史快照，不能依赖它进行日后回滚；安装失败的事务恢复仍必须可用。仅在用户明确同意后，在原命令末尾追加错误中返回的 `--accept-backup-failure=<confirmation>`；PowerShell 入口使用 `-AcceptBackupFailure <confirmation>`。不要自行生成、持久保存确认值，或把其他安装包/配置的旧确认值拿来重试。
+
+`BACKUP_BLOCKED`、来源读取、UNKNOWN、哈希或安装包校验失败、关键配置读取失败、事务恢复准备失败不能通过此选项跳过。可能遭安全软件隔离时核对防护记录，不关闭防护、不加排除、不省略文件。安装后看 `backup_status`、`backup_warning`、`cleanup_warnings` 和真实恢复结果；无 `backup_id` 不能声称有可用回滚快照。仅更改这些通用安装行为，不改变原有功能。

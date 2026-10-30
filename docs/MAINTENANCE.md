@@ -1,6 +1,6 @@
 # 维护、迁移与恢复
 
-当前版本 **1.6.62**。包名 `dsh-purge-community`，来源仅本仓库正式 GitHub Releases；保留内部 Cordis ID `dsh-purge`、HTTP `/dsh-purge/*` 及用户数据目录。主安装步骤与镜像故障决策树统一见 [安装指南](INSTALLATION.md)；[AGENTS.md](../AGENTS.md) 是 Agent 操作说明。
+当前版本 **1.6.64**。包名 `dsh-purge-community`，来源仅本仓库正式 GitHub Releases；保留内部 Cordis ID `dsh-purge`、HTTP `/dsh-purge/*` 及用户数据目录。主安装步骤与镜像故障决策树统一见 [安装指南](INSTALLATION.md)；[AGENTS.md](../AGENTS.md) 是 Agent 操作说明。
 
 ## 兼容与操作边界
 
@@ -93,3 +93,11 @@ profile 不存在/有多个且未明确选择时停止。Web/Headless 只用当�
 ## 1.6.41：更新状态核对
 
 运行版本与当前 profile 磁盘版本分开核对；旧 pendingVersion 不代表当前安装。未知版本或读取失败继续告警，安装失败不会被成功检查掩盖。旧版已卡住时先手动安装新版，由用户手动退出重开一次；不要删除设置、改更新开关或自动重启。详见 [状态迁移与测试说明](maintenance-update-state.md)。
+
+## 安装备份选择（1.6.64）
+
+完整历史快照默认尝试创建；首次安装没有旧插件时无需此快照。只有明确的备份目标写入故障会提供继续选项。面板先显示原因和回滚限制，用户确认后重试一次。自动安装不会自行确认。
+
+CLI 或 bootstrap 报 `BACKUP_CONFIRMATION_REQUIRED` 后，先向用户说明：继续将没有本次完整历史快照，不能依赖它进行日后回滚；安装失败的事务恢复仍必须可用。仅在用户明确同意后，在原命令末尾追加错误中返回的 `--accept-backup-failure=<confirmation>`；PowerShell 入口使用 `-AcceptBackupFailure <confirmation>`。不要自行生成、持久保存确认值，或把其他安装包/配置的旧确认值拿来重试。
+
+`BACKUP_BLOCKED`、来源读取、UNKNOWN、哈希或安装包校验失败、关键配置读取失败、事务恢复准备失败不能通过此选项跳过。可能遭安全软件隔离时核对防护记录，不关闭防护、不加排除、不省略文件。安装后看 `backup_status`、`backup_warning`、`cleanup_warnings` 和真实恢复结果；无 `backup_id` 不能声称有可用回滚快照。仅更改这些通用安装行为，不改变原有功能。

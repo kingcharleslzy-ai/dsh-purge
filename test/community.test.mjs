@@ -469,6 +469,9 @@ test('a failed fresh install quarantines partial package and retains user settin
   const f = setup();
   try {
     fs.rmSync(f.root, { recursive: true });
+    const freshManifest = JSON.parse(fs.readFileSync(path.join(f.profile,'package.json')));
+    delete freshManifest.dependencies[PACKAGE];
+    fs.writeFileSync(path.join(f.profile,'package.json'),JSON.stringify(freshManifest));
     f.manager.installer = async () => {
       fs.mkdirSync(f.root, { recursive: true });
       fs.writeFileSync(path.join(f.root, 'incomplete.js'), 'partial download');

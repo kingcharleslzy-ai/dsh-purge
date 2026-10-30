@@ -48,21 +48,23 @@ if ($LASTEXITCODE -ne 0) { throw 'GUI fixture build failed' }
 try {
     $env:DSH_HOME = 'original-home'
     $env:ELECTRON_RUN_AS_NODE = 'original-electron'
-    & $target -DshExe $node -DshHome $fixtureHome -Profile web -Version 1.6.8 -DryRun
+    & $target -DshExe $node -DshHome $fixtureHome -Profile web -Version 1.6.8 -DryRun -AcceptBackupFailure ('a' * 64)
     $called = Get-Content -LiteralPath (Join-Path $fixtureHome 'called.json') -Raw | ConvertFrom-Json
     Assert ($called.args -contains '--profile=web') 'profile was lost'
     Assert ($called.args -contains '--version=1.6.8') 'version was lost'
     Assert ($called.args -contains '--dry-run') 'dry-run was lost'
+    Assert ($called.args -contains ('--accept-backup-failure=' + ('a' * 64))) 'backup consent was lost'
     Assert ($called.electron -eq '1') 'runtime mode not set'
     Assert ($env:DSH_HOME -eq 'original-home') 'home not restored'
     Assert ($env:ELECTRON_RUN_AS_NODE -eq 'original-electron') 'electron env not restored'
     # A true GUI-subsystem process deliberately starts reading the file late.
     # The old call-operator wrapper deleted it early and falsely returned success.
     Remove-Item -LiteralPath (Join-Path $fixtureHome 'called.json') -Force
-    & $target -DshExe $gui -DshHome $fixtureHome -Profile web -Version 1.6.8 -DryRun
+    & $target -DshExe $gui -DshHome $fixtureHome -Profile web -Version 1.6.8 -DryRun -AcceptBackupFailure ('a' * 64)
     Assert (Test-Path -LiteralPath (Join-Path $fixtureHome 'called.json')) 'GUI process returned before reading bootstrap'
     $guiCalled = Get-Content -LiteralPath (Join-Path $fixtureHome 'called.json') -Raw | ConvertFrom-Json
     Assert ($guiCalled.args -contains '--dry-run') 'GUI arguments lost'
+    Assert ($guiCalled.args -contains ('--accept-backup-failure=' + ('a' * 64))) 'GUI backup consent was lost'
     $global:purgeFixtureExitCode = 17
     $failed = $false
     try { & $target -DshExe $node -DshHome $fixtureHome } catch { $failed = $true }

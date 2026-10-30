@@ -5,6 +5,7 @@ param(
     [string]$DshHome = $env:DSH_HOME,
     [string]$Profile = 'desktop',
     [string]$Version = $env:PURGE_VERSION,
+    [string]$AcceptBackupFailure,
     [switch]$DryRun
 )
 $ErrorActionPreference = 'Stop'
@@ -53,6 +54,7 @@ try {
     $arguments = @($bootstrap, "--profile=$Profile")
     if ($Version) { $arguments += "--version=$Version" }
     if ($DryRun) { $arguments += '--dry-run' }
+    if ($AcceptBackupFailure) { $arguments += ('--accept-backup-failure=' + $AcceptBackupFailure) }
     $standardOutput = Join-Path $temporary 'stdout.log'
     $standardError = Join-Path $temporary 'stderr.log'
     $quoted = ($arguments | ForEach-Object { ConvertTo-NativeArgument $_ }) -join ' '

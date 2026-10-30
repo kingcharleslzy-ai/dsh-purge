@@ -20,7 +20,11 @@ const backup = (id) => ({
 });
 const reply = (body, status = 200) =>
   new Response(JSON.stringify(body), { status });
-function harness(transport, component = "CommunityMaintenance") {
+function harness(
+  transport,
+  component = "CommunityMaintenance",
+  confirm = () => true,
+) {
   const calls = [],
     context = {
       module: { exports: {} },
@@ -31,7 +35,7 @@ function harness(transport, component = "CommunityMaintenance") {
       AbortController,
       setTimeout,
       clearTimeout,
-      window: { location: { origin: "http://test" }, confirm: () => true },
+      window: { location: { origin: "http://test" }, confirm },
       fetch: async (url, init = {}) => {
         const call = {
           url: String(url),
@@ -436,3 +440,94 @@ test("saving a token does not erase masked proxy credentials or auto-update pref
   });
   await unmount(tree);
 });
+
+test("update offers a second explicit backup decision, scoped to the failed profile and selected release", async () => {
+  const confirmations = [];
+  const token = "a".repeat(64);
+  const h = harness(
+    (c) => {
+      if (c.method === "GET") return reply({ ok: true, backups: [] });
+      if (c.body.op === "check")
+        return reply({
+          ok: true,
+          versions: [{ asset: "tgz", ref: "v1.6.63", label: "1.6.63" }],
+        });
+      if (!c.body.acceptBackupFailures)
+        return reply({
+          ok: false,
+          error: "backup destination full",
+          release: { ref: "v1.6.63" },
+          targets: [
+            {
+              profile: "desktop",
+              ok: false,
+              backup_failure: {
+                can_continue: true,
+                confirmation: token,
+                message: "完整备份未完成",
+              },
+            },
+          ],
+        });
+      assert.equal(c.body.acceptBackupFailures.desktop, token);
+      assert.equal(c.body.ref, "v1.6.63");
+      return reply({
+        ok: true,
+        applied: true,
+        release: { version: "1.6.63" },
+        backup_warnings: [{ accepted: true }],
+      });
+    },
+    "CommunityMaintenance",
+    (message) => {
+      confirmations.push(message);
+      return true;
+    },
+  );
+  const tree = await mount(h);
+  await click(tree, "检查社区版更新");
+  await click(tree, "安装所选版本");
+  assert.equal(h.calls.filter((c) => c.body?.op === "update").length, 2);
+  assert.equal(confirmations.length, 2);
+  assert.match(confirmations[1], /放弃完整历史备份/);
+  assert(text(tree).includes("本次未保留完整备份"));
+  await unmount(tree);
+});
+for (const blocked of [false, true])
+  test(`backup decision ${blocked ? "security blocked" : "user declined"} never retries installation`, async () => {
+    let prompts = 0;
+    const h = harness(
+      (c) =>
+        c.method === "GET"
+          ? reply({ ok: true, backups: [] })
+          : c.body.op === "check"
+            ? reply({
+                ok: true,
+                versions: [{ asset: "tgz", ref: "v1.6.63", label: "1.6.63" }],
+              })
+            : reply({
+                ok: false,
+                error: blocked ? "Defender UNKNOWN" : "backup failed",
+                targets: [
+                  {
+                    profile: "desktop",
+                    ok: false,
+                    backup_failure: {
+                      can_continue: !blocked,
+                      confirmation: blocked ? "" : "a".repeat(64),
+                      message: "backup failed",
+                    },
+                  },
+                ],
+              }),
+      "CommunityMaintenance",
+      () => ++prompts === 1,
+    );
+    const tree = await mount(h);
+    await click(tree, "检查社区版更新");
+    await click(tree, "安装所选版本");
+    assert.equal(h.calls.filter((c) => c.body?.op === "update").length, 1);
+    assert.equal(prompts, blocked ? 1 : 2);
+    assert(text(tree).includes(blocked ? "Defender UNKNOWN" : "backup failed"));
+    await unmount(tree);
+  });

@@ -79,7 +79,8 @@ export async function runInstallLifecycle({runtime,cli,legacy,previous,archive,t
     assert(bundles.includes(meta.name));assert(!bundles.includes('dsh-purge'));
     const manager=new Maintenance({home,profile});
     const backupId=output?.match(/"backup_id"\s*:\s*"([^"]+)"/)?.[1];
-    if(output)assert(backupId,'Bootstrap must report the actual backup');
+    if(output && baseline)assert(backupId,'Upgrade must report the actual backup');
+    if(output && !baseline)assert.match(output,/"backup_status": "not-required"/);
     const afterConfig=fs.readFileSync(config,'utf8');
     if(baseline&&alias==='dsh-purge')assert.equal(afterConfig,initialConfig.replace('name: dsh-purge\n','name: "dsh-purge-community"\n'));
     else assert.equal(afterConfig,initialConfig);
