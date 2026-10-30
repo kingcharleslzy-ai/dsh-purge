@@ -15,7 +15,7 @@
 
 测试使用独立临时 profile、真实 DSH CLI/pnpm 和 Electron 44.7.0（Node 24.21.0），没有启动、注册或重启正式 DSH，没有修改正式设置。
 
-入口：`scripts/check-optional-backup-runtime.mjs <baseline.tgz> <candidate.tgz>`，要求 `PURGE_LINK_TEST_CLI` 指向已准备好的隔离宿主 CLI。Mac/Windows 本次包基线为 1.6.61，首次测试候选为 1.6.63（主分支随后使用此版本号，本任务改为 1.6.64）；CI 另覆盖 1.6.36 旧版迁移。脚本保留临时目录及失败证据。
+入口：`scripts/check-optional-backup-runtime.mjs <baseline.tgz> <candidate.tgz>`，要求 `PURGE_LINK_TEST_CLI` 指向已准备好的隔离宿主 CLI。Mac/Windows 本次包基线为 1.6.61，候选为 1.6.64（已合入主分支 1.6.63 后重新执行）；CI 另覆盖 1.6.36 旧版迁移。脚本保留临时目录及失败证据。
 
 | 场景 | Mac 实机 | Windows 11 / 4090 实机 |
 | --- | --- | --- |
@@ -29,7 +29,7 @@
 
 失败恢复中的验证故障是主动注入；安装、依赖事务和恢复使用真实文件及 CLI。它证明这一失败分支的恢复，不代表重现所有自然安装故障。面板交互覆盖使用 DOM 测试，不宣称已在正式 DSH 窗口验收。
 
-自动回归：Mac 419 项中 407 通过、12 跳过、0 失败；Windows 419 项中 392 通过、27 跳过、0 失败。Windows Electron 的备份策略/维护锁/文件清理测试 41 项全部通过；面板 28 项全部通过。跳过项不计作实测通过。
+自动回归：Mac 421 项中 409 通过、12 跳过、0 失败；Windows 421 项中 394 通过、27 跳过、0 失败。Windows Electron 的备份策略/维护锁/文件清理测试 41 项全部通过；面板 28 项全部通过，Windows PowerShell 5.1 的真实 Node/GUI 子系统参数传递测试通过（下载入口使用测试替身，不等同于正式网络安装）。候选完整包 smoke 检查通过。跳过项不计作实测通过。
 
 ## Windows 防护证据
 
