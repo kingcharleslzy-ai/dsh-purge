@@ -33,3 +33,14 @@
 - 市场会重新固定默认分支完整 Commit；提交时显式选择根目录。若源码变化，同一版本也需要新 Commit 复检。
 - 这两个问题消除不等于已上架。依赖、权限、静态源码及受保护宿主操作仍按市场原规则审查，失败应保留具体原因。
 - 不为通过市场检查删除功能、隐藏权限、伪造兼容性或篡改扫描结果。主插件包含宿主维护能力，应如实披露；市场是否接受此类插件需由其规则及维护者决定。
+
+## 2026-10-30 固定源码预检
+
+使用 DSH Store 自己的检查器提交 `66e6c77a316450da08648458e25da3438e278c46`，对公开的修正提交 `96e88852ec3532e12a11955088a3c2e1d216364e` 执行只读预检：
+
+- 留空路径：复现 `SUBMISSION_PACKAGE_AMBIGUOUS`，候选为 `.` 与 `packages/purge-panel`。
+- 显式 `.`：仅读取根 `package.json` 与 `cordis.patch.yml`，不再读取面板 manifest，目录歧义消失。
+- 市场的 `inferredCompatibility()` 能读到精确版本声明；rc.4/alpha.2 保持 unknown，rc.5 为 compatible，逐项运行操作证据为空而非伪造 passed。
+- 完整预检继续在 Bundle 阶段停止：`SUBMISSION_PATCH_AMBIGUOUS: Unsupported Patch inline sequence requires review`。这是另一项门槛，不能把前两项修正说成整体预检通过。
+
+现有 Bundle 含 `inject: [systemPrompt, tools]`、旧插件 `disabled` 迁移条目及 `!!js` 路径配置；市场有界解析器仅接受更窄的语法和操作。即使为字符串加引号，后续语法/操作仍需独立审查。保持 Bundle 原样，不删配置、不降低功能，也不篡改市场检查器。
