@@ -9,9 +9,9 @@
 [![Release](https://img.shields.io/github/v/release/kingcharleslzy-ai/dsh-purge?label=release)](https://github.com/kingcharleslzy-ai/dsh-purge/releases)
 [![Checks](https://github.com/kingcharleslzy-ai/dsh-purge/actions/workflows/community.yml/badge.svg)](https://github.com/kingcharleslzy-ai/dsh-purge/actions/workflows/community.yml)
 
-当前版本 **1.6.63** · 适配 **DSH Desktop 0.2.1-rc.5**（rc.1 / rc.2 / rc.3 同样通过） · [English](docs/README.en.md)
+当前版本 **1.6.64** · 适配 **DSH Desktop 0.2.1-rc.5**（rc.1 / rc.2 / rc.3 同样通过） · [English](docs/README.en.md)
 
-1.6.63 从上游 1.1.83 取回漂移判定（锚点失配不再算绿），延续 rc.5 适配。[发行说明](docs/releases/1.6.63.md) · [测试与边界](docs/maintenance-1.6.63.md) · [市场安装与迁移指南](docs/MARKET-MIGRATION.md)。
+1.6.64 候选版允许普通备份目标写入失败后由用户明确选择继续，保留安装校验与失败恢复。Windows 完整包的 Defender 阻断尚未解决，暂未发布。[发行说明](docs/releases/1.6.64.md) · [测试与边界](docs/maintenance-1.6.64.md) · [市场安装与迁移指南](docs/MARKET-MIGRATION.md)。
 
 **原项目与作者**：基于 [小杨 / YuJunZhiXue 的 dsh-purge](https://github.com/YuJunZhiXue/dsh-purge) 独立维护。原仓库已恢复；保留原作者署名、版权与 MIT 许可证。社区版由本仓库维护，并非原作者官方发行。
 
@@ -89,7 +89,7 @@ dsh-purge Community 是一个跑在你自己机器上的 Harness 附加组件。
 下面命令适用于**已经安装 `dsh` 命令、且使用 `web` profile 的 CLI/Web 用户**，在 macOS/Linux 终端或 Windows PowerShell 中运行。桌面版用户优先用上面的界面；不要为了安装插件再用 `npx` 下载另一套宿主。
 
 ```sh
-dsh plugin --profile web add "https://github.com/kingcharleslzy-ai/dsh-purge/releases/download/v1.6.63/dsh-purge-community-1.6.63.tgz"
+dsh plugin --profile web add "https://github.com/kingcharleslzy-ai/dsh-purge/releases/download/v1.6.64/dsh-purge-community-1.6.64.tgz"
 ```
 
 `web` 必须与实际启动的 profile 一致；自定义数据目录需要沿用该实例的 `DSH_HOME`。命令使用本次发行的固定版本 URL；不是 `npm install -g`，也不是安装裸 npm 包名。本项目通过 GitHub 发行，**不要替换成 `add dsh-purge` 或 `add dsh-purge-community`**。官方 CLI 的安装不会额外运行我们安装器的 Release SHA256 比对及迁移快照；需要这些功能时选方式三。[官方 CLI 安装说明](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/user/develop/basic/publish.zh.md)
@@ -191,7 +191,7 @@ sh "$PURGE_INSTALL_DIR/install.sh" --dry-run
 
 | 组件 | 值 |
 | --- | --- |
-| 插件 | `dsh-purge-community` 1.6.63 |
+| 插件 | `dsh-purge-community` 1.6.64 |
 | 已验证宿主 | DSH Desktop 0.2.1-rc.1 / 0.2.1-rc.2 / 0.2.1-rc.3 / 0.2.1-rc.5 |
 | 其它宿主 | 允许安装，自检会标「未验证」；先看 `diagnose` |
 | Node | ≥18（桌面版自带运行时即可） |
@@ -268,3 +268,11 @@ npm run smoke            # 发行包冒烟
 <!-- CONTRIBUTORS:END -->
 
 名单合并 GitHub 提交者与人工鸣谢记录，自动每日刷新并保留历史贡献者。头像顺序不代表贡献排名，也不将问题报告者误记为代码作者。
+
+## 安装备份选择（1.6.64）
+
+完整历史快照默认尝试创建；首次安装没有旧插件时无需此快照。只有明确的备份目标写入故障会提供继续选项。面板先显示原因和回滚限制，用户确认后重试一次。自动安装不会自行确认。
+
+CLI 或 bootstrap 报 `BACKUP_CONFIRMATION_REQUIRED` 后，先向用户说明：继续将没有本次完整历史快照，不能依赖它进行日后回滚；安装失败的事务恢复仍必须可用。仅在用户明确同意后，在原命令末尾追加错误中返回的 `--accept-backup-failure=<confirmation>`；PowerShell 入口使用 `-AcceptBackupFailure <confirmation>`。不要自行生成、持久保存确认值，或把其他安装包/配置的旧确认值拿来重试。
+
+`BACKUP_BLOCKED`、来源读取、UNKNOWN、哈希或安装包校验失败、关键配置读取失败、事务恢复准备失败不能通过此选项跳过。可能遭安全软件隔离时核对防护记录，不关闭防护、不加排除、不省略文件。安装后看 `backup_status`、`backup_warning`、`cleanup_warnings` 和真实恢复结果；无 `backup_id` 不能声称有可用回滚快照。仅更改这些通用安装行为，不改变原有功能。

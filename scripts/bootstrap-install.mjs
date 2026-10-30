@@ -325,7 +325,7 @@ export async function bootstrapInstall(options = {}) {
     if (manifest.name !== "dsh-purge-community" || manifest.version !== version || manifest.repository?.url !== `git+https://github.com/${repo}.git`) throw Error("Release package identity mismatch");
     const host = platform === "linux" && mode === "web" ? prepareLinuxHost(cli, { userHome: options.userHome, log }) : null;
     if (host) cli = host.cli;
-    const result = await run(executable, [path.join(tmp, "package/bin/community.js"), "migrate", file], {
+    const result = await run(executable, [path.join(tmp, "package/bin/community.js"), "migrate", file, ...(options.acceptBackupFailure ? ["--accept-backup-failure=" + options.acceptBackupFailure] : [])], {
       timeout: 600000, maxBuffer: 4 * 1024 * 1024, windowsHide: true,
       env: { ...process.env, ELECTRON_RUN_AS_NODE: "1", DSH_SURFACE: mode, PURGE_DSH_CLI: cli, DSH_BASE: "", DSH_HOME: home, DSH_PROFILE: profile, PURGE_PROFILE_DIR: path.join(home, "profiles", profile) },
     });
@@ -341,7 +341,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(fs.realpathSync(process
   try {
     const options = {};
     for (const arg of process.argv.slice(2)) {
-      if (arg === "--dry-run") options.dryRun = true;
+      if (arg.startsWith("--accept-backup-failure=")) options.acceptBackupFailure = arg.slice(24);
+      else if (arg === "--dry-run") options.dryRun = true;
       else if (arg.startsWith("--version=")) options.version = arg.slice(10);
       else if (arg.startsWith("--profile=")) options.profile = arg.slice(10);
       else if (arg.startsWith("--archive=")) options.archiveFile = arg.slice(10);

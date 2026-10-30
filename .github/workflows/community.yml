@@ -155,3 +155,4 @@ jobs:
           "$engine" --test test/remove-tree.test.mjs
           "$engine" scripts/check-linked-install-runtime.mjs "$RUNNER_TEMP/purge-baseline/dsh-purge-community-1.6.36.tgz" "dsh-purge-community-$(node -p 'require("./package.json").version').tgz"
           "$engine" scripts/check-npm-alias-runtime.mjs "$RUNNER_TEMP/purge-baseline/dsh-purge-community-1.6.36.tgz" "dsh-purge-community-$(node -p 'require("./package.json").version').tgz"
+          "$engine" scripts/check-optional-backup-runtime.mjs "$RUNNER_TEMP/purge-baseline/dsh-purge-community-1.6.36.tgz" "dsh-purge-community-$(node -p 'require("./package.json").version').tgz"

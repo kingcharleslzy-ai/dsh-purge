@@ -1,7 +1,7 @@
 # AGENTS.md — 给 AI agent 的 Purge 使用说明书
 
 > 这份文件是写给**在 DSH 里干活的 agent** 的，不是营销文档。
-> 当前版本：**1.6.63** · 适配 DSH Desktop **0.2.1-rc.5**（rc.1 / rc.2 / rc.3 同样通过）
+> 当前版本：**1.6.64** · 适配 DSH Desktop **0.2.1-rc.5**（rc.1 / rc.2 / rc.3 同样通过）
 > 版本号由 `npm run check:docs` 与 `package.json` 校验，发版必须同步。
 
 ---
@@ -133,7 +133,7 @@ purge-community probe new
 
 | 组件 | 值 |
 | --- | --- |
-| 插件 | `dsh-purge-community` 1.6.63 |
+| 插件 | `dsh-purge-community` 1.6.64 |
 | 已验证宿主 | DSH Desktop 0.2.1-rc.1 / 0.2.1-rc.2 / 0.2.1-rc.3 / 0.2.1-rc.5 |
 | 其它宿主 | 允许应用，但 `selfcheck` 会标"未验证"；先看 `diagnose` |
 | Node | ≥18（桌面版自带运行时即可） |
@@ -423,3 +423,11 @@ Web 子路径请求按实际插件脚本路径定位挂载点，根路径和桌�
 - `fileOptional` 的目标漂移不牵连整条补丁。
 - `ensureHostClean` 不再忽略 `pattern_not_found`。
 - 未取：NEXT 识别、allowBuilds/pnpm、cordis.patch 空 `[]`、子代理继承父预设（与 #53 契约冲突）、redteam 默认清理。
+
+## 安装备份选择（1.6.64）
+
+完整历史快照默认尝试创建；首次安装没有旧插件时无需此快照。只有明确的备份目标写入故障会提供继续选项。面板先显示原因和回滚限制，用户确认后重试一次。自动安装不会自行确认。
+
+CLI 或 bootstrap 报 `BACKUP_CONFIRMATION_REQUIRED` 后，先向用户说明：继续将没有本次完整历史快照，不能依赖它进行日后回滚；安装失败的事务恢复仍必须可用。仅在用户明确同意后，在原命令末尾追加错误中返回的 `--accept-backup-failure=<confirmation>`；PowerShell 入口使用 `-AcceptBackupFailure <confirmation>`。不要自行生成、持久保存确认值，或把其他安装包/配置的旧确认值拿来重试。
+
+`BACKUP_BLOCKED`、来源读取、UNKNOWN、哈希或安装包校验失败、关键配置读取失败、事务恢复准备失败不能通过此选项跳过。可能遭安全软件隔离时核对防护记录，不关闭防护、不加排除、不省略文件。安装后看 `backup_status`、`backup_warning`、`cleanup_warnings` 和真实恢复结果；无 `backup_id` 不能声称有可用回滚快照。仅更改这些通用安装行为，不改变原有功能。

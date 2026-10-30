@@ -234,6 +234,7 @@ if (LEGACY[op]) {
     result = await maintenance().install(path.resolve(argument), {
       reason: op === "migrate" ? "before-migration" : "before-update",
       migrate: op === "migrate",
+      acceptBackupFailure: rawArgs.find(a => a.startsWith("--accept-backup-failure="))?.split("=")[1] || "",
     });
   } else
     throw Error(
@@ -242,5 +243,10 @@ if (LEGACY[op]) {
   console.log(JSON.stringify(result, null, 2));
 } catch (e) {
   console.error(e.message);
+  if (e.backup_failure) {
+    console.error(JSON.stringify({ code: e.code, backup_failure: e.backup_failure }));
+    if (e.backup_failure.can_continue)
+      console.error(`仅在用户确认接受本次无完整备份后，使用同一安装命令追加 --accept-backup-failure=${e.backup_failure.confirmation}；该确认不适用于其他包或配置。`);
+  }
   process.exitCode = 1;
 }

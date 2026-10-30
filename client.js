@@ -10425,6 +10425,20 @@ function assertMaintenanceResult(result) {
     throw new Error((result.error || errors || "\u7EF4\u62A4\u64CD\u4F5C\u5931\u8D25") + partial);
   }
 }
+function backupConfirmationRequest(result) {
+  const failed = (result?.targets || []).filter((t) => t.ok === false);
+  if (!failed.length || failed.some(
+    (t) => !t.backup_failure?.can_continue || !/^[a-f0-9]{64}$/.test(t.backup_failure.confirmation)
+  ))
+    return null;
+  return {
+    ref: result.release?.ref,
+    acceptBackupFailures: Object.fromEntries(
+      failed.map((t) => [t.profile, t.backup_failure.confirmation])
+    ),
+    message: failed.map((t) => `${t.profile}: ${t.backup_failure.message}`).join("\n") + "\n\n\u53EA\u5BF9\u672C\u6B21\u5B89\u88C5\u653E\u5F03\u5B8C\u6574\u5386\u53F2\u5907\u4EFD\u5E76\u7EE7\u7EED\uFF1F\u5B89\u88C5\u5305\u6821\u9A8C\u548C\u5931\u8D25\u6062\u590D\u4ECD\u4F1A\u6267\u884C\uFF0C\u4E0D\u4F1A\u5173\u95ED\u9632\u62A4\u3002"
+  };
+}
 function maintenanceNotice(op, result) {
   if (op === "backup") {
     if (!result.id)
@@ -10440,7 +10454,8 @@ function maintenanceNotice(op, result) {
       const version = result.release?.version || result.localVersion || result.remoteVersion;
       const warnings = result.cleanup_warnings || [];
       const cleanup = warnings.length ? `\u6E05\u7406\u672A\u5B8C\u6210\uFF08${warnings.map((w) => `${w.stage}:${w.code}`).join("\uFF0C")}\uFF09\uFF0C\u6B8B\u7559\u5DF2\u4FDD\u7559\u3002` : "";
-      return `${cleanup}\u63D2\u4EF6\u5DF2\u5B89\u88C5${version ? "\uFF1A" + version : ""}\u3002\u8BF7\u91CD\u542F DSH \u8FDB\u7A0B\uFF1B\u4EC5\u5237\u65B0\u6D4F\u89C8\u5668\u4E0D\u4F1A\u52A0\u8F7D\u65B0\u7248\u540E\u7AEF\u3002`;
+      const backup = result.backup_warnings?.length ? "\u672C\u6B21\u672A\u4FDD\u7559\u5B8C\u6574\u5907\u4EFD\uFF0C\u4E0D\u80FD\u4F7F\u7528\u672C\u6B21\u5FEB\u7167\u8FDB\u884C\u65E5\u540E\u56DE\u6EDA\u3002" : "";
+      return `${backup}${cleanup}\u63D2\u4EF6\u5DF2\u5B89\u88C5${version ? "\uFF1A" + version : ""}\u3002\u8BF7\u91CD\u542F DSH \u8FDB\u7A0B\uFF1B\u4EC5\u5237\u65B0\u6D4F\u89C8\u5668\u4E0D\u4F1A\u52A0\u8F7D\u65B0\u7248\u540E\u7AEF\u3002`;
     }
     return result.note || "\u66F4\u65B0\u8BF7\u6C42\u5DF2\u5B8C\u6210\uFF0C\u8BF7\u5237\u65B0\u72B6\u6001\u6838\u5BF9\u5B89\u88C5\u7ED3\u679C\u3002";
   }
@@ -10753,18 +10768,30 @@ function CommunityMaintenance() {
     ))
       return;
     if (op === "update" && !window.confirm(
-      "\u5C06\u5148\u5907\u4EFD\uFF0C\u518D\u5B89\u88C5\u6240\u9009\u793E\u533A\u6B63\u5F0F\u7248\uFF1B\u4E0D\u4F1A\u91CD\u65B0\u5E94\u7528\u5BBF\u4E3B\u8865\u4E01\u3002\u5B89\u88C5\u540E\u8BF7\u91CD\u542F DSH \u8FDB\u7A0B\uFF1B\u4EC5\u5237\u65B0\u6D4F\u89C8\u5668\u4E0D\u4F1A\u52A0\u8F7D\u65B0\u7248\u540E\u7AEF\u3002\u7EE7\u7EED\uFF1F"
+      "\u5C06\u5C1D\u8BD5\u5907\u4EFD\uFF0C\u518D\u5B89\u88C5\u6240\u9009\u793E\u533A\u6B63\u5F0F\u7248\uFF1B\u666E\u901A\u5907\u4EFD\u5931\u8D25\u4F1A\u53E6\u884C\u8BE2\u95EE\uFF1B\u4E0D\u4F1A\u91CD\u65B0\u5E94\u7528\u5BBF\u4E3B\u8865\u4E01\u3002\u5B89\u88C5\u540E\u8BF7\u91CD\u542F DSH \u8FDB\u7A0B\uFF1B\u4EC5\u5237\u65B0\u6D4F\u89C8\u5668\u4E0D\u4F1A\u52A0\u8F7D\u65B0\u7248\u540E\u7AEF\u3002\u7EE7\u7EED\uFF1F"
     ))
       return;
     running.current = true;
     setBusy(true);
     setNotice("\u5904\u7406\u4E2D\u2026");
     try {
-      const r = await apiJson("/dsh-purge/community", {
+      let r = await apiJson("/dsh-purge/community", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ op, id: selected, ref: release })
       });
+      const confirmation = op === "update" ? backupConfirmationRequest(r) : null;
+      if (mounted.current && confirmation && window.confirm(confirmation.message)) {
+        r = await apiJson("/dsh-purge/community", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            op,
+            ref: confirmation.ref || release,
+            acceptBackupFailures: confirmation.acceptBackupFailures
+          })
+        });
+      }
       assertMaintenanceResult(r);
       if (!mounted.current) return;
       if (op === "check") {
@@ -13199,7 +13226,7 @@ function SettingsRoot(props = {}) {
       h(
         "span",
         { className: "dshpp-native-badge" },
-        (true ? "\u793E\u533A\u7248 " : "\u72EC\u7ACB\u754C\u9762 ") + "1.6.63"
+        (true ? "\u793E\u533A\u7248 " : "\u72EC\u7ACB\u754C\u9762 ") + "1.6.64"
       )
     ),
     h(CompatibilityNote, { status: backendStatus }),
@@ -13355,7 +13382,7 @@ function StatusStrip({ info }) {
       "span",
       { className: "dshpp-strip-item" },
       "\u63D2\u4EF6 ",
-      h("b", null, info?.plugin_version || "1.6.63")
+      h("b", null, info?.plugin_version || "1.6.64")
     )
   );
 }
@@ -13390,11 +13417,11 @@ function VersionNotice({ info }) {
     );
   }
   const backend = info?.plugin_version;
-  if (!backend || backend === "1.6.63") return null;
+  if (!backend || backend === "1.6.64") return null;
   return h(
     "p",
     { className: "dshpp-warn", role: "status" },
-    `\u5B98\u65B9\u7248\u672C ${backend}\uFF1B\u754C\u9762 ${"1.6.63"}\u3002\u4E24\u8005\u4E0D\u4E00\u81F4\u65F6\u8BBE\u7F6E\u53EF\u80FD\u4E0D\u751F\u6548\uFF0C\u8BF7\u66F4\u65B0\u5230\u540C\u4E00\u7248\u672C\u540E\u91CD\u542F DSH\u3002`
+    `\u5B98\u65B9\u7248\u672C ${backend}\uFF1B\u754C\u9762 ${"1.6.64"}\u3002\u4E24\u8005\u4E0D\u4E00\u81F4\u65F6\u8BBE\u7F6E\u53EF\u80FD\u4E0D\u751F\u6548\uFF0C\u8BF7\u66F4\u65B0\u5230\u540C\u4E00\u7248\u672C\u540E\u91CD\u542F DSH\u3002`
   );
 }
 function PurgePage() {
@@ -13444,7 +13471,7 @@ function PurgePage() {
           true ? h(
             "span",
             { className: "dshpp-page-ver" },
-            "\u793E\u533A\u7248 1.6.63"
+            "\u793E\u533A\u7248 1.6.64"
           ) : null
         )
       )

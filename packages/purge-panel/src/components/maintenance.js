@@ -226,6 +226,30 @@ export function assertMaintenanceResult(result) {
     throw new Error((result.error || errors || "维护操作失败") + partial);
   }
 }
+export function backupConfirmationRequest(result) {
+  const failed = (result?.targets || []).filter((t) => t.ok === false);
+  if (
+    !failed.length ||
+    failed.some(
+      (t) =>
+        !t.backup_failure?.can_continue ||
+        !/^[a-f0-9]{64}$/.test(t.backup_failure.confirmation),
+    )
+  )
+    return null;
+  return {
+    ref: result.release?.ref,
+    acceptBackupFailures: Object.fromEntries(
+      failed.map((t) => [t.profile, t.backup_failure.confirmation]),
+    ),
+    message:
+      failed
+        .map((t) => `${t.profile}: ${t.backup_failure.message}`)
+        .join("\n") +
+      "\n\n只对本次安装放弃完整历史备份并继续？安装包校验和失败恢复仍会执行，不会关闭防护。",
+  };
+}
+
 export function maintenanceNotice(op, result) {
   if (op === "backup") {
     if (!result.id)
@@ -247,7 +271,10 @@ export function maintenanceNotice(op, result) {
       const cleanup = warnings.length
         ? `清理未完成（${warnings.map((w) => `${w.stage}:${w.code}`).join("，")}），残留已保留。`
         : "";
-      return `${cleanup}插件已安装${version ? "：" + version : ""}。请重启 DSH 进程；仅刷新浏览器不会加载新版后端。`;
+      const backup = result.backup_warnings?.length
+        ? "本次未保留完整备份，不能使用本次快照进行日后回滚。"
+        : "";
+      return `${backup}${cleanup}插件已安装${version ? "：" + version : ""}。请重启 DSH 进程；仅刷新浏览器不会加载新版后端。`;
     }
     return result.note || "更新请求已完成，请刷新状态核对安装结果。";
   }
@@ -607,7 +634,7 @@ export function CommunityMaintenance() {
     if (
       op === "update" &&
       !window.confirm(
-        "将先备份，再安装所选社区正式版；不会重新应用宿主补丁。安装后请重启 DSH 进程；仅刷新浏览器不会加载新版后端。继续？",
+        "将尝试备份，再安装所选社区正式版；普通备份失败会另行询问；不会重新应用宿主补丁。安装后请重启 DSH 进程；仅刷新浏览器不会加载新版后端。继续？",
       )
     )
       return;
@@ -615,11 +642,28 @@ export function CommunityMaintenance() {
     setBusy(true);
     setNotice("处理中…");
     try {
-      const r = await apiJson("/dsh-purge/community", {
+      let r = await apiJson("/dsh-purge/community", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ op, id: selected, ref: release }),
       });
+      const confirmation =
+        op === "update" ? backupConfirmationRequest(r) : null;
+      if (
+        mounted.current &&
+        confirmation &&
+        window.confirm(confirmation.message)
+      ) {
+        r = await apiJson("/dsh-purge/community", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            op,
+            ref: confirmation.ref || release,
+            acceptBackupFailures: confirmation.acceptBackupFailures,
+          }),
+        });
+      }
       assertMaintenanceResult(r);
       if (!mounted.current) return;
       if (op === "check") {

@@ -8,7 +8,7 @@ A self-hosted add-on for DeepSeek Harness (known in the community as a 破甲 / 
 
 [![Release](https://img.shields.io/github/v/release/kingcharleslzy-ai/dsh-purge?label=release)](https://github.com/kingcharleslzy-ai/dsh-purge/releases)
 
-Current version 1.6.63 · targets **DSH Desktop 0.2.1-rc.5** (rc.1 / rc.2 / rc.3 also pass)
+Current version 1.6.64 · targets **DSH Desktop 0.2.1-rc.5** (rc.1 / rc.2 / rc.3 also pass)
 
 **Original project and author:** independently maintained from [dsh-purge by 小杨 / YuJunZhiXue](https://github.com/YuJunZhiXue/dsh-purge). The original repository is available again. Original attribution, copyright and the MIT license are retained; this community distribution is not an official upstream release.
 
@@ -51,7 +51,7 @@ Local learning, personal projects, automation experiments and maintenance work. 
 - CLI/Web users who already have `dsh` on PATH and use the `web` profile can use the official command below. Desktop users should not download another npx host to install into their existing desktop profile.
 
 ```sh
-dsh plugin --profile web add "https://github.com/kingcharleslzy-ai/dsh-purge/releases/download/v1.6.63/dsh-purge-community-1.6.63.tgz"
+dsh plugin --profile web add "https://github.com/kingcharleslzy-ai/dsh-purge/releases/download/v1.6.64/dsh-purge-community-1.6.64.tgz"
 ```
 
 Use the actual instance's profile and `DSH_HOME`. This project distributes via GitHub; do not substitute bare npm package names. The official command does not run our extra Release SHA256 check, migration snapshot or rollback wrapper.
@@ -76,7 +76,7 @@ Two separate preferences (check / install), default check-only every six hours. 
 
 ## Compatibility
 
-Plugin `dsh-purge-community` 1.6.63 · verified on DSH Desktop 0.2.1-rc.1 / rc.2 / rc.3 / rc.5 · Node ≥ 18.
+Plugin `dsh-purge-community` 1.6.64 · verified on DSH Desktop 0.2.1-rc.1 / rc.2 / rc.3 / rc.5 · Node ≥ 18.
 
 ## Troubleshooting
 
@@ -158,3 +158,11 @@ The standalone installer now reports the failing stage, official host, transport
 Merge `excludePresets: [roleplay, minimal]` into the existing `dsh-purge` entry's config in the current profile. The default `[]` preserves existing behavior. Match effective preset IDs exactly, ignoring case and surrounding whitespace. All prompt sections, assembly rewrites and the host fallback use the same per-session decision; subagents use their own effective preset. Configured exclusions with an unknown context suppress injection rather than leaking it. Commands, UI and tools remain registered.
 
 This does not revert global host patches, deployment configuration or past chat messages. Installation does not apply patches or restart DSH; old host fallback calls need a user-scheduled apply and manual restart to pass session context. See [configuration, migration and test boundaries](maintenance-issue-53.md).
+
+## Installation backup choice (1.6.64 candidate)
+
+An existing installation still attempts a full historical snapshot. A fresh installation has no old plugin snapshot to preserve. An identified destination-write failure (permissions, read-only storage, insufficient space or a path conflict) can be acknowledged for this installation only. The panel asks explicitly; automatic updates never accept on the user's behalf.
+
+When the CLI or bootstrap returns `BACKUP_CONFIRMATION_REQUIRED`, explain that there will be no full snapshot for a later rollback. After explicit user consent, repeat the original command with the returned `--accept-backup-failure=<confirmation>` value (PowerShell: `-AcceptBackupFailure <confirmation>`). Consent is bound to the archive, profile and configuration; it is not a permanent setting.
+
+Source-read failures, unknown errors, security-software detections, invalid archives and failure-recovery preparation errors remain blocking. Do not disable protection, exclude files or claim a missing backup exists. Immediate installation-failure recovery remains mandatory. See the [actual validation record and Windows limitation](maintenance-1.6.64.md).

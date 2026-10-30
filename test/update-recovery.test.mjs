@@ -24,12 +24,12 @@ function fixture(t) {
   return { home, targets };
 }
 test('partial profile update remains actionable across scheduler restarts; only failed target is retried', async t => {
-  const {home, targets} = fixture(t); const calls = [], snapshots = new Map(); let fail = true;
+  const {home, targets} = fixture(t); const calls = []; let fail = true;
   const services = {
     listReleases: async () => ({ rows:[release] }), installSites: () => targets,
-    createManager: site => ({site, backup: async () => { snapshots.set(site.profile,fs.readFileSync(path.join(site.dir,'package.json'))); return {id:site.profile}; }, rollback: async () => fs.writeFileSync(path.join(site.dir,'package.json'),snapshots.get(site.profile))}),
+    createManager: site => ({site, backup: async () => { throw Error('outer duplicate backup must not run'); }, rollback: async () => { throw Error('outer duplicate rollback must not run'); }}),
     prepareRelease: async () => "isolated-prepared-archive",
-    installRelease: async manager => { const site = manager.site; calls.push(site.profile); fs.writeFileSync(path.join(site.dir,'package.json'),JSON.stringify({name:PACKAGE,version:release.version})); if(site.profile==='web' && fail) throw Error('simulated disk failure'); return {restart_required:true}; },
+    installRelease: async manager => { const site = manager.site; calls.push(site.profile); if(site.profile==='web' && fail) throw Error('simulated disk failure (transaction restored)'); fs.writeFileSync(path.join(site.dir,'package.json'),JSON.stringify({name:PACKAGE,version:release.version})); return {restart_required:true}; },
   };
   const check = async () => ({ok:true,channel:'stable',remoteVersion:release.version,...summarizeProfileUpdates(profileVersions(targets,release.version))});
   const install = () => installForkRelease({reason:'auto'}, services);
@@ -91,4 +91,19 @@ test('download/integrity failure never starts a backup, install or rollback', as
     assert.equal(JSON.parse(fs.readFileSync(path.join(site.dir,'package.json'))).version,'1.6.27');
     assert.equal(fs.readFileSync(path.join(site.profileDir,'cordis.patch.yml'),'utf8'),'PRIVATE SETTINGS');
   }
+});
+
+test('online updater delegates one transaction and preserves per-profile backup decisions; automatic mode never forwards consent',async t=>{
+  const {targets}=fixture(t),calls=[],token='b'.repeat(64);
+  const services={listReleases:async()=>({rows:[release]}),installSites:()=>targets,
+    prepareRelease:async()=> 'verified-archive',createManager:site=>({
+      backup(){throw Error('must not duplicate backup');},rollback(){throw Error('must not duplicate recovery');},
+      async install(file,options){calls.push({profile:site.profile,file,options});throw Object.assign(Error('backup destination write failed'),{code:'BACKUP_CONFIRMATION_REQUIRED',backup_failure:{can_continue:true,confirmation:token,original_code:'ENOSPC'}});}
+    })};
+  let result=await installForkRelease({acceptBackupFailures:{desktop:token}},services);
+  assert.equal(result.ok,false);assert.equal(result.applied,false);assert.equal(result.targets[0].backup_failure.confirmation,token);
+  assert.equal(calls[0].options.acceptBackupFailure,token);assert.equal(calls[1].options.acceptBackupFailure,'');
+  calls.length=0;
+  result=await installForkRelease({reason:'auto',acceptBackupFailures:{desktop:token,web:token}},services);
+  assert.equal(result.ok,false);assert(calls.every(c=>c.options.acceptBackupFailure===''));
 });
