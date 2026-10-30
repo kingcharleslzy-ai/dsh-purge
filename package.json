@@ -97,6 +97,21 @@
       "preferred": "tarball",
       "tarball": "https://github.com/kingcharleslzy-ai/dsh-purge/releases/latest/download/dsh-purge-community-1.6.63.tgz",
       "git": "https://github.com/kingcharleslzy-ai/dsh-purge.git"
+    },
+    "compatibility": {
+      "dsh": ">=0.2.1-rc.1 <0.3.0",
+      "profiles": [
+        "desktop",
+        "web"
+      ],
+      "dshReleases": {
+        "0.2.1-rc.1": "compatible",
+        "0.2.1-rc.2": "compatible",
+        "0.2.1-rc.3": "compatible",
+        "0.2.1-rc.4": "unknown",
+        "0.2.1-rc.5": "compatible",
+        "0.2.2-alpha.2": "unknown"
+      }
     }
   },
   "publishConfig": {

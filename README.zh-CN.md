@@ -268,3 +268,7 @@ npm run smoke            # 发行包冒烟
 <!-- CONTRIBUTORS:END -->
 
 名单合并 GitHub 提交者与人工鸣谢记录，自动每日刷新并保留历史贡献者。头像顺序不代表贡献排名，也不将问题报告者误记为代码作者。
+
+### DSH Store 收录信息
+
+DSH Store 申请必须填写 **Plugin path：`.`**，安装根目录的 `dsh-purge-community`；不要留空或选独立面板包。逐版本兼容声明已放入 manifest，未验证版本保持 `unknown`。元数据修正不等于市场已批准安装；[路径、兼容证据和收录边界](docs/DSH-STORE.md)。

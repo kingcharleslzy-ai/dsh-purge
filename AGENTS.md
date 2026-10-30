@@ -423,3 +423,7 @@ Web 子路径请求按实际插件脚本路径定位挂载点，根路径和桌�
 - `fileOptional` 的目标漂移不牵连整条补丁。
 - `ensureHostClean` 不再忽略 `pattern_not_found`。
 - 未取：NEXT 识别、allowBuilds/pnpm、cordis.patch 空 `[]`、子代理继承父预设（与 #53 契约冲突）、redteam 默认清理。
+
+## DSH Store 提交与复检
+
+主插件申请必须使用 `GitHub repository: https://github.com/kingcharleslzy-ai/dsh-purge`、`Plugin path (optional): .`，不能因为表单提示根目录留空就省略。保留 `packages/purge-panel`；它不是本次安装目标。兼容信息从根 manifest 的 `dsh.compatibility` 读取，不把 README 范围或相邻版本推断写成精确 `compatible`。rc.4 和 alpha.2 尚为 unknown；rc.5 的作者声明依据与局限见 [DSH Store 说明](docs/DSH-STORE.md)。不得伪造固定 Commit 的 install/start/uninstall/rollback 证据，不为市场准入删功能或隐藏宿主维护能力。
