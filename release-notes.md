@@ -13,6 +13,45 @@ Defender 对既有技能文档的检测没有在本版中被豁免或宣称误�
 
 ---
 
+# 1.6.63
+
+## 从上游 1.1.83 取回的通用修复：补丁「静默失效」不再算绿
+
+原作者恢复维护后连发 1.1.78–1.1.83。逐条比对后，只取通用且适合本 fork 的部分。
+
+### 采纳：#188 的漂移判定（通用部分）
+
+以前当目标文件存在、marker 不在、所有锚点都不命中时，状态是 `skipped`——被当成软成功，
+状态页全绿。官方一次改版就能让补丁悄悄失效而没人发现。
+
+现在：
+
+- 新增 `drifted` 状态：文件在、锚点全不中 → 漂移，`patchStatusReady("drifted") === false`，
+  面板显示「锚点漂移」，自检计入异常；
+- 两类例外仍判 `skipped`：**自标记补丁**（pattern 本身就是 `[dsh-purge]` 痕迹，找不到＝没加过）
+  与 `silentWhenMissing`（#76 用户预设里本来就没有官方身份行）；
+- `ensureHostClean` 不再把 `pattern_not_found` 从阻断项里过滤掉：没打上就是没打上，
+  不再带着半打状态继续重启；
+- `fileOptional` 的目标即使漂移也不牵连整条补丁（它们在新版宿主里已不承载该行为）。
+
+### 未采纳，以及原因
+
+| 上游改动 | 不采纳原因 |
+|---|---|
+| #174 DSH NEXT 识别 | 第三方壳家族，需要独立宿主适配（#98 / PR #102） |
+| #180/#185 allowBuilds、pnpm 11/12 修复 | 本 fork 走 `dsh plugin add`，不写 `pnpm-workspace.yaml`，无此面 |
+| #191 `cordis.patch.yml` 为 `[]` 时替换 | 同上：本 fork 不自动追加 insert 行 |
+| 子代理沿父会话读预设 | 与本 fork #53 的既定契约冲突：**子代理按自己的预设判断**，已有测试锁定 |
+| #108 清 `selectedDefault=redteam` | 本 fork 没有 redteam 预设，也不改用户默认选择 |
+| #170 zip 目录条目 | 本 fork 已按 `endsWith("/")` 建目录，无需再取 |
+
+公网门禁类改动依旧一律不取。
+
+## 验证
+
+`npm test` 399 通过 / 0 失败（新增 `test/drift-status.test.mjs`）；真机 0.2.1-rc.5：
+74 applied / 6 na（第三方未装）/ 2 skipped（#76、#80），`diagnose` 零漂移。
+
 # 1.6.62
 
 ## 适配 0.2.1-rc.5 + 修 #107（未闭合 ChatML 开标签）

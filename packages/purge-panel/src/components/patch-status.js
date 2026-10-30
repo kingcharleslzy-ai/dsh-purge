@@ -8,6 +8,7 @@ export function statusKind(st) {
   if (st === "pending") return "wait";
   if (st === "unmatched") return "bad";
   if (st === "partial") return "bad";
+  if (st === "drifted") return "bad";
   if (st === "na") return "ok";
   if (
     st === "missing_file" ||
@@ -25,6 +26,7 @@ export function statusLabel(st, t) {
   if (st === "pending") return t("status.pending");
   if (st === "unmatched") return t("status.unmatched");
   if (st === "partial") return t("status.partial");
+  if (st === "drifted") return t("status.drifted");
   if (st === "skipped") return t("status.skipped");
   if (st === "missing_file") return t("skip");
   if (st === "unlocated") return t("status.unlocated");
@@ -81,6 +83,7 @@ export function tallyPatches(rows) {
     else if (row.st === "pending") out.pending += 1;
     else if (row.st === "unmatched") out.unmatched += 1;
     else if (row.st === "partial") out.partial += 1;
+    else if (row.st === "drifted") out.drifted += 1;
     else out.skipped += 1;
   }
   return out;

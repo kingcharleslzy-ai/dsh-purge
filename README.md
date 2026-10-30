@@ -11,7 +11,7 @@
 
 当前版本 **1.6.64** · 适配 **DSH Desktop 0.2.1-rc.5**（rc.1 / rc.2 / rc.3 同样通过） · [English](docs/README.en.md)
 
-1.6.64 适配 DSH 0.2.1-rc.5，修掉注入信封里未闭合的 ChatML 开标签，并加入会话 cookie 端口与请求头上限修复。[发行说明](docs/releases/1.6.64.md) · [测试与边界](docs/maintenance-1.6.64.md) · [市场安装与迁移指南](docs/MARKET-MIGRATION.md)。
+1.6.64 候选版允许普通备份目标写入失败后由用户明确选择继续，保留安装校验与失败恢复。Windows 完整包的 Defender 阻断尚未解决，暂未发布。[发行说明](docs/releases/1.6.64.md) · [测试与边界](docs/maintenance-1.6.64.md) · [市场安装与迁移指南](docs/MARKET-MIGRATION.md)。
 
 **原项目与作者**：基于 [小杨 / YuJunZhiXue 的 dsh-purge](https://github.com/YuJunZhiXue/dsh-purge) 独立维护。原仓库已恢复；保留原作者署名、版权与 MIT 许可证。社区版由本仓库维护，并非原作者官方发行。
 

@@ -409,6 +409,21 @@ Windows Electron 的递归删除可能进入 Junction。清理使用 `removeTree
 
 Web 子路径请求按实际插件脚本路径定位挂载点，根路径和桌面入口继续兼容。不为修复 404 扩大 Cookie 域或合并端口。预设恢复宿主原生技能目录发现，保留技能自身禁止模型调用的声明与用户自定义预设。未验证的第三方桌面、Cookie 修改、Windows 换包助手问题单独保持待确认，不据此宣称已修复。
 
+## 31. 讨论型 issue 不关闭（运维约定）
+
+- 用户自己发起的讨论、经验分享、提问帖（非 bug / 非重复诉求）**只回复，不关闭**。
+- 只有「已修复」「重复」「明确不在支持范围」的 bug/feature 才关闭，并在评论里写依据。
+- 关闭时若带说明，用 `gh issue close -c`；**纯评论**必须用 `gh issue comment --body/--body-file`，`-c` 在 comment 子命令上无效，会静默失败。
+
+## 1.6.63：漂移判定（取自上游 1.1.83 通用部分）
+
+- 目标文件存在、marker 不在、锚点全不中 → `drifted`（以前是 `skipped`，软成功、状态页假绿）。
+  `patchStatusReady("drifted")` 为 false，面板标「锚点漂移」，自检计入异常。
+- 自标记补丁（pattern 含 `[dsh-purge]`）与声明 `silentWhenMissing` 的补丁（#76）仍判 `skipped`。
+- `fileOptional` 的目标漂移不牵连整条补丁。
+- `ensureHostClean` 不再忽略 `pattern_not_found`。
+- 未取：NEXT 识别、allowBuilds/pnpm、cordis.patch 空 `[]`、子代理继承父预设（与 #53 契约冲突）、redteam 默认清理。
+
 ## 安装备份选择（1.6.64）
 
 完整历史快照默认尝试创建；首次安装没有旧插件时无需此快照。只有明确的备份目标写入故障会提供继续选项。面板先显示原因和回滚限制，用户确认后重试一次。自动安装不会自行确认。
