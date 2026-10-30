@@ -1,7 +1,7 @@
 # AGENTS.md — 给 AI agent 的 Purge 使用说明书
 
 > 这份文件是写给**在 DSH 里干活的 agent** 的，不是营销文档。
-> 当前版本：**1.6.63** · 适配 DSH Desktop **0.2.1-rc.5**（rc.1 / rc.2 / rc.3 同样通过）
+> 当前版本：**1.6.64** · 适配 DSH Desktop **0.2.1-rc.5**（rc.1 / rc.2 / rc.3 同样通过）
 > 版本号由 `npm run check:docs` 与 `package.json` 校验，发版必须同步。
 
 ---
@@ -133,7 +133,7 @@ purge-community probe new
 
 | 组件 | 值 |
 | --- | --- |
-| 插件 | `dsh-purge-community` 1.6.63 |
+| 插件 | `dsh-purge-community` 1.6.64 |
 | 已验证宿主 | DSH Desktop 0.2.1-rc.1 / 0.2.1-rc.2 / 0.2.1-rc.3 / 0.2.1-rc.5 |
 | 其它宿主 | 允许应用，但 `selfcheck` 会标"未验证"；先看 `diagnose` |
 | Node | ≥18（桌面版自带运行时即可） |
@@ -423,6 +423,13 @@ Web 子路径请求按实际插件脚本路径定位挂载点，根路径和桌�
 - `fileOptional` 的目标漂移不牵连整条补丁。
 - `ensureHostClean` 不再忽略 `pattern_not_found`。
 - 未取：NEXT 识别、allowBuilds/pnpm、cordis.patch 空 `[]`、子代理继承父预设（与 #53 契约冲突）、redteam 默认清理。
+
+## 1.6.64：expect 命中数契约与能力审计
+
+- `{ pattern, replace, expect: N }`：实际命中数不等于 N（含 0）时整条拒写，返回 `hitMismatch {patch_id, expected, actual, file}`；应用路径记为 `hit_mismatch:期望!=实际` 并计入未打上。
+- 真机探针 `test/expect-contract.test.mjs` 要求每个字面锚点在原始宿主（优先 `.dshpurge.bak`）里恰好出现一次；新增锚点必须收窄或声明 expect。
+- complete 模式注入段改为排在官方段之前（`[...dshPurgeSections, ...dshPurgeRest]`），旧宿主有专门迁移 pattern。
+- 审计口径：与上游 1.1.83 同名对比，72 条替换逐字一致，6 条为加强；上游独有的 #18/#19 是上下文保护（非闸），不启用。
 
 ## DSH Store 提交与复检
 
