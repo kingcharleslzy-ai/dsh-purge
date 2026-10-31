@@ -11,7 +11,7 @@
 ## 实测与边界
 
 - Mac 与 Windows 11 4090 的实际公开 GitHub 发行信息请求均返回 HTTP 200；Windows 三次只读注册表探测约 9–11 ms，PowerShell 备用读取结果一致。
-- 两平台隔离 Electron 44.7.0 验证真实 HTTPS / CONNECT / SOCKS、连接重置及半途断流、总超时、token 跨主机隔离和 SHA256 校验。Windows 专项 36 项全部通过；Mac 对应 33 项通过、3 项 Windows 专用测试明确跳过。
+- 两平台隔离 Electron 44.7.0 验证真实 HTTPS / CONNECT / SOCKS、连接重置及半途断流、总超时、token 跨主机隔离和 SHA256 校验。Windows 专项 38 项全部通过；Mac 对应 33 项通过、5 项 Windows 专用测试明确跳过。
 - Windows 实际验证宽松父目录下的 ACL、新建/覆盖/旧文件迁移、只读目标、真实文件占用及释放后的恢复。凭据均为临时测试假值。
 - CI 与发行流程加入同一套 Electron 更新通道测试，发行包继续经过三平台安装器及回归检查。
 
