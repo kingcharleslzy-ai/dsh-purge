@@ -86,3 +86,14 @@ test('Windows native sharing violation preserves old credential and permits late
     writeSecretFile(file,'FAKE_NEW_CREDENTIAL');check(file);assert.equal(fs.readFileSync(file,'utf8'),'FAKE_NEW_CREDENTIAL');
   }finally{if(child){const done=new Promise(resolve=>child.once('close',resolve));child.kill();await done;}fs.rmSync(root,{recursive:true,force:true});}
 });
+
+
+test('Windows 8.3 paths retain the same protected credentials',{skip:process.platform!=='win32'},()=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'purge-channel-shortpath-'));
+  try {
+    const short=ps(`$f=New-Object -ComObject Scripting.FileSystemObject;$f.GetFolder(${q(root)}).ShortPath`).trim();
+    assert(short,'must resolve an actual Windows folder');
+    const file=path.join(short,'channel.json');
+    writeSecretFile(file,'FAKE_SHORT_PATH_SECRET');check(file);assert.equal(fs.readFileSync(path.join(root,'channel.json'),'utf8'),'FAKE_SHORT_PATH_SECRET');
+  }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
