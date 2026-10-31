@@ -5,7 +5,14 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { ALL_PATCHES, applyPatches, patchEnabled, patchStatus, patchStatusReady } from "../lib/core.js";
+import {
+  ALL_PATCHES,
+  applyPatches,
+  patchEnabled,
+  patchStatus,
+  patchStatusReady,
+  summarizeApplyReport,
+} from "../lib/core.js";
 import { writeTuning, readTuning } from "../lib/tuning.js";
 import { tallyPatchStatus } from "../lib/selfcheck.js";
 import { removeTreeNoFollowSync } from "../lib/remove-tree.js";
@@ -57,6 +64,30 @@ test("disabled patches report disabled and are not written", async () => {
     assert.equal(patchStatusReady("disabled", patch18), true, "an intentional off switch is not a failure");
     assert.equal(tallyPatchStatus(status, [patch18]).disabled, 1);
     assert.equal(tallyPatchStatus(status, [patch18]).not_applicable, 1);
+  } finally {
+    f.close();
+  }
+});
+
+test("an opt-in patch left off is soft in the apply summary, not a failure", async () => {
+  const f = fixture();
+  try {
+    const opts = { dshHome: f.home, surface: "desktop", extraPatches: [] };
+    const report = await applyPatches(f.host, [patch18], opts);
+    assert.equal(report[0].status, "disabled");
+    const summary = summarizeApplyReport(report, [patch18]);
+    // 面板红字只看 failed：默认关闭的 #18/#19 不能把整次应用标成「N 项处理失败」。
+    assert.deepEqual(summary.failed.map((r) => r.patch_id), []);
+    assert.deepEqual(summary.soft.map((r) => r.patch_id), [18]);
+
+    // 同口径检查：真失败不能被这一行顺手静音。
+    for (const status of ["write_failed", "EACCES: permission denied"]) {
+      assert.deepEqual(
+        summarizeApplyReport([{ patch_id: 18, status }], [patch18]).failed.map((r) => r.patch_id),
+        [18],
+        `${status} must stay a failure`,
+      );
+    }
   } finally {
     f.close();
   }
