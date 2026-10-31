@@ -1,3 +1,23 @@
+# 1.6.67
+
+## 修复内容
+
+- Windows 更新代理探测优先使用只读 `reg.exe`，必要时回退到 UTF-8 PowerShell，避免每次都依赖 PowerShell 冷启动。探测失败标明 HTTP 尚未发送，不再笼统误报 GitHub API 不可用，也不会静默改成直连。
+- 瞬时连接重置等网络错误最多重试两次，共用原来的请求超时和重定向预算。HTTP、认证、证书、文件大小、来源和 SHA256 错误继续明确报出。
+- 修复 Windows 更新凭据文件继承普通 Users 读取权限的问题：先创建受保护的暂存目录和文件，再写入凭据、原子替换；旧文件首次读取时收紧权限且保持内容不变。覆盖失败保留旧文件。
+- 密钥不进入 PowerShell 命令参数、环境变量或日志；损坏 JSON 的诊断也不再输出凭据原文。保持空密钥不覆盖、显式清除才删除及行为偏好单独存储的语义。
+
+## 实测与边界
+
+- Mac 与 Windows 11 4090 的实际公开 GitHub 发行信息请求均返回 HTTP 200；Windows 三次只读注册表探测约 9–11 ms，PowerShell 备用读取结果一致。
+- 两平台隔离 Electron 44.7.0 验证真实 HTTPS / CONNECT / SOCKS、连接重置及半途断流、总超时、token 跨主机隔离和 SHA256 校验。Windows 专项 36 项全部通过；Mac 对应 33 项通过、3 项 Windows 专用测试明确跳过。
+- Windows 实际验证宽松父目录下的 ACL、新建/覆盖/旧文件迁移、只读目标、真实文件占用及释放后的恢复。凭据均为临时测试假值。
+- CI 与发行流程加入同一套 Electron 更新通道测试，发行包继续经过三平台安装器及回归检查。
+
+此版本仅修改通用更新通道和凭据保护，不变更宿主补丁、提示词或自动更新偏好；本次测试不改维护者正式 DSH 设置、代理或防护，也不自动重启。ACL 不等于加密，不能防止管理员或同一用户进程读取。
+
+[#122](https://github.com/kingcharleslzy-ai/dsh-purge/issues/122) 暂留待确认：维护者实机为 Windows 11，尚需报告者在 Windows 10 19041 / 原 Clash TUN fakeIP 环境确认修复效果。[验证与维护说明](https://github.com/kingcharleslzy-ai/dsh-purge/blob/master/docs/update-channel-122.md)
+
 # 1.6.66
 
 ## 修复内容

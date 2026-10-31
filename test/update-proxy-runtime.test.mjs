@@ -19,7 +19,7 @@ test('real CONNECT tunnel validates TLS, scopes credentials and respects total t
     try {
       const env={...process.env,PURGE_PROXY_TEST_CHILD:'1',PURGE_TEST_TLS_DIR:tmp,NODE_EXTRA_CA_CERTS:path.join(tmp,'cert.pem')};
       delete env.NODE_TEST_CONTEXT;
-      const result=await exec(process.execPath,['--test',fileURLToPath(import.meta.url)],{
+      const result=await exec(process.execPath,['--test','--test-reporter=tap',fileURLToPath(import.meta.url)],{
         timeout:30000,maxBuffer:1024*1024,env,
       }).catch(e=>{throw Error(e.message+'\n'+e.stdout+'\n'+e.stderr);});
       assert.match(result.stdout,/# fail 0/);
@@ -33,10 +33,15 @@ test('real CONNECT tunnel validates TLS, scopes credentials and respects total t
   await exec('tar',['-czf',packed,'-C',dir,'package']);
   const bytes=fs.readFileSync(packed),digest='sha256:'+createHash('sha256').update(bytes).digest('hex');
   const release={ref:'v9.9.9',version:'9.9.9',asset:`https://github.com/${REPOSITORY}/releases/download/v9.9.9/${PACKAGE}-9.9.9.tgz`,sums:`https://github.com/${REPOSITORY}/releases/download/v9.9.9/SHA256SUMS.txt`};
-  let tamper=false;
+  let tamper=false;const counts=new Map();
 
   const server=https.createServer({key:fs.readFileSync(path.join(dir,'key.pem')),cert:fs.readFileSync(path.join(dir,'cert.pem'))},(req,res)=>{
     requests.push({url:req.url,headers:req.headers});
+    counts.set(req.url,(counts.get(req.url)||0)+1);
+    if(req.url==='/reset' && counts.get(req.url)===1){req.socket.destroy();return;}
+    if(req.url==='/partial' && counts.get(req.url)===1){res.writeHead(200,{'content-length':'100'});res.write('discard-me');setTimeout(()=>req.socket.destroy(),10);return;}
+    if(req.url==='/unauthorized'){res.writeHead(401);res.end();return;}
+    if(req.url==='/reset-always'){req.socket.destroy();return;}
     if(req.url===`/repos/${REPOSITORY}/releases/tags/v9.9.9`){res.setHeader('content-type','application/json');res.end(JSON.stringify({tag_name:release.ref,assets:[{name:PACKAGE+'-9.9.9.tgz',browser_download_url:release.asset,digest}]}));}
     else if(req.url==='/'+release.asset){res.writeHead(200);const data=tamper?Buffer.from('tampered'):bytes;let n=0;const timer=setInterval(()=>{res.write(data.subarray(n,n+32));n+=32;if(n>=data.length){clearInterval(timer);res.end();}},20);res.on('close',()=>clearInterval(timer));}
     else if(req.url==='/redirect'){res.writeHead(302,{location:`https://release-assets.githubusercontent.com:${server.address().port}/asset`});res.end();}
@@ -89,6 +94,12 @@ test('real CONNECT tunnel validates TLS, scopes credentials and respects total t
     assert(connects.every(r=>!r.headers.authorization && r.headers['proxy-authorization']==='Basic '+Buffer.from('user:fixture').toString('base64')));
     await assert.rejects(requestUpdate(`https://github.com:${server.address().port}/asset`,{env}),/网络连接失败/);
     await assert.rejects(requestUpdate(base+'/large',{env,maxBytes:2}),/过大/);
+    for(const route of ['/reset','/partial']) {
+      assert.equal((await requestUpdate(base+route,{env})).body.toString(),'verified');
+      assert.equal(counts.get(route),2,'real reset/partial body retries exactly once');
+    }
+    await assert.rejects(requestUpdate(base+'/unauthorized',{env}),/HTTP 401/);assert.equal(counts.get('/unauthorized'),1);
+    await assert.rejects(requestUpdate(base+'/reset-always',{env}),/ECONNRESET.*尝试 3 次/);assert.equal(counts.get('/reset-always'),3);
     const socksEnv={PURGE_HTTPS_PROXY:`socks5h://user:fixture@127.0.0.1:${socks.address().port}`,GITHUB_TOKEN:'socks-token'};
     const begin=requests.length;
     assert.equal((await requestUpdate(base+'/redirect',{env:socksEnv})).body.toString(),'verified');

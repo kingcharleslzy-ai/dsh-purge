@@ -46,12 +46,12 @@ test("real Cordis late service, replacement and parent reload retain commands an
     // Both independently registered update handlers must use their own scoped
     // settings reader; malformed channel config must never become direct traffic.
     fs.mkdirSync(path.join(tmp,"dsh-purge"),{recursive:true});
-    fs.writeFileSync(path.join(tmp,"dsh-purge/update-channel.json"),"broken json");
+    fs.writeFileSync(path.join(tmp,"dsh-purge/update-channel.json"),"FAKE_SECRET_broken_json");
     for(const method of ["GET","POST"]) {
       const req=Object.assign(Readable.from(["{}"]),{method,headers:{}});
       const res={writeHead(code){this.code=code;},end(body){this.body=body;}};
       await routes.get("/dsh-purge/update").handler(req,res);
-      assert.equal(res.code,500);assert.match(JSON.parse(res.body).error,/无法读取更新设置/);
+      assert.equal(res.code,500);assert.match(JSON.parse(res.body).error,/无法读取更新密钥设置.*JSON/);assert(!res.body.includes("FAKE_SECRET"));
     }
     fs.unlinkSync(path.join(tmp,"dsh-purge/update-channel.json"));
     await web.dispose();await tick();assert.equal(routes.size,0);

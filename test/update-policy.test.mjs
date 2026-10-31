@@ -242,3 +242,13 @@ test('channel secrets are not returned by the public preferences projection',()=
   savePreferences(f.home,{intervalHours:24});assert.equal(preferences(f.home).proxyUrl,saved.proxyUrl);
  }finally{f.done();}
 });
+
+
+test('malformed channel credentials produce a redacted error rather than JSON parser plaintext',()=>{
+  const home=fs.mkdtempSync(path.join(os.tmpdir(),'purge-malformed-channel-'));
+  try {
+    fs.mkdirSync(path.join(home,'dsh-purge'));
+    fs.writeFileSync(path.join(home,'dsh-purge','update-channel.json'),'SENSITIVE_FAKE_TOKEN_NOT_JSON');
+    assert.throws(()=>preferences(home),e=>/JSON/.test(e.message)&&!e.message.includes('SENSITIVE'));
+  }finally{fs.rmSync(home,{recursive:true,force:true});}
+});

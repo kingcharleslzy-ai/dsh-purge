@@ -1,7 +1,7 @@
 # AGENTS.md — 给 AI agent 的 Purge 使用说明书
 
 > 这份文件是写给**在 DSH 里干活的 agent** 的，不是营销文档。
-> 当前版本：**1.6.66** · 适配 DSH Desktop **0.2.1-rc.5**（rc.1 / rc.2 / rc.3 同样通过）
+> 当前版本：**1.6.67** · 适配 DSH Desktop **0.2.1-rc.5**（rc.1 / rc.2 / rc.3 同样通过）
 > 版本号由 `npm run check:docs` 与 `package.json` 校验，发版必须同步。
 
 ---
@@ -133,7 +133,7 @@ purge-community probe new
 
 | 组件 | 值 |
 | --- | --- |
-| 插件 | `dsh-purge-community` 1.6.66 |
+| 插件 | `dsh-purge-community` 1.6.67 |
 | 已验证宿主 | DSH Desktop 0.2.1-rc.1 / 0.2.1-rc.2 / 0.2.1-rc.3 / 0.2.1-rc.5 |
 | 其它宿主 | 允许应用，但 `selfcheck` 会标"未验证"；先看 `diagnose` |
 | Node | ≥18（桌面版自带运行时即可） |
@@ -450,3 +450,9 @@ Web 子路径请求按实际插件脚本路径定位挂载点，根路径和桌�
 桌面进程仅带 `--updated` 时，只读诊断可检查该进程经包身份校验的 `resourcesPath`；不要据此扩大安装/写入目标，也不要全局扫描其他安装。运行入口可由 Electron `app.getAppPath()` 提供，但磁盘存在 `app` 不等于当前进程已加载。未知、跨实例、读取失败和真实缺失继续报出。
 
 Windows 换包仅对真实共享/锁冲突继续等待；其他错误保留 `detail`、HRESULT 和可用的 Win32 错误码。不要关闭 Defender、覆盖原备份或用自动重启掩盖失败。#118 的特定卡住原因仍待用户脱敏日志确认；本次不代表 #102 的 NEXT 桌面发行版完整兼容。详见 [验证记录](docs/host-diagnostics-118-119.md)。
+
+## 1.6.67：更新网络与凭据保护（#122）
+
+更新代理探测失败不代表 GitHub 已收到请求。Windows 先只读 `reg.exe`，必要时再用 PowerShell；不得自行关闭 TUN、改系统代理或忽略失败走直连。连接重置等瞬时错误最多重试两次，仍受原超时限制；HTTP、认证、证书、权限与 SHA256 错误要保留并处理根因。
+
+`update-channel.json` 的 token 不回显、不写日志；Windows 首次读取旧文件时收紧 DACL，新凭据在受保护文件创建后才写入。保护失败就报错，不降级成明文宽权限文件。不要删除旧配置、关 Defender 或加白名单来让更新显示成功。行为偏好、提示词、规则和宿主补丁不变，安装后不要自动重启。实测入口与限制见 [#122 维护说明](docs/update-channel-122.md)。

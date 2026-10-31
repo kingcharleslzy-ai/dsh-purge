@@ -83,6 +83,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           npm run test:electron
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node scripts/check-update-runtime.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $env:ELECTRON_RUN_AS_NODE = '1'
           $downloadLog = Join-Path $env:RUNNER_TEMP 'purge-download.log'
           $downloadError = Join-Path $env:RUNNER_TEMP 'purge-download-error.log'
@@ -99,6 +101,7 @@ jobs:
           node "$runtime/node_modules/electron/install.js"
           export PURGE_ELECTRON_EXEC="$runtime/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron"
           npm run test:electron
+          node scripts/check-update-runtime.mjs
           ELECTRON_RUN_AS_NODE=1 "$PURGE_ELECTRON_EXEC" scripts/check-bootstrap-download-runtime.mjs
       - name: Real Linux root and service-user audit ownership
         if: runner.os == 'Linux'
