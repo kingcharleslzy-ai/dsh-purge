@@ -62,3 +62,16 @@ test("#19 Web surface can skip the existing Desktop handoff despite an archive o
     assert(!fs.existsSync(archive + ".bak"));
   } finally { f.close(); }
 });
+
+test("packaged Electron --updated uses actual app path, never disk as runtime evidence", () => {
+  const f = fixture(), other = fixture();
+  try {
+    const opts = {argv: ["electron", "--updated"], execArgv: []};
+    assert.equal(hostLayoutEvidence(f.host, opts).state, "unknown_runtime");
+    const result = hostLayoutEvidence(f.host, {...opts, appPath: path.join(f.resources, "app")});
+    assert.equal(result.state, "unpacked_entry");
+    assert.equal(result.process.source, "electron-app-path");
+    assert.equal(hostLayoutEvidence(f.host, {...opts, appPath: path.join(other.resources, "app")}).state, "different_instance");
+    assert.equal(hostLayoutEvidence(f.host, {...opts, appPath: path.join(f.resources, "app.asar")}).state, "archive_entry");
+  } finally { f.close(); other.close(); }
+});

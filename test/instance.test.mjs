@@ -584,3 +584,30 @@ test("verified npm CLI shorthand selects its running profile when multiple profi
     assert.throws(() => resolveProfile(f.home, { env: {}, argv: ["node", f.cli, "plugin"] }), /无法唯一确定/);
   } finally { f.close(); }
 });
+
+test("packaged community diagnostics stay within verified Electron resources", () => {
+  const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "purge-diagnostic-")));
+  const resources = path.join(root, "resources"), app = path.join(resources, "app");
+  const host = path.join(app, "node_modules/@deepseek-ai");
+  fs.mkdirSync(path.join(app,"lib"), {recursive:true});
+  fs.mkdirSync(host, {recursive:true});
+  fs.writeFileSync(path.join(app,"package.json"), JSON.stringify({name:"dsh-plugin-desktop",main:"lib/main.js",version:"2.0.18"}));
+  fs.writeFileSync(path.join(app,"lib/main.js"), "// fixture");
+  const options = {env:{}, argv:["electron", "--updated"], resourcesPath:resources, electron:"44.0.0"};
+  try {
+    assert.equal(currentHost(options), "", "write target must not change");
+    assert.equal(diagnosticHost(options), host);
+    assert.equal(diagnosticHost({...options,electron:false}), "");
+    assert.throws(() => diagnosticHost({...options,diskReader:{...fs,statSync(file){
+      if(file === host) throw Object.assign(Error("denied"),{code:"EACCES"});
+      return fs.statSync(file);
+    }}}), /denied/, "do not hide access errors by choosing another component root");
+    assert.equal(diagnosticHost({...options,env:{PURGE_DSH_CLI:path.join(root,"missing.js")}}), "");
+    assert.equal(diagnosticHost({...options,resourcesPath:path.join(root,"unrelated")}), "");
+    fs.rmSync(host,{recursive:true});
+    const sibling = path.join(resources,"app.asar.unpacked/node_modules/@deepseek-ai");
+    fs.mkdirSync(sibling,{recursive:true});
+    assert.equal(diagnosticHost(options), host, "partial preferred extraction must not borrow a healthy sibling");
+    assert.equal(fs.existsSync(host), false, "diagnostic lookup must not create files");
+  } finally { fs.rmSync(root,{recursive:true,force:true}); }
+});

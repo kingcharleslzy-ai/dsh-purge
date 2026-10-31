@@ -28,6 +28,8 @@ test("layout notice never equates a disk archive or absent archive with loaded c
   const unpacked = render({
     asar_still_sealed: false,
     host_layout: {
+      state: "unpacked_entry",
+      process: { matches_target: true },
       note: "入口位置不能证明之后写入的内容已重新加载。",
       disk: { archive_exists: false },
     },
@@ -45,4 +47,30 @@ test("layout notice never equates a disk archive or absent archive with loaded c
   });
   assert.match(different, /安装不同/);
   assert.match(different, /目标磁盘仍有 app.asar/);
+});
+
+test("unknown, different and unreadable layouts never claim handoff completion", () => {
+  for (const state of ["unknown_runtime", "different_instance", "unreadable"]) {
+    const html = renderToStaticMarkup(
+      React.createElement(LayoutNotice, {
+        info: {
+          asar_still_sealed: false,
+          host_layout: {
+            state,
+            process: { matches_target: state !== "different_instance" },
+            disk: { archive_exists: false },
+            note: state,
+          },
+          asar_handoff: {
+            phase: "failed",
+            detail: "<failure>",
+            error: { win32_code: 183 },
+          },
+        },
+      }),
+    );
+    assert.doesNotMatch(html, /换包完成/);
+    assert.match(html, /183/);
+    assert.match(html, /&lt;failure&gt;/);
+  }
 });

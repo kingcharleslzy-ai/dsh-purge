@@ -116,17 +116,26 @@ export function LayoutNotice({ info }) {
   const handoff = info.asar_handoff
     ? ` 换包状态：${{ not_scheduled: "尚未应用：点「应用」后才会安排换包", archive_reappeared: "归档再次出现，旧换包记录不代表当前已完成", backup_missing: "原归档备份缺失，请检查诊断", unknown_target: "目标实例未确定", unreadable: "换包记录不可读，请检查诊断", starting: "助手启动中（尚未确认就绪）", ready: "助手已就绪", waiting_for_quit: "等待完整退出（macOS ⌘Q / Windows 系统托盘）", waiting_for_unlock: "等待归档解锁", moving: "正在保留原归档", complete: "换包完成，请手动打开 DSH", already_unsealed: "归档已移走，请手动打开 DSH", failed: "失败，请查看诊断并按恢复文档操作", expired: "等待超时，请重新应用或按恢复文档操作", helper_stopped: "助手意外结束，请重新应用或按恢复文档操作" }[info.asar_handoff.phase] || info.asar_handoff.phase}。`
     : "";
+  const failure = info.asar_handoff?.error;
+  const detail = info.asar_handoff?.detail
+    ? ` 详情：${info.asar_handoff.detail}${failure?.win32_code != null ? `（Windows 错误 ${failure.win32_code}）` : ""}`
+    : "";
+  const confirmed =
+    info.host_layout?.state === "unpacked_entry" &&
+    info.host_layout?.process?.matches_target === true &&
+    info.host_layout?.disk?.archive_exists === false;
   const diskNote =
-    info.host_layout?.disk.archive_exists === true
+    info.host_layout?.disk?.archive_exists === true
       ? " 目标磁盘仍有 app.asar。"
       : "";
-  if (sealed) {
+  if (sealed || !confirmed) {
     return h(
       "p",
       { className: "dshpp-warn", role: "status" },
       note,
       diskNote,
       handoff,
+      detail,
     );
   }
   // 换包正常时只留一行确认，说明折进 details：它讲的是"入口不代表已重载"，
@@ -135,7 +144,7 @@ export function LayoutNotice({ info }) {
     "details",
     { className: "dshpp-layout-details" },
     h("summary", null, "✓ 已从解包目录启动（换包完成）"),
-    h("p", { className: "dshpp-note" }, note, diskNote, handoff),
+    h("p", { className: "dshpp-note" }, note, diskNote, handoff, detail),
   );
 }
 

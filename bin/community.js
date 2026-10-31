@@ -243,14 +243,17 @@ if (LEGACY[op]) {
       : {host:"",state:"unknown",checked:0,drifted:[],optionalDrift:[],chained:[],missing:[],
           note:"未定位当前实例；请明确 DSH_BASE 或 PURGE_DSH_CLI，不扫描其他安装"};
     result = { name: "Purge Community", package: PACKAGE, compatibility: compatibility(target), ...drift };
-  } else if (op === "status")
+  } else if (op === "status") {
+    const target = diagnosticHost();
     result = {
       name: "Purge Community",
       package: PACKAGE,
-      compatibility: compatibility(aiBase),
+      compatibility: compatibility(target),
+      host_selection: target ? "explicit-or-running" : "unresolved",
+      ...(target ? {} : { hint: "未取得当前实例入口；请指定 DSH_BASE / PURGE_DSH_CLI，或查看正在运行宿主的面板诊断。这不是插件未安装的证明。" }),
       backups: (() => { try { return maintenance().list(); } catch { return []; } })(),
     };
-  else if (op === "backup") result = await maintenance().backup("cli");
+  } else if (op === "backup") result = await maintenance().backup("cli");
   else if (op === "prune") result = await maintenance().pruneLocked();
   else if (op === "usage") result = maintenance().usage();
   else if (op === "rollback") result = await maintenance().rollback(argument);
