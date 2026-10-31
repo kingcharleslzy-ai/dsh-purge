@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';import os from 'node:os';import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {protectSecretFile,writeSecretFile} from '../lib/update-secrets.js';
-function ps(script){return execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-EncodedCommand',Buffer.from("$ErrorActionPreference='Stop';$ProgressPreference='SilentlyContinue';[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false);"+script,'utf16le').toString('base64')],{encoding:'utf8',windowsHide:true});}
+function ps(script){return execFileSync('powershell.exe',['-NoProfile','-NonInteractive','-EncodedCommand',Buffer.from("$ErrorActionPreference='Stop';$env:PSModulePath=$PSHOME+'\\Modules';$ProgressPreference='SilentlyContinue';[Console]::OutputEncoding=[Text.UTF8Encoding]::new($false);"+script,'utf16le').toString('base64')],{encoding:'utf8',windowsHide:true});}
 const q=s=>"'"+s.replaceAll("'","''")+"'";
 function acl(file){return JSON.parse(ps(`$a=Get-Acl -LiteralPath ${q(file)};@{protected=$a.AreAccessRulesProtected;rules=@($a.GetAccessRules($true,$true,[Security.Principal.SecurityIdentifier])|ForEach-Object {@{sid=$_.IdentityReference.Value;inherited=$_.IsInherited}})}|ConvertTo-Json -Depth 5 -Compress`));}
 function check(file){if(process.platform==='win32'){const a=acl(file);assert.equal(a.protected,true);assert(!a.rules.some(r=>r.inherited || ['S-1-1-0','S-1-5-32-545','S-1-5-11'].includes(r.sid)));assert(a.rules.length>=2);}else assert.equal(fs.statSync(file).mode&0o777,0o600);}
@@ -96,4 +96,26 @@ test('Windows 8.3 paths retain the same protected credentials',{skip:process.pla
     const file=path.join(short,'channel.json');
     writeSecretFile(file,'FAKE_SHORT_PATH_SECRET');check(file);assert.equal(fs.readFileSync(path.join(root,'channel.json'),'utf8'),'FAKE_SHORT_PATH_SECRET');
   }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+
+test('Windows credential helper ignores incompatible parent PowerShell modules',{skip:process.platform!=='win32'},async()=>{
+  const {readWindowsProxy}=await import('../lib/update-system-proxy.js');
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'purge-channel-modules-'));
+  const before=process.env.PSModulePath,marker=path.join(root,'untrusted-loaded');
+  try {
+    // A deterministic stand-in for a PowerShell 7 parent module path: importing
+    // these modules in Windows PowerShell 5.1 must fail. Neither helper needs them.
+    for(const name of ['Microsoft.PowerShell.Security','Microsoft.PowerShell.Management','Microsoft.PowerShell.Utility']) {
+      const dir=path.join(root,'modules',name);fs.mkdirSync(dir,{recursive:true});
+      fs.writeFileSync(path.join(dir,name+'.psd1'),`@{ModuleVersion='99.0.0';RootModule='${name}.psm1';FunctionsToExport=@('*')}`);
+      fs.writeFileSync(path.join(dir,name+'.psm1'),`[IO.File]::WriteAllText(${q(marker)},'loaded');throw 'Incompatible parent module'`);
+    }
+    process.env.PSModulePath=path.join(root,'modules');
+    const file=path.join(root,'channel.json');writeSecretFile(file,'FAKE_MODULE_PATH_SECRET');check(file);
+    const {execFile}=await import('node:child_process');const {promisify}=await import('node:util');const run=promisify(execFile);
+    await readWindowsProxy({run:(exe,args,options)=>exe.endsWith('reg.exe')?Promise.reject(Error('fixture forces actual fallback')):run(exe,args,options)});
+    assert.equal(process.env.PSModulePath,path.join(root,'modules'),'helpers do not mutate parent environment');
+    assert(!fs.existsSync(marker),'parent modules were not imported');
+    assert.equal(fs.readFileSync(file,'utf8'),'FAKE_MODULE_PATH_SECRET');
+  }finally{if(before===undefined)delete process.env.PSModulePath;else process.env.PSModulePath=before;fs.rmSync(root,{recursive:true,force:true});}
 });
