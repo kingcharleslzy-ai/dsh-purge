@@ -27,6 +27,32 @@ The Windows actual CLI transaction reached a backup read failure on the unchange
 
 This does not establish a false positive, nor does it establish a new regression in these maintenance changes. The full Windows upgrade/rollback sequence did **not** pass. Remaining dependent transaction scenarios were not claimed as tested. Protection was not disabled, no exclusion was added, and no bundled feature/content was removed or altered to evade detection. Release remains blocked pending resolution and a successful rerun on the affected machine, even if hosted CI passes.
 
+### Follow-up diagnosis, 2026-11-01
+
+All eight jobs in [Community checks for code commit 9c4124e](https://github.com/kingcharleslzy-ai/dsh-purge/actions/runs/41319700558) completed successfully, including the hosted Windows npm installation/rollback job. This is separate from the affected Windows machine, where the blocker is reproducible.
+
+The affected file is 8,298 bytes. Its SHA256 above matches both release v1.6.68 and its original source commit `197cbdd67969b4f4bbbcdde200c0debcc0fe160d`. It contains literal PHP WebShell examples inside Markdown code fences. That is consistent with the reported PHP backdoor category, but neither the exact signature nor a false-positive determination is available from the event log.
+
+The verified failure chain is:
+
+1. The isolated official CLI installs the baseline package, then `Maintenance.snapshot()` copies the package into a temporary backup.
+2. `treeHashes()` reads backup files to verify their bytes. This code path reads/hashes content; it does not execute the Markdown examples.
+3. Defender event 1116 identifies the same temporary backup file and isolated Electron process, with source **real-time protection**. Event 1117 records successful **quarantine** and error `0x00000000`.
+4. Electron's `readFileSync` reports `UNKNOWN` / errno `-4094`; the incomplete backup cannot be used for a valid rollback, so acceptance stops.
+
+Earlier events on 2026-10-30 show the same file/category under security intelligence `1.463.33.0`, including one installed-profile path as well as backup paths. This is not confined to a backup-directory name, nor first introduced by PR #125. The events' execution label is “Suspended”; it must not be reinterpreted as proof of either malicious execution or universal file safety. The tested read/hash path did not execute the code examples.
+
+| Run | Defender security intelligence | Result |
+| --- | --- | --- |
+| Original actual transaction, 2026-11-01 14:55 UTC | 1.463.68.0 | Same file quarantined during backup verification |
+| Rerun after normal signature update, 2026-11-01 15:27 UTC | 1.463.73.0 | Same file quarantined; complete rollback acceptance still blocked |
+
+The second run used the same isolated runtime and unmodified baseline/candidate packages. The signature update used the existing configured channel; the serialized Defender preference fingerprint was unchanged, and antivirus, real-time protection and behavior monitoring remained enabled. No quarantine restore, exclusion, protection downgrade, file transformation, missing-file skip or alternate installation path was used to obtain a pass. Formal DSH profiles, application processes and proxy settings were not changed.
+
+Microsoft documents that [real-time protection reviews files when opened/closed](https://learn.microsoft.com/en-us/defender-endpoint/schedule-antivirus-scans), and [events 1116/1117 describe detection and protective action](https://learn.microsoft.com/en-us/defender-endpoint/troubleshoot-microsoft-defender-antivirus). A Markdown extension therefore does not mean its contents bypass inspection. The supported next step is a [software-developer file submission for Microsoft's determination](https://learn.microsoft.com/en-us/defender-xdr/submission-guide), supplying the original public file, its provenance/hash and these redacted observations. No submission or false-positive conclusion is claimed here. Local usernames, absolute resource paths, device identity, credentials and unrelated protection history are excluded from this public record.
+
+Release remains blocked. A successful hosted CI run or an accepted review submission does not replace a successful protected installation/rollback rerun on the affected machine.
+
 ## Reproduction
 
 Ordinary suite: `npm test`.
