@@ -1,4 +1,4 @@
-# 1.6.69 maintenance candidate: integrity and lifecycle
+# 1.6.69 maintenance: integrity and lifecycle
 
 ## Scope
 
@@ -25,7 +25,7 @@ No patch definitions, feature defaults, user settings, proxy settings, security 
 
 The Windows actual CLI transaction reached a backup read failure on the unchanged bundled file `skills/redteam/unauth-exploit.md`. The local Defender record identified `Backdoor:PHP/Chopper.E!dha` (ThreatID 2147891541) and successful protective action against that exact temporary backup path. Its source SHA256 is unchanged from v1.6.68: `d70e456d4c0ae0a2b4c2e767dc5c3d0a3131af3be1dc4f3cdc6ed21a8dcd7129`.
 
-This does not establish a false positive, nor does it establish a new regression in these maintenance changes. The full Windows upgrade/rollback sequence did **not** pass. Remaining dependent transaction scenarios were not claimed as tested. Protection was not disabled, no exclusion was added, and no bundled feature/content was removed or altered to evade detection. Release remains blocked pending resolution and a successful rerun on the affected machine, even if hosted CI passes.
+This does not establish a false positive, nor does it establish a new regression in these maintenance changes. The full Windows upgrade/rollback sequence did **not** pass. Remaining dependent transaction scenarios were not claimed as tested. Protection was not disabled, no exclusion was added, and no bundled feature/content was removed or altered to evade detection. This initially blocked release. The maintainer subsequently explicitly authorized publication with this unresolved limitation; no affected-machine acceptance pass is claimed.
 
 ### Follow-up diagnosis, 2026-11-01
 
@@ -51,7 +51,7 @@ The second run used the same isolated runtime and unmodified baseline/candidate 
 
 Microsoft documents that [real-time protection reviews files when opened/closed](https://learn.microsoft.com/en-us/defender-endpoint/schedule-antivirus-scans), and [events 1116/1117 describe detection and protective action](https://learn.microsoft.com/en-us/defender-endpoint/troubleshoot-microsoft-defender-antivirus). A Markdown extension therefore does not mean its contents bypass inspection. The supported next step is a [software-developer file submission for Microsoft's determination](https://learn.microsoft.com/en-us/defender-xdr/submission-guide), supplying the original public file, its provenance/hash and these redacted observations. No submission or false-positive conclusion is claimed here. Local usernames, absolute resource paths, device identity, credentials and unrelated protection history are excluded from this public record.
 
-Release remains blocked. A successful hosted CI run or an accepted review submission does not replace a successful protected installation/rollback rerun on the affected machine.
+Release decision: after receiving the diagnosis, the maintainer declined Microsoft submission for now and explicitly authorized merge/publication with the known limitation retained. A successful hosted CI run does not replace a successful protected installation/rollback rerun on the affected machine. The detection remains unresolved; no Microsoft review has been submitted.
 
 ## Reproduction
 

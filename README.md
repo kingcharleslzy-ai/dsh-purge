@@ -11,7 +11,7 @@
 
 当前版本 **1.6.69** · 适配 **DSH Desktop 0.2.1-rc.5**（rc.1 / rc.2 / rc.3 同样通过） · [English](docs/README.en.md)
 
-1.6.69 候选修复空备份恢复、ASAR/链接路径边界、停用残留与 CLI 错误报告，并优化列表读取。**尚未发布：Windows 完整回滚验收被 Defender 拦截，当前正式版仍为 1.6.68。**[发行说明与测试范围](docs/releases/1.6.69.md) · [市场安装与迁移指南](docs/MARKET-MIGRATION.md)。
+1.6.69 修复空备份恢复、ASAR/链接路径边界、停用残留与 CLI 错误报告，并优化列表读取。**已知限制：Windows 4090 的完整回滚验收仍被 Defender 拦截，本版未解决该检测问题。**[发行说明与测试范围](docs/releases/1.6.69.md) · [市场安装与迁移指南](docs/MARKET-MIGRATION.md)。
 
 **原项目与作者**：基于 [小杨 / YuJunZhiXue 的 dsh-purge](https://github.com/YuJunZhiXue/dsh-purge) 独立维护。原仓库已恢复；保留原作者署名、版权与 MIT 许可证。社区版由本仓库维护，并非原作者官方发行。
 

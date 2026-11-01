@@ -72,7 +72,7 @@ A full page in the left sidebar: one line of state at the top, "Apply" as the pr
 
 ## Updates
 
-1.6.69 is a maintenance candidate covering backup integrity, archive/resource path boundaries, disposal, CLI errors and list performance. **Not released: Windows full rollback acceptance is blocked by Defender. The current stable release remains 1.6.68.** See [validation and limitations](maintenance-integrity-169.md).
+1.6.69 covers backup integrity, archive/resource path boundaries, disposal, CLI errors and list performance. **Known limitation: full rollback acceptance on the affected Windows 4090 remains blocked by Defender; this release does not resolve that detection.** See [validation and limitations](maintenance-integrity-169.md).
 
 Two separate preferences (check / install), default check-only every six hours. Installing never restarts the app — you decide when to reopen it.
 

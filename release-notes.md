@@ -1,5 +1,7 @@
 # 1.6.69
 
+**已知限制 / Known limitation:** Windows 4090 上，Defender 仍隔离旧版已有的 `skills/redteam/unauth-exploit.md`，完整升级/回滚验收未通过；更新病毒库后复测仍失败。GitHub 三平台检查通过不代表该机器已恢复。本版保留原有功能与文件，不关闭防护、不加白名单、不绕过校验，也不自动重启 DSH。维护者在知悉此限制后决定发布；尚未向微软提交复核。
+
 ## Maintenance integrity and lifecycle
 
 - Refuse empty/non-regular source backups and retain them for diagnosis. Restore via atomic replacement, keeping original permissions and leaving the current file intact on write failure.
@@ -11,7 +13,7 @@
 
 No changes to patch definitions, feature defaults, user settings, proxy configuration or restart policy. Upstream design review informed this work; implementation and regression coverage are maintained independently. No upstream test removal or automatic application restart is adopted.
 
-See [validation and recovery](../maintenance-integrity-169.md) for verified scope and limitations.
+See [validation and recovery](https://github.com/kingcharleslzy-ai/dsh-purge/blob/v1.6.69/docs/maintenance-integrity-169.md) for verified scope and limitations.
 
 ---
 
