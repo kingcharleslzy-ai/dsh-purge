@@ -1,6 +1,6 @@
 {
   "name": "dsh-purge-community",
-  "version": "1.6.68",
+  "version": "1.6.69",
   "description": "让 AI 更专注地辅助学习与动手实验：DSH 附加组件，提供状态自检、提示词与规则管理、本机备份与回滚。",
   "type": "module",
   "main": "lib/index.js",
@@ -42,14 +42,15 @@
     "embed-prompt": "node scripts/embed-default-prompt.mjs",
     "build:client": "node packages/purge-panel/scripts/build.mjs --community",
     "test:linux": "node --test test/linux-install.test.mjs",
-    "test": "node --test test/desktop-identity.test.mjs test/linux-install.test.mjs test/linux-shim.test.mjs test/redteam-host.test.mjs test/uninstall.test.mjs test/web-restart.test.mjs test/install-registry.test.mjs test/bootstrap-install.test.mjs test/bootstrap-download.test.mjs test/bootstrap-curl.test.mjs test/community.test.mjs test/patch-anchors.test.mjs test/selfcheck.test.mjs test/asar-swap-fallback.test.mjs test/windows-electron-handoff.test.mjs test/settings-api.test.mjs test/host-backup.test.mjs test/atomic-files.test.mjs test/host-layout.test.mjs test/runtime-layout.test.mjs test/desktop-target.test.mjs test/runtime-error.test.mjs test/boost.test.mjs test/prompt-sections.test.mjs test/presets.test.mjs test/preset-compat.test.mjs test/anchors.test.mjs test/audit.test.mjs test/instance.test.mjs test/bypass-contract.test.mjs test/update-policy.test.mjs test/market.test.mjs test/command-registration.test.mjs test/plugin-lifecycle.test.mjs test/permission-state.test.mjs test/inject-contract.test.mjs test/ask-user-wait.test.mjs test/steer-migration.test.mjs test/steering-runtime.test.mjs test/steering-files.test.mjs test/audit-regressions.test.mjs test/update-recovery.test.mjs test/update-integrity.test.mjs test/update-http.test.mjs test/update-proxy-runtime.test.mjs test/macos-handoff.test.mjs test/issue40-followup.test.mjs test/refusal-retry.test.mjs test/update-download.test.mjs test/update-source.test.mjs test/preset-injection.test.mjs test/update-status.test.mjs test/review-integrity.test.mjs test/inject-split.test.mjs test/no-region-gate.test.mjs test/partial-status.test.mjs test/apply-missing-target.test.mjs test/stale-maintenance-lock.test.mjs test/chatml-envelope.test.mjs test/drift-status.test.mjs test/expect-contract.test.mjs test/opt-in-patches.test.mjs test/update-resilience.test.mjs test/update-secrets.test.mjs",
+    "test": "node --test test/desktop-identity.test.mjs test/linux-install.test.mjs test/linux-shim.test.mjs test/redteam-host.test.mjs test/uninstall.test.mjs test/web-restart.test.mjs test/install-registry.test.mjs test/bootstrap-install.test.mjs test/bootstrap-download.test.mjs test/bootstrap-curl.test.mjs test/community.test.mjs test/patch-anchors.test.mjs test/selfcheck.test.mjs test/asar-swap-fallback.test.mjs test/windows-electron-handoff.test.mjs test/settings-api.test.mjs test/host-backup.test.mjs test/atomic-files.test.mjs test/host-layout.test.mjs test/runtime-layout.test.mjs test/desktop-target.test.mjs test/runtime-error.test.mjs test/boost.test.mjs test/prompt-sections.test.mjs test/presets.test.mjs test/preset-compat.test.mjs test/anchors.test.mjs test/audit.test.mjs test/instance.test.mjs test/bypass-contract.test.mjs test/update-policy.test.mjs test/market.test.mjs test/command-registration.test.mjs test/plugin-lifecycle.test.mjs test/permission-state.test.mjs test/inject-contract.test.mjs test/ask-user-wait.test.mjs test/steer-migration.test.mjs test/steering-runtime.test.mjs test/steering-files.test.mjs test/audit-regressions.test.mjs test/update-recovery.test.mjs test/update-integrity.test.mjs test/update-http.test.mjs test/update-proxy-runtime.test.mjs test/macos-handoff.test.mjs test/issue40-followup.test.mjs test/refusal-retry.test.mjs test/update-download.test.mjs test/update-source.test.mjs test/preset-injection.test.mjs test/update-status.test.mjs test/review-integrity.test.mjs test/inject-split.test.mjs test/no-region-gate.test.mjs test/partial-status.test.mjs test/apply-missing-target.test.mjs test/stale-maintenance-lock.test.mjs test/chatml-envelope.test.mjs test/drift-status.test.mjs test/expect-contract.test.mjs test/opt-in-patches.test.mjs test/update-resilience.test.mjs test/update-secrets.test.mjs test/maintenance-boundaries.test.mjs test/maintenance-lifecycle.test.mjs test/list-performance.test.mjs test/maintenance-cli.test.mjs",
     "test:ui": "node packages/purge-panel/test/community.cjs",
     "check:client": "node packages/purge-panel/scripts/build.mjs --community --check",
     "diagnose": "node bin/community.js diagnose",
     "check:docs": "node scripts/check-docs.mjs",
     "smoke": "npm pack --ignore-scripts && node scripts/smoke.mjs",
-    "test:electron": "node scripts/check-electron-selfcheck.mjs && node scripts/check-electron-diagnostic-target.mjs && node scripts/check-macos-handoff.mjs",
-    "build:market": "node scripts/build-market.mjs"
+    "test:electron": "node scripts/check-electron-selfcheck.mjs && node scripts/check-electron-diagnostic-target.mjs && node scripts/check-macos-handoff.mjs && npm run test:maintenance:electron",
+    "build:market": "node scripts/build-market.mjs",
+    "test:maintenance:electron": "node scripts/check-maintenance-runtime.mjs"
   },
   "license": "MIT",
   "keywords": [
@@ -95,7 +96,7 @@
     },
     "install": {
       "preferred": "tarball",
-      "tarball": "https://github.com/kingcharleslzy-ai/dsh-purge/releases/latest/download/dsh-purge-community-1.6.68.tgz",
+      "tarball": "https://github.com/kingcharleslzy-ai/dsh-purge/releases/latest/download/dsh-purge-community-1.6.69.tgz",
       "git": "https://github.com/kingcharleslzy-ai/dsh-purge.git"
     },
     "compatibility": {
