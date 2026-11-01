@@ -18,7 +18,7 @@ const PLUGIN = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const inst = await import(pathToFileURL(PLUGIN + "/lib/instance.js").href);
 const { compatibility } = await import(pathToFileURL(PLUGIN + "/lib/community.js").href);
 
-const TMP = fs.mkdtempSync(path.join(os.tmpdir(), "purge-owner-"));
+const TMP = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "purge-owner-")));
 /** 跨平台路径比较：两边都过 realpath，消掉 /var ↔ /private/var。
  *  预期路径可能本来就不存在（正是要断言的场景），realpath 失败时退回 resolve。 */
 const realOr = (p) => {

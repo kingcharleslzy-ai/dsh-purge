@@ -14,7 +14,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 
-const TMP = fs.mkdtempSync(path.join(os.tmpdir(), "purge-lock-"));
+const TMP = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "purge-lock-")));
 const isWindows = process.platform === "win32";
 
 /** 用不含 FILE_SHARE_DELETE 的共享模式持有文件；resolve 时锁已生效 */

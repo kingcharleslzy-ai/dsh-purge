@@ -15,7 +15,7 @@ const inst = await import(pathToFileURL(PLUGIN + "/lib/instance.js").href);
 
 const norm = (p) => String(p).split(path.sep).join("/");
 const ai = (root) => path.join(root, "node_modules", "@deepseek-ai");
-const TMP = fs.mkdtempSync(path.join(os.tmpdir(), "purge-resolve-"));
+const TMP = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "purge-resolve-")));
 
 /** 最小合法 ASAR：header 里放 package.json + main，满足 desktopIdentity 的包证据校验 */
 function buildAsar(target, entries) {

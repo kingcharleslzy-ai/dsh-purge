@@ -20,7 +20,7 @@ const CORDIS = path.join(PLUGIN, "node_modules/@deepseek-ai/cordis/lib/index.js"
 const { Context, Service } = await import(pathToFileURL(CORDIS).href);
 const { installWebServer } = await import(pathToFileURL(PLUGIN + "/lib/index.js").href);
 
-const TMP = fs.mkdtempSync(path.join(os.tmpdir(), "purge-http-"));
+const TMP = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "purge-http-")));
 const realOr = (p) => {
   try {
     return fs.realpathSync.native(p);
