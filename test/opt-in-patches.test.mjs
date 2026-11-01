@@ -16,6 +16,7 @@ import {
 import { writeTuning, readTuning } from "../lib/tuning.js";
 import { tallyPatchStatus } from "../lib/selfcheck.js";
 import { removeTreeNoFollowSync } from "../lib/remove-tree.js";
+import { incompleteApplyDetail } from "../packages/purge-panel/src/shared/apply-result.js";
 
 const REPEAT_SOURCE = [
   '\tctx.on("tools/post-execute", async (exec, _result, next) => {',
@@ -87,6 +88,33 @@ test("an opt-in patch left off is soft in the apply summary, not a failure", asy
         [18],
         `${status} must stay a failure`,
       );
+    }
+  } finally {
+    f.close();
+  }
+});
+
+test("disabled selections do not hide mixed real errors or UI failure details", async () => {
+  const f = fixture();
+  try {
+    const patches = ALL_PATCHES.filter((p) => [18, 19].includes(p.id));
+    const report = await applyPatches(f.host, patches, {
+      dshHome: f.home, surface: "desktop", extraPatches: [],
+    });
+    assert.deepEqual(report.map((r) => r.status), ["disabled", "disabled"]);
+    const source = path.join(f.host, "dsh-repeat-tool-reminder/lib/index.js");
+    assert.equal(fs.readFileSync(source, "utf8"), `${patch18.replacements[0].pattern}\n`);
+    assert.equal(fs.existsSync(source + ".dshpurge.bak"), false);
+    assert.equal(summarizeApplyReport(report, patches).failed.length, 0);
+
+    const errors = ["write_failed", "EACCES: permission denied", "pattern_not_found", "hit_mismatch:1!=2", "partial", "unreadable", "unexpected_status"];
+    for (const status of errors) {
+      const summary = summarizeApplyReport([...report, {patch_id: 999, status}], [...patches, {id: 999, strictFiles: true}]);
+      assert.deepEqual(summary.failed, [{patch_id: 999, status}]);
+      assert.equal(summary.soft.length, 2);
+      const text = incompleteApplyDetail({failed: summary.failed.length, failed_items: summary.failed.map((r) => ({id: r.patch_id}))},
+        (key, values = {}) => `${key}:${values.failed || ""}:${values.ids || ""}`);
+      assert.equal(text, "restart.incomplete.patches:1:999");
     }
   } finally {
     f.close();
