@@ -33,7 +33,10 @@ import {
   newestPreservedDir,
 } from "../lib/extract-asar.js";
 
-const TMP = fs.mkdtempSync(path.join(os.tmpdir(), "dsh-purge-next-"));
+// realpath 归一化：macOS 的 os.tmpdir() 给的是 /var/folders/...，而实现层
+// （statSync / readdir 回来的路径）是 /private/var/folders/...。不归一化的话
+// 「预期路径 vs 实际路径」的断言会在 mac 上假失败，与实现无关。
+const TMP = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "dsh-purge-next-")));
 const norm = (p) => String(p).split(path.sep).join("/");
 const rm = (p) => fs.rmSync(p, { recursive: true, force: true });
 
@@ -284,7 +287,14 @@ test("补丁：写失败显式报错，原文与备份都可回滚，恢复后�
     assert.equal((reverted.errors || []).length, 0);
     assert.equal(fs.readFileSync(target, "utf8"), original);
 
-    fs.chmodSync(target, 0o444);
+    // 注入写入失败：把目标文件换成同名目录。
+    // 不用 chmod(0o444) —— POSIX 下 rename 只看目录权限，文件位拦不住替换，
+    // 那样注入实际会返回 applied，属于夹具失效而不是断言太松。
+    // revertAll 回滚后会清掉备份，先重新应用一次把可回滚的原文造出来。
+    await core.applyPatchesAllHosts([patch1], {});
+    assert.ok(fs.existsSync(target + ".dshpurge.bak"), "失败注入前必须已有可回滚的备份");
+    fs.rmSync(target);
+    fs.mkdirSync(target);
     let failed = null;
     try {
       const run = await core.applyPatchesAllHosts([patch1], {});
@@ -293,10 +303,12 @@ test("补丁：写失败显式报错，原文与备份都可回滚，恢复后�
       failed = { status: "throw:" + (error.code || error.message) };
     }
     assert.notEqual(failed.status, "applied");
-    assert.equal(fs.readFileSync(target, "utf8"), original, "写失败不得破坏原文");
+    assert.equal(fs.statSync(target).isDirectory(), true, "写失败不得改动目标现状");
     assert.equal(fs.readFileSync(target + ".dshpurge.bak", "utf8"), original, "备份必须是可回滚的原文");
 
-    fs.chmodSync(target, 0o644);
+    // 恢复成未应用状态，重试必须真的写进去（而不是 already）
+    fs.rmdirSync(target);
+    fs.writeFileSync(target, original);
     const retried = await core.applyPatchesAllHosts([patch1], {});
     assert.equal(retried.report[0].status, "applied");
   } finally {
