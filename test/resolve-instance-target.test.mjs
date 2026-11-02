@@ -132,8 +132,10 @@ test("指错实例仍然拒绝，不因映射而回落", () => {
   fs.mkdirSync(decoy, { recursive: true });
 
   const resolved = inst.resolveInstance({ env: { DSH_BASE: decoy }, reader: fs, argv: [] });
-  assert.equal(resolved.resolved, false);
-  assert.equal(resolved.source, "unresolved");
+  assert.equal(resolved.resolved, false, "指错的实例必须判为不可用");
+  // source 保留用户的选择（告诉他是哪个选择器指错了），resolved 才是可用性结论
+  assert.equal(resolved.source, "DSH_BASE");
+  assert.equal(resolved.probe.reason, "missing");
   assert.ok(!norm(resolved.host).includes("good"), "不得回落到另一份安装");
 });
 

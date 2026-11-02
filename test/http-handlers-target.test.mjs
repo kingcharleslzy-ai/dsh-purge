@@ -51,7 +51,7 @@ function buildAsar(target, entries) {
     buffers.push(buf);
     offset += buf.length;
   }
-  const json = Buffer.from(JSON.stringify(files));
+  const json = Buffer.from(JSON.stringify({ files }));
   const padded = Math.ceil(json.length / 4) * 4;
   const prefix = Buffer.alloc(16 + padded);
   prefix.writeUInt32LE(4, 0);
@@ -89,6 +89,10 @@ function makeInstall(root, { layout = "next", complete = true, identity = null }
 
   if (complete) {
     write(path.join(physicalHost, "dsh-agent-instructions", "lib", "index.js"), "// diagnostic fixture");
+  } else {
+    // 「scope 存在但不完整」：目录和 package.json 都在，只缺 lib。
+    // 注意 asar 条目也写进了 app 目录，这里必须把 lib 删掉，否则夹具其实并不缺件。
+    fs.rmSync(path.join(physicalHost, "dsh-agent-instructions", "lib"), { recursive: true, force: true });
   }
 
   const home = path.join(root, "home");
@@ -206,6 +210,75 @@ test("物理 app 缺组件：三个 handler 报同一个缺失目标，不偷偷
     const layoutLayer = (check.layers || []).find((layer) => layer.kind === "layout");
     assert.ok(layoutLayer, "selfcheck 必须给出 layout 层");
     assert.notEqual(layoutLayer.state, "ok", "缺组件的夹具不得报 ok");
+
+    // 缺件时仍要交出目标（不是「未定位」），缺件结论由 compatibility 表达
+    assert.notEqual(status.ai_base, "", "缺件时仍应给出目标");
+    assert.equal(status.compatibility.layout_found, false, "缺件必须被承认");
+  } finally {
+    await dispose();
+  }
+});
+
+test("status 接口的资格结论来自真实判定，不是常量", async () => {
+  // 夹具内层是 0.2.1-rc.2（在内核清单里），宿主家族是 next
+  const fx = makeInstall(path.join(TMP, "compat"));
+  const { read, dispose } = await boot(fx);
+  try {
+    const status = await read("status");
+    const compat = status.compatibility;
+    assert.ok(compat, "status 必须返回 compatibility");
+
+    assert.equal(compat.kernel.version, "0.2.1-rc.2");
+    assert.equal(compat.kernel.qualified, true, "rc.2 命中内核清单");
+    assert.equal(compat.host_family, "next");
+    assert.equal(compat.family_qualified, false, "NEXT 家族整体未验证");
+    assert.equal(compat.qualified, false, "两层都过才算 qualified");
+    assert.equal(compat.level, "kernel-verified", "不能报 qualified，也不能笼统报 unverified");
+
+    // diagnose 用同一套判定，不能各算各的
+    const diagnose = await read("diagnose");
+    assert.equal(diagnose.compatibility.qualified, compat.qualified);
+    assert.equal(diagnose.compatibility.level, compat.level);
+    assert.equal(diagnose.compatibility.family_qualified, compat.family_qualified);
+  } finally {
+    await dispose();
+  }
+});
+
+test("缺失诊断在三个 handler 之间交叉一致", async () => {
+  const fx = makeInstall(path.join(TMP, "cross"), { complete: false });
+  const { read, dispose } = await boot(fx);
+  try {
+    const status = await read("status");
+    const check = await read("selfcheck");
+    const diagnose = await read("diagnose");
+
+    // 1) 目标一致
+    assert.equal(same(status.ai_base, check.host), true);
+    assert.equal(same(check.host, diagnose.ai_base), true);
+
+    // 2) 缺件结论一致：宿主是定位到的，只是不完整 —— 该由 layout 层报缺，
+    //    而不是退回「未定位」（missing_ai_base 表示的是后者）。
+    assert.notEqual(status.ai_base, "", "缺件时仍应给出目标，而不是当成未定位");
+    assert.equal(status.compatibility.layout_found, false, "status 必须承认缺件");
+    const layout = (check.layers || []).find((l) => l.kind === "layout");
+    assert.ok(layout, "selfcheck 必须给出 layout 层");
+    assert.notEqual(layout.state, "ok", "selfcheck 不得把缺件报成 ok");
+
+    // 3) 三方对「缺件」的判断必须一致：都认这个物理目标，也都认它不完整
+    const diag = await read("diagnose");
+    assert.equal(same(diag.ai_base, status.ai_base), true, "diagnose 必须与 status 同目标");
+    assert.equal(
+      diag.compatibility.layout_found,
+      status.compatibility.layout_found,
+      "diagnose 与 status 的缺件判断必须一致",
+    );
+    assert.equal(diag.compatibility.layout_found, false, "缺件夹具必须被判为 layout 缺失");
+    assert.equal(
+      diag.compatibility.level,
+      status.compatibility.level,
+      "diagnose 与 status 的兼容级别必须一致",
+    );
   } finally {
     await dispose();
   }
