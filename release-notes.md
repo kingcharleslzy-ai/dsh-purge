@@ -1,3 +1,41 @@
+# 1.6.69
+
+**已知限制 / Known limitation:** Windows 4090 上，Defender 仍隔离旧版已有的 `skills/redteam/unauth-exploit.md`，完整升级/回滚验收未通过；更新病毒库后复测仍失败。GitHub 三平台检查通过不代表该机器已恢复。本版保留原有功能与文件，不关闭防护、不加白名单、不绕过校验，也不自动重启 DSH。维护者在知悉此限制后决定发布；尚未向微软提交复核。
+
+## Maintenance integrity and lifecycle
+
+- Refuse empty/non-regular source backups and retain them for diagnosis. Restore via atomic replacement, keeping original permissions and leaving the current file intact on write failure.
+- Validate every ASAR entry and packed byte range before output. Reject traversal, Windows drive/ADS/device names and pre-existing output symlinks/junctions. Link creation errors are reported, not silently skipped; ASAR targets follow archive-root semantics. Failed side extraction leaves the active installation intact.
+- Resolve resource paths through their nearest existing ancestor, including Windows junctions; reject external or dangling links while allowing valid internal references and new descendants.
+- Stop disposed prompt callbacks, clear only the globals owned by that instance, and leave replacement instances intact. No user prompt is deleted or rewritten by disposal.
+- Return nonzero CLI exit codes for apply/restore errors and stop reporting unconditional completion. Default-disabled optional entries remain non-failures.
+- Read metadata-only workspace selectors without opening all databases; batch detail-evidence reads with identical fields, ordering and existing length limits. Full statistics remain available and errors are explicit.
+
+No changes to patch definitions, feature defaults, user settings, proxy configuration or restart policy. Upstream design review informed this work; implementation and regression coverage are maintained independently. No upstream test removal or automatic application restart is adopted.
+
+See [validation and recovery](https://github.com/kingcharleslzy-ai/dsh-purge/blob/v1.6.69/docs/maintenance-integrity-169.md) for verified scope and limitations.
+
+---
+
+# 1.6.68
+
+## 修复内容
+
+- 修复点击「应用」后，默认关闭的 #18/#19 被错误计入「处理失败」的问题。`disabled` 现在与状态页、自检采用一致口径：表示按选择关闭，不是失败。
+- 写入错误、权限错误、必需锚点不匹配、命中数异常、部分应用、不可读和未知状态继续报告；混合结果只列出真正失败的项目，不让关闭项掩盖异常。
+- 未改变任何功能补丁、默认开关、提示词、设置或预设。不会自动开启 #18/#19，也不会自动重启 DSH。
+
+## 验证
+
+- PR #124 最终提交的 8 项 GitHub 检查全部通过，包括三平台安装及 npm 运行时验证。
+- Mac 全套 439 项：421 通过、18 项平台/条件跳过；Windows 11 4090：413 通过、26 项平台/条件跳过。没有将跳过项计作通过。
+- 两端实际隔离 Electron 44.7.0 的 apply、缺失目标与部分状态专项各 15/15；面板 26 项、UI 合约、文档和生成 bundle 一致性通过。
+- 移除修复的负对照会再次触发测试失败；同时检查默认关闭时不写入目标或创建备份，混合真实错误时保留正确失败 ID。
+
+感谢 [ShiTan-677](https://github.com/ShiTan-677) 提交 [PR #124](https://github.com/kingcharleslzy-ai/dsh-purge/pull/124)。
+
+本版不包含尚未通过验证的 NEXT 适配 PR #102 或备份选项 PR #115。发行包由三平台检查通过后构建，并附 SHA256SUMS.txt；用户现有安装不会因本次发布而被维护者自动重启。
+
 # 1.6.67
 
 ## 修复内容

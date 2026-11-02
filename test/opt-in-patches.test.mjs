@@ -5,10 +5,18 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { ALL_PATCHES, applyPatches, patchEnabled, patchStatus, patchStatusReady } from "../lib/core.js";
+import {
+  ALL_PATCHES,
+  applyPatches,
+  patchEnabled,
+  patchStatus,
+  patchStatusReady,
+  summarizeApplyReport,
+} from "../lib/core.js";
 import { writeTuning, readTuning } from "../lib/tuning.js";
 import { tallyPatchStatus } from "../lib/selfcheck.js";
 import { removeTreeNoFollowSync } from "../lib/remove-tree.js";
+import { incompleteApplyDetail } from "../packages/purge-panel/src/shared/apply-result.js";
 
 const REPEAT_SOURCE = [
   '\tctx.on("tools/post-execute", async (exec, _result, next) => {',
@@ -57,6 +65,57 @@ test("disabled patches report disabled and are not written", async () => {
     assert.equal(patchStatusReady("disabled", patch18), true, "an intentional off switch is not a failure");
     assert.equal(tallyPatchStatus(status, [patch18]).disabled, 1);
     assert.equal(tallyPatchStatus(status, [patch18]).not_applicable, 1);
+  } finally {
+    f.close();
+  }
+});
+
+test("an opt-in patch left off is soft in the apply summary, not a failure", async () => {
+  const f = fixture();
+  try {
+    const opts = { dshHome: f.home, surface: "desktop", extraPatches: [] };
+    const report = await applyPatches(f.host, [patch18], opts);
+    assert.equal(report[0].status, "disabled");
+    const summary = summarizeApplyReport(report, [patch18]);
+    // 面板红字只看 failed：默认关闭的 #18/#19 不能把整次应用标成「N 项处理失败」。
+    assert.deepEqual(summary.failed.map((r) => r.patch_id), []);
+    assert.deepEqual(summary.soft.map((r) => r.patch_id), [18]);
+
+    // 同口径检查：真失败不能被这一行顺手静音。
+    for (const status of ["write_failed", "EACCES: permission denied"]) {
+      assert.deepEqual(
+        summarizeApplyReport([{ patch_id: 18, status }], [patch18]).failed.map((r) => r.patch_id),
+        [18],
+        `${status} must stay a failure`,
+      );
+    }
+  } finally {
+    f.close();
+  }
+});
+
+test("disabled selections do not hide mixed real errors or UI failure details", async () => {
+  const f = fixture();
+  try {
+    const patches = ALL_PATCHES.filter((p) => [18, 19].includes(p.id));
+    const report = await applyPatches(f.host, patches, {
+      dshHome: f.home, surface: "desktop", extraPatches: [],
+    });
+    assert.deepEqual(report.map((r) => r.status), ["disabled", "disabled"]);
+    const source = path.join(f.host, "dsh-repeat-tool-reminder/lib/index.js");
+    assert.equal(fs.readFileSync(source, "utf8"), `${patch18.replacements[0].pattern}\n`);
+    assert.equal(fs.existsSync(source + ".dshpurge.bak"), false);
+    assert.equal(summarizeApplyReport(report, patches).failed.length, 0);
+
+    const errors = ["write_failed", "EACCES: permission denied", "pattern_not_found", "hit_mismatch:1!=2", "partial", "unreadable", "unexpected_status"];
+    for (const status of errors) {
+      const summary = summarizeApplyReport([...report, {patch_id: 999, status}], [...patches, {id: 999, strictFiles: true}]);
+      assert.deepEqual(summary.failed, [{patch_id: 999, status}]);
+      assert.equal(summary.soft.length, 2);
+      const text = incompleteApplyDetail({failed: summary.failed.length, failed_items: summary.failed.map((r) => ({id: r.patch_id}))},
+        (key, values = {}) => `${key}:${values.failed || ""}:${values.ids || ""}`);
+      assert.equal(text, "restart.incomplete.patches:1:999");
+    }
   } finally {
     f.close();
   }
