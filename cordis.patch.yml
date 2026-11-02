@@ -68,6 +68,29 @@
       config:
         root: !!js dshHomePath('redteam')
 
-    # 演练台 HTTP 桥 POST /redteam/api
+    # The RedTeam HTTP bridge requires the Host webServer service.
+    # Reuse an active Web/TUI provider; otherwise provide a loopback-only
+    # listener when the Host package is available (notably in headless profiles).
+    - id: dsh-purge-webserver
+      name: '@deepseek-ai/dsh-host-webserver'
+      disabled: !!js >-
+        (() => {
+          const require = process.getBuiltinModule('node:module').createRequire(ctx.baseUrl)
+          try { require.resolve('@deepseek-ai/dsh-host-webserver/package.json') } catch { return true }
+          return [...ctx.loader.entries()].some(entry => entry.options.id !== 'dsh-purge-webserver' && entry.options.name === '@deepseek-ai/dsh-host-webserver' && !entry.disabled)
+        })()
+      config:
+        host: 127.0.0.1
+        port: 0
+
+    # RedTeam HTTP bridge POST /redteam/api. Do not leave a pending UI plugin
+    # on older Hosts that do not ship the webServer package.
     - id: dsh-purge-redteam-ui
       name: dsh-purge-community/redteam/ui
+      disabled: !!js >-
+        (() => {
+          const entries = [...ctx.loader.entries()]
+          if (entries.some(entry => entry.options.name === '@deepseek-ai/dsh-host-webserver' && !entry.disabled)) return false
+          const require = process.getBuiltinModule('node:module').createRequire(ctx.baseUrl)
+          try { require.resolve('@deepseek-ai/dsh-host-webserver/package.json'); return false } catch { return true }
+        })()

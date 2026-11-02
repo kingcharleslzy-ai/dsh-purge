@@ -7,7 +7,10 @@ import {curlReleaseRequest,downloadReleaseFile} from '../scripts/bootstrap-insta
 const exec=promisify(execFile);
 test('real system curl: CONNECT/TLS, binary body, redirect validation, limits, timeout and curlrc isolation',async()=>{
   const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'purge-bootstrap-tls-'));
-  const openssl=process.platform==='win32'?path.join(process.env.ProgramFiles||'C:\\Program Files','Git/usr/bin/openssl.exe'):'openssl';
+  const defaultOpenSsl=path.join(process.env.ProgramFiles||'C:\\Program Files','Git/usr/bin/openssl.exe');
+  // PortableGit and developer-managed Git installations may live outside Program Files.
+  // Prefer the conventional path when present, otherwise resolve openssl from PATH.
+  const openssl=process.platform==='win32'&&fs.existsSync(defaultOpenSsl)?defaultOpenSsl:(process.platform==='win32'?'openssl.exe':'openssl');
   await exec(openssl,['req','-x509','-newkey','rsa:2048','-nodes','-keyout',path.join(tmp,'key.pem'),'-out',path.join(tmp,'cert.pem'),'-days','1','-subj','/CN=github.com','-addext','subjectAltName=DNS:github.com,DNS:release-assets.githubusercontent.com']);
   const sockets=new Set(),requests=[];
   const binary=Buffer.from([0,255,10,13,128,1,2]);
