@@ -7,12 +7,14 @@
 // 差别只是不需要 Electron —— 归档/物理映射走的是路径正则 + 物理目录 stat。
 //
 // 运行：node --test test/http-handlers-target.test.mjs
-import { test } from "node:test";
+import { test, after } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
+import { diskFs } from "../lib/extract-asar.js";
+import { removeTreeNoFollowSync } from "../lib/remove-tree.js";
 import os from "node:os";
 import path from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
+const fs = diskFs();
 
 const PLUGIN = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const CORDIS = path.join(PLUGIN, "node_modules/@deepseek-ai/cordis/lib/index.js");
@@ -20,7 +22,12 @@ const CORDIS = path.join(PLUGIN, "node_modules/@deepseek-ai/cordis/lib/index.js"
 const { Context, Service } = await import(pathToFileURL(CORDIS).href);
 const { installWebServer } = await import(pathToFileURL(PLUGIN + "/lib/index.js").href);
 
-const TMP = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "purge-http-")));
+// Electron on Windows retains ASAR handles until process exit. The explicit
+// runtime harness owns its fresh parent directory and verifies cleanup after
+// this child exits. Standalone Node tests still clean up their own fixtures.
+const parentFixtures = process.env.PURGE_TEST_HTTP_PARENT_DIR;
+const TMP = fs.realpathSync(fs.mkdtempSync(path.join(parentFixtures || os.tmpdir(), "purge-http-")));
+after(() => { if (!parentFixtures) removeTreeNoFollowSync(TMP, {fs, maxRetries:2}); });
 const realOr = (p) => {
   try {
     return fs.realpathSync.native(p);
