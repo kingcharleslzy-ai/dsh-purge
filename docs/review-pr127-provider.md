@@ -38,3 +38,12 @@ when the webServer consumer contract is not satisfied. This deliberate failure
 must not be turned into a successful compatibility result. No adapter for an
 unverified service ABI is added in this follow-up. Existing features, prompts,
 settings and formal DSH processes remain unchanged.
+
+## CI follow-up: Windows handoff test ordering
+
+The Windows full-suite job exposed a test race: Save-State publishes its JSON
+before Add-Content closes the log. Reading the log immediately after observing
+`expired` can fail with EBUSY. The test now waits for the helper process to exit
+and asserts timeout exit code 2 before reading the log. No runtime helper code
+or error assertion is removed. All seven handoff tests passed in three repeated
+runs on the Windows 11 acceptance machine using real Windows PowerShell.
