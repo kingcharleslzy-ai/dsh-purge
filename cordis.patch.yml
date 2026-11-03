@@ -75,9 +75,16 @@
       name: '@deepseek-ai/dsh-host-webserver'
       disabled: !!js >-
         (() => {
+          const providers = [...ctx.loader.entries()].filter(entry => entry.options.id !== 'dsh-purge-webserver' && entry.options.name === '@deepseek-ai/dsh-host-webserver')
+          /* An existing provider owns this choice, including an explicit disable. */
+          if (providers.length) return true
           const require = process.getBuiltinModule('node:module').createRequire(ctx.baseUrl)
-          try { require.resolve('@deepseek-ai/dsh-host-webserver/package.json') } catch { return true }
-          return [...ctx.loader.entries()].some(entry => entry.options.id !== 'dsh-purge-webserver' && entry.options.name === '@deepseek-ai/dsh-host-webserver' && !entry.disabled)
+          try { require.resolve('@deepseek-ai/dsh-host-webserver/package.json') }
+          catch (error) {
+            if (error.code === 'MODULE_NOT_FOUND' && error.message.split('\n')[0] === "Cannot find module '@deepseek-ai/dsh-host-webserver/package.json'") return true
+            throw error
+          }
+          return false
         })()
       config:
         host: 127.0.0.1
@@ -89,8 +96,13 @@
       name: dsh-purge-community/redteam/ui
       disabled: !!js >-
         (() => {
-          const entries = [...ctx.loader.entries()]
-          if (entries.some(entry => entry.options.name === '@deepseek-ai/dsh-host-webserver' && !entry.disabled)) return false
+          const providers = [...ctx.loader.entries()].filter(entry => entry.options.name === '@deepseek-ai/dsh-host-webserver')
+          if (providers.some(entry => !entry.disabled)) return false
+          if (providers.length) return true
           const require = process.getBuiltinModule('node:module').createRequire(ctx.baseUrl)
-          try { require.resolve('@deepseek-ai/dsh-host-webserver/package.json'); return false } catch { return true }
+          try { require.resolve('@deepseek-ai/dsh-host-webserver/package.json'); return false }
+          catch (error) {
+            if (error.code === 'MODULE_NOT_FOUND' && error.message.split('\n')[0] === "Cannot find module '@deepseek-ai/dsh-host-webserver/package.json'") return true
+            throw error
+          }
         })()

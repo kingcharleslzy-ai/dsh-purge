@@ -67,7 +67,8 @@ test('RedTeam UI declares the Host webServer contract and registers its loopback
  assert.equal(evaluate(providerExpr,[]),false,'fallback provider should start when no Host provider exists');
  assert.equal(evaluate(providerExpr,ownProvider),false,'fallback provider must not disable itself');
  assert.equal(evaluate(providerExpr,activeOfficial),true,'fallback provider must yield to an active official provider');
- assert.equal(evaluate(providerExpr,disabledOfficial),false,'a disabled official provider does not satisfy webServer');
+ assert.equal(evaluate(providerExpr,disabledOfficial),true,'an explicitly disabled official provider must not be replaced');
+ assert.equal(evaluate(uiExpr,disabledOfficial),true,'the UI respects the explicitly disabled provider');
  assert.equal(evaluate(uiExpr,ownProvider),false,'RedTeam UI should stay enabled with the fallback provider');
  const missingRoot=fs.mkdtempSync(path.join(os.tmpdir(),'purge-webserver-missing-'));
  const missingBase=pathToFileURL(path.join(missingRoot,'host.js')).href;
