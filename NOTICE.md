@@ -8,3 +8,5 @@ Original copyright and MIT license remain in LICENSE. The repository preserves u
 The native settings UI was derived from the original 1.1.71 client and subsequently separated and integrated into this community distribution. Existing third-party notices under docs/redteam-upstream-LICENSE and docs/redteam-upstream-DISCLOSURE remain applicable to their respective material.
 
 Community contributors and their contributions are recorded in [CONTRIBUTORS.md](CONTRIBUTORS.md).
+
+The test fixture `test/fixtures/agent-loop-022-native.json` contains method bodies from DeepSeek Harness `@deepseek-ai/dsh-agent-loop` 0.2.2-rc.1. Its original MIT license is preserved in `test/fixtures/agent-loop-022-LICENSE`. These methods are used only for isolated contract tests.
