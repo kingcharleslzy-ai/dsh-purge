@@ -60,6 +60,36 @@ macOS 默认要求 `/Applications/DeepSeek Harness.app`。自定义安装位置�
 
 `HEAD https://github.com/... UND_ERR_DESTROYED` 属 GitHub 网络问题。保留完整脱敏日志区分错误；切 npm 源不保证修复 GitHub 连接。
 
+## 启动告警：Cannot find package 'dsh-purge'
+
+宿主启动或面板报：
+
+```
+dsh: warning: 1 entry did not activate
+dsh-purge (dsh-purge): failed to import
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'dsh-purge' imported from <profile>
+```
+
+原因：profile 的 `cordis.patch.yml` 里被手工加了一段 `- insert:`，把条目绑到了旧独立包名：
+
+```yaml
+- insert:
+    - id: dsh-purge
+      name: dsh-purge        # 社区版没有这个名字的包，本包叫 dsh-purge-community
+      inject: [systemPrompt, tools]
+```
+
+社区版的这条入口已经由 bundle patch 注册（`id: dsh-purge`、`name: dsh-purge-community`），手工再 `insert` 一份既多余，又会因为包名不存在而导入失败。这段 YAML 抄自归档的上游 README（`docs/upstream/README.md`），那份文档对应的是 1.0.x 独立包，不能照抄。
+
+处理：
+
+1. 备份 `cordis.patch.yml`；
+2. 删掉那段 `- insert:`（含里面的 `id: dsh-purge` / `name: dsh-purge`：`config` 里若已有你要的选项，先抄到别处再删）；
+3. 检查是否还多了 `dsh-purge-redteam*` 之类的重复条目，一并删掉；
+4. 重启 DSH。警告消失即修复；仍报错说明 profile 里还有第二处重复入口。
+
+要改插件选项（`excludePresets`、`capabilityProtocol` 等），只改**已有**那条 `id: dsh-purge` 的 `config`，见 [#53 维护说明](maintenance-issue-53.md)。安装器遇到这种手工入口会拒绝安装并保留原配置，不会替你删。
+
 ## 失败、备份与回滚
 
 - 记录失败阶段、DSH/插件版本、profile、下载源与 backup_id；隐藏用户名、私有地址、token。
