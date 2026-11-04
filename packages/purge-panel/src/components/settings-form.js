@@ -696,6 +696,12 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
     metricNotes.push(t("metric.pendingShort", { n: tally.pending }));
   if (tally.unmatched)
     metricNotes.push(t("metric.unmatchedShort", { n: tally.unmatched }));
+  if (tally.partial)
+    metricNotes.push(t("metric.partialShort", { n: tally.partial }));
+  if (tally.drifted)
+    metricNotes.push(t("metric.driftedShort", { n: tally.drifted }));
+  if (tally.disabled)
+    metricNotes.push(t("metric.disabledShort", { n: tally.disabled }));
   if (tally.skipped)
     metricNotes.push(t("metric.skipShort", { n: tally.skipped }));
 

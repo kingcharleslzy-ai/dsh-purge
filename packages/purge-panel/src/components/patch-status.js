@@ -76,6 +76,8 @@ export function tallyPatches(rows) {
     pending: 0,
     unmatched: 0,
     partial: 0,
+    drifted: 0,
+    disabled: 0,
     skipped: 0,
     total: 0,
   };
@@ -125,6 +127,10 @@ export function PatchGroups({ state }) {
       notes.push(t("metric.unmatchedShort", { n: tally.unmatched }));
     if (tally.partial)
       notes.push(t("metric.partialShort", { n: tally.partial }));
+    if (tally.drifted)
+      notes.push(t("metric.driftedShort", { n: tally.drifted }));
+    if (tally.disabled)
+      notes.push(t("metric.disabledShort", { n: tally.disabled }));
     if (tally.skipped) notes.push(t("metric.skipShort", { n: tally.skipped }));
     const expanded = !!open[key];
     return h(
