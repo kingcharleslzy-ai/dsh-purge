@@ -24,6 +24,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Install locked documentation dependencies
+        run: npm ci --ignore-scripts --omit=dev --legacy-peer-deps
       - name: Refresh and validate credits
         env:
           GH_TOKEN: ${{ github.token }}
