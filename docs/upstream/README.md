@@ -325,7 +325,17 @@ dsh-purge --uninstall
 # /purge uninstall
 ```
 
-Plugin config lives in `cordis.patch.yml` (`postPrompt` is empty by default):
+<!-- legacy-standalone-config -->
+> [!WARNING]
+> **Do not copy the YAML below into the community build.** It belongs to the standalone
+> `dsh-purge` 1.0.x package. The community build ships `dsh-purge-community`, and its bundle
+> patch already registers this entry (`id: dsh-purge`, `name: dsh-purge-community`). Adding a
+> second `- insert:` entry with `name: 'dsh-purge'` makes the host log
+> `1 entry did not activate … Cannot find package 'dsh-purge'` and the plugin never loads.
+> To change plugin options, merge into the `config` of the **existing** `id: dsh-purge` entry
+> in the profile — never add a new entry. See [installation and troubleshooting](../INSTALLATION.md).
+
+Plugin config lives in `cordis.patch.yml` (`postPrompt` is empty by default) — **standalone 1.0.x only, see the warning above**:
 
 ```yaml
 - insert:
