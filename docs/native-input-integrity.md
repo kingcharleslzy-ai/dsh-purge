@@ -2,7 +2,7 @@
 
 ## Scope
 
-These are plugin-side data-integrity fixes, not replacements for host patches #67 or #74. Those patch definitions and their unresolved diagnostic states stay unchanged. No approval, permission, injection order, preset definition or saved preference is changed. DSH 0.2.2-rc.1 is not declared fully compatible.
+These are plugin-side data-integrity fixes, not changes to host patch definitions, approvals, permissions, injection order, preset definitions or saved preferences. During review, a separate task published 1.6.73. This branch retains those mainline changes without modifying them; the evidence below does not verify or endorse that release's host-patch compatibility claims. The current release is 1.6.74.
 
 ## Reproduced failures and changes
 

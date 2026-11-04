@@ -9,9 +9,9 @@
 [![Release](https://img.shields.io/github/v/release/kingcharleslzy-ai/dsh-purge?label=release)](https://github.com/kingcharleslzy-ai/dsh-purge/releases)
 [![Checks](https://github.com/kingcharleslzy-ai/dsh-purge/actions/workflows/community.yml/badge.svg)](https://github.com/kingcharleslzy-ai/dsh-purge/actions/workflows/community.yml)
 
-当前版本 **1.6.72** · 适配 **DSH Desktop 0.2.1-rc.5**（rc.1 / rc.2 / rc.3 同样通过） · [English](docs/README.en.md)
+当前版本 **1.6.74** · 适配 **DSH Desktop 0.2.2-rc.1**（0.2.1-rc.1 / rc.2 / rc.3 / rc.5 同样通过） · [English](docs/README.en.md)
 
-1.6.72 补全旧入口安装排障与归档示例警示，迁移时保留原配置；修复消息回调和提示词装配失败时的静默数据丢失：异常消息不再被当成空输入，提示词错误不再被替换为空提示词和空工具列表。**旧宿主补丁 #67/#74 仍未重新适配，DSH 0.2.2-rc.1 不宣称完整兼容。**[发行说明与验证边界](docs/releases/1.6.72.md)。
+1.6.74 补全旧入口安装排障与归档示例警示，迁移时保留原配置；修复消息回调和提示词装配失败时的静默数据丢失：异常消息不再被当成空输入，提示词错误不再被替换为空提示词和空工具列表。本次不改既有宿主补丁定义。[发行说明与验证边界](docs/releases/1.6.74.md)。
 
 **原项目与作者**：基于 [小杨 / YuJunZhiXue 的 dsh-purge](https://github.com/YuJunZhiXue/dsh-purge) 独立维护。原仓库已恢复；保留原作者署名、版权与 MIT 许可证。社区版由本仓库维护，并非原作者官方发行。
 
@@ -89,7 +89,7 @@ dsh-purge Community 是一个跑在你自己机器上的 Harness 附加组件。
 下面命令适用于**已经安装 `dsh` 命令、且使用 `web` profile 的 CLI/Web 用户**，在 macOS/Linux 终端或 Windows PowerShell 中运行。桌面版用户优先用上面的界面；不要为了安装插件再用 `npx` 下载另一套宿主。
 
 ```sh
-dsh plugin --profile web add "https://github.com/kingcharleslzy-ai/dsh-purge/releases/download/v1.6.72/dsh-purge-community-1.6.72.tgz"
+dsh plugin --profile web add "https://github.com/kingcharleslzy-ai/dsh-purge/releases/download/v1.6.74/dsh-purge-community-1.6.74.tgz"
 ```
 
 `web` 必须与实际启动的 profile 一致；自定义数据目录需要沿用该实例的 `DSH_HOME`。命令使用本次发行的固定版本 URL；不是 `npm install -g`，也不是安装裸 npm 包名。本项目通过 GitHub 发行，**不要替换成 `add dsh-purge` 或 `add dsh-purge-community`**。官方 CLI 的安装不会额外运行我们安装器的 Release SHA256 比对及迁移快照；需要这些功能时选方式三。[官方 CLI 安装说明](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/user/develop/basic/publish.zh.md)
@@ -191,8 +191,8 @@ sh "$PURGE_INSTALL_DIR/install.sh" --dry-run
 
 | 组件 | 值 |
 | --- | --- |
-| 插件 | `dsh-purge-community` 1.6.72 |
-| 已验证宿主 | DSH Desktop 0.2.1-rc.1 / 0.2.1-rc.2 / 0.2.1-rc.3 / 0.2.1-rc.5 |
+| 插件 | `dsh-purge-community` 1.6.74 |
+| 已验证宿主 | DSH Desktop 0.2.2-rc.1 / 0.2.1-rc.1 / 0.2.1-rc.2 / 0.2.1-rc.3 / 0.2.1-rc.5 |
 | 其它宿主 | 允许安装，自检会标「未验证」；先看 `diagnose` |
 | Node | ≥18（桌面版自带运行时即可） |
 

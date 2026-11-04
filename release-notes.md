@@ -1,4 +1,4 @@
-# 1.6.72
+# 1.6.74
 
 修复插件运行层两处会丢失正常输入的错误兜底，保留现有有效请求、消息过滤选择、提示词和预设设置。
 
@@ -12,13 +12,37 @@
 
 本地完整回归 509 项通过、21 项条件跳过；Mac 与 Windows 4090 隔离 Electron 的 13 项消息/错误契约测试及 7 组真实原生服务检查通过。检查覆盖首轮、第二轮、作用域切换、并行与子作用域、异常传播和故障移除后恢复。没有调用模型，也不代表完整 GUI 预设选择或全部插件端到端验收。
 
-**宿主补丁 #67/#74 定义及未适配状态保持不变，本版不是强制注入或审批绕过补丁的恢复。DSH 0.2.2-rc.1 仍不宣称完整兼容。**既有 Windows 4090 Defender 完整回滚阻断和 #127 待确认事项不在本次修复范围内。
+本次改动不修改既有宿主补丁定义，不承担 1.6.73 的宿主适配或全功能验收结论；仅验证本文列出的消息、提示词错误传播和安装文档范围。既有 Windows 4090 Defender 完整回滚阻断和 #127 待确认事项不在本次修复范围内。
 
 感谢 @longyanbo1224-debug 提交 PR #131 的归档文档改进。
 
-不修改用户设置、提示词或预设，不自动重启 DSH。详细证据见 [运行验证记录](https://github.com/kingcharleslzy-ai/dsh-purge/blob/v1.6.72/docs/native-input-integrity.md)。
+不修改用户设置、提示词或预设，不自动重启 DSH。详细证据见 [运行验证记录](https://github.com/kingcharleslzy-ai/dsh-purge/blob/v1.6.74/docs/native-input-integrity.md)。
 
 ---
+
+# 1.6.73
+
+## DSH 0.2.2-rc.1 适配：8 条旧补丁按新宿主重写
+
+0.2.2-rc.1 把审批、沙箱、观察策略、交付物提示词拆到了新包，旧锚点全部失配。逐条对照原始 0.2.2 源码重写：
+
+| 补丁 | 新位置 / 新做法 |
+|---|---|
+| #14 升级无条件授信 | \`dsh-sandbox\` 的 \`approveEscalation\` 整体短路为直接返回目标模式（连严格加宽检查和审批服务依赖一起移除） |
+| #17 观察策略放行 | 0.2.2 把 edit/delete 收进 \`requirePresent\`，改为直接返回；写意图保持无条件 |
+| #40 complete 注入保留 | 新版 assemble 返回里多了 \`tools\`，按新回填写；complete 段与 dsh-purge 段同时保留 |
+| #54 交付物禁令 | 提示词搬到 \`dsh-deliverable-file-references\`，按新包定位后删除禁令句 |
+| #60 run_code 审批教学 | 搬到 \`dsh-tool-executor-ptc\`（含 types），四处文案全部改为"审批自动放行" |
+| #62 审批通道缺失即拒 | 搬到 \`dsh-tools/lib/pipeline.js\` 与 \`types/pipeline.js\`，\`serviceAsk\` 直接返回 allow |
+| #67 messages 缺失崩溃守卫 | 缩进变化，改成缩进无关的正则，仍只加可选链守卫 |
+| #74 先装配再 pre-step | 新代码把 selection/toolSet 插在中间，钩子改挂在 claim 之后、selection 之前 |
+| #82 桌面壳 profile 兜底 | 0.2.2 已显式传 \`profile: "desktop"\`，本补丁降级为无副作用的标记（\`silentWhenMissing\`），不再报漂移 |
+
+真机结果：84 条补丁 **0 drift**；\`selfcheck\` 全绿；\`apply\` 后 #14/#17/#40/#54/#60/#62/#67/#74 全部 applied。
+
+## 验证
+
+\`npm test\` 489 通过 / 0 失败（更新 3 条闸门指纹与 #40 锚点夹具，补丁语义变化都记录在测试里）。
 
 # 1.6.71
 
