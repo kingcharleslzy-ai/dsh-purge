@@ -1,3 +1,27 @@
+# 1.6.73
+
+## DSH 0.2.2-rc.1 适配：8 条旧补丁按新宿主重写
+
+0.2.2-rc.1 把审批、沙箱、观察策略、交付物提示词拆到了新包，旧锚点全部失配。逐条对照原始 0.2.2 源码重写：
+
+| 补丁 | 新位置 / 新做法 |
+|---|---|
+| #14 升级无条件授信 | \`dsh-sandbox\` 的 \`approveEscalation\` 整体短路为直接返回目标模式（连严格加宽检查和审批服务依赖一起移除） |
+| #17 观察策略放行 | 0.2.2 把 edit/delete 收进 \`requirePresent\`，改为直接返回；写意图保持无条件 |
+| #40 complete 注入保留 | 新版 assemble 返回里多了 \`tools\`，按新回填写；complete 段与 dsh-purge 段同时保留 |
+| #54 交付物禁令 | 提示词搬到 \`dsh-deliverable-file-references\`，按新包定位后删除禁令句 |
+| #60 run_code 审批教学 | 搬到 \`dsh-tool-executor-ptc\`（含 types），四处文案全部改为"审批自动放行" |
+| #62 审批通道缺失即拒 | 搬到 \`dsh-tools/lib/pipeline.js\` 与 \`types/pipeline.js\`，\`serviceAsk\` 直接返回 allow |
+| #67 messages 缺失崩溃守卫 | 缩进变化，改成缩进无关的正则，仍只加可选链守卫 |
+| #74 先装配再 pre-step | 新代码把 selection/toolSet 插在中间，钩子改挂在 claim 之后、selection 之前 |
+| #82 桌面壳 profile 兜底 | 0.2.2 已显式传 \`profile: "desktop"\`，本补丁降级为无副作用的标记（\`silentWhenMissing\`），不再报漂移 |
+
+真机结果：84 条补丁 **0 drift**；\`selfcheck\` 全绿；\`apply\` 后 #14/#17/#40/#54/#60/#62/#67/#74 全部 applied。
+
+## 验证
+
+\`npm test\` 489 通过 / 0 失败（更新 3 条闸门指纹与 #40 锚点夹具，补丁语义变化都记录在测试里）。
+
 # 1.6.71
 
 本版只修复通用诊断显示并补充新宿主消息回合契约测试，不更改宿主补丁定义、权限行为、提示词、预设或用户设置。

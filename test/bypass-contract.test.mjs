@@ -16,10 +16,10 @@ const GATE_FINGERPRINTS = {
   11: "f732bb54043fe3f6",
   12: "e7e94c2c5d5d6e0f",
   13: "eac61898ab7bddde",
-  14: "8a7c12ba2de85245",
+  14: "7aec29a1b4b82ddb",
   15: "68bd19d2e61b65bb",
   16: "9698a6c3b4e9e7ba",
-  17: "975df12b54173ecb",
+  17: "4a6132d95ce052a0",
   30: "c844cddcc7933514",
   31: "f80165c28dc19a5e",
   34: "1ecd46f5b4067b0f",
@@ -30,7 +30,7 @@ const GATE_FINGERPRINTS = {
   61: "c17dcb85eded7e36",
   63: "b92dd05efb4ba817",
   66: "a97a223234457fee",
-  67: "8cfd0fd1a4e97f0a",
+  67: "71232b69177aa8e0",
   68: "2590e742617f1242",
 };
 

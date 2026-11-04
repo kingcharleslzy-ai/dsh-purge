@@ -12,7 +12,7 @@ const patch = (id) => {
 
 const WEB_PROMPT = "const WEB_SURFACE_PROMPT = `You are interacting with the user through the DeepSeek Harness Web GUI whose URL the runtime context names. When the user refers to \"this page\", \"this GUI\", or \"this app\" without naming another target, they mean this GUI. The browser provides no implicit DOM, route, or screenshot context. The client-plugin HMR receiver is active, but client-plugin changes reload without a refresh only while \\`pnpm run dev:web\\` is also running from this same checkout to rebuild their bundles; verify that watcher before promising automatic updates. Every other change — the apps/web shell and plain packages — requires rebuilding the affected Web artifacts and verifying this existing URL after a page refresh. Starting another server does not update this GUI. The apps/web Vite entry builds the shell but is not a standalone application because only dsh web injects window.__DSH_BOOT__. Do not start a replacement server unless the user asks; if one is needed, use a managed background job and verify its exact URL.`;";
 
-const SYSTEM_PROMPT_ASSEMBLE = "\t\tconst transformed = await this.ctx.waterfall(scopeTarget(this, scope), \"system-prompt/assemble\", assembly, context, () => Promise.resolve(assembly));\n\t\tif (completeSection === void 0 && !runtimeContextSuppressed) return transformed;\n\t\tconst requiredContexts = new Set([...contextByName.values()].filter((entry) => entry.required === true).map((entry) => entry.name));\n\t\treturn {\n\t\t\t...transformed,\n\t\t\tsections: completeSection === void 0 ? transformed.sections : [completeSection],\n\t\t\tcontexts: runtimeContextSuppressed ? transformed.contexts.filter((entry) => requiredContexts.has(entry.name)) : transformed.contexts\n\t\t};\n";
+const SYSTEM_PROMPT_ASSEMBLE = "\t\tconst transformed = await this.ctx.waterfall(scopeTarget(this, scope), \"system-prompt/assemble\", assembly, context, () => Promise.resolve(assembly));\n\t\tif (completeSection === void 0 && !runtimeContextSuppressed) return {\n\t\t\t...transformed,\n\t\t\ttools\n\t\t};\n\t\tconst requiredContexts = new Set([...contextByName.values()].filter((entry) => entry.required === true).map((entry) => entry.name));\n\t\treturn {\n\t\t\t...transformed,\n\t\t\ttools,\n\t\t\tsections: completeSection === void 0 ? transformed.sections : [completeSection],\n\t\t\tcontexts: runtimeContextSuppressed ? transformed.contexts.filter((entry) => requiredContexts.has(entry.name)) : transformed.contexts\n\t\t};\n";
 
 const CONVERSATION_APPEND = "\t\t\tappend(record) {\n\t\t\t\tconst event = record.event;\n\t\t\t\tif (this.inputs.has(event.seq)) return \"none\";\n\t\t\t\tif (this.revised.size > 0) this.revised.clear();\n\t\t\t\tthis.inputs.set(event.seq, record);\n";
 
@@ -34,12 +34,12 @@ test("0.2.1 web-surface prompt: #32 neutralizes the product name, #53 drops iden
   assert.equal(applyReplacementsToText(after53, patch(53)).changed, false);
 });
 
-test("0.2.1 complete preset still carries the dsh-purge inject after assemble", () => {
+test("0.2.2 complete preset still carries the dsh-purge inject after assemble", () => {
   const out = applyReplacementsToText(SYSTEM_PROMPT_ASSEMBLE, patch(40));
   assert.equal(out.changed, true);
   assert.ok(out.text.includes("const dshPurgeSections ="));
-  // complete 模式：注入段排在官方段之前（普通分支保持宿主原顺序）。
-  assert.ok(out.text.includes("[...dshPurgeSections, ...dshPurgeRest]"));
+  // complete 模式保留原 complete 段，并把注入段一并带上。
+  assert.ok(out.text.includes("[completeSection, ...dshPurgeSections]"));
   assert.ok(out.text.includes("const requiredContexts = new Set("));
   assert.ok(out.text.includes("requiredContexts.has(entry.name)"));
   assert.equal(applyReplacementsToText(out.text, patch(40)).changed, false);
