@@ -30,7 +30,9 @@ const GATE_FINGERPRINTS = {
   61: "c17dcb85eded7e36",
   63: "b92dd05efb4ba817",
   66: "a97a223234457fee",
-  67: "71232b69177aa8e0",
+  // 1.6.74: correct the literal newline escape and migrate only its malformed
+  // output; the two existing message-length conditions are unchanged.
+  67: "1cb9cbbaf23fb2d8",
   68: "2590e742617f1242",
 };
 

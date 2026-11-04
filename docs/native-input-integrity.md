@@ -2,7 +2,7 @@
 
 ## Scope
 
-These are plugin-side data-integrity fixes, not changes to host patch definitions, approvals, permissions, injection order, preset definitions or saved preferences. During review, a separate task published 1.6.73. This branch retains those mainline changes without modifying them; the evidence below does not verify or endorse that release's host-patch compatibility claims. The current release is 1.6.74.
+These are plugin-side data-integrity fixes, not changes to approvals, permissions, injection order, preset definitions or saved preferences. A later startup incident added one narrow syntax repair to patch #67, described below. During review, a separate task published 1.6.73. This branch retains those mainline changes except for that malformed newline; the evidence below does not verify or endorse that release's host-patch compatibility claims. The current release is 1.6.74.
 
 ## Reproduced failures and changes
 
@@ -39,3 +39,15 @@ The historical standalone examples remain unchanged inside their YAML fences, wi
 The original guard passed with an added unquoted legacy entry and also passed after the guarded example was removed. The replacement parses YAML fenced entry lists and has eight regression cases covering quoting, subpaths, non-entry prompt data, misplaced warnings, removed examples and cyclic aliases. Five existing migration/rollback tests are now in the default suite. No installer deletion or migration behavior was added by this documentation change.
 
 After integration with mainline 1.6.73, the complete local suite again passed 509 cases with 21 conditional skips. The eight documentation checks and five migration/rollback cases also passed under isolated Electron 44.7.0 on the Windows 4090, with the child exit code and TAP summary checked. These are regression/service checks, not a new full application installation acceptance. The 1.6.74 packed artifact passed import, CLI and bundle smoke checks.
+
+## Reproduced 1.6.73 startup failure
+
+The user's crash log identified the required agent-loop module failing to import with `SyntaxError: Missing catch or finally after try`. Syntax checking the installed full module reproduced it. Patch #67 emitted a literal backslash-n after a line comment, swallowing the following if statement and unbalancing the try block. The installed plugin was 1.6.73; the unpublished review fixes were not installed there.
+
+Both the host module and installed template were backed up, then only the malformed newline was corrected. The profile patch, profile package metadata and override-state hashes were unchanged. The user manually exited/reopened DSH and confirmed recovery; the new host process returned HTTP 401 at its current loopback listener, with no new crash from that process. No global third-party disable or automated restart was used.
+
+The release fixes the template and adds an exact migration for the historical malformed join. Diagnostics reject that known damaged marker. Three regression cases cover LF/CRLF and indentation, compile the actual shipped turn method, reproduce the syntax failure, verify byte-equivalent repaired output and idempotence, and retain unrelated syntax errors/escaped strings. Applying the migration to a private copy of the real damaged full module produced exactly the locally repaired file, which passed syntax checking. Existing message-length conditions and other patches are unchanged. Only #67's expected test fingerprint is updated for the documented syntax repair.
+
+An initial Windows CI failure was in the documentation test fixture's removal regex, which assumed LF. It now exercises both LF and CRLF and asserts the fixture was actually removed; the parser itself already supported both. This is not treated as a passing CI run: the corrected commit must pass all jobs before publication.
+
+With the startup repair included, the final local root suite passed 512 tests with 21 conditional/platform skips and zero failures. Windows 4090 isolated Electron passed all 16 documentation, migration and newline-syntax regression cases.
