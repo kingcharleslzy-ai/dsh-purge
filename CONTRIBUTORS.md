@@ -23,6 +23,8 @@
 | [Minggle](https://github.com/Minggle) | [PR #99](https://github.com/kingcharleslzy-ai/dsh-purge/pull/99)：更新代理、GitHub token 配置及界面贡献；集成时补充请求隔离和真实 TLS 测试。 |
 | [Steooenwolf-666](https://github.com/Steooenwolf-666) / [hans](https://github.com/a320583781-create) | [PR #103](https://github.com/kingcharleslzy-ai/dsh-purge/pull/103)：恢复原生技能目录发现与回归测试。 |
 
+| [longyanbo1224-debug](https://github.com/longyanbo1224-debug) | [PR #131](https://github.com/kingcharleslzy-ai/dsh-purge/pull/131)：归档独立包配置警示与文档守卫提案；集成时补充配置保留、合法别名和 YAML 解析回归。 |
+
 第三方代码来源另见 [NOTICE.md](NOTICE.md)。欢迎通过 issue 提供复现与验证反馈，或通过 PR 贡献代码。
 
 ## 头像名单维护

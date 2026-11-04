@@ -325,14 +325,13 @@ dsh-purge --uninstall
 
 <!-- legacy-standalone-config -->
 > [!WARNING]
-> **下面这段 YAML 不要照抄进社区版。** 它属于上游 1.0.x 的独立包 `dsh-purge`。社区版装的包是
-> `dsh-purge-community`，bundle patch 已经注册好同一个条目（`id: dsh-purge`、`name: dsh-purge-community`）。
-> 再手工加一条 `name: 'dsh-purge'` 的 `- insert:`，宿主启动时会报
-> `1 entry did not activate … Cannot find package 'dsh-purge'`，插件不会激活。
-> 要改插件选项，请合并进 profile 里**已有**那条 `id: dsh-purge` 的 `config`，不要新增条目。
+> **这是历史独立包示例，不要照抄进社区版。** 社区 bundle 已提供插件入口，
+> 再手工插入可能造成重复入口或旧包名解析失败。受支持的依赖别名本身不代表错误，
+> 应先核实当前 profile 和实际解析到的包。
+> 迁移时保留并合并原配置，不整段删除 insert，也不按名称前缀清理。
 > 详见[安装与故障排查](../INSTALLATION.md)。
 
-插件配置在 `cordis.patch.yml`（`postPrompt` 默认为空）——**仅适用于 1.0.x 独立包，见上方警告**：
+历史独立包的 `cordis.patch.yml` 示例（`postPrompt` 默认为空）：
 
 ```yaml
 - insert:

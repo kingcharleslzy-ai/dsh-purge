@@ -1,6 +1,7 @@
 // 文档跟着版本走：版本号、发行说明首行、英文 README 的版本行必须一致。
 // 放在 CI 里跑，避免"代码发版了、README 还停在上一个版本"。
 import fs from "node:fs";
+import { checkInstallExamples } from "./lib/check-install-examples.mjs";
 
 const read = (file) => fs.readFileSync(file, "utf8");
 const pkg = JSON.parse(read("package.json"));
@@ -53,21 +54,12 @@ for (const file of ["README.md", "docs/README.en.md"]) {
 if (/安装器不会改动 DSH 本体|installer leaves DSH itself untouched/.test(readme + readmeEn))
   problems.push("安装说明不能承诺安装器完全不写宿主目录");
 
-// 归档的上游 README 里有一段面向 1.0.x 独立包的 `- insert:` 配置。社区版照抄它会多出一条
-// `name: 'dsh-purge'` 条目，而本包叫 `dsh-purge-community` → 宿主启动报
-// `1 entry did not activate … Cannot find package 'dsh-purge'`，插件不激活。
-// 归档正文保持原样，但必须带警示标记；社区自己的文档里不能出现这种照抄入口。
-const LEGACY_NOTICE = "<!-- legacy-standalone-config -->";
-for (const file of ["docs/upstream/README.md", "docs/upstream/README.zh-CN.md"]) {
-  const doc = read(file);
-  if (!doc.includes(LEGACY_NOTICE)) problems.push(`${file} 缺少旧版独立包配置警示（${LEGACY_NOTICE}）`);
-  else if (!doc.slice(doc.indexOf(LEGACY_NOTICE)).includes("name: 'dsh-purge'"))
-    problems.push(`${file} 的警示必须紧贴那段 name: 'dsh-purge' 的示例`);
-}
-for (const file of ["README.md", "README.zh-CN.md", "docs/README.en.md", "docs/INSTALLATION.md", "docs/MAINTENANCE.md", "AGENTS.md"]) {
-  if (/name:\s*['"]dsh-purge['"]/.test(read(file)))
-    problems.push(`${file} 出现绑定旧包名 dsh-purge 的条目示例；社区版应为 dsh-purge-community`);
-}
+// Historical examples remain intact, with a warning attached to the actual YAML.
+// Parse entries so quote style cannot bypass the guard and prose is not mistaken for config.
+for (const file of ["docs/upstream/README.md", "docs/upstream/README.zh-CN.md"])
+  for (const problem of checkInstallExamples(read(file), { archive: true })) problems.push(`${file}: ${problem}`);
+for (const file of ["README.md", "README.zh-CN.md", "docs/README.en.md", "docs/INSTALLATION.md", "docs/MAINTENANCE.md", "AGENTS.md"])
+  for (const problem of checkInstallExamples(read(file))) problems.push(`${file}: ${problem}`);
 
 if (problems.length) {
   console.error("✗ 文档与版本不一致：");

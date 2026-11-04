@@ -487,3 +487,11 @@ Windows 换包仅对真实共享/锁冲突继续等待；其他错误保留 `det
 `PURGE_INVALID_PRE_STEP_DECISION` 表示回调返回的消息字段不符合契约，应定位该回调；不要补空数组假装本轮完成，也不要重放被拒绝的任务。提示词装配失败保留原始错误，不发送空提示词或清空工具列表。提供方恢复后可再次尝试正常请求。
 
 此修复在插件运行层处理数据完整性，未重新适配宿主补丁 #67/#74，不能把它们改成已生效，也不能声称恢复了强制注入。普通提示词实际模块测试及边界见 [测试记录](docs/native-input-integrity.md)。不改用户配置，不自动应用或重启。
+
+### 旧入口导入失败：先定位，再保留配置迁移
+
+`Cannot find package 'dsh-purge'` 不能单凭包名判定重复安装。先核实报错进程使用的 home/profile、bundle、依赖别名和实际包 manifest/链接。旧依赖别名解析到社区包时仍受支持。
+
+如已确认手工 insert 与 bundle 入口重复，备份后逐字段保留原 config（包括提示词、未知项、false 和空字符串），合并为同 ID 配置覆盖；冲突或未知入口字段先停下核对。只移除那个已确认重复项，保留 insert 中其他插件，不按 dsh-purge-redteam 等前缀删除，不编辑已安装 bundle。原生错误仍在时按完整异常排查，不继续盲删。详见 [安装排障](docs/INSTALLATION.md#启动告警cannot-find-package-dsh-purge)。
+
+归档示例保留原文并紧邻警告。`check:docs` 解析 YAML fenced 示例，识别有/无引号的旧模块入口，不把普通提示词和报错文字当成安装入口；对应回归为 `test/install-docs.test.mjs`。迁移/回滚配置保留回归为 `test/market-migration.test.mjs`，均纳入默认测试。

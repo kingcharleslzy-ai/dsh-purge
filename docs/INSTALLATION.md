@@ -70,25 +70,25 @@ dsh-purge (dsh-purge): failed to import
 Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'dsh-purge' imported from <profile>
 ```
 
-原因：profile 的 `cordis.patch.yml` 里被手工加了一段 `- insert:`，把条目绑到了旧独立包名：
+这条错误表示当前 profile 无法解析某个入口引用，**不能只凭错误文本认定是重复配置**。归档上游 README 的历史独立包示例若被照抄，可能留下指向旧包名的手工入口；依赖未安装、链接失效、选错 profile 或 bundle 未启用也可能造成导入失败。
+
+按以下顺序排查，不要卸载重装或按名称前缀批量删除：
+
+1. 确认报错进程的 DSH、home、profile，以及实际启用的 bundle。检查该 profile 的依赖、实际包的 `package.json` 和链接目标是否存在。社区包名是 `dsh-purge-community`；历史依赖别名 `dsh-purge` 若实际解析到社区包，也受支持，**不能仅凭别名就删除**。
+2. 修改前备份该 profile 的 `cordis.patch.yml`、`package.json` 和现有锁文件。保留完整错误、入口 ID 和解析路径用于核对，分享日志前脱敏。
+3. 只有确认 bundle 已提供对应入口、profile 又手工插入了同一个入口时，才迁移这一个重复项。将原项的 **全部 `config`（包括提示词、未知字段和显式 false/空字符串）** 合并到同 ID 的 profile 配置覆盖项；出现同名字段冲突时，先让用户决定保留哪一值，不以默认值覆盖。若原项还有无法确认含义的入口字段，先保留并报告，不擅自丢弃。
+4. 核对配置保留后，只移除已确认重复的那个插入项。一个 `insert` 容器可能还有其他插件，必须保留；只有容器变空时才可移除空容器。`dsh-purge-redteam*` 等是 bundle 的合法入口，**不能按前缀删除**，也不要直接修改已安装包里的 bundle 源文件。
+5. 若入口仅存在于 bundle，可在 profile 按同一个 `id` 添加配置覆盖，不再添加 `insert` 或 `name`。下面只是结构示例；实际迁移须使用用户原来的完整配置，不要照抄示例值覆盖：
 
 ```yaml
-- insert:
-    - id: dsh-purge
-      name: dsh-purge        # 社区版没有这个名字的包，本包叫 dsh-purge-community
-      inject: [systemPrompt, tools]
+- id: dsh-purge
+  config:
+    autoUpdateOnStart: false
 ```
 
-社区版的这条入口已经由 bundle patch 注册（`id: dsh-purge`、`name: dsh-purge-community`），手工再 `insert` 一份既多余，又会因为包名不存在而导入失败。这段 YAML 抄自归档的上游 README（`docs/upstream/README.md`），那份文档对应的是 1.0.x 独立包，不能照抄。
+6. 核对最终有效入口、依赖解析和保留的配置后，由用户选择何时完整退出并重新打开 DSH，不自动重启。仍失败时，根据完整异常区分依赖、链接、profile 或服务故障，**不能认定还有重复入口而继续删除**。有歧义时停止迁移，保留备份和现场。
 
-处理：
-
-1. 备份 `cordis.patch.yml`；
-2. 删掉那段 `- insert:`（含里面的 `id: dsh-purge` / `name: dsh-purge`：`config` 里若已有你要的选项，先抄到别处再删）；
-3. 检查是否还多了 `dsh-purge-redteam*` 之类的重复条目，一并删掉；
-4. 重启 DSH。警告消失即修复；仍报错说明 profile 里还有第二处重复入口。
-
-要改插件选项（`excludePresets`、`capabilityProtocol` 等），只改**已有**那条 `id: dsh-purge` 的 `config`，见 [#53 维护说明](maintenance-issue-53.md)。安装器遇到这种手工入口会拒绝安装并保留原配置，不会替你删。
+安装器遇到不能安全判断的手工入口仍会拒绝迁移并保留配置；本文不增加自动删配置逻辑。更详细的配置合并说明见 [维护说明](maintenance-issue-53.md)。
 
 ## 失败、备份与回滚
 
