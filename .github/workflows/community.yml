@@ -158,3 +158,29 @@ jobs:
           "$engine" --test test/remove-tree.test.mjs
           "$engine" scripts/check-linked-install-runtime.mjs "$RUNNER_TEMP/purge-baseline/dsh-purge-community-1.6.36.tgz" "dsh-purge-community-$(node -p 'require("./package.json").version').tgz"
           "$engine" scripts/check-npm-alias-runtime.mjs "$RUNNER_TEMP/purge-baseline/dsh-purge-community-1.6.36.tgz" "dsh-purge-community-$(node -p 'require("./package.json").version').tgz"
+
+  native-prompt-022:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --ignore-scripts --legacy-peer-deps
+      - name: Official prompt and persona services in isolated Electron
+        shell: bash
+        run: |
+          set -euo pipefail
+          runtime="$RUNNER_TEMP/purge-native-prompt-022"
+          npm install --prefix "$runtime" --ignore-scripts --no-audit --no-fund @deepseek-ai/cordis@4.1.0 @deepseek-ai/dsh-system-prompt@0.2.2-rc.1 @deepseek-ai/dsh-persona@0.2.2-rc.1 electron@44.7.0
+          node "$runtime/node_modules/electron/install.js"
+          export PURGE_TEST_HOST="$runtime/node_modules/@deepseek-ai"
+          export PURGE_ELECTRON_EXEC="$runtime/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron"
+          if [ "$RUNNER_OS" = Windows ]; then
+            export PURGE_ELECTRON_EXEC="$runtime/node_modules/electron/dist/electron.exe"
+          fi
+          node scripts/check-native-prompt-electron.mjs

@@ -325,7 +325,16 @@ dsh-purge --uninstall
 # /purge uninstall
 ```
 
-Plugin config lives in `cordis.patch.yml` (`postPrompt` is empty by default):
+<!-- legacy-standalone-config -->
+> [!WARNING]
+> **Historical standalone-package example: do not copy it into the community build.**
+> The community bundle already supplies its plugin entries. Adding another manual entry
+> can duplicate them or fail to resolve the old package name. A supported dependency alias
+> is not itself an error: inspect the active profile and actual package first.
+> Preserve and merge existing configuration; do not delete an entire insert group or entries
+> by name prefix. See [installation and troubleshooting](../INSTALLATION.md).
+
+Historical standalone plugin configuration (`postPrompt` is empty by default):
 
 ```yaml
 - insert:

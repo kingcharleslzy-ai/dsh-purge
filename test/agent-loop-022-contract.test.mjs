@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
+import { installMnemonMessageStrip } from '../lib/index.js';
 const fixture = JSON.parse(fs.readFileSync(new URL('./fixtures/agent-loop-022-native.json', import.meta.url)));
 const methods = vm.runInNewContext(`({${fixture.preStep},${fixture.turn}})`, {
   AbortController, Error,
@@ -13,7 +14,12 @@ const methods = vm.runInNewContext(`({${fixture.preStep},${fixture.turn}})`, {
   LlmError: class extends Error {}, ToolActivationError: class extends Error {},
   ToolCallRecovery: class { observe() {} results() { return []; } },
 });
-function agent({ messages = [], override, modelError } = {}) {
+function agent({ messages = [], override, modelError, messageGuard = false } = {}) {
+  let guard;
+  if (messageGuard) installMnemonMessageStrip({
+    on(_name, fn) { guard = fn; return () => {}; },
+    effect(fn) { fn(); },
+  }, {stripMnemon:false});
   const events = [], seen = [];
   let disposed = 0;
   const value = {
@@ -27,7 +33,10 @@ function agent({ messages = [], override, modelError } = {}) {
     },
     runtimeContext: { project: () => undefined },
     dispatch: {
-      waterfall: async (_event, _args, native) => override ? override() : native(),
+      waterfall: async (_event, _args, native) => {
+        const next = () => override ? override() : native();
+        return guard ? guard(_args, next) : next();
+      },
       serial: async () => {},
     },
     ctx: { on: () => () => {} },
@@ -89,4 +98,19 @@ test('generation errors retain the original failure and close the step', async (
   assert.equal(a.events.at(-1).data.reason.kind, 'error');
   assert.equal(a.events.filter(e => e.type === 'step/end').length, 1);
   assert.equal(a.disposed(), 1);
+});
+
+test('installed message guard records malformed decisions as errors, never completed turns', async () => {
+  const a = agent({ messages:[{content:['KEEP INPUT']}], messageGuard:true, override:()=>({kind:'enter'}) });
+  await assert.rejects(a.value.turn(), e=>e.code==='PURGE_INVALID_PRE_STEP_DECISION');
+  assert.equal(a.seen.length,0);
+  assert.equal(a.events.at(-1).data.reason.kind,'error');
+  assert.equal(a.disposed(),1);
+});
+test('installed message guard keeps native input and rejection semantics', async () => {
+  const message={content:['KEEP INPUT']};
+  const a = agent({messages:[message],messageGuard:true});
+  await a.value.turn();assert.equal(a.seen[0][0],message);assert.equal(a.disposed(),1);
+  const b = agent({messageGuard:true,override:()=>({kind:'reject'})});
+  await b.value.turn();assert.equal(b.events.at(-1).data.reason.kind,'blocked');assert.equal(b.seen.length,0);
 });

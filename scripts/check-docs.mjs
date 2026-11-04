@@ -1,6 +1,7 @@
 // 文档跟着版本走：版本号、发行说明首行、英文 README 的版本行必须一致。
 // 放在 CI 里跑，避免"代码发版了、README 还停在上一个版本"。
 import fs from "node:fs";
+import { checkInstallExamples } from "./lib/check-install-examples.mjs";
 
 const read = (file) => fs.readFileSync(file, "utf8");
 const pkg = JSON.parse(read("package.json"));
@@ -52,6 +53,13 @@ for (const file of ["README.md", "docs/README.en.md"]) {
 }
 if (/安装器不会改动 DSH 本体|installer leaves DSH itself untouched/.test(readme + readmeEn))
   problems.push("安装说明不能承诺安装器完全不写宿主目录");
+
+// Historical examples remain intact, with a warning attached to the actual YAML.
+// Parse entries so quote style cannot bypass the guard and prose is not mistaken for config.
+for (const file of ["docs/upstream/README.md", "docs/upstream/README.zh-CN.md"])
+  for (const problem of checkInstallExamples(read(file), { archive: true })) problems.push(`${file}: ${problem}`);
+for (const file of ["README.md", "README.zh-CN.md", "docs/README.en.md", "docs/INSTALLATION.md", "docs/MAINTENANCE.md", "AGENTS.md"])
+  for (const problem of checkInstallExamples(read(file))) problems.push(`${file}: ${problem}`);
 
 if (problems.length) {
   console.error("✗ 文档与版本不一致：");

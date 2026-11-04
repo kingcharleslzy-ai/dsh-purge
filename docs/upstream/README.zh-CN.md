@@ -323,7 +323,15 @@ dsh-purge --uninstall
 # /purge uninstall
 ```
 
-插件配置在 `cordis.patch.yml`（`postPrompt` 默认为空）：
+<!-- legacy-standalone-config -->
+> [!WARNING]
+> **这是历史独立包示例，不要照抄进社区版。** 社区 bundle 已提供插件入口，
+> 再手工插入可能造成重复入口或旧包名解析失败。受支持的依赖别名本身不代表错误，
+> 应先核实当前 profile 和实际解析到的包。
+> 迁移时保留并合并原配置，不整段删除 insert，也不按名称前缀清理。
+> 详见[安装与故障排查](../INSTALLATION.md)。
+
+历史独立包的 `cordis.patch.yml` 示例（`postPrompt` 默认为空）：
 
 ```yaml
 - insert:
