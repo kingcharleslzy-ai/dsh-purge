@@ -33,7 +33,12 @@ test('published skill command round trips a fresh challenge; echoes, stale repli
   const verify = path.resolve('scripts/exec-proof.mjs');
   const content = fs.readFileSync('skills/redteam/unauth-exploit.md', 'utf8');
   const win = process.platform === 'win32';
-  const block = content.match(win ? /```powershell\n([^\n]+)/ : /```sh\n([^\n]+)/)[1];
+  const pattern = win ? /```powershell\r?\n([^\r\n]+)/ : /```sh\r?\n([^\r\n]+)/;
+  const block = content.match(pattern)?.[1];
+  assert.ok(block, 'platform command missing from the bundled skill');
+  for (const ending of ['\n', '\r\n']) {
+    assert.equal(content.replace(/\r?\n/g, ending).match(pattern)?.[1], block);
+  }
   const fresh = () => execFileSync(process.execPath, [verify, 'new'], {encoding:'utf8'}).trim();
   const nonce = fresh(), command = block.replaceAll('NONCE', nonce);
   const reply = execFileSync(win ? 'powershell.exe' : 'sh', win ? ['-NoProfile','-NonInteractive','-Command',command] : ['-c',command], {encoding:'utf8'});
