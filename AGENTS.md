@@ -1,7 +1,7 @@
 # AGENTS.md — 给 AI agent 的 Purge 使用说明书
 
 > 这份文件是写给**在 DSH 里干活的 agent** 的，不是营销文档。
-> 当前版本：**1.6.75** · 适配 DSH Desktop **0.2.2-rc.1**（0.2.1-rc.1 / rc.2 / rc.3 / rc.5 同样通过）
+> 当前版本：**1.6.76** · 适配 DSH Desktop **0.2.2-rc.1**（0.2.1-rc.1 / rc.2 / rc.3 / rc.5 同样通过）
 > 版本号由 `npm run check:docs` 与 `package.json` 校验，发版必须同步。
 
 ---
@@ -104,7 +104,7 @@ purge-community probe new
 | `$DSH_HOME/dsh-purge-community/audit.jsonl` | 动作审计（1MB 轮转，保留 2 份）；面板「维护 → 最近动作」 |
 | `$DSH_HOME/dsh-purge/applied.json` · `installed-rev` | 上次应用的插件版本 |
 | `$DSH_HOME/dsh-purge-community/backups/<id>/` | 快照（`manifest.json` + 小文件；大文件在 `objects/`） |
-| `$DSH_HOME/.agent-presets/unrestricted/` | 无限制模式预设（首行 `# managed-by: dsh-purge` 时会被新版覆盖） |
+| `$DSH_HOME/.agent-presets/unrestricted/` | 无限制模式预设（升级保留原文；首行模板标记不代表用户授权覆盖） |
 | `$DSH_HOME/prompt-inject.md` | **用户的注入正文**，插件只读不改（除非用户点保存） |
 
 **不变量**：`prompt-inject.md`、规则集、其他插件配置，任何时候都不该被「应用」或「回滚」覆盖。
@@ -133,7 +133,7 @@ purge-community probe new
 
 | 组件 | 值 |
 | --- | --- |
-| 插件 | `dsh-purge-community` 1.6.75 |
+| 插件 | `dsh-purge-community` 1.6.76 |
 | 已验证宿主 | DSH Desktop 0.2.2-rc.1 / 0.2.1-rc.1 / 0.2.1-rc.2 / 0.2.1-rc.3 / 0.2.1-rc.5 |
 | 其它宿主 | 允许应用，但 `selfcheck` 会标"未验证"；先看 `diagnose` |
 | Node | ≥18（桌面版自带运行时即可） |
