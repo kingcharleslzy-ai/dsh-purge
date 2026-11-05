@@ -1,3 +1,28 @@
+# 1.6.77
+
+## 从上游 1.1.90 取回两条去品牌补丁
+
+上游这波（1.1.84–1.1.90）其余内容集中在红队体系、web 重启回收、Windows 换包，本 fork 都已有等价或更优实现。真正值得取的是两条提示词层补丁：
+
+- **#93 `SANDBOX_POLICY_BRAND_NEUTRAL`**：`Current DSH file policy:` → `Current file policy:` 等 3 处品牌词。**放行语义原样保留**（`approval is auto-granted` 一字未动），只是模型读到的策略描述不再自称是哪家产品。
+- **#94 `SKILL_BADGE_DESCRIPTION_NEUTRAL`**：官方徽章技能不再要求模型往交付物/PR 里塞 `powered by dsh`，改成中性署名描述。
+
+### 编号说明
+
+上游的这两条是 #89/#90，但本 fork 的 #89/#90 已被 `ASK_USER_WAIT_CAPPED` 与 `RESTORE_NATIVE_STEERING` 占用，照抄会互相干扰（试算时确实触发了 #90 冲突告警）。因此改用空闲 id **93/94**。
+
+### 契约调整
+
+- 新增 `multiHit: true`：允许某个锚点在原始宿主里合法出现多次（#93 的文案在普通与 PTC 两套描述里各有一份），`test/expect-contract.test.mjs` 的真机唯一性探针会跳过它，其余锚点仍要求恰好一次。
+- 这两条的 `replacements` 不钉 `expect`：已迁移的文件里锚点次数为 0，钉死会让重复「应用」永远 pending；marker 落地后由 `patchApplied` 短路成 `already`。
+
+## 验证
+
+- 真机 0.2.2-rc.1：86 条 → 74 applied / 2 disabled / 6 na / 4 skipped，**0 drift**；
+- `grep` 复核：#93 三处 `Current file policy:` 生效，#94 `powered by dsh` 归零、新描述就位；
+- 破甲链路复测：审批、沙箱、fs 意图、run_code 教学等闸门补丁状态未变；
+- `npm test` 536 通过 / 0 失败。
+
 # 1.6.76
 
 - #140：修复 DSH 0.2.2-rc.1 将 `list_agents` 并入主模块后红队和无限制预设加载失败的问题。注册时识别同组的工具提供者，沿用用户预设、提示词、名称和子任务策略。旧宿主继续使用独立入口。
