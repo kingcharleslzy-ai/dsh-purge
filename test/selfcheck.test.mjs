@@ -372,3 +372,20 @@ test("two applies compose branding and read-only changes on a clean or upgraded 
     assert.notEqual((await patchStatusDetail(host,patches,{dshHome:root.home,surface:"desktop"})).status[id],"applied");
   }
 });
+
+test("a clean rc.5 observation policy and either previously migrated half converge on two applies", async () => {
+  const {applyReplacementsToText} = await import("../lib/core.js");
+  const {patchApplied} = await import("../lib/core/shared.mjs");
+  const p = ALL_PATCHES.find(row => row.id === 17);
+  const native = fs.readFileSync(new URL("./fixtures/observed-state-rc5.js.txt", import.meta.url), "utf8");
+  const [write,,edit] = p.replacements;
+  for (const start of [native, native.replace(write.pattern,write.replace), native.replace(edit.pattern,edit.replace)]) {
+    assert.equal(patchApplied(start,p),false);
+    const first = applyReplacementsToText(start,p);
+    assert.equal(first.changed,true);
+    assert.equal(patchApplied(first.text,p),true);
+    const second = applyReplacementsToText(first.text,p);
+    assert.equal(second.changed,false);
+    assert.equal(second.text,first.text);
+  }
+});
