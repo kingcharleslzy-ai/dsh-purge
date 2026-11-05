@@ -40,19 +40,37 @@ test("engagement ids cannot escape the engagements directory", () => {
   });
 });
 
-test("importing evidence from outside the engagement and tmp is refused", () => {
+test("imports stay within this engagement", () => {
   withStore((store, root) => {
     const id = store.openEngagement("guard-fixture", "10.0.0.6").id;
-    // 靶标目录与临时目录之外的普通文件：不能当作截图来源复制进来
-    assert.throws(() => store.addShot(id, { path: "/etc/hosts", label: "x" }), /outside allowed roots|允许的根|path/i);
-    // 临时目录内的文件仍然允许
-    const allowed = path.join(os.tmpdir(), `allowed-${process.pid}.txt`);
-    fs.writeFileSync(allowed, "ok");
-    try {
-      const shot = store.addShot(id, { path: allowed, label: "ok" });
-      assert.ok(shot);
-    } finally {
-      fs.rmSync(allowed, { force: true });
-    }
+    const other = path.join(root, "another-task.txt");
+    fs.writeFileSync(other, "private fixture");
+    assert.throws(() => store.addShot(id, { path: other }), /outside allowed roots/i);
+    const incoming = path.join(store.dirOf(id), "incoming");
+    fs.mkdirSync(incoming);
+    fs.writeFileSync(path.join(incoming, "sample.txt"), "ok");
+    assert.ok(store.addShot(id, { path: "incoming/sample.txt" }));
+
   });
 });
+
+test("reject aliased ids and linked import sources and output directories", () => withStore((store, root) => {
+  const { id } = store.openEngagement("demo");
+  for (const alias of [".", "../demo", "a/../demo", "a\\demo", "C:demo", "demo.", "con"]) {
+    assert.throws(() => store.dirOf(alias), /path/i);
+  }
+  const outside = path.join(root, "other-task");
+  fs.mkdirSync(outside);
+  fs.writeFileSync(path.join(outside, "marker.txt"), "untouched");
+  const linkType = process.platform === "win32" ? "junction" : "dir";
+  for (const name of ["incoming", "shots", "attack-files"]) {
+    fs.symlinkSync(outside, path.join(store.dirOf(id), name), linkType);
+  }
+  const file = {target:"demo", name:"marker.txt", evidence:"fixture", content:"changed"};
+  assert.throws(() => store.addAttackFile(id, file), /symbolic link|outside allowed/i);
+  assert.throws(() => store.addShot(id, {file:"marker.txt", data_base64:"aGk="}), /symbolic link|outside allowed/i);
+  fs.unlinkSync(path.join(store.dirOf(id), "shots"));
+  assert.throws(() => store.addShot(id, {path:"incoming/marker.txt"}), /outside allowed/i);
+  assert.deepEqual(fs.readdirSync(outside), ["marker.txt"]);
+  assert.equal(fs.readFileSync(path.join(outside, "marker.txt"), "utf8"), "untouched");
+}));

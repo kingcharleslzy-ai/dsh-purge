@@ -7,6 +7,7 @@ import fs from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import {
   EVIDENCE_CONFIDENCE,
+  EVIDENCE_LEDGER_DDL,
   CONFIDENCE_REQUIRES_VERIFICATION,
   evidenceId,
   EvidenceLedger,
@@ -73,3 +74,49 @@ test("unknown registry keeps one row per normalized question", () => {
     assert.equal(registry.record({ question: "" }).ok, false);
   });
 });
+
+test("claims need an explicit verification, not a citation or copied report", () => withDb(db => {
+  const ledger = new EvidenceLedger(db);
+  const scope = { engagement_id: "fixture", operation: "sample", result: { value: 1 } };
+  const claim = ledger.record(scope).ev_id;
+  ledger.record({ ...scope, confidence: "observed", supporting_ev_ids: [claim] });
+  assert.equal(ledger.countUnresolvedClaims("fixture"), 1);
+  for (const invalid of [undefined, null, {}, []]) {
+    assert.equal(ledger.upgrade({ claimed_ev_id: claim, verified_result: invalid }).ok, false);
+  }
+  assert.equal(ledger.countUnresolvedClaims("fixture"), 1);
+  assert.equal(ledger.upgrade({ claimed_ev_id: claim, verified_result: { measured: 1 } }).ok, true);
+  assert.equal(ledger.countUnresolvedClaims("fixture"), 0);
+  assert.equal(ledger.get(claim).confidence, "inferred");
+}));
+
+test("damaged rows, invalid references and query failures cannot produce a clean ledger", () => withDb(db => {
+  const ledger = new EvidenceLedger(db);
+  const args = { operation: "sample", engagement_id: "demo", result: { value: 1 }, confidence: "observed" };
+  const { ev_id } = ledger.record(args);
+  for (const invalid of ['{"value":2}', 'truncated']) {
+    db.prepare("UPDATE evidence SET result=? WHERE ev_id=?").run(invalid, ev_id);
+    assert.throws(() => ledger.countUnresolvedClaims("demo"));
+    assert.throws(() => ledger.verify(args));
+    assert.equal(ledger.record(args).ok, false);
+  }
+  db.prepare("UPDATE evidence SET result=?, supporting_ev_ids='{}'").run(JSON.stringify(args.result));
+  assert.throws(() => ledger.countUnresolvedClaims("demo"));
+  db.exec("DROP TABLE evidence");
+  assert.throws(() => ledger.countUnverified("demo"));
+}));
+
+test("old unknowns and their indexes survive migration, withdrawal and reopen", () => withDb(db => {
+  const oldDDL = EVIDENCE_LEDGER_DDL.replace(",'withdrawn'", "");
+  db.exec(oldDDL);
+  db.exec("INSERT INTO residual_unknown(unk_id,question,resolution,revision) VALUES ('fixture','sample?','original',7)");
+  db.exec("CREATE INDEX fixture_revision ON residual_unknown(revision)");
+  const registry = new UnknownRegistry(db);
+  const before = registry.list()[0];
+  assert.equal(before.revision, 7);
+  assert.equal(before.resolution, "original");
+  assert.equal(registry.resolve("missing", "resolved").ok, false);
+  assert.equal(registry.resolve("fixture", "withdrawn", "duplicate").ok, true);
+  assert.equal(new UnknownRegistry(db).list({status:"withdrawn"})[0].resolution, "duplicate");
+  assert.ok(db.prepare("SELECT 1 FROM sqlite_schema WHERE name='fixture_revision'").get());
+}));
