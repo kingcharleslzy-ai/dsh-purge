@@ -1,4 +1,4 @@
-# managed-by: dsh-purge（插件管理：内容随版本更新；你自己改过就别留这行，插件就不会覆盖）
+# managed-by: dsh-purge（模板来源；已有用户文件仅在明确要求重置时覆盖）
 # The `unrestricted` agent preset: 无限制模式（骨架，由红队预设裁剪）。
 #
 # 只保留 agent 平面的通用部分：人设、工具行、计划/压缩/委派分组。

@@ -88,17 +88,19 @@ test("installed unrestricted preset preserves native skill discovery", () => {
   }
 });
 
-test("a plugin-managed preset is updated in place, a user-edited one is kept", () => {
+test("legacy template markers and incomplete presets never authorize a reset", () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "purge-preset-managed-"));
   try {
     installPreset({ home });
     const file = path.join(userPresetDir(home), "agent.cordis.yml");
-    // 模拟旧版本模板：仍是插件写的（带 marker），内容不同
+    // Ownership markers often survive user edits.
     fs.writeFileSync(file, "# managed-by: dsh-purge\nold template\n");
     const updated = installPreset({ home });
-    assert.equal(updated.action, "updated");
-    assert(fs.readFileSync(file, "utf8").includes("fetch: true"));
-    // 用户把它改成自己的一份（去掉 marker）后不再覆盖
+    assert.equal(updated.action, "kept");
+    assert.match(fs.readFileSync(file, "utf8"), /old template/);
+    fs.unlinkSync(file);
+    assert.equal(installPreset({ home }).action, "kept");
+    assert.equal(fs.existsSync(file), false);
     fs.writeFileSync(file, "# my own preset\n");
     assert.equal(installPreset({ home }).action, "kept");
   } finally {
