@@ -19,7 +19,7 @@ function setup(extra = {}) {
 }
 test("preferences default to check-only and preserve legacy automatic-install intent without migration writes", () => {
   const f = setup(); try {
-    assert.deepEqual(preferences(f.home), { autoCheck: true, autoInstall: false, intervalHours: 6, proxyUrl: "", githubToken: "" });
+    assert.deepEqual(preferences(f.home), { autoCheck: true, autoInstall: false, intervalHours: 6, proxyUrl: "", githubToken: "", mirrorUrl: "" });
     assert.equal(preferences(f.home, { autoUpdateOnStart: true }).autoInstall, true);
     assert.deepEqual(fs.readdirSync(f.home), []);
     fs.writeFileSync(path.join(f.home, "cordis.patch.yml"), "CURRENT SETTINGS");

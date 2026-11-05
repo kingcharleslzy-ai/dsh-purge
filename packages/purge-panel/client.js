@@ -10570,6 +10570,7 @@ function UpdatePreferences({
 function UpdateChannelDialog({ value, onClose, onSaved }) {
   const tr = useText();
   const [proxy, setProxy] = useState(value?.proxyUrl || "");
+  const [mirror, setMirror] = useState(value?.mirrorUrl || "");
   const [token, setToken] = useState("");
   const [clearToken, setClearToken] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -10596,6 +10597,8 @@ function UpdateChannelDialog({ value, onClose, onSaved }) {
   async function save() {
     if (saving) return;
     const next = {};
+    if (mirror.trim() !== (value?.mirrorUrl || ""))
+      next.mirrorUrl = mirror.trim();
     if (proxy.trim() !== (value?.proxyUrl || "")) next.proxyUrl = proxy.trim();
     if (clearToken) next.clearGithubToken = true;
     else if (token.trim()) next.githubToken = token.trim();
@@ -10641,6 +10644,23 @@ function UpdateChannelDialog({ value, onClose, onSaved }) {
         tr(
           "updch.scope",
           "\u8FD9\u91CC\u7684\u4EE3\u7406\u4E0E\u5BC6\u94A5\u53EA\u4F5C\u7528\u4E8E\u672C\u63D2\u4EF6\u7684\u66F4\u65B0\u68C0\u67E5\u4E0E\u4E0B\u8F7D\u901A\u9053\uFF0C\u4E0D\u5F71\u54CD\u5176\u5B83\u6A21\u578B\u5382\u5546\u7684\u8BF7\u6C42\uFF0C\u4E5F\u4E0D\u5199\u5165\u5BBF\u4E3B\u8FDB\u7A0B\u73AF\u5883\u3002\u7559\u7A7A\u7EE7\u627F\u5DF2\u6709\u66F4\u65B0\u4EE3\u7406\u73AF\u5883\u3002"
+        )
+      ),
+      h(
+        "label",
+        { className: "dshpp-updch-label" },
+        h("span", null, "GitHub \u955C\u50CF\uFF08\u53EF\u9009\uFF09"),
+        h("input", {
+          type: "text",
+          value: mirror,
+          placeholder: "https://\u955C\u50CF\u4E3B\u673A/",
+          onChange: (e) => setMirror(e.target.value),
+          disabled: saving
+        }),
+        h(
+          "small",
+          null,
+          "\u7528\u4E8E\u67E5\u8BE2\u4E0E\u4E0B\u8F7D\uFF1B\u4E0D\u53D1\u9001 GitHub \u5BC6\u94A5\u3002\u5B89\u88C5\u4ECD\u987B\u4ECE GitHub \u83B7\u53D6\u5B98\u65B9\u6821\u9A8C\u503C\uFF0C\u53EF\u4F7F\u7528\u66F4\u65B0\u4EE3\u7406\u3002\u7559\u7A7A\u5173\u95ED\u955C\u50CF\u3002"
         )
       ),
       h(

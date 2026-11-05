@@ -1,6 +1,6 @@
 # 维护、迁移与恢复
 
-当前版本 **1.6.74**。包名 `dsh-purge-community`，来源仅本仓库正式 GitHub Releases；保留内部 Cordis ID `dsh-purge`、HTTP `/dsh-purge/*` 及用户数据目录。主安装步骤与镜像故障决策树统一见 [安装指南](INSTALLATION.md)；[AGENTS.md](../AGENTS.md) 是 Agent 操作说明。
+当前版本 **1.6.75**。包名 `dsh-purge-community`，来源仅本仓库正式 GitHub Releases；保留内部 Cordis ID `dsh-purge`、HTTP `/dsh-purge/*` 及用户数据目录。主安装步骤与镜像故障决策树统一见 [安装指南](INSTALLATION.md)；[AGENTS.md](../AGENTS.md) 是 Agent 操作说明。
 
 ## 兼容与操作边界
 
@@ -97,3 +97,7 @@ profile 不存在/有多个且未明确选择时停止。Web/Headless 只用当�
 ## 更新通道网络与 Windows 凭据保护（1.6.67 / #122）
 
 代理探测、网络传输、HTTP 认证/限流和凭据文件权限分别报告。瞬时错误仅有限重试，不能隐藏证书、来源或摘要校验错误。Windows 首次读取旧凭据时迁移 ACL；写入前保护暂存目录及文件，原子替换失败保留旧文件。不要关闭防护、扩大普通用户权限或修改全局代理。测试方法和报告者尚待确认的环境见 [详细说明](update-channel-122.md)。
+
+## 1.6.75 安装布局、镜像与市场
+
+当前为待发布验收版。修复范围、真实运行证据及 Windows Defender 阻断见 [#130/#132/#137 验收记录](update-layout-130-132-137.md)。不能以组件测试或 pnpm 版本查询通过替代 Windows 完整安装、迁移、回滚通过。不要自动重启、清缓存或修改防护。

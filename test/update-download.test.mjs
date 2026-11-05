@@ -24,8 +24,8 @@ test('mirror is opt-in, contains no token, and unrelated redirects are blocked',
   assert.equal(calls[0][1].authorization,undefined);
   calls.length=0;
   await requestUpdate('https://api.github.com/repos/x/y',{env,fetch:request});
-  assert.equal(calls[0][0],'https://api.github.com/repos/x/y');
-  assert.equal(calls[0][1].authorization,'Bearer private-token');
+  assert.equal(calls[0][0],'https://mirror.example/prefix/https://api.github.com/repos/x/y');
+  assert.equal(calls[0][1].authorization,undefined);
   await assert.rejects(downloadArchive(archive,{env,request:async()=>new Response(null,{status:302,headers:{location:'https://untrusted.example/file'}})}),/来源/);
   const direct=[];
   await downloadArchive(archive,{env:{},request:async url=>{direct.push(String(url));return new Response('ok');}});

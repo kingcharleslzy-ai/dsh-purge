@@ -319,7 +319,7 @@ test("release checksum failure stops before installation", async () => {
   try {
     globalThis.fetch = async (url) =>
       new Response(
-        String(url).endsWith("sums")
+        String(url).endsWith("SHA256SUMS.txt")
           ? "0".repeat(64) + "  " + PACKAGE + "-1.2.0.tgz"
           : "wrong bytes",
       );
@@ -327,8 +327,8 @@ test("release checksum failure stops before installation", async () => {
       installRelease(f.manager, {
         ref: "v1.2.0",
         version: "1.2.0",
-        asset: "https://github.com/fixture/asset",
-        sums: "https://github.com/fixture/sums",
+        asset: "https://github.com/kingcharleslzy-ai/dsh-purge/releases/download/v1.2.0/dsh-purge-community-1.2.0.tgz",
+        sums: "https://github.com/kingcharleslzy-ai/dsh-purge/releases/download/v1.2.0/SHA256SUMS.txt",
       }, globalThis.fetch),
       /SHA256/,
     );
