@@ -19,9 +19,18 @@ foreach($scenario in @('locked','collision')) {
   for($i=0;$i -lt 100;$i++) {Start-Sleep -Milliseconds 100;try{$s=Get-Content -LiteralPath $state -Raw -Encoding UTF8|ConvertFrom-Json}catch{};if($s.phase -in @('waiting_for_unlock','failed')){break}}
   $observed=$s
   if($handle){$handle.Dispose();$handle=$null}
-  $p.WaitForExit(10000)|Out-Null
-  $s=Get-Content -LiteralPath $state -Raw -Encoding UTF8|ConvertFrom-Json
-  $results+=@{scenario=$scenario;observed=$observed;final=$s;exitCode=$p.ExitCode;originalExists=(Test-Path -LiteralPath $asar);backupText=([IO.File]::ReadAllText($backup))}
+  # 等的是状态机到终态，不是"进程退出"：助手在锁释放后才开始写备份和换包，
+  # 只等 WaitForExit 会先读到还没生成的 .bak，报 FileNotFoundException。
+  $exited=$p.WaitForExit(10000)
+  for($i=0;$i -lt 100;$i++) {
+    try{$s=Get-Content -LiteralPath $state -Raw -Encoding UTF8|ConvertFrom-Json}catch{$s=$null}
+    if($s -and $s.phase -in @('complete','failed','expired','helper_stopped')){break}
+    if($p.HasExited -and $s -and $s.phase -in @('complete','failed')){break}
+    Start-Sleep -Milliseconds 100
+  }
+  $backupText=$null
+  if(Test-Path -LiteralPath $backup){$backupText=[IO.File]::ReadAllText($backup)}
+  $results+=@{scenario=$scenario;observed=$observed;final=$s;exitCode=$p.ExitCode;exited=[bool]$exited;originalExists=(Test-Path -LiteralPath $asar);backupExists=(Test-Path -LiteralPath $backup);backupText=$backupText}
  } finally {if($handle){$handle.Dispose()};if($p -and -not $p.HasExited){$p.Kill();$p.WaitForExit()}}
 }
 @{root=$root;results=$results}|ConvertTo-Json -Depth 8

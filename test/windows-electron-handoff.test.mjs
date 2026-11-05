@@ -78,6 +78,7 @@ test('Windows native sharing violation retries, permanent collision fails withou
     assert.equal(locked.observed.error.win32_code,32);
     assert.equal(locked.final.phase,'complete');
     assert.equal(locked.exitCode,0);
+    assert.equal(locked.backupExists,true,'备份文件必须存在，否则换包没真正发生');
     assert.equal(locked.backupText,'original fixture');
     assert.equal(locked.originalExists,false);
     const collision=result.results.find(r=>r.scenario==='collision');
