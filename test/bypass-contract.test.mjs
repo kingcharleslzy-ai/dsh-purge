@@ -19,7 +19,8 @@ const GATE_FINGERPRINTS = {
   14: "7aec29a1b4b82ddb",
   15: "68bd19d2e61b65bb",
   16: "9698a6c3b4e9e7ba",
-  17: "4a6132d95ce052a0",
+  // rc.5 has its own editIntent body instead of the shared edit/delete method.
+  17: "19bdb473d05f28c9",
   30: "c844cddcc7933514",
   31: "f80165c28dc19a5e",
   34: "1ecd46f5b4067b0f",
@@ -27,7 +28,8 @@ const GATE_FINGERPRINTS = {
   36: "fd8e27dd7b1b21b3",
   59: "fc2fc00d258210b1",
   60: "9e13ac2da676e434",
-  61: "c17dcb85eded7e36",
+  // Accept the same native sentence after #93 has removed its branding.
+  61: "c175ed1d70acf41d",
   63: "b92dd05efb4ba817",
   66: "a97a223234457fee",
   // 1.6.74: correct the literal newline escape and migrate only its malformed

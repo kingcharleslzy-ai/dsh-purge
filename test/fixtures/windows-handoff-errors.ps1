@@ -19,9 +19,14 @@ foreach($scenario in @('locked','collision')) {
   for($i=0;$i -lt 100;$i++) {Start-Sleep -Milliseconds 100;try{$s=Get-Content -LiteralPath $state -Raw -Encoding UTF8|ConvertFrom-Json}catch{};if($s.phase -in @('waiting_for_unlock','failed')){break}}
   $observed=$s
   if($handle){$handle.Dispose();$handle=$null}
-  $p.WaitForExit(10000)|Out-Null
-  $s=Get-Content -LiteralPath $state -Raw -Encoding UTF8|ConvertFrom-Json
-  $results+=@{scenario=$scenario;observed=$observed;final=$s;exitCode=$p.ExitCode;originalExists=(Test-Path -LiteralPath $asar);backupText=([IO.File]::ReadAllText($backup))}
+  # The helper owns both the state and the backup. Observe its final state
+  # after exit; on timeout keep the last state so the test reports the cause.
+  $exited=$p.WaitForExit(20000)
+  $s=$null
+  if(Test-Path -LiteralPath $state){$s=Get-Content -LiteralPath $state -Raw -Encoding UTF8|ConvertFrom-Json}
+  $backupText=$null
+  if(Test-Path -LiteralPath $backup){$backupText=[IO.File]::ReadAllText($backup)}
+  $results+=@{scenario=$scenario;observed=$observed;final=$s;exitCode=$p.ExitCode;exited=[bool]$exited;originalExists=(Test-Path -LiteralPath $asar);backupExists=(Test-Path -LiteralPath $backup);backupText=$backupText}
  } finally {if($handle){$handle.Dispose()};if($p -and -not $p.HasExited){$p.Kill();$p.WaitForExit()}}
 }
 @{root=$root;results=$results}|ConvertTo-Json -Depth 8
