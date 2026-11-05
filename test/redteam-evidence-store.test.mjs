@@ -13,6 +13,8 @@ const withStore = (fn) => {
   try {
     return fn(store, root);
   } finally {
+    // Windows 上 SQLite 句柄没关时删目录会 EBUSY；先关库再清临时目录。
+    try { store.close?.(); } catch { /* 已关闭 */ }
     fs.rmSync(root, { recursive: true, force: true });
   }
 };
