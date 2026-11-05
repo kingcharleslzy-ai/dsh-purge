@@ -28,3 +28,18 @@ test('bundled file-write skill stays readable and demonstrates write access usin
   assert.match(skill.content, /静态标记/);
   assert.doesNotMatch(skill.content, /<\?(?:php\b|=)/i);
 });
+
+test('published skill command round trips a fresh challenge; echoes, stale replies and mixed output fail', () => {
+  const verify = path.resolve('scripts/exec-proof.mjs');
+  const content = fs.readFileSync('skills/redteam/unauth-exploit.md', 'utf8');
+  const win = process.platform === 'win32';
+  const block = content.match(win ? /```powershell\n([^\n]+)/ : /```sh\n([^\n]+)/)[1];
+  const fresh = () => execFileSync(process.execPath, [verify, 'new'], {encoding:'utf8'}).trim();
+  const nonce = fresh(), command = block.replaceAll('NONCE', nonce);
+  const reply = execFileSync(win ? 'powershell.exe' : 'sh', win ? ['-NoProfile','-NonInteractive','-Command',command] : ['-c',command], {encoding:'utf8'});
+  const check = (id, input) => execFileSync(process.execPath,[verify,'check',id],{input,stdio:['pipe','pipe','pipe']});
+  check(nonce,reply);
+  for (const [id, input] of [[nonce,nonce],[fresh(),reply],[nonce,reply+'other'],[nonce,''],[nonce,'file written']]) {
+    assert.throws(() => check(id,input), e => e.status === 1);
+  }
+});
