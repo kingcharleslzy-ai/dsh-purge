@@ -1,3 +1,30 @@
+# 1.6.80
+
+> PR 待审，未合并、未发布。
+
+## 审计更正：1.6.78 的账本模块当时是死代码
+
+`evidence-ledger.mjs` 拷进来了，但没有接到工具面——上游是 `tools.js` 引用它，我们当时漏了这一步。本版补齐 8 个工具：`redteam_evidence_record / _verify / _upgrade / _list`、`redteam_unverified_count`、`redteam_unknown_record / _resolve / _list`，并在 `test/redteam-tools-contract.test.mjs` 里钉死"模块被引用 + 工具已注册"，防止再出现"文件在、能力没有"。
+
+同时保留本 fork 的知识库工具（`redteam_poc_*`）。上游开源版把这组工具改成一律返回"已下架"，本 fork 不跟。
+
+## 上游补丁数量更正
+
+之前说"上游 1.1.90 有 87 条"是错的：**双方都是 86 条**，其中 82 条同名，上游独有 4 条（两条桌面退出留痕 `DESKTOP_HOST_EXIT_TRACE` / `DESKTOP_MAIN_EXIT_TRACE`、两条插话语义 `SESSION_PROMPT_ALWAYS_FOLLOWUP` / `SESSION_QUEUE_STEER_INTERRUPT`），本 fork 独有 4 条（`ASK_USER_WAIT_CAPPED`、`RESTORE_NATIVE_STEERING`、`BROWSER_COOKIE_NAME_IGNORE_PORT`、`HOST_MAX_HTTP_HEADER_SIZE`）。上游的插话两条与本 fork 的 #90 等价或更弱（我们连带恢复了 `session/steer-unavailable` 错误），因此不重复搬。
+
+## store-core 不做整文件合并
+
+651 行差异里占大头的是上游的**开源裁剪**（知识库一律下架）和中文错误文案，整文件合并会把我们更强的能力删掉。真正值得取的是两处安全加固，已单独移植：
+
+- `dirOf(id)` 走 `assertPathWithin`：`id` 可能来自请求体，`..` 不能拼出靶标根目录；
+- 截图 / 攻击文件导入的**源路径**允许清单（靶标目录或系统临时目录）：以前只校验写目标，接口传绝对路径就能把本机任意文件复制进证据目录再读回。
+
+## 验证
+
+- 新增 `test/redteam-evidence-store.test.mjs`（账本挂真实库、`..` 拒绝、越界来源拒绝、临时目录允许）与工具契约测试；
+- `npm test` **549 通过 / 0 失败**；
+- 破甲链路 12/12 模块级用例复测通过，宿主补丁未改动。
+
 # 1.6.79
 
 ## Windows CI 夹具路径修复（不是功能变更）
