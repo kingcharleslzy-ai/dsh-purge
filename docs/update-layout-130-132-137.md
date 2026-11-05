@@ -17,6 +17,7 @@
 - 面板测试：29 项通过；社区 bundle、格式、版本和发行包导入检查通过。
 - Mac CLI-only 隔离 Electron：真实 CLI/pnpm 首次安装、1.6.74 升级、旧依赖别名迁移、备份、回滚、重升和安装/回滚故障恢复通过。检查备份后新增的用户内容仍保留。OS sandbox 禁止写正式应用、用户 DSH home 与日志目录。
 - Windows 原始安装包：DSH Desktop 0.13.2 / 内核 0.2.2-alpha.2；从安装器提取，不安装或启动 GUI。SHA512 与发行元数据一致，Authenticode 为 Valid。实际 Electron 中 CLI 定位、归档版本诊断、web profile 初始化和打包 pnpm/runner `--version` 通过。
+- Windows 隔离 Electron 43 项组件/真实 TLS 测试通过；Mac 隔离 Electron 对应定位/镜像/真实 TLS 的 24 项测试通过。
 - Windows Node 全套回归通过（平台条件项按声明跳过），PowerShell 5.1 包装器组件测试通过；这两项不能代替实际安装。
 - Windows **完整安装失败**，因此升级和回滚的最终验收尚未通过，不能用上条代替。
 - Mac 公共镜像实测：经显式 `https://gh-proxy.org/` 查询发行列表、下载既有 1.6.74，独立官方摘要及包校验通过。测试不带 Token。镜像可用性只是本次观察，不是服务保证。
@@ -31,7 +32,7 @@
 - 检测名：`Backdoor:PHP/Chopper.E!dha`，ThreatID `2147891541`。
 - 发行包原有文件：`skills/redteam/unauth-exploit.md`。
 - 该文件 SHA512：`96bce1192f61f904f9ce13e95e2afd0fd75ddffe4cba022e1de01f61ad592e4f87f949bfe74f06c07afe34215c8e62aa750dce58be5765eda389bfea4a706506`，与 pnpm store 目标一致。
-- 此文件本次未修改。此前缓存复用路径一次成功不能证明全新安装或问题已消失。
+- 该文件在已发布 1.6.74 与候选包中的 SHA512 完全一致，本次未修改。此前缓存复用路径一次成功不能证明全新安装或问题已消失。
 - 失败安装报告已恢复先前依赖/清单并保留快照；此观察不等于完整升级/回滚矩阵通过。
 
 未关闭防护、添加白名单、删除/编码/改名此文件规避检测，也未向微软提交文件。保留隔离日志，当前不能断言误报。用户要求两平台实际测试通过后发布，故暂不合并或发版。

@@ -78,4 +78,10 @@ test('sealed diagnostics keep mixed versions, missing components and broken phys
  archive();value=compatibility(base);assert.equal(value.prompt_version,'unknown');assert.match(value.message,/system-prompt 缺失/);assert.equal(value.runtime_supported,false);
  archive('0.2.2-rc.1');value=compatibility(base);assert.equal(value.kernel.qualified,true);assert.equal(value.qualified,false,'new shell is not fully qualified merely by its kernel version');
  physical.mkdirSync(path.join(resources,'app'));value=compatibility(base);assert.equal(value.sealed_host,false);assert.equal(value.layout_found,false,'broken app cannot borrow the healthy archive');
+ physical.rmdirSync(path.join(resources,'app'));
+ physical.symlinkSync(path.join(resources,'missing-target'),path.join(resources,'app'),process.platform==='win32'?'junction':'dir');
+ assert.equal(compatibility(base).sealed_host,false,'dangling app link cannot borrow the archive');
+ const original=physical.lstatSync;
+ physical.lstatSync=function(file,...args){if(String(file)===path.join(resources,'app'))throw Object.assign(Error('denied'),{code:'EACCES'});return original.call(this,file,...args);};
+ try {assert.throws(()=>compatibility(base),{code:'EACCES'});} finally {physical.lstatSync=original;}
 });
