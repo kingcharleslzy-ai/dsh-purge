@@ -611,3 +611,26 @@ test("packaged community diagnostics stay within verified Electron resources", (
     assert.equal(fs.existsSync(host), false, "diagnostic lookup must not create files");
   } finally { fs.rmSync(root,{recursive:true,force:true}); }
 });
+
+test("#93 a pnpm workspace junction selects only the CLI package that owns the running entry", () => {
+  const f = fixture();
+  try {
+    const cliRoot = path.join(f.root, "apps/cli");
+    fs.cpSync(path.dirname(path.dirname(f.cli)), cliRoot, { recursive: true });
+    const bin = path.join(cliRoot, "lib/bin.mjs");
+    const link = path.join(f.root, "node_modules/.pnpm/node_modules/@deepseek-ai/dsh");
+    fs.mkdirSync(path.dirname(link), { recursive: true });
+    fs.symlinkSync(cliRoot, link, "junction");
+    const launch = { env: {}, argv: ["node", path.join(link, "lib/bin.mjs")] };
+    assert.equal(currentHost(launch), cliRoot);
+    assert.equal(resolveDshCli(launch).cli, bin);
+    assert.equal(resolveDshCli({ aiBase: currentHost(launch), env: {} }).cli, bin);
+    fs.cpSync(path.dirname(path.dirname(f.cli)), path.join(cliRoot, "dsh"), { recursive: true });
+    fs.unlinkSync(bin);
+    assert.throws(() => resolveDshCli(launch), /无法定位/);
+    const outside = path.join(cliRoot, "linked-dir");
+    fs.symlinkSync(path.dirname(f.cli), outside, "junction");
+    fs.writeFileSync(path.join(cliRoot, "package.json"), JSON.stringify({ name: "@deepseek-ai/dsh", bin: "linked-dir/bin.mjs" }));
+    assert.throws(() => resolveDshCli(launch), /无法定位/);
+  } finally { f.close(); }
+});

@@ -1,6 +1,6 @@
 # 安装、升级与故障排查
 
-当前版本 **1.6.81**。面向用户与协助安装的 Agent。支持的安装器环境：Linux CLI/Web；macOS Desktop；Windows 11 的 PowerShell 5.1/7。完整 Windows 宿主补丁及界面验收与安装器测试分开，不能因安装通过就宣称全部功能正常。
+当前版本 **1.6.82**。面向用户与协助安装的 Agent。支持的安装器环境：Linux CLI/Web；macOS Desktop；Windows 11 的 PowerShell 5.1/7。完整 Windows 宿主补丁及界面验收与安装器测试分开，不能因安装通过就宣称全部功能正常。
 
 ## 安装前
 
@@ -8,6 +8,12 @@
 - 默认数据目录 `~/.dsh`；旧 Desktop CLI 默认 profile `desktop`；带独立 `@deepseek-ai/dsh` CLI 的新桌面壳及 CLI/Web 默认 `web`。不同目录/profile 必须显式指定，不能自动选另一个实例。
 - 保留正在运行的任务；安装不会停止进程或自动重启。用户在任务结束后手动重开。
 - 不需要管理员权限或全局 Node/pnpm；Desktop 入口使用该应用的 Electron 运行时和 CLI。遇到权限问题先核对路径，不建议盲目提权。
+
+## pnpm 源码工作区的 Web 升级与回滚
+
+从工作区启动时，先核对运行进程的入口、`DSH_HOME` 和 profile。工作区包名应为 `@deepseek-ai/dsh`，读取它的 `package.json` 中声明的 `bin.dsh`。链接解析到 `apps/cli` 属于正常布局。修订版使用该包的入口进行升级和回滚。
+
+旧版若在面板中提示“无法定位当前 DSH 实例的 CLI”，可先从**同一工作区**运行官方 CLI，在当前 profile 上添加已验证 SHA256 的新版发行包。例如对于报告中的 rc.2 布局，在工作区根目录执行 `node ./apps/cli/lib/bin.js plugin --profile web add ./dsh-purge-community.tgz`。前提是该文件为已核验的本地发行包，且当前终端的 DSH_HOME 与运行服务一致；其它布局按实际 bin 和 profile 替换。等用户手动重开服务，再验收面板升级和回滚。
 
 ## 新桌面布局与更新镜像（1.6.75）
 
