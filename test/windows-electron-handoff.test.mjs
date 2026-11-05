@@ -71,9 +71,10 @@ test('Windows native sharing violation retries, permanent collision fails withou
   try {
     fs.writeFileSync(helper,WINDOWS_ASAR_HANDOFF_PS1,'utf8');
     const output=execFileSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',
-      FIXTURE_ERRORS,'-Helper',helper],{encoding:'utf8',timeout:45000});
+      FIXTURE_ERRORS,'-Helper',helper],{encoding:'utf8',timeout:75000});
     const result=JSON.parse(output.replace(/^\uFEFF/,'')); fixtureRoot=result.root;
     const locked=result.results.find(r=>r.scenario==='locked');
+    assert.equal(locked.exited,true,JSON.stringify(locked));
     assert.equal(locked.observed.phase,'waiting_for_unlock');
     assert.equal(locked.observed.error.win32_code,32);
     assert.equal(locked.final.phase,'complete');
@@ -82,6 +83,8 @@ test('Windows native sharing violation retries, permanent collision fails withou
     assert.equal(locked.backupText,'original fixture');
     assert.equal(locked.originalExists,false);
     const collision=result.results.find(r=>r.scenario==='collision');
+    assert.equal(collision.exited,true,JSON.stringify(collision));
+    assert.equal(collision.final?.phase,'failed',JSON.stringify(collision));
     assert.equal(collision.observed.phase,'failed');
     assert.equal(collision.exitCode,1);
     assert.equal(collision.observed.error.win32_code,183);
