@@ -1,7 +1,7 @@
 # AGENTS.md — 给 AI agent 的 Purge 使用说明书
 
 > 这份文件是写给**在 DSH 里干活的 agent** 的，不是营销文档。
-> 当前版本：**1.6.80** · 适配 DSH Desktop **0.2.2-rc.1**（0.2.1-rc.1 / rc.2 / rc.3 / rc.5 同样通过）
+> 当前版本：**1.6.81** · 适配 DSH Desktop **0.2.2-rc.1**（0.2.1-rc.1 / rc.2 / rc.3 / rc.5 同样通过）
 > 版本号由 `npm run check:docs` 与 `package.json` 校验，发版必须同步。
 
 ---
@@ -133,10 +133,14 @@ purge-community probe new
 
 | 组件 | 值 |
 | --- | --- |
-| 插件 | `dsh-purge-community` 1.6.80 |
+| 插件 | `dsh-purge-community` 1.6.81 |
 | 已验证宿主 | DSH Desktop 0.2.2-rc.1 / 0.2.1-rc.1 / 0.2.1-rc.2 / 0.2.1-rc.3 / 0.2.1-rc.5 |
 | 其它宿主 | 允许应用，但 `selfcheck` 会标"未验证"；先看 `diagnose` |
-| Node | ≥18（桌面版自带运行时即可） |
+| Node | ≥18（桌面版自带运行时即可）；**红队工具需 ≥22.5**（依赖 `node:sqlite`，低版本会在加载红队工具时失败） |
+
+### 证据账本（1.6.81 起）
+
+口头报告用 `claimed` 并填写 `source_agent`。工具默认按 `inferred` 记录。用 `redteam_evidence_upgrade` 提交实际核实的结果；普通引用和旧版缺少核实记录的引用保留，需另行核实。计数或哈希报错时先处理账本异常。导入文件须位于当前靶标目录，可暂存在其 `incoming/` 子目录，也可以直接传截图内容。已撤回的问题可按 `withdrawn` 查询。
 
 ## 10. 这份文档的维护规则
 
