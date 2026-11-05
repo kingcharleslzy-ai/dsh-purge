@@ -1,0 +1,30 @@
+{
+  "name": "dsh-breeze-voice",
+  "title": {
+    "en": "Breeze Voice",
+    "zh": "Breeze 语音对话"
+  },
+  "description": {
+    "en": "Talk in your current DSH conversation with speech recognition, streamed replies, and interruption.",
+    "zh": "在当前 DSH 会话内说话，识别语音、分句播放回答，随时打断。"
+  },
+  "author": "kingcharleslzy-ai",
+  "homepage": "https://github.com/kingcharleslzy-ai/dsh-breeze-voice#readme",
+  "repository": {
+    "url": "https://github.com/kingcharleslzy-ai/dsh-breeze-voice"
+  },
+  "versions": [
+    {
+      "version": "0.4.1",
+      "publishTimestamp": 1793852218,
+      "source": {
+        "type": "git",
+        "url": "https://github.com/kingcharleslzy-ai/dsh-breeze-voice",
+        "commit": "fe7d83efd7b5306578ebf6739a4bcbb50592adcf"
+      },
+      "engines": {
+        "dsh": ">=0.2.1-rc.5 <0.2.2-0 || 0.2.2-rc.1"
+      }
+    }
+  ]
+}
