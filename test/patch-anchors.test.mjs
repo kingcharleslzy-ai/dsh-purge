@@ -172,3 +172,49 @@ test("#57 covers both pi-ai paths that decide the developer role", () => {
   const files = patch(57).file;
   assert.deepEqual([...files].sort(), ["pi-ai-completions", "pi-ai-responses-shared"]);
 });
+
+// Run the real rc.5 method fragments, with observable host-service boundaries.
+// Supplying a source directory additionally checks a pristine npm package.
+test("rc.5 keeps complete persona, selected tools and required contexts; first-step prepare runs before assemble", async () => {
+  const fs = await import("node:fs/promises");
+  const vm = await import("node:vm");
+  const path = await import("node:path");
+  const fixture = JSON.parse(await fs.readFile(new URL("./fixtures/prompt-rc5-host.json", import.meta.url)));
+  const input = process.env.PURGE_RC5_SOURCE;
+  async function patched(fragment, pkg, id) {
+    const original = input ? await fs.readFile(path.join(input, pkg, "lib/index.js"), "utf8") : fragment;
+    assert.ok(original.includes(fragment));
+    const result = applyReplacementsToText(original, patch(id));
+    assert.ok(result.changed);
+    assert.equal(applyReplacementsToText(result.text, patch(id)).changed, false);
+    const part = applyReplacementsToText(fragment, patch(id)).text;
+    assert.ok(result.text.includes(part));
+    return part;
+  }
+  const tail = await patched(fixture.assembleTail, "dsh-system-prompt", 40);
+  const prepare = await patched(fixture.preStep, "dsh-agent-loop", 74);
+  const assemble = vm.runInNewContext('(async function(assembly, completeSection, runtimeContextSuppressed, contextByName) {' + tail + '})',
+    {scopeTarget: () => null, scope: null, context: {}});
+  const complete = {name:"user-persona", text:"User supplied text"};
+  const extra = {name:"dsh-purge-test", text:"User supplied supplement"};
+  const assembly = {sections:[{name:"other", text:"ordinary"}, complete, extra], tools:[{name:"read"}], contexts:[{name:"keep"}, {name:"drop"}]};
+  const ctx = {waterfall: async (_target, _event, original) => original};
+  const run = (persona, suppress) => assemble.call({ctx}, assembly, persona, suppress, new Map([["keep",{name:"keep",required:true}]]));
+  assert.equal(await run(undefined, false), assembly);
+  const result = await run(complete, true);
+  assert.deepEqual(Array.from(result.sections), [complete, extra]);
+  assert.deepEqual(Array.from(result.contexts), [assembly.contexts[0]]);
+  assert.equal(result.tools, assembly.tools);
+  ctx.waterfall = async () => { throw Error("provider failure"); };
+  await assert.rejects(run(complete, false), /provider failure/);
+  const events = [];
+  const method = vm.runInNewContext('({' + prepare + '}).preStep', {
+    __dshPurgePrepareAssemble: () => events.push("prepare"),
+    assembleContextFor: () => ({}), renderContextSections: () => [], joinContextSections: () => "",
+  });
+  const agent = {phase:{kind:"running",abort:new AbortController()}, inbox:{claim:()=>[]},
+    loopCtx:{systemPrompt:{assemble:async()=>{events.push("assemble");return assembly;}}},
+    dispatch:{waterfall:async(_event,_args,next)=>next()},runtimeContext:{project:()=>undefined}};
+  assert.equal((await method.call(agent,"next-turn",{turn:1})).assembly, assembly);
+  assert.deepEqual(events, ["prepare","assemble"]);
+});
