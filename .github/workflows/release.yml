@@ -72,13 +72,15 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $runtime = Join-Path $env:RUNNER_TEMP 'purge-electron'
+          $runtime = Join-Path ([IO.Path]::GetTempPath()) 'purge-electron'
           npm install --prefix $runtime --no-package-lock --no-audit --no-fund electron@44.7.0
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node (Join-Path $runtime 'node_modules/electron/install.js')
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $env:PURGE_ELECTRON_EXEC = Join-Path $runtime 'node_modules/electron/dist/electron.exe'
           if (-not (Test-Path -LiteralPath $env:PURGE_ELECTRON_EXEC)) { throw 'Electron binary was not installed' }
+          powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-windows-job-handoff.ps1 -ElectronExe $env:PURGE_ELECTRON_EXEC -SourceRoot $PWD.Path
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node --test test/windows-electron-handoff.test.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           npm run test:electron

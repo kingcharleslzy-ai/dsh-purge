@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$ElectronExe, [Parameter(Mandatory=$true)][string]$SourceRoot)
+param([Parameter(Mandatory=$true)][string]$ElectronExe, [Parameter(Mandatory=$true)][string]$SourceRoot, [switch]$ExpectLegacyFailure)
 $ErrorActionPreference='Stop'
 # Controlled Job Object reproduction, not the user's running DSH. No archive
 # from an installed application is read or changed; no model patches run.
@@ -34,9 +34,12 @@ try {
  [IO.File]::WriteAllText($holderScript,'setInterval(()=>{},1000)')
  $holder=Start-Process -FilePath $holderExe -ArgumentList ('"'+$holderScript+'"') -PassThru -WindowStyle Hidden
  $asar=Join-Path $root 'app.asar'
- New-Item -ItemType Directory -Path (Join-Path $root 'app')|Out-Null
- [IO.File]::WriteAllText((Join-Path $root 'app/package.json'),'{}')
- [IO.File]::WriteAllText($asar,'isolated original archive')
+ $sourceArchive=Join-Path (Split-Path -Parent $ElectronExe) 'resources/default_app.asar'
+ Copy-Item -LiteralPath $sourceArchive -Destination $asar
+ $originalHash=(Get-FileHash -LiteralPath $asar).Hash
+ $extractor=([Uri](Join-Path $SourceRoot 'lib/extract-asar.js')).AbsoluteUri
+ & node.exe --input-type=module -e "const [u,a,d]=process.argv.slice(1); (await import(u)).extractAsar(a,d)" $extractor $asar (Join-Path $root 'app')
+ if($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath (Join-Path $root 'app/package.json'))){throw 'Fixture archive extraction failed'}
  $go=Join-Path $root 'go'
  $module=([Uri](Join-Path $SourceRoot 'lib/windows-asar-handoff.js')).AbsoluteUri
  $js=@"
@@ -71,11 +74,23 @@ setInterval(()=>{},1000);
  Start-Sleep -Seconds 2
  $alive=$null -ne (Get-Process -Id $helperId -ErrorAction SilentlyContinue)
  $state=Get-Content -LiteralPath $statePath -Raw|ConvertFrom-Json
- $evidence=@{scenario='controlled KILL_ON_JOB_CLOSE';helperInJob=$inJob;helperAliveAfterJobClose=$alive;phase=$state.phase;archiveUnchanged=([IO.File]::ReadAllText($asar) -eq 'isolated original archive');root=$root}
+ if ($ExpectLegacyFailure) {
+   if(-not $inJob -or $alive -or $state.phase -ne 'waiting_for_quit' -or (Get-FileHash -LiteralPath $asar).Hash -ne $originalHash){throw 'Original #89 failure was not reproduced'}
+ } else {
+   if($inJob -or -not $alive -or $state.phase -ne 'waiting_for_quit' -or -not (Test-Path -LiteralPath $asar)){throw 'Helper did not independently wait for the isolated host'}
+   $holder.Kill();$holder.WaitForExit()
+   if(-not $helper.WaitForExit(15000)){throw 'Helper did not finish after full quit'}
+   $state=Get-Content -LiteralPath $statePath -Raw|ConvertFrom-Json
+   if($state.phase -ne 'complete' -or (Test-Path -LiteralPath $asar) -or (Get-FileHash -LiteralPath $state.backup).Hash -ne $originalHash){throw 'Archive handoff did not preserve the original'}
+   $backupHash=(Get-FileHash -LiteralPath $state.backup).Hash
+   if($backupHash -ne $state.archive_sha256){throw 'Archive digest mismatch'}
+   Move-Item -LiteralPath $state.backup -Destination $asar
+   if((Get-FileHash -LiteralPath $asar).Hash -ne $originalHash){throw 'Offline archive restoration failed'}
+ }
+ $evidence=@{scenario='controlled KILL_ON_JOB_CLOSE';helperInJob=$inJob;helperAliveAfterJobClose=$alive;phase=$state.phase;root=$root}
  $evidence|ConvertTo-Json|Tee-Object -FilePath (Join-Path $root 'result.json')
- if(-not $inJob -or $alive -or $state.phase -ne 'waiting_for_quit' -or -not $evidence.archiveUnchanged){throw 'Original #89 failure was not reproduced; keep the evidence instead of assuming its cause'}
 } finally {
  if($job -ne [IntPtr]::Zero){[PurgeTestJob]::CloseHandle($job)|Out-Null}
  foreach($p in @($holder,$launcher)){if($null -ne $p){try{if(-not $p.HasExited){$p.Kill();$p.WaitForExit(5000)|Out-Null}}catch{}}}
- if($helperId){Stop-Process -Id $helperId -ErrorAction SilentlyContinue}
+ if($helper -and -not $helper.HasExited){$helper.Kill()}
 }
