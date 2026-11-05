@@ -136,7 +136,7 @@ purge-community probe new
 | 插件 | `dsh-purge-community` 1.6.80 |
 | 已验证宿主 | DSH Desktop 0.2.2-rc.1 / 0.2.1-rc.1 / 0.2.1-rc.2 / 0.2.1-rc.3 / 0.2.1-rc.5 |
 | 其它宿主 | 允许应用，但 `selfcheck` 会标"未验证"；先看 `diagnose` |
-| Node | ≥18（桌面版自带运行时即可） |
+| Node | ≥18（桌面版自带运行时即可）；**红队工具需 ≥22.5**（依赖 `node:sqlite`，低版本会在加载红队工具时失败） |
 
 ## 10. 这份文档的维护规则
 

@@ -115,7 +115,7 @@ Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'dsh-purge' imported from <pro
 
 有面板时优先选择「Purge → 状态 → 本机备份」中的备份，确认记录对应本次安装。面板不可用时，使用下列方式运行当前 profile 安装的 CLI。`purge-community` 是 profile 内的 bin，不保证在全局 PATH；**不要 `npm install -g` 来补命令**。
 
-CLI/Web（macOS、Linux；已有 Node ≥18 和该实例的 `dsh` 命令）：
+CLI/Web（macOS、Linux；已有 Node ≥18 和该实例的 `dsh` 命令；红队工具另需 ≥22.5）：
 
 ```sh
 export DSH_HOME="${DSH_HOME:-$HOME/.dsh}"

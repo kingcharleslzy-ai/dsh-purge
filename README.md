@@ -194,7 +194,7 @@ sh "$PURGE_INSTALL_DIR/install.sh" --dry-run
 | 插件 | `dsh-purge-community` 1.6.80 |
 | 已验证宿主 | DSH Desktop 0.2.2-rc.1 / 0.2.1-rc.1 / 0.2.1-rc.2 / 0.2.1-rc.3 / 0.2.1-rc.5 |
 | 其它宿主 | 允许安装，自检会标「未验证」；先看 `diagnose` |
-| Node | ≥18（桌面版自带运行时即可） |
+| Node | ≥18（桌面版自带运行时即可）；红队工具需 ≥22.5（`node:sqlite`） |
 
 ## 出问题怎么办
 
