@@ -4,8 +4,13 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { execFileSync, spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { setTimeout as wait } from 'node:timers/promises';
 import { WINDOWS_ASAR_HANDOFF_PS1, readWindowsAsarHandoff } from '../lib/windows-asar-handoff.js';
+
+// 夹具用 import.meta.url 定位：Windows 上 cwd 可能被外层脚本改掉，
+// 用 cwd 拼接时（path.resolve 相对写法）会指向不存在的路径。
+const FIXTURE_ERRORS = fileURLToPath(new URL('./fixtures/windows-handoff-errors.ps1', import.meta.url));
 
 const electron = process.env.PURGE_ELECTRON_EXEC;
 test('real Windows Electron: helper executes and survives its launcher exiting', {
@@ -66,7 +71,7 @@ test('Windows native sharing violation retries, permanent collision fails withou
   try {
     fs.writeFileSync(helper,WINDOWS_ASAR_HANDOFF_PS1,'utf8');
     const output=execFileSync('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File',
-      path.resolve('test/fixtures/windows-handoff-errors.ps1'),'-Helper',helper],{encoding:'utf8',timeout:45000});
+      FIXTURE_ERRORS,'-Helper',helper],{encoding:'utf8',timeout:45000});
     const result=JSON.parse(output.replace(/^\uFEFF/,'')); fixtureRoot=result.root;
     const locked=result.results.find(r=>r.scenario==='locked');
     assert.equal(locked.observed.phase,'waiting_for_unlock');

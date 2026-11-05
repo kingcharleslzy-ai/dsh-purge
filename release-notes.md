@@ -1,3 +1,16 @@
+# 1.6.79
+
+## Windows CI 夹具路径修复（不是功能变更）
+
+1.6.77 的 release workflow 在 `windows-latest` 上失败，报 `windows-handoff-errors.ps1:24 FileNotFoundException`。定位结果：测试用 `path.resolve('test/fixtures/...')` 找夹具，依赖 `process.cwd()`；Windows runner 上 cwd 被外层脚本改掉后，拼出的绝对路径不存在，PowerShell 直接报找不到文件。同一 commit 的 macOS / ubuntu 全绿，1.6.78 的 release 也正常产出，说明与补丁逻辑无关。
+
+- `test/windows-electron-handoff.test.mjs` 改为用 `fileURLToPath(new URL('./fixtures/...', import.meta.url))` 定位，与测试文件绑定而非与启动目录绑定。
+- 新增 `test/fixture-paths.test.mjs`：扫描全部测试文件，禁止 `path.resolve('test/...')` 与 `process.cwd() + 'test/...'` 这类写法，并断言 Windows 交接夹具确实存在。
+
+## 验证
+
+`npm test` **544 通过 / 0 失败**。本轮不改任何宿主补丁、权限或提示词。
+
 # 1.6.78
 
 ## 红队模块补两处上游能力
