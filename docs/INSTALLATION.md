@@ -1,13 +1,23 @@
 # 安装、升级与故障排查
 
-当前版本 **1.6.74**。面向用户与协助安装的 Agent。支持的安装器环境：Linux CLI/Web；macOS Desktop；Windows 11 的 PowerShell 5.1/7。完整 Windows 宿主补丁及界面验收与安装器测试分开，不能因安装通过就宣称全部功能正常。
+当前版本 **1.6.75**。面向用户与协助安装的 Agent。支持的安装器环境：Linux CLI/Web；macOS Desktop；Windows 11 的 PowerShell 5.1/7。完整 Windows 宿主补丁及界面验收与安装器测试分开，不能因安装通过就宣称全部功能正常。
 
 ## 安装前
 
 - 确认用户授权，读取实际 DSH 版本和应用路径，先打开一次完成 profile 初始化。
-- 默认数据目录 `~/.dsh`；Desktop 默认 profile `desktop`，Linux CLI/Web 安装器默认 `web`。不同目录/profile 必须显式指定，不能自动选另一个实例。
+- 默认数据目录 `~/.dsh`；旧 Desktop CLI 默认 profile `desktop`；带独立 `@deepseek-ai/dsh` CLI 的新桌面壳及 CLI/Web 默认 `web`。不同目录/profile 必须显式指定，不能自动选另一个实例。
 - 保留正在运行的任务；安装不会停止进程或自动重启。用户在任务结束后手动重开。
 - 不需要管理员权限或全局 Node/pnpm；Desktop 入口使用该应用的 Electron 运行时和 CLI。遇到权限问题先核对路径，不建议盲目提权。
+
+## 新桌面布局与更新镜像（1.6.75）
+
+Windows 的 `DSH Desktop.exe` 与旧 `DeepSeek Harness.exe` 都可作为候选；仍需核对包内 CLI 身份。新布局从 `@deepseek-ai/dsh/package.json` 的 `bin` 读取入口，沿用同一安装的 `harness-node-entry.mjs`、打包 pnpm 和锁恢复启动器。不要为了绕过“pnpm 找不到”安装全局 pnpm 或选另一份 DSH。若多个候选并存，用 `-DshExe` 明确指定。自定义 profile 始终用 `-Profile` / `--profile` 指定，缺少初始化时停止，不搬迁用户数据猜测匹配。
+
+`sealed_host: true` 表示在 `app.asar` 中识别到宿主，尚不是可写解包目录。诊断不再把它当作“没有宿主”，也不会把虚拟归档路径交给直接文件写入。已有解包目录损坏时，继续报告缺失或读取失败。
+
+插件的「更新通道」可保存可选 HTTPS 镜像前缀，如 `https://gh-proxy.org/`。镜像覆盖发行查询、raw 元数据与包传输；GitHub Token 不发给镜像，包括镜像发起的重定向。代理与镜像可同时使用，只影响插件更新请求，不改系统或模型代理。显式清空镜像后停用；旧配置未声明此字段时继续兼容 `PURGE_GH_MIRROR`。
+
+**镜像不是校验来源**：安装仍需经 GitHub 官方接口取得发行摘要，旧发行必要时读取官方 SHA256SUMS。可通过现有更新代理连接 GitHub。官方校验不可达时停止，不接受镜像自报摘要，不关闭 TLS 或 SHA256。首次安装脚本的下载路径与插件内更新通道分开，不能声称尚未安装的插件能读取其更新设置。
 
 ## 先区分官方入口和社区安装器
 

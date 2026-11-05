@@ -3,7 +3,7 @@
 param(
     [string]$DshExe = $env:DSH_EXE,
     [string]$DshHome = $env:DSH_HOME,
-    [string]$Profile = 'desktop',
+    [string]$Profile = $env:DSH_PROFILE,
     [string]$Version = $env:PURGE_VERSION,
     [switch]$DryRun
 )
@@ -14,15 +14,15 @@ function Find-DshExecutable {
         return (Resolve-Path -LiteralPath $DshExe).Path
     }
     $candidates = @()
-    $candidates += @(Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -eq 'DeepSeek Harness' } | ForEach-Object { $_.Path })
+    $candidates += @(Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -in @('DeepSeek Harness', 'DSH Desktop') } | ForEach-Object { $_.Path })
     foreach ($key in @('HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*', 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*')) {
-        foreach ($entry in @(Get-ItemProperty $key -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -eq 'DeepSeek Harness' })) {
-            if ($entry.InstallLocation) { $candidates += Join-Path $entry.InstallLocation 'DeepSeek Harness.exe' }
+        foreach ($entry in @(Get-ItemProperty $key -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -in @('DeepSeek Harness', 'DSH Desktop') })) {
+            if ($entry.InstallLocation) { foreach ($name in @('DeepSeek Harness.exe', 'DSH Desktop.exe')) { $candidates += Join-Path $entry.InstallLocation $name } }
         }
     }
     foreach ($base in @($env:LOCALAPPDATA, $env:ProgramFiles)) {
         if ($base) {
-            foreach ($suffix in @('Programs\DeepSeek Harness\DeepSeek Harness.exe', 'Programs\deepseek-harness\DeepSeek Harness.exe', 'DeepSeek Harness\DeepSeek Harness.exe')) {
+            foreach ($suffix in @('Programs\DSH Desktop\DSH Desktop.exe', 'DSH Desktop\DSH Desktop.exe', 'Programs\DeepSeek Harness\DeepSeek Harness.exe', 'Programs\deepseek-harness\DeepSeek Harness.exe', 'DeepSeek Harness\DeepSeek Harness.exe')) {
                 $candidates += Join-Path $base $suffix
             }
         }
@@ -50,7 +50,8 @@ try {
     Invoke-WebRequest -UseBasicParsing -TimeoutSec 90 -Uri 'https://raw.githubusercontent.com/kingcharleslzy-ai/dsh-purge/master/scripts/bootstrap-install.mjs' -OutFile $bootstrap
     $env:ELECTRON_RUN_AS_NODE = '1'
     if ($DshHome) { $env:DSH_HOME = $DshHome }
-    $arguments = @($bootstrap, "--profile=$Profile")
+    $arguments = @($bootstrap)
+    if ($Profile) { $arguments += "--profile=$Profile" }
     if ($Version) { $arguments += "--version=$Version" }
     if ($DryRun) { $arguments += '--dry-run' }
     $standardOutput = Join-Path $temporary 'stdout.log'

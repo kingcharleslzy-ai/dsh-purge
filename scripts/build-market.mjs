@@ -16,7 +16,7 @@ export function buildMarket(releases, git = (args) => execFileSync("git", args, 
       const publishTimestamp = Math.floor(Date.parse(r.published_at) / 1000);
       if (!/^[0-9a-f]{40}$/.test(commit) || !Number.isFinite(publishTimestamp)) throw Error("Invalid release identity");
       return { version, publishTimestamp, source: { type: "git", url: `https://github.com/${repo}`, commit },
-        engines: { dsh: ">=0.2.1-rc.1 <0.2.2-0" } };
+        engines: { dsh: manifest.dsh.compatibility?.dsh || ">=0.2.1-rc.1 <0.2.2-0" } };
     }).filter(Boolean).sort((a,b) => b.publishTimestamp-a.publishTimestamp);
   if (!versions.length) throw Error("No published market-qualified release (>=1.6.5)");
   return { format: 1, title: { en: "dsh-purge Community", zh: "dsh-purge Community 插件源" },

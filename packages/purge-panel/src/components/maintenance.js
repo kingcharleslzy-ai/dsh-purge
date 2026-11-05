@@ -391,6 +391,7 @@ export function UpdatePreferences({
 export function UpdateChannelDialog({ value, onClose, onSaved }) {
   const tr = useText();
   const [proxy, setProxy] = useState(value?.proxyUrl || "");
+  const [mirror, setMirror] = useState(value?.mirrorUrl || "");
   const [token, setToken] = useState("");
   const [clearToken, setClearToken] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -418,6 +419,8 @@ export function UpdateChannelDialog({ value, onClose, onSaved }) {
   async function save() {
     if (saving) return;
     const next = {};
+    if (mirror.trim() !== (value?.mirrorUrl || ""))
+      next.mirrorUrl = mirror.trim();
     if (proxy.trim() !== (value?.proxyUrl || "")) next.proxyUrl = proxy.trim();
     // 勾了清除就不要再把输入框里的内容发出去，避免两个动作互相覆盖。
     if (clearToken) next.clearGithubToken = true;
@@ -464,6 +467,23 @@ export function UpdateChannelDialog({ value, onClose, onSaved }) {
         tr(
           "updch.scope",
           "这里的代理与密钥只作用于本插件的更新检查与下载通道，不影响其它模型厂商的请求，也不写入宿主进程环境。留空继承已有更新代理环境。",
+        ),
+      ),
+      h(
+        "label",
+        { className: "dshpp-updch-label" },
+        h("span", null, "GitHub 镜像（可选）"),
+        h("input", {
+          type: "text",
+          value: mirror,
+          placeholder: "https://镜像主机/",
+          onChange: (e) => setMirror(e.target.value),
+          disabled: saving,
+        }),
+        h(
+          "small",
+          null,
+          "用于查询与下载；不发送 GitHub 密钥。安装仍须从 GitHub 获取官方校验值，可使用更新代理。留空关闭镜像。",
         ),
       ),
       h(

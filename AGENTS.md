@@ -1,7 +1,7 @@
 # AGENTS.md — 给 AI agent 的 Purge 使用说明书
 
 > 这份文件是写给**在 DSH 里干活的 agent** 的，不是营销文档。
-> 当前版本：**1.6.74** · 适配 DSH Desktop **0.2.2-rc.1**（0.2.1-rc.1 / rc.2 / rc.3 / rc.5 同样通过）
+> 当前版本：**1.6.75** · 适配 DSH Desktop **0.2.2-rc.1**（0.2.1-rc.1 / rc.2 / rc.3 / rc.5 同样通过）
 > 版本号由 `npm run check:docs` 与 `package.json` 校验，发版必须同步。
 
 ---
@@ -133,7 +133,7 @@ purge-community probe new
 
 | 组件 | 值 |
 | --- | --- |
-| 插件 | `dsh-purge-community` 1.6.74 |
+| 插件 | `dsh-purge-community` 1.6.75 |
 | 已验证宿主 | DSH Desktop 0.2.2-rc.1 / 0.2.1-rc.1 / 0.2.1-rc.2 / 0.2.1-rc.3 / 0.2.1-rc.5 |
 | 其它宿主 | 允许应用，但 `selfcheck` 会标"未验证"；先看 `diagnose` |
 | Node | ≥18（桌面版自带运行时即可） |
@@ -156,7 +156,7 @@ Electron 的 app.asar 本体必须用 `diskFs()` 读取；不要把普通 Node �
 ## 12. 安装 / 更新失败：Agent 必读（1.6.47）
 
 1. **先选入口，不把社区脚本称为官方方法**。首次安装：DSH 官方插件界面/市场确认框，或该实例的 `dsh plugin --profile <实际名称> add <固定版本TGZ URL>`。官方管理器维护 `dsh.bundle`；我们的索引、TGZ 和 `scripts/install.sh` / `scripts/install.ps1` 是社区内容。本项目没有供此流程使用的裸 npm 包名，不运行 `add dsh-purge`、`add dsh-purge-community` 或全局 npm 安装。已有 `dsh-purge`/独立面板时选社区安装器迁移，不能先卸载旧包。完整可复制命令见 [README](README.md#安装) 与 [安装指南](docs/INSTALLATION.md)。
-2. 读取目标 DSH 版本、可执行文件、`DSH_HOME`、profile，先确认已经初始化。Desktop 默认 `desktop`，CLI/Web 示例为 `web`，不能混用；不要下载另一套 npx 宿主来安装到当前桌面实例。先下载脚本到独立临时路径，审阅后 dry-run，再按已有授权执行。dry-run 只验证前置条件、下载与 SHA256，不安装依赖、不验证完整启动。正式安装会备份、调用官方 CLI、迁移旧包引用并验证磁盘版本；它可能修复解包桌面的 `app/runtime` 链接，Linux 可能准备用户宿主副本，并非完全不写宿主目录。脚本与 bootstrap 来自 master，SHA256 校验的对象是发行 TGZ，不能声称脚本也经过独立签名校验。不改提示词、权限、代理、更新偏好或其他插件；不要安装后自动 apply/restart。
+2. 读取目标 DSH 版本、可执行文件、`DSH_HOME`、profile，先确认已经初始化。旧 Desktop CLI 默认 `desktop`，独立 dsh CLI 的新壳及 CLI/Web 默认为 `web`，不能混用；不要下载另一套 npx 宿主来安装到当前桌面实例。先下载脚本到独立临时路径，审阅后 dry-run，再按已有授权执行。dry-run 只验证前置条件、下载与 SHA256，不安装依赖、不验证完整启动。正式安装会备份、调用官方 CLI、迁移旧包引用并验证磁盘版本；它可能修复解包桌面的 `app/runtime` 链接，Linux 可能准备用户宿主副本，并非完全不写宿主目录。脚本与 bootstrap 来自 master，SHA256 校验的对象是发行 TGZ，不能声称脚本也经过独立签名校验。不改提示词、权限、代理、更新偏好或其他插件；不要安装后自动 apply/restart。
 3. `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION` 不是一律“发布太新”。若同时明确报 `@dsh-ops/bash-win32-x64@<版本> ... version not present in registry manifest`，先比较当前公开镜像与 npm 官方元数据。本版安装器仅对这一公开包、明确的公开镜像执行一次 scoped registry 重试；官方 name/version/time/integrity/tarball 不完整则停止。其余依赖保持原源，不改变全局设置。
 4. 市场 JSON 首次安装失败时插件尚未加载，插件运行时无法修复宿主安装器。先让用户选择 npm 官方源，或用独立安装入口。不要承诺“升级插件就能让旧宿主市场自动重试”；换 tgz 仍会触发宿主锁文件校验。
 5. 真实的发布时间不足、integrity/trust 错误、私有源、未知错误：保持失败，保留日志与快照；不要设 minimumReleaseAge=0、trustLockfile，也不要删锁文件、全局清缓存、修改全局 npm 源或把所有错误都归为镜像问题。GitHub `UND_ERR_DESTROYED` 是独立的网络线索，不能承诺换 npm 源会解决。
@@ -499,3 +499,12 @@ Windows 换包仅对真实共享/锁冲突继续等待；其他错误保留 `det
 ### 1.6.73 启动语法错误
 
 若核心 agent-loop 导入报 `Missing catch or finally after try`，先核对源文件是否含 #67 两行之间的字面反斜线 n。1.6.74 修正模板，并精确迁移这一处已知损坏产物；不得把所有反斜线 n 全局换成换行。修复前备份，之后对完整模块做语法检查。不要仅因有补丁 marker 就判成功，也不要为修这一个模块自动禁用所有第三方插件。此修复不改任何权限判断；不自动重启 DSH。
+
+## 1.6.75：目标安装、市场与镜像
+
+- #130：安装入口兼容旧 `dsh-desktop-host/lib/cli.js` 和由 `@deepseek-ai/dsh` manifest 声明的新 CLI。新壳存在 `harness-node-entry.mjs` 时沿用它。不要从 cwd、profile 依赖或用户目录找另一份宿主顶替；显式目标无效应报错。旧 CLI 默认 desktop，独立 dsh CLI 默认 web；已有自定义 profile 必须显式传入，不能搬运或重建用户配置。
+- 归档的只读识别与可写目标分开：`sealed_host:true` 表示 app.asar 已定位但还未解包，不等于补丁已加载。已有 app 目录缺组件时仍报告缺失，不用归档的健康文件掩盖故障。识别宿主不等于所有补丁已适配。
+- #132：`mirrorUrl` 存于现有 update-channel.json，可填完整 HTTPS 前缀或 `gh-proxy.org`；这是可选通道，不默认启用任何公共服务。显式空值关闭镜像；旧文件未声明则继承 PURGE_GH_MIRROR。代理与镜像可以并用，只影响更新请求。
+- 镜像覆盖发行查询、raw 元数据和归档传输；GitHub Token 不发送给镜像或镜像引发的重定向。安装前官方 API digest / SHA256SUMS 必须通过 GitHub（可走现有更新代理）取得；失败停止安装，不能把镜像同时提供的包和摘要当作独立来源证明，也不能关闭 TLS/SHA256。
+- #137：市场索引逐发行读取 manifest.dsh.compatibility.dsh；历史未声明版本保留原有限定。刷新索引即可读取新范围，不需要卸载插件、改用户兼容豁免或重启应用。
+- 本次不改宿主补丁定义，不改用户设置，不自动 apply/restart。隔离安装测试不代表模型行为或全部 GUI 功能验收。
