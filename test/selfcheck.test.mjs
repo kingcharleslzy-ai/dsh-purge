@@ -302,6 +302,7 @@ test("observation policy requires every active method in each host layout", asyn
     policy(write.replace, ...delegations, check.pattern), policy(write.pattern, ...delegations, check.replace),
     policy(write.replace, delegations[0], check.replace), policy(write.replace, edit, check.replace),
     old.replace("return void 0;", "return this.get(actor, target);"), modern + "\n" + modern,
+    policy(write.replace, edit, "\teditIntent(other) { throw Error(); }"),
   ]) assert.equal(patchApplied(partial, patch), false);
 });
 
