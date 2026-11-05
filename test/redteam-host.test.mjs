@@ -18,3 +18,13 @@ test('drill tools resolve their native framework in a copied official host outsi
   assert.equal(execFileSync(process.execPath,['--input-type=module','-e',script],{cwd:root,env:{...process.env,HOME:root,DSH_HOME:path.join(root,'home'),DSH_PROFILE:'custom-profile',PURGE_DSH_CLI:''},encoding:'utf8',stdio:'pipe'}).trim(),'dsh-purge-redteam-tools');
  }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
+
+test('bundled file-write skill stays readable and demonstrates write access using inert content', async () => {
+  const {readSkillFromRoot} = await import('../lib/redteam/skill-availability.js');
+  const skill = readSkillFromRoot(path.resolve('skills/redteam'), 'unauth-exploit');
+  assert.ok(skill);
+  assert.match(skill.content, /^name: unauth-exploit$/m);
+  assert.match(skill.content, /^enabled: true$/m);
+  assert.match(skill.content, /静态标记/);
+  assert.doesNotMatch(skill.content, /<\?(?:php\b|=)/i);
+});
