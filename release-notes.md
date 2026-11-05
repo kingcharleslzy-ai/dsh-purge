@@ -1,3 +1,22 @@
+# 1.6.78
+
+## 红队模块补两处上游能力
+
+上一轮我说"项目没有红队模式"是错的——`lib/redteam` / `presets/redteam` / `skills/redteam` 一直都在。真正落后的是两个新文件，这次补上：
+
+- **`lib/redteam/atomic-write.js`**：先写临时文件 + fsync 再 rename。以前直接 `writeFileSync` 覆盖设置/平台配置，写到一半崩溃会留下半截 JSON，读侧又把解析错误吞成默认值，用户设置就无声丢了。`settings.js` 与 `platform-config.js` 已切到原子写。
+- **`lib/redteam/evidence-ledger.mjs`**：红队证据账本。四档置信度 `claimed` / `observed` / `derived` / `inferred`，`claimed` 与 `inferred` 永远需要核实；每条证据带 `ev_id = sha256(规范化语义)`，改一个字哈希就变，能验证"子代理说 A、库里记的是不是真的 A"。另有 `UnknownRegistry` 记"还没打完、证据不足"的问题，同一问题规范化后得到同一个 `unk_id`。
+
+## 两处没照抄
+
+- **路径校验**：上游 `validate.js` 用 `realish()` 自己防软链接穿越；我们保留已有的 `assertWithinRoots()`（统一走 `lib/path-boundary.js`），实现更强，不换回上游版本。
+- **红队主逻辑**（`store-core.js` 等 651 行差异）本轮未合并，留到下一轮单独评估。
+
+## 验证
+
+- 新增 `test/redteam-evidence-ledger.test.mjs`（语义哈希、置信度契约、非法置信度被拒、未知问题去重）与 `test/redteam-atomic-write.test.mjs`（替换成功无残留、失败保留原文件），两条都已接进 `npm test`。
+- `npm test` **542 通过 / 0 失败**。
+
 # 1.6.77
 
 ## 从上游 1.1.90 取回两条去品牌补丁
