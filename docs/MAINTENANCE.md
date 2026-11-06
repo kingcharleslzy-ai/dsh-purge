@@ -46,6 +46,8 @@ profile 不存在/有多个且未明确选择时停止。Web/Headless 只用当�
 
 启动错误另见 `.json.broker.log`、`.json.launch.log`、`.json.launch.log.error`。实机发现 Electron 的 detached PowerShell 会退出 0 却不执行脚本，因此用短 broker 启动独立助手。broker 成功不代表握手成功；最终以状态文件为准。维护回归必须提供真实 Electron，并验证启动进程退出后助手仍存活，直到归档换包完成。
 
+broker 不把「创建进程成功」当作启动成功：它在启动后轮询状态文件，只有助手写出 `ready` 之后的阶段才算就绪。经本地 WMI 提供者创建 PowerShell 时会话可能立刻退出（返回码为成功、进程秒退、无任何输出；用 `cmd.exe` 包装才能看到「拒绝访问。」），该路径现在记为未就绪，随后改用 shell 启动重试一次。两条路径都没有就绪时，broker 直接把状态写成 `phase: failed`，把原因写进 `detail` 与 `.json.broker.log`，宿主不再在十秒后只报一句「助手停止」。原归档在所有失败路径上都保留。
+
 助手始终没有完成时：先保留日志，从系统托盘完整退出 DSH，确认任务管理器没有**该安装路径**的进程。仅当本次「应用」已成功、`resources/app/package.json` 及宿主文件完整时，才在独立 PowerShell 中将 `resources/app.asar` **改名保留**为新的带时间戳 `.bak`，再手动打开 DSH。这绕开的是失效的交接进程，不是重写补丁。若文件仍被占用/权限不足，保持原件并停止；不要删除 app.asar 或强杀所有 Electron。此步骤不能套到刚被官方更新替换的新归档。
 
 回到原宿主：完整退出后，核对状态文件记录的 `backup` 与 `archive_sha256`，用 `Get-FileHash -Algorithm SHA256` 校验该原归档备份，确认没有跨官方版本。保留当前解包目录及现存归档，再将原备份复制回 `resources/app.asar`，手动打开。此过程不恢复 profile，不覆盖当前提示词、规则或其他插件设置。插件版本回滚仍使用前文 `rollback <id>`，两种回滚不要混淆。
