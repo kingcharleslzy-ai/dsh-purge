@@ -2,6 +2,7 @@
 // 1.1.71 (MIT). Original block: client.js 1.1.71 lines 2835-3474:
 // REWIND_CSS, RewindSafe/RewindFallback/RewindButton, installRewindUi,
 // installRewindWatch.
+import * as rd from "react-dom";
 import { h, useState, useEffect, useRef, Component } from "../shared/react.js";
 import { NS, useT } from "../shared/locale.js";
 import { apiJson } from "../api/client.js";
@@ -380,7 +381,19 @@ export function RewindButton(props) {
       ),
       label,
     ),
-    menu ? rewindMenuNode(t, menuPos, menuRef, runRewind) : null,
+    // 菜单自身是 position:fixed，但宿主 composerSeat 带 will-change:transform，
+    // 它会成为 fixed 的包含块，菜单就按那个容器算坐标（#151）。
+    // 门户到 body 才回到视口坐标系；host 没暴露 react-dom 时退回原位置渲染。
+    menu
+      ? typeof rd.createPortal === "function" &&
+        typeof document !== "undefined" &&
+        document.body
+        ? rd.createPortal(
+            rewindMenuNode(t, menuPos, menuRef, runRewind),
+            document.body,
+          )
+        : rewindMenuNode(t, menuPos, menuRef, runRewind)
+      : null,
   );
 }
 
