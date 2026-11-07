@@ -23,7 +23,7 @@ shellcode, no credential dumps and no C2 implants. It consists of:
 
   lib/            orchestration logic, a local SQLite fact base, tool schemas,
                   a right-side console UI and report rendering
-  skills/         23 Markdown instruction documents (prose runbooks) telling an
+  skills/         41 Markdown instruction documents (prose runbooks) telling an
                   agent how to *operate* third-party tools the user installs
   presets/        agent preset composition (YAML)
   scripts/        redteam-setup.sh — an optional environment bootstrap that
