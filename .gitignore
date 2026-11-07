@@ -34,3 +34,5 @@ default-prompt-inject.md
 *.asar.bak
 
 market-dist/
+# npm pack 产物与临时解包目录，不入库
+dist/
