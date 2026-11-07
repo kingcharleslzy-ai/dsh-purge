@@ -1,0 +1,30 @@
+{
+  "name": "dsh-h3-video",
+  "title": {
+    "en": "MiniMax H3 Video",
+    "zh": "MiniMax H3 视频工作台"
+  },
+  "description": {
+    "en": "Generate clips with selectable duration, Turbo and quality presets, and an H3 conversation skill.",
+    "zh": "在视频页或对话中选择 480p / 768p、Turbo / 质量档与镜头时长，生成有声 MP4。"
+  },
+  "author": "kingcharleslzy-ai",
+  "homepage": "https://github.com/kingcharleslzy-ai/dsh-h3-video#readme",
+  "repository": {
+    "url": "https://github.com/kingcharleslzy-ai/dsh-h3-video"
+  },
+  "versions": [
+    {
+      "version": "0.3.0",
+      "publishTimestamp": 1794060470,
+      "source": {
+        "type": "git",
+        "url": "https://github.com/kingcharleslzy-ai/dsh-h3-video",
+        "commit": "641cc1ee51a7c3af403ed28f7f959ea4e027058d"
+      },
+      "engines": {
+        "dsh": "0.2.2-rc.1"
+      }
+    }
+  ]
+}

@@ -50,12 +50,13 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
     !plugin.versions?.length || plugin.versions.some(v => v.source?.type !== "git" || v.source?.url !== plugin.repository.url || !/^[a-f0-9]{40}$/.test(v.source.commit)))
     throw Error("Qwen market identity or pinned sources invalid");
   index.title = { en: "Charles DSH plugins", zh: "Charles DSH 插件源" };
-  index.description = { en: "Verified dsh-purge Community, Qwen Studio, and Breeze Voice releases.", zh: "Purge 社区版、Qwen Studio 生图和 Breeze 语音的已校验发行版本。" };
+  index.description = { en: "Verified dsh-purge Community, Qwen Studio, Breeze Voice and H3 Video releases.", zh: "Purge 社区版、Qwen Studio 生图、Breeze 语音和 H3 视频的已校验发行版本。" };
   index.metadata = qwen.metadata;
   const voice = JSON.parse(fs.readFileSync(new URL("../market/breeze-voice.json", import.meta.url), "utf8"));
-  index.plugins.push(plugin, voice);
+  const h3 = JSON.parse(fs.readFileSync(new URL("../market/h3-video.json", import.meta.url), "utf8"));
+  index.plugins.push(plugin, voice, h3);
   fs.mkdirSync(out, { recursive: true });
   fs.writeFileSync(path.join(out, "index.json"), JSON.stringify(index, null, 2) + "\n");
-  fs.writeFileSync(path.join(out, "index.html"), '<!doctype html><html lang="zh"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Charles DSH 插件源</title><main><h1>Charles DSH 插件源</h1><p>DSH → 插件 → 实验性插件 → 自定义插件市场 → 发现 → 添加索引源。</p><p>索引：<a href="index.json">index.json</a>，复制此链接的完整地址添加。</p><p>包含 dsh-purge Community、图像 Qwen Studio 和 <a href="https://github.com/kingcharleslzy-ai/dsh-breeze-voice">Breeze 语音对话</a>。<a href="https://github.com/kingcharleslzy-ai/dsh-qwen-studio">图像插件安装与 Agent 指南</a>。</p><p>宿主策略补丁、提示词管理、诊断、更新与备份回滚。安装会修改本机插件；应用宿主补丁是单独的操作。插件升级后手动重启 DSH。</p><p><a href="https://github.com/kingcharleslzy-ai/dsh-purge">源码与安装说明</a> · <a href="https://github.com/kingcharleslzy-ai/dsh-purge/releases/latest">最新发行包</a></p></main></html>\n');
+  fs.writeFileSync(path.join(out, "index.html"), '<!doctype html><html lang="zh"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Charles DSH 插件源</title><main><h1>Charles DSH 插件源</h1><p>DSH → 插件 → 实验性插件 → 自定义插件市场 → 发现 → 添加索引源。</p><p>索引：<a href="index.json">index.json</a>，复制此链接的完整地址添加。</p><p>包含 dsh-purge Community、图像 Qwen Studio 、<a href="https://github.com/kingcharleslzy-ai/dsh-breeze-voice">Breeze 语音对话</a> 和 <a href="https://github.com/kingcharleslzy-ai/dsh-h3-video">H3 视频工作台</a>。<a href="https://github.com/kingcharleslzy-ai/dsh-qwen-studio">图像插件安装与 Agent 指南</a>。</p><p>宿主策略补丁、提示词管理、诊断、更新与备份回滚。安装会修改本机插件；应用宿主补丁是单独的操作。插件升级后手动重启 DSH。</p><p><a href="https://github.com/kingcharleslzy-ai/dsh-purge">源码与安装说明</a> · <a href="https://github.com/kingcharleslzy-ai/dsh-purge/releases/latest">最新发行包</a></p></main></html>\n');
   console.log(`Generated ${index.plugins[0].versions.length} pinned market versions`);
 }
