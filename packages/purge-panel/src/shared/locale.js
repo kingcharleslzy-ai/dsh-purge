@@ -12,6 +12,12 @@ export function useT() {
   return translate;
 }
 
+export function compatibilityLevelText(t, level) {
+  const key = "compat.level." + (level || "unknown");
+  const hit = t(key);
+  return hit && hit !== key ? hit : zh[key] || level || t("unknown");
+}
+
 export const zh = {
   nav: "规则设定",
   "dock.clean": "清洗",
@@ -73,6 +79,9 @@ export const zh = {
   "compat.level.qualified": "已回归验证",
   "compat.level.unverified": "未验证版本",
   "compat.level.mixed": "组件版本不一致",
+  "compat.level.sealed": "已定位归档宿主",
+  "compat.level.kernel-verified": "内核已验证，宿主未验证",
+  "compat.level.missing": "未定位宿主",
   "compat.level.no-host": "未定位宿主",
   "compat.level.unknown": "未知",
   "theme.aria": "外观",
@@ -491,6 +500,9 @@ export const en = {
   "compat.level.qualified": "regression verified",
   "compat.level.unverified": "unverified version",
   "compat.level.mixed": "mixed component versions",
+  "compat.level.sealed": "host archive located",
+  "compat.level.kernel-verified": "kernel verified, host unverified",
+  "compat.level.missing": "host not located",
   "compat.level.no-host": "host not located",
   "compat.level.unknown": "unknown",
   "theme.aria": "Appearance",

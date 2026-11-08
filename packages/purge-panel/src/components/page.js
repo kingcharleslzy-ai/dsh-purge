@@ -3,7 +3,7 @@
 // host tokens, one column, explanations in "?" tips instead of paragraphs).
 import { h, useState, useEffect, useCallback } from "../shared/react.js";
 import { PURGE_CSS, NATIVE_CSS, PAGE_CSS } from "../styles/index.js";
-import { useT } from "../shared/locale.js";
+import { compatibilityLevelText, useT } from "../shared/locale.js";
 import { apiJson, unavailableStatus } from "../api/client.js";
 import { Btn, HelpTip } from "./primitives.js";
 import { PurgifySection } from "./settings-form.js";
@@ -40,6 +40,7 @@ function PurgeGlyph({ size = 18 } = {}) {
 }
 
 export function StatusStrip({ info }) {
+  const t = useT();
   const compat = info?.compatibility || {};
   const level = compat.level || "";
   const ok = level === "qualified";
@@ -62,17 +63,11 @@ export function StatusStrip({ info }) {
       h(
         "b",
         null,
-        level === "qualified"
-          ? "已回归验证"
-          : level === "unverified"
-            ? "未验证版本"
-            : level === "mixed"
-              ? "组件版本不一致"
-              : level
-                ? "未定位宿主"
-                : info?.ok === false
-                  ? "读取失败"
-                  : "检测中",
+        level
+          ? compatibilityLevelText(t, level)
+          : info?.ok === false
+            ? "读取失败"
+            : "检测中",
       ),
       h(
         HelpTip,
@@ -120,6 +115,38 @@ export function LayoutNotice({ info }) {
   const detail = info.asar_handoff?.detail
     ? ` 详情：${info.asar_handoff.detail}${failure?.win32_code != null ? `（Windows 错误 ${failure.win32_code}）` : ""}`
     : "";
+  const layout = info.host_layout;
+  if (
+    info.ok !== false &&
+    info.surface === "web" &&
+    layout?.disk?.surface === "web" &&
+    layout.state === "unknown_runtime" &&
+    layout.process?.entry_layout === "unknown" &&
+    layout.process.matches_target === null &&
+    layout.disk.archive_exists === null &&
+    layout.disk.unpacked_exists === null &&
+    !info.desktop_exe &&
+    !info.desktop_install &&
+    !sealed &&
+    !layout.errors?.length &&
+    info.asar_handoff?.phase === "unknown_target" &&
+    !info.asar_handoff.error &&
+    !info.asar_handoff.detail
+  ) {
+    return h(
+      "details",
+      { className: "dshpp-layout-details" },
+      h("summary", null, "换包状态：不适用（Web 宿主）"),
+      h(
+        "p",
+        { className: "dshpp-note" },
+        "Web 服务无需桌面归档换包。原始诊断：",
+        layout.state,
+        " / ",
+        info.asar_handoff.phase,
+      ),
+    );
+  }
   const confirmed =
     info.host_layout?.state === "unpacked_entry" &&
     info.host_layout?.process?.matches_target === true &&

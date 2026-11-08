@@ -208,3 +208,27 @@ test("a confirmed missing host remains a visible diagnostic, not a read failure"
   assert.match(markup, /未定位宿主/);
   assert.doesNotMatch(markup, /读取失败/);
 });
+
+test("the compatibility strip distinguishes archived, kernel-only and unknown future levels", () => {
+  const h = harness();
+  for (const [level, label] of Object.entries({
+    qualified: "已回归验证",
+    mixed: "组件版本不一致",
+    unverified: "未验证版本",
+    sealed: "已定位归档宿主",
+    "kernel-verified": "内核已验证，宿主未验证",
+    "no-host": "未定位宿主",
+    "future-level": "future-level",
+  })) {
+    const html = renderToStaticMarkup(
+      React.createElement(h.StatusStrip, {
+        info: {
+          ok: true,
+          compatibility: { level, host_version: "0.2.2-rc.1" },
+        },
+      }),
+    );
+    assert.ok(html.includes(label), level);
+    assert.equal(html.includes("is-ok"), level === "qualified");
+  }
+});

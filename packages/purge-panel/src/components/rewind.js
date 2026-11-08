@@ -3,6 +3,7 @@
 // REWIND_CSS, RewindSafe/RewindFallback/RewindButton, installRewindUi,
 // installRewindWatch.
 import { h, useState, useEffect, useRef, Component } from "../shared/react.js";
+import { createPortal } from "react-dom";
 import { NS, useT } from "../shared/locale.js";
 import { apiJson } from "../api/client.js";
 import {
@@ -26,7 +27,7 @@ export const REWIND_CSS = `
 .dshp-rewind:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.12));color:var(--dsw-alias-label-primary,currentColor)}
 .dshp-rewind:disabled{opacity:.4;cursor:default}
 .dshp-rewind svg{display:block}
-.dshp-rewind-menu{position:fixed;z-index:2147483000;box-sizing:border-box;min-width:220px;padding:4px;border:0;border-radius:12px;background:var(--dsw-specific-menu,#fff);color:var(--dsw-alias-label-primary,#1a1a1a);--dsw-elevation-stroke-color:var(--dsw-alias-border-l1);box-shadow:var(--dsw-elevation-prominent,0 8px 24px rgba(0,0,0,.16));transform:translateY(-100%)}
+.dshp-rewind-menu{position:fixed;z-index:2147483000;box-sizing:border-box;width:max-content;min-width:min(220px,calc(100vw - 16px));max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);overflow:auto;padding:4px;border:0;border-radius:12px;background:var(--dsw-specific-menu,#fff);color:var(--dsw-alias-label-primary,#1a1a1a);--dsw-elevation-stroke-color:var(--dsw-alias-border-l1);box-shadow:var(--dsw-elevation-prominent,0 8px 24px rgba(0,0,0,.16));transform:translateY(-100%)}
 body[data-ds-dark-theme] .dshp-rewind-menu{background:var(--dsw-specific-menu,#32312d);color:var(--dsw-alias-label-primary,#e6e2db);--dsw-elevation-stroke-color:var(--dsw-alias-border-l1,#3f3d38);box-shadow:var(--dsw-elevation-prominent,0 10px 28px rgba(0,0,0,.45))}
 .dshp-rewind-item{display:flex;flex-direction:column;gap:2px;width:100%;padding:8px 10px;border:0;border-radius:8px;background:transparent;color:inherit;text-align:left;cursor:pointer;font:12px/1.3 var(--ds-font-sans,system-ui,sans-serif)}
 .dshp-rewind-item:hover{background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.12))}
@@ -35,16 +36,93 @@ body[data-ds-dark-theme] .dshp-rewind-menu{background:var(--dsw-specific-menu,#3
 body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tertiary,#a8a39a)}
 `;
 
-function rewindMenuNode(t, menuPos, menuRef, runRewind) {
+// The composer may create a containing block for fixed descendants. Measure
+// and render in the same viewport, including when a nested scroller moves.
+class RewindMenu extends Component {
+  state = { position: null };
+
+  reposition = () => {
+    const { anchor, menuRef } = this.props;
+    const menu = menuRef.current;
+    if (!anchor || !menu) return;
+    const rect = anchor.getBoundingClientRect();
+    const size = menu.getBoundingClientRect();
+    const win = anchor.ownerDocument.defaultView;
+    const viewport = win.visualViewport;
+    const x = viewport?.offsetLeft ?? 0;
+    const y = viewport?.offsetTop ?? 0;
+    const right = x + (viewport?.width ?? win.innerWidth);
+    const bottom = y + (viewport?.height ?? win.innerHeight);
+    const above = rect.top - 8 - size.height;
+    const left = Math.max(
+      x + 8,
+      Math.min(rect.right - size.width, right - size.width - 8),
+    );
+    const top = Math.max(
+      y + 8,
+      Math.min(
+        above >= y + 8 ? above : rect.bottom + 8,
+        bottom - size.height - 8,
+      ),
+    );
+    const prev = this.state.position;
+    if (!prev || left !== prev.left || top !== prev.top)
+      this.setState({ position: { left, top } });
+  };
+
+  componentDidMount() {
+    const win = this.props.anchor?.ownerDocument?.defaultView;
+    if (!win || typeof createPortal !== "function") return;
+    this.win = win;
+    this.reposition();
+    win.addEventListener("resize", this.reposition);
+    win.addEventListener("scroll", this.reposition, true);
+    win.visualViewport?.addEventListener("resize", this.reposition);
+    win.visualViewport?.addEventListener("scroll", this.reposition);
+    if (win.ResizeObserver) {
+      this.observer = new win.ResizeObserver(this.reposition);
+      this.observer.observe(this.props.anchor);
+      this.observer.observe(this.props.menuRef.current);
+    }
+  }
+
+  componentWillUnmount() {
+    this.win?.removeEventListener("resize", this.reposition);
+    this.win?.removeEventListener("scroll", this.reposition, true);
+    this.win?.visualViewport?.removeEventListener("resize", this.reposition);
+    this.win?.visualViewport?.removeEventListener("scroll", this.reposition);
+    this.observer?.disconnect();
+  }
+
+  render() {
+    const { t, menuRef, runRewind, anchor } = this.props;
+    const body = anchor?.ownerDocument?.body;
+    const portal = body && typeof createPortal === "function";
+    const style = portal
+      ? {
+          ...this.state.position,
+          visibility: this.state.position ? "visible" : "hidden",
+          transform: "none",
+        }
+      : {
+          position: "absolute",
+          right: 0,
+          bottom: "calc(100% + 8px)",
+          transform: "none",
+        };
+    const menu = rewindMenuNode(t, style, menuRef, runRewind);
+    return portal ? createPortal(menu, body) : menu;
+  }
+}
+
+function rewindMenuNode(t, style, menuRef, runRewind) {
   return h(
     "div",
     {
       className: "dshp-rewind-menu",
       role: "menu",
       ref: menuRef,
-      style: menuPos
-        ? { left: menuPos.left + "px", top: menuPos.top + "px" }
-        : { left: "8px", bottom: "48px", transform: "none" },
+      style,
     },
     h(
       "button",
@@ -104,12 +182,12 @@ function rewindMenuNode(t, menuPos, menuRef, runRewind) {
 export class RewindFallback extends Component {
   constructor(p) {
     super(p);
-    this.state = { menu: false, busy: false, notice: "", menuPos: null };
+    this.state = { menu: false, busy: false, notice: "" };
     this.wrap = null;
-    this.menuEl = null;
+    this.menuRef = { current: null };
     this.onDoc = (event) => {
       if (this.wrap && this.wrap.contains(event.target)) return;
-      if (this.menuEl && this.menuEl.contains(event.target)) return;
+      if (this.menuRef.current?.contains(event.target)) return;
       this.setState({ menu: false });
     };
   }
@@ -149,20 +227,7 @@ export class RewindFallback extends Component {
       });
   }
   openMenu() {
-    const rect =
-      this.wrap && this.wrap.getBoundingClientRect
-        ? this.wrap.getBoundingClientRect()
-        : null;
-    this.setState({
-      menu: !this.state.menu,
-      notice: "",
-      menuPos: rect
-        ? {
-            left: Math.max(8, rect.right - 228),
-            top: Math.max(8, rect.top - 8),
-          }
-        : null,
-    });
+    this.setState(({ menu }) => ({ menu: !menu, notice: "" }));
   }
   render() {
     const sessionId = this.props.sessionId || currentSessionId(hostSessions());
@@ -196,14 +261,12 @@ export class RewindFallback extends Component {
         label,
       ),
       this.state.menu
-        ? rewindMenuNode(
+        ? h(RewindMenu, {
             t,
-            this.state.menuPos,
-            (node) => {
-              this.menuEl = node;
-            },
-            (mode) => this.run(mode),
-          )
+            anchor: this.wrap,
+            menuRef: this.menuRef,
+            runRewind: (mode) => this.run(mode),
+          })
         : null,
     );
   }
@@ -266,7 +329,6 @@ export function RewindButton(props) {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [menu, setMenu] = useState(false);
-  const [menuPos, setMenuPos] = useState(null);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -329,13 +391,6 @@ export function RewindButton(props) {
       setMenu(false);
       return;
     }
-    const rect = wrapRef.current?.getBoundingClientRect?.();
-    if (rect) {
-      setMenuPos({
-        left: Math.max(8, rect.right - 228),
-        top: Math.max(8, rect.top - 8),
-      });
-    }
     setNotice("");
     setMenu(true);
   };
@@ -380,7 +435,9 @@ export function RewindButton(props) {
       ),
       label,
     ),
-    menu ? rewindMenuNode(t, menuPos, menuRef, runRewind) : null,
+    menu
+      ? h(RewindMenu, { t, anchor: wrapRef.current, menuRef, runRewind })
+      : null,
   );
 }
 
