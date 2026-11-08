@@ -96,3 +96,34 @@ test('Windows native sharing violation retries, permanent collision fails withou
     if(fixtureRoot) fs.rmSync(fixtureRoot,{recursive:true,force:true});
   }
 });
+
+test('Windows reports a created helper that exits before its first acknowledgement', {
+  skip: process.platform !== 'win32',
+}, async t => {
+  const {scheduleWindowsAsarHandoff} = await import('../lib/windows-asar-handoff.js');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'purge-no-ack-'));
+  t.after(() => fs.rmSync(dir, {recursive:true, force:true}));
+  const asar = path.join(dir, 'app.asar');
+  fs.writeFileSync(asar, 'original');
+  const statePath = asar + '.purge-handoff.json';
+  scheduleWindowsAsarHandoff({exe:process.execPath, asar}, {
+    spawn(command, args, options) {
+      const {token} = JSON.parse(fs.readFileSync(statePath, 'utf8'));
+      const helper = path.join(os.tmpdir(), 'dsh-purge-handoff-' + token + '.ps1');
+      t.after(() => fs.rmSync(helper, {force:true}));
+      fs.writeFileSync(helper, 'exit 0\n');
+      return spawn(command, args, options);
+    }
+  });
+  let state;
+  for (let i = 0; i < 200; i++) {
+    await wait(200);
+    state = readWindowsAsarHandoff(asar);
+    if (state?.phase === 'failed') break;
+  }
+  assert.equal(state?.phase, 'failed', JSON.stringify(state));
+  const log = fs.readFileSync(statePath + '.broker.log', 'utf8');
+  assert.match(log, /child_pid=[1-9]\d*/);
+  assert.match(log, /before acknowledging startup|did not acknowledge startup/);
+  assert.equal(fs.readFileSync(asar, 'utf8'), 'original');
+});

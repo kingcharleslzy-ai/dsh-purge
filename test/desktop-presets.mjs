@@ -18,7 +18,7 @@ const { boot, initProfile, readProfilePatches } = await load("dsh-app-boot");
 const { readPresetDefinition } = await import(
   pathToFileURL(path.join(repo, "lib/redteam/preset-composition.js"))
 );
-const { migratePresetDefinition, registerPresetDefinitions } = await import(
+const { adaptListAgents, migratePresetDefinition, registerPresetDefinitions, backupPresetMigration, withLegacyChildIds } = await import(
   pathToFileURL(path.join(repo, "lib/preset-compat.js"))
 );
 const home = fs.mkdtempSync(path.join(os.tmpdir(), "purge-native-preset-"));
@@ -42,7 +42,7 @@ const profile = {
   startedBundles: ["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app"],
   dir,
   patchPath: path.join(dir, "cordis.patch.yml"),
-  installAnchor: path.join(home, "package.json"),
+  installAnchor: path.join(dir, "package.json"),
   cwd: home,
   home,
   overlays: [],
@@ -99,12 +99,20 @@ try {
     /toolFilter is no longer supported/,
   );
   await release();
-  const migrated = migratePresetDefinition(original);
+  const current = adaptListAgents(original, profile.installAnchor);
+  const previous = structuredClone(current);
+  previous.plugins.unshift({ id: "previous-host-row", group: true, config: [] });
+  const legacy = migratePresetDefinition(previous);
+  backupPresetMigration({ home, dir: userDir, id: original.id, policies: legacy.policies });
+  const migrated = migratePresetDefinition(current, { stableChildIds: true });
+  backupPresetMigration({home, dir:userDir, id:original.id, policies:migrated.policies});
+  const historicalDefinitions = withLegacyChildIds(migrated, home);
+  assert(historicalDefinitions.some(def => def.id === legacy.policies[0].childId));
   release = await registerPresetDefinitions(
     ctx.agentPresets,
-    migrated.definitions,
+    historicalDefinitions,
   );
-  for (const id of migrated.definitions.map((d) => d.id)) {
+  for (const id of historicalDefinitions.map((d) => d.id)) {
     const handle = await ctx.agents.create({
       sessionId: "compat-" + id,
       agentOptions: ctx.agentDefaultModel.currentSelection(),

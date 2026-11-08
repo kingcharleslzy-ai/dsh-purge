@@ -195,3 +195,24 @@ test("list_agents is adapted only for the verified merged provider in the same g
   fs.writeFileSync(path.join(opaquePackage, "package.json"), JSON.stringify({name, exports:{".":"./index.js"}}));
   assert.equal(adaptListAgents(before, path.join(opaqueRoot, "package.json")), before);
 });
+
+test("saved child IDs resolve after host rows move, with the same denied tools", async (t) => {
+  const {createHash} = await import("node:crypto");
+  const {withLegacyChildIds} = await import("../lib/preset-compat.js");
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "preset-history-"));
+  t.after(() => fs.rmSync(home, {recursive:true, force:true}));
+  const def = definition();
+  const old = migratePresetDefinition(def, { stableChildIds: true });
+  const p = old.policies[0];
+  const oldId = def.id + "-child-" + createHash("sha256").update(JSON.stringify({at:p.at, deny:p.deny})).digest("hex").slice(0,10);
+  backupPresetMigration({home,dir:bundledPresetDir(),id:def.id,policies:[{...p,childId:oldId}]});
+  def.plugins.unshift({name:"qa",id:"user-row"});
+  const next = migratePresetDefinition(def, { stableChildIds: true });
+  assert.equal(next.policies[0].childId,p.childId);
+  assert.notDeepEqual(next.policies[0].at,p.at);
+  const definitions = withLegacyChildIds(next,home);
+  assert.deepEqual(definitions.find(x => x.id === oldId).plugins,next.definitions[0].plugins);
+  assert.equal(spawn(definitions.at(-1)).config.agentPreset,p.childId);
+  spawn(def).config.toolFilter.deny.pop();
+  assert.ok(!withLegacyChildIds(migratePresetDefinition(def, { stableChildIds: true }),home).some(x => x.id === oldId));
+});
