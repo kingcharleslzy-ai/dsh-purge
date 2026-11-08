@@ -637,3 +637,15 @@ test("failed migration restores exact disabled profile and floating dependency",
   assert.equal(fs.readFileSync(manifest, "utf8"), original);
   assert.equal(fs.readFileSync(path.join(fixture.profile, "cordis.patch.yml"), "utf8"), "PRIVATE CURRENT SETTINGS");
 });
+
+test("an installer can initialize a fresh profile manifest", async t => {
+  const fixture = setup();
+  t.after(fixture.close);
+  const manifest = path.join(fixture.profile, "package.json");
+  fs.unlinkSync(manifest);
+  fixture.manager.installer = async () => {
+    fs.writeFileSync(manifest, JSON.stringify({private:true}));
+  };
+  await fixture.manager.install(fixture.candidate);
+  assert.deepEqual(JSON.parse(fs.readFileSync(manifest)).dsh.profile.bundles, [PACKAGE]);
+});
