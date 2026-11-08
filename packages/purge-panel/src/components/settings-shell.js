@@ -1,7 +1,11 @@
 import { CommunityMaintenance } from "./maintenance.js";
 // UI derived from YuJunZhiXue/dsh-purge 1.1.71 (MIT). See LICENSE.
 import { h, useState, useEffect } from "../shared/react.js";
-import { setTranslate, useT } from "../shared/locale.js";
+import {
+  compatibilityLevelText,
+  setTranslate,
+  useT,
+} from "../shared/locale.js";
 import { apiJson } from "../api/client.js";
 import { PURGE_CSS, NATIVE_CSS } from "../styles/index.js";
 import { Btn } from "./primitives.js";
@@ -15,12 +19,6 @@ import {
   useDock,
   requestDrill,
 } from "../state/dock.js";
-
-export function compatibilityLevelText(t, level) {
-  const key = "compat.level." + (level || "unknown");
-  const hit = t(key);
-  return hit && hit !== key ? hit : level || t("unknown");
-}
 
 /**
  * 社区版兼容提示：读取后端 /dsh-purge/community 报告的宿主版本与兼容级别。

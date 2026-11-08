@@ -9123,6 +9123,11 @@ function setTranslate(t) {
 function useT() {
   return translate;
 }
+function compatibilityLevelText(t, level) {
+  const key = "compat.level." + (level || "unknown");
+  const hit = t(key);
+  return hit && hit !== key ? hit : zh[key] || level || t("unknown");
+}
 var zh = {
   nav: "\u89C4\u5219\u8BBE\u5B9A",
   "dock.clean": "\u6E05\u6D17",
@@ -9173,6 +9178,9 @@ var zh = {
   "compat.level.qualified": "\u5DF2\u56DE\u5F52\u9A8C\u8BC1",
   "compat.level.unverified": "\u672A\u9A8C\u8BC1\u7248\u672C",
   "compat.level.mixed": "\u7EC4\u4EF6\u7248\u672C\u4E0D\u4E00\u81F4",
+  "compat.level.sealed": "\u5DF2\u5B9A\u4F4D\u5F52\u6863\u5BBF\u4E3B",
+  "compat.level.kernel-verified": "\u5185\u6838\u5DF2\u9A8C\u8BC1\uFF0C\u5BBF\u4E3B\u672A\u9A8C\u8BC1",
+  "compat.level.missing": "\u672A\u5B9A\u4F4D\u5BBF\u4E3B",
   "compat.level.no-host": "\u672A\u5B9A\u4F4D\u5BBF\u4E3B",
   "compat.level.unknown": "\u672A\u77E5",
   "theme.aria": "\u5916\u89C2",
@@ -9550,6 +9558,9 @@ var en = {
   "compat.level.qualified": "regression verified",
   "compat.level.unverified": "unverified version",
   "compat.level.mixed": "mixed component versions",
+  "compat.level.sealed": "host archive located",
+  "compat.level.kernel-verified": "kernel verified, host unverified",
+  "compat.level.missing": "host not located",
   "compat.level.no-host": "host not located",
   "compat.level.unknown": "unknown",
   "theme.aria": "Appearance",
@@ -13311,6 +13322,7 @@ function PurgeGlyph({ size = 18 } = {}) {
   );
 }
 function StatusStrip({ info }) {
+  const t = useT();
   const compat = info?.compatibility || {};
   const level = compat.level || "";
   const ok = level === "qualified";
@@ -13333,7 +13345,7 @@ function StatusStrip({ info }) {
       h(
         "b",
         null,
-        level === "qualified" ? "\u5DF2\u56DE\u5F52\u9A8C\u8BC1" : level === "unverified" ? "\u672A\u9A8C\u8BC1\u7248\u672C" : level === "mixed" ? "\u7EC4\u4EF6\u7248\u672C\u4E0D\u4E00\u81F4" : level ? "\u672A\u5B9A\u4F4D\u5BBF\u4E3B" : info?.ok === false ? "\u8BFB\u53D6\u5931\u8D25" : "\u68C0\u6D4B\u4E2D"
+        level ? compatibilityLevelText(t, level) : info?.ok === false ? "\u8BFB\u53D6\u5931\u8D25" : "\u68C0\u6D4B\u4E2D"
       ),
       h(
         HelpTip,
@@ -13372,6 +13384,22 @@ function LayoutNotice({ info }) {
   const handoff = info.asar_handoff ? ` \u6362\u5305\u72B6\u6001\uFF1A${{ not_scheduled: "\u5C1A\u672A\u5E94\u7528\uFF1A\u70B9\u300C\u5E94\u7528\u300D\u540E\u624D\u4F1A\u5B89\u6392\u6362\u5305", archive_reappeared: "\u5F52\u6863\u518D\u6B21\u51FA\u73B0\uFF0C\u65E7\u6362\u5305\u8BB0\u5F55\u4E0D\u4EE3\u8868\u5F53\u524D\u5DF2\u5B8C\u6210", backup_missing: "\u539F\u5F52\u6863\u5907\u4EFD\u7F3A\u5931\uFF0C\u8BF7\u68C0\u67E5\u8BCA\u65AD", unknown_target: "\u76EE\u6807\u5B9E\u4F8B\u672A\u786E\u5B9A", unreadable: "\u6362\u5305\u8BB0\u5F55\u4E0D\u53EF\u8BFB\uFF0C\u8BF7\u68C0\u67E5\u8BCA\u65AD", starting: "\u52A9\u624B\u542F\u52A8\u4E2D\uFF08\u5C1A\u672A\u786E\u8BA4\u5C31\u7EEA\uFF09", ready: "\u52A9\u624B\u5DF2\u5C31\u7EEA", waiting_for_quit: "\u7B49\u5F85\u5B8C\u6574\u9000\u51FA\uFF08macOS \u2318Q / Windows \u7CFB\u7EDF\u6258\u76D8\uFF09", waiting_for_unlock: "\u7B49\u5F85\u5F52\u6863\u89E3\u9501", moving: "\u6B63\u5728\u4FDD\u7559\u539F\u5F52\u6863", complete: "\u6362\u5305\u5B8C\u6210\uFF0C\u8BF7\u624B\u52A8\u6253\u5F00 DSH", already_unsealed: "\u5F52\u6863\u5DF2\u79FB\u8D70\uFF0C\u8BF7\u624B\u52A8\u6253\u5F00 DSH", failed: "\u5931\u8D25\uFF0C\u8BF7\u67E5\u770B\u8BCA\u65AD\u5E76\u6309\u6062\u590D\u6587\u6863\u64CD\u4F5C", expired: "\u7B49\u5F85\u8D85\u65F6\uFF0C\u8BF7\u91CD\u65B0\u5E94\u7528\u6216\u6309\u6062\u590D\u6587\u6863\u64CD\u4F5C", helper_stopped: "\u52A9\u624B\u610F\u5916\u7ED3\u675F\uFF0C\u8BF7\u91CD\u65B0\u5E94\u7528\u6216\u6309\u6062\u590D\u6587\u6863\u64CD\u4F5C" }[info.asar_handoff.phase] || info.asar_handoff.phase}\u3002` : "";
   const failure = info.asar_handoff?.error;
   const detail = info.asar_handoff?.detail ? ` \u8BE6\u60C5\uFF1A${info.asar_handoff.detail}${failure?.win32_code != null ? `\uFF08Windows \u9519\u8BEF ${failure.win32_code}\uFF09` : ""}` : "";
+  const layout = info.host_layout;
+  if (info.ok !== false && info.surface === "web" && layout?.disk?.surface === "web" && layout.state === "unknown_runtime" && layout.process?.entry_layout === "unknown" && layout.process.matches_target === null && layout.disk.archive_exists === null && layout.disk.unpacked_exists === null && !info.desktop_exe && !info.desktop_install && !sealed && !layout.errors?.length && info.asar_handoff?.phase === "unknown_target" && !info.asar_handoff.error && !info.asar_handoff.detail) {
+    return h(
+      "details",
+      { className: "dshpp-layout-details" },
+      h("summary", null, "\u6362\u5305\u72B6\u6001\uFF1A\u4E0D\u9002\u7528\uFF08Web \u5BBF\u4E3B\uFF09"),
+      h(
+        "p",
+        { className: "dshpp-note" },
+        "Web \u670D\u52A1\u65E0\u9700\u684C\u9762\u5F52\u6863\u6362\u5305\u3002\u539F\u59CB\u8BCA\u65AD\uFF1A",
+        layout.state,
+        " / ",
+        info.asar_handoff.phase
+      )
+    );
+  }
   const confirmed = info.host_layout?.state === "unpacked_entry" && info.host_layout?.process?.matches_target === true && info.host_layout?.disk?.archive_exists === false;
   const diskNote = info.host_layout?.disk?.archive_exists === true ? " \u76EE\u6807\u78C1\u76D8\u4ECD\u6709 app.asar\u3002" : "";
   if (sealed || !confirmed) {
@@ -13555,6 +13583,9 @@ function installLegacyVisibility(doc = globalThis.document) {
   doc.head.append(style);
   return () => style.remove();
 }
+
+// src/components/rewind.js
+var import_react_dom = require("react-dom");
 
 // src/state/rewind-draft.js
 var DRAFT_KEY = "dshp-rewind-draft:";
@@ -13906,7 +13937,7 @@ var REWIND_CSS = `
 .dshp-rewind:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.12));color:var(--dsw-alias-label-primary,currentColor)}
 .dshp-rewind:disabled{opacity:.4;cursor:default}
 .dshp-rewind svg{display:block}
-.dshp-rewind-menu{position:fixed;z-index:2147483000;box-sizing:border-box;min-width:220px;padding:4px;border:0;border-radius:12px;background:var(--dsw-specific-menu,#fff);color:var(--dsw-alias-label-primary,#1a1a1a);--dsw-elevation-stroke-color:var(--dsw-alias-border-l1);box-shadow:var(--dsw-elevation-prominent,0 8px 24px rgba(0,0,0,.16));transform:translateY(-100%)}
+.dshp-rewind-menu{position:fixed;z-index:2147483000;box-sizing:border-box;width:max-content;min-width:min(220px,calc(100vw - 16px));max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);overflow:auto;padding:4px;border:0;border-radius:12px;background:var(--dsw-specific-menu,#fff);color:var(--dsw-alias-label-primary,#1a1a1a);--dsw-elevation-stroke-color:var(--dsw-alias-border-l1);box-shadow:var(--dsw-elevation-prominent,0 8px 24px rgba(0,0,0,.16));transform:translateY(-100%)}
 body[data-ds-dark-theme] .dshp-rewind-menu{background:var(--dsw-specific-menu,#32312d);color:var(--dsw-alias-label-primary,#e6e2db);--dsw-elevation-stroke-color:var(--dsw-alias-border-l1,#3f3d38);box-shadow:var(--dsw-elevation-prominent,0 10px 28px rgba(0,0,0,.45))}
 .dshp-rewind-item{display:flex;flex-direction:column;gap:2px;width:100%;padding:8px 10px;border:0;border-radius:8px;background:transparent;color:inherit;text-align:left;cursor:pointer;font:12px/1.3 var(--ds-font-sans,system-ui,sans-serif)}
 .dshp-rewind-item:hover{background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.12))}
@@ -13914,14 +13945,84 @@ body[data-ds-dark-theme] .dshp-rewind-menu{background:var(--dsw-specific-menu,#3
 .dshp-rewind-item span{color:var(--dsw-alias-label-tertiary,#9a958c);font-size:11px}
 body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tertiary,#a8a39a)}
 `;
-function rewindMenuNode(t, menuPos, menuRef, runRewind) {
+var RewindMenu = class extends Component {
+  state = { position: null };
+  reposition = () => {
+    const { anchor, menuRef } = this.props;
+    const menu = menuRef.current;
+    if (!anchor || !menu) return;
+    const rect = anchor.getBoundingClientRect();
+    const size = menu.getBoundingClientRect();
+    const win = anchor.ownerDocument.defaultView;
+    const viewport = win.visualViewport;
+    const x = viewport?.offsetLeft ?? 0;
+    const y = viewport?.offsetTop ?? 0;
+    const right = x + (viewport?.width ?? win.innerWidth);
+    const bottom = y + (viewport?.height ?? win.innerHeight);
+    const above = rect.top - 8 - size.height;
+    const left = Math.max(
+      x + 8,
+      Math.min(rect.right - size.width, right - size.width - 8)
+    );
+    const top = Math.max(
+      y + 8,
+      Math.min(
+        above >= y + 8 ? above : rect.bottom + 8,
+        bottom - size.height - 8
+      )
+    );
+    const prev = this.state.position;
+    if (!prev || left !== prev.left || top !== prev.top)
+      this.setState({ position: { left, top } });
+  };
+  componentDidMount() {
+    const win = this.props.anchor?.ownerDocument?.defaultView;
+    if (!win || typeof import_react_dom.createPortal !== "function") return;
+    this.win = win;
+    this.reposition();
+    win.addEventListener("resize", this.reposition);
+    win.addEventListener("scroll", this.reposition, true);
+    win.visualViewport?.addEventListener("resize", this.reposition);
+    win.visualViewport?.addEventListener("scroll", this.reposition);
+    if (win.ResizeObserver) {
+      this.observer = new win.ResizeObserver(this.reposition);
+      this.observer.observe(this.props.anchor);
+      this.observer.observe(this.props.menuRef.current);
+    }
+  }
+  componentWillUnmount() {
+    this.win?.removeEventListener("resize", this.reposition);
+    this.win?.removeEventListener("scroll", this.reposition, true);
+    this.win?.visualViewport?.removeEventListener("resize", this.reposition);
+    this.win?.visualViewport?.removeEventListener("scroll", this.reposition);
+    this.observer?.disconnect();
+  }
+  render() {
+    const { t, menuRef, runRewind, anchor } = this.props;
+    const body = anchor?.ownerDocument?.body;
+    const portal = body && typeof import_react_dom.createPortal === "function";
+    const style = portal ? {
+      ...this.state.position,
+      visibility: this.state.position ? "visible" : "hidden",
+      transform: "none"
+    } : {
+      position: "absolute",
+      right: 0,
+      bottom: "calc(100% + 8px)",
+      transform: "none"
+    };
+    const menu = rewindMenuNode(t, style, menuRef, runRewind);
+    return portal ? (0, import_react_dom.createPortal)(menu, body) : menu;
+  }
+};
+function rewindMenuNode(t, style, menuRef, runRewind) {
   return h(
     "div",
     {
       className: "dshp-rewind-menu",
       role: "menu",
       ref: menuRef,
-      style: menuPos ? { left: menuPos.left + "px", top: menuPos.top + "px" } : { left: "8px", bottom: "48px", transform: "none" }
+      style
     },
     h(
       "button",
@@ -13980,12 +14081,12 @@ function rewindMenuNode(t, menuPos, menuRef, runRewind) {
 var RewindFallback = class extends Component {
   constructor(p) {
     super(p);
-    this.state = { menu: false, busy: false, notice: "", menuPos: null };
+    this.state = { menu: false, busy: false, notice: "" };
     this.wrap = null;
-    this.menuEl = null;
+    this.menuRef = { current: null };
     this.onDoc = (event) => {
       if (this.wrap && this.wrap.contains(event.target)) return;
-      if (this.menuEl && this.menuEl.contains(event.target)) return;
+      if (this.menuRef.current?.contains(event.target)) return;
       this.setState({ menu: false });
     };
   }
@@ -14023,15 +14124,7 @@ var RewindFallback = class extends Component {
     });
   }
   openMenu() {
-    const rect = this.wrap && this.wrap.getBoundingClientRect ? this.wrap.getBoundingClientRect() : null;
-    this.setState({
-      menu: !this.state.menu,
-      notice: "",
-      menuPos: rect ? {
-        left: Math.max(8, rect.right - 228),
-        top: Math.max(8, rect.top - 8)
-      } : null
-    });
+    this.setState(({ menu }) => ({ menu: !menu, notice: "" }));
   }
   render() {
     const sessionId = this.props.sessionId || currentSessionId(hostSessions());
@@ -14060,14 +14153,12 @@ var RewindFallback = class extends Component {
         },
         label
       ),
-      this.state.menu ? rewindMenuNode(
+      this.state.menu ? h(RewindMenu, {
         t,
-        this.state.menuPos,
-        (node) => {
-          this.menuEl = node;
-        },
-        (mode) => this.run(mode)
-      ) : null
+        anchor: this.wrap,
+        menuRef: this.menuRef,
+        runRewind: (mode) => this.run(mode)
+      }) : null
     );
   }
 };
@@ -14121,7 +14212,6 @@ function RewindButton(props) {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [menu, setMenu] = useState(false);
-  const [menuPos, setMenuPos] = useState(null);
   useEffect(() => {
     if (!sessionId) return;
     const armed = takeArmedFill(sessionId);
@@ -14180,13 +14270,6 @@ function RewindButton(props) {
       setMenu(false);
       return;
     }
-    const rect = wrapRef.current?.getBoundingClientRect?.();
-    if (rect) {
-      setMenuPos({
-        left: Math.max(8, rect.right - 228),
-        top: Math.max(8, rect.top - 8)
-      });
-    }
     setNotice("");
     setMenu(true);
   };
@@ -14224,7 +14307,7 @@ function RewindButton(props) {
       ),
       label
     ),
-    menu ? rewindMenuNode(t, menuPos, menuRef, runRewind) : null
+    menu ? h(RewindMenu, { t, anchor: wrapRef.current, menuRef, runRewind }) : null
   );
 }
 function installRewindWatch(ctx) {
