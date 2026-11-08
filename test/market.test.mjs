@@ -21,3 +21,10 @@ test('each release uses its own declared compatibility; historical absence keeps
  assert.equal(versions.find(v=>v.version==='1.6.74').engines.dsh,'>=0.2.1-rc.1 <0.3.0');
  assert.equal(versions.find(v=>v.version==='1.6.5').engines.dsh,'>=0.2.1-rc.1 <0.2.2-0');
 });
+
+test("the install manifest pins the package archive to its own release tag", async () => {
+  const {readFile} = await import("node:fs/promises");
+  const pkg = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+  assert.equal(pkg.dsh.install.tarball,
+    `https://github.com/kingcharleslzy-ai/dsh-purge/releases/download/v${pkg.version}/${pkg.name}-${pkg.version}.tgz`);
+});

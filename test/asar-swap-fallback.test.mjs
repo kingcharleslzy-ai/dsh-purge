@@ -96,3 +96,16 @@ test('real Windows PowerShell: locked archive retries, timeout and changed archi
   finally{holder.kill();}
  }finally{locker.kill();helper?.kill();await wait(300);fs.rmSync(f.root,{recursive:true,force:true});}
 });
+
+test('a broker PID alone cannot keep a never-acknowledged attempt pending', () => {
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'handoff-startup-'));
+ try {
+   const asar=path.join(root,'app.asar');
+   fs.writeFileSync(asar,'fixture');
+   for(const updated_at of ['2000-01-01','invalid']){
+     fs.writeFileSync(asar+'.purge-handoff.json', JSON.stringify({token:'probe',phase:'starting',pid:process.pid,updated_at}));
+     assert.equal(readWindowsAsarHandoff(asar).phase,'helper_stopped');
+   }
+   assert.equal(fs.readFileSync(asar,'utf8'),'fixture');
+ } finally {fs.rmSync(root,{recursive:true,force:true});}
+});

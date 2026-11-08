@@ -619,3 +619,21 @@ test('missing CLI preflight stops before profile installation or checkpoint muta
   assert(!fs.existsSync(path.join(f.manager.base,'install-recovery')));
  } finally {fs.rmSync(f.home,{recursive:true,force:true});}
 });
+
+test("failed migration restores exact disabled profile and floating dependency", async t => {
+  const fixture = setup();
+  t.after(fixture.close);
+  const manifest = path.join(fixture.profile, "package.json");
+  const previous = JSON.parse(fs.readFileSync(manifest));
+  previous.dependencies[PACKAGE] = "https://github.com/kingcharleslzy-ai/dsh-purge/releases/latest/download/dsh-purge-community.tgz";
+  previous.dsh.profile.bundles = ["unrelated-plugin"];
+  const original = JSON.stringify(previous, null, 2);
+  fs.writeFileSync(manifest, original);
+  fixture.manager.installer = async () => {
+    assert.match(JSON.parse(fs.readFileSync(manifest)).dependencies[PACKAGE], /^file:/);
+    throw Error("fixture installer failure");
+  };
+  await assert.rejects(fixture.manager.install(fixture.candidate), /fixture installer failure/);
+  assert.equal(fs.readFileSync(manifest, "utf8"), original);
+  assert.equal(fs.readFileSync(path.join(fixture.profile, "cordis.patch.yml"), "utf8"), "PRIVATE CURRENT SETTINGS");
+});
