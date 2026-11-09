@@ -9,6 +9,7 @@ import {
   migratePresetDefinition,
   backupPresetMigration,
   registerPresetDefinitions,
+  profileDeclaredPresetIds,
 } from "../lib/preset-compat.js";
 
 const walk = (rows) =>
@@ -215,4 +216,130 @@ test("saved child IDs resolve after host rows move, with the same denied tools",
   assert.equal(spawn(definitions.at(-1)).config.agentPreset,p.childId);
   spawn(def).config.toolFilter.deny.pop();
   assert.ok(!withLegacyChildIds(migratePresetDefinition(def, { stableChildIds: true }),home).some(x => x.id === oldId));
+});
+
+// A Profile may already declare the same preset through its own composition:
+// dsh-desktop rewrites every folder under `$DSH_HOME/.agent-presets/` into a
+// `preset-<id>` row on each launch. Declaring a second copy used to throw
+// `Duplicate agent preset`, which aborts startup when the existing row is
+// required. The declaration must be idempotent instead.
+const fakeRegistry = (initialIds = []) => {
+  const held = new Map(initialIds.map((id) => [id, { config: { id } }]));
+  const calls = { register: 0, list: 0 };
+  return {
+    calls,
+    definitions: held,
+    async list() {
+      calls.list += 1;
+      return [...held.keys()].map((id) => ({ id }));
+    },
+    async register(def) {
+      calls.register += 1;
+      if (held.has(def.id)) throw new Error(`Duplicate agent preset: ${def.id}`);
+      held.set(def.id, { config: def });
+      let released = false;
+      return async () => {
+        if (released) return;
+        released = true;
+        held.delete(def.id);
+      };
+    },
+    async resolve(id) {
+      return { id, broken: undefined };
+    },
+  };
+};
+
+test("declaring a preset the Profile already owns is skipped, not thrown", async () => {
+  const registry = fakeRegistry(["unrestricted"]);
+  const notes = [];
+  const release = await registerPresetDefinitions(
+    registry,
+    [{ id: "unrestricted", name: "无限制模式" }],
+    { log: (message) => notes.push(message) },
+  );
+
+  assert.equal(registry.calls.register, 0, "no second declaration reaches register()");
+  assert.deepEqual([...registry.definitions.keys()], ["unrestricted"], "existing row is untouched");
+  assert.match(notes.join("\n"), /unrestricted/, "the skip is reported");
+  await release();
+  assert.deepEqual([...registry.definitions.keys()], ["unrestricted"], "release does not remove a row it did not create");
+});
+
+test("an unrelated id still registers normally when others are already present", async () => {
+  const registry = fakeRegistry(["unrestricted"]);
+  const release = await registerPresetDefinitions(registry, [
+    { id: "redteam", name: "红队模式" },
+    { id: "unrestricted", name: "无限制模式" },
+  ]);
+
+  assert.deepEqual([...registry.definitions.keys()].sort(), ["redteam", "unrestricted"]);
+  await release();
+  assert.deepEqual([...registry.definitions.keys()], ["unrestricted"]);
+});
+
+test("an unreadable roster still lets register() decide instead of silently skipping", async () => {
+  const registry = fakeRegistry();
+  registry.list = async () => {
+    throw new Error("roster unavailable");
+  };
+  const release = await registerPresetDefinitions(registry, [{ id: "redteam" }]);
+
+  assert.equal(registry.calls.register, 1, "the declaration is still attempted");
+  assert.ok(registry.definitions.has("redteam"));
+  await release();
+});
+
+// The reverse race: this plugin can reach register() before the composition row
+// does. That row is `required`, so the throw lands on startup instead of on this
+// plugin's caught warning. An inline `preset-<id>` declaration must therefore be
+// recognised before registering, not discovered by losing.
+test("a preset the Profile patch declares inline is never registered", async () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "purge-declared-"));
+  fs.mkdirSync(path.join(home, "profiles", "web"), { recursive: true });
+  fs.writeFileSync(
+    path.join(home, "profiles", "web", "cordis.patch.yml"),
+    [
+      "- insert:",
+      "    - id: preset-unrestricted",
+      "      name: '@deepseek-ai/dsh-agent-preset'",
+      "  config:",
+      "    id: unrestricted",
+      "",
+    ].join("\n"),
+  );
+  const declared = profileDeclaredPresetIds(home);
+  assert.deepEqual([...declared], ["unrestricted"]);
+
+  const registry = fakeRegistry();
+  const notes = [];
+  const release = await registerPresetDefinitions(
+    registry,
+    [{ id: "unrestricted", name: "无限制模式" }],
+    { declared, log: (message) => notes.push(message) },
+  );
+
+  assert.equal(registry.calls.register, 0, "the composition row owns this id");
+  assert.match(notes.join("\n"), /Profile 已声明/, "the reason names the owner");
+  await release();
+});
+
+test("ids absent from the Profile patch still register", async () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "purge-declared-"));
+  fs.mkdirSync(path.join(home, "profiles", "web"), { recursive: true });
+  fs.writeFileSync(path.join(home, "profiles", "web", "cordis.patch.yml"), "- insert:\n    - id: preset-qq-chat\n");
+
+  const declared = profileDeclaredPresetIds(home);
+  const registry = fakeRegistry();
+  const release = await registerPresetDefinitions(registry, [{ id: "redteam" }], { declared });
+
+  assert.equal(registry.calls.register, 1, "an undeclared id is still registered");
+  assert.ok(registry.definitions.has("redteam"));
+  await release();
+});
+
+test("an unreadable profiles root reports unknown rather than empty", () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "purge-declared-"));
+  fs.writeFileSync(path.join(home, "profiles"), "not a directory", "utf8");
+  assert.equal(profileDeclaredPresetIds(home), null, "skip must not be inferred from a read failure");
 });
