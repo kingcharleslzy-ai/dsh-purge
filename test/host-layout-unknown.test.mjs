@@ -78,10 +78,24 @@ test('Tauri managed entries are read-only process evidence on Windows and macOS'
     const archive = paths.normalize(base + 'deepseek-harness-pkg-' + stem + '.asar');
     const host = paths.join(archive, 'node_modules', '@deepseek-ai');
     const entry = paths.join(host, 'dsh', 'lib', 'bin.js');
-    const options = {platform, argv:['node', entry, '--profile', 'desktop'], execArgv: [],
+    const runtimeFs = {statSync(file) {
+      assert.ok([paths.join(host, 'dsh', 'package.json'), entry].includes(file));
+      return {isFile: () => true, size: 120};
+    }, readFileSync() {return '{"name":"@deepseek-ai/dsh","version":"0.2.2-rc.1","bin":{"dsh":"lib/bin.js"}}';}};
+    const options = {platform, runtimeFs, argv:['node', entry, '--profile', 'desktop'], execArgv: [],
       reader:{statSync(file) {assert.equal(file, archive); return {isFile:() => true};}}};
     const hit = hostLayoutEvidence(host, options);
     assert.equal(hit.family, 'tauri');
+    assert.equal(hit.cli.version, '0.2.2-rc.1');
+    for (const inaccessible of [
+      {...runtimeFs, readFileSync:() => '{"name":"foreign"}'},
+      {...runtimeFs, statSync:() => { throw Object.assign(Error('archive not traversable'), {code:'ENOTDIR'}); }},
+    ]) {
+      const failed = hostLayoutEvidence(host, {...options, runtimeFs:inaccessible});
+      assert.equal(failed.state,'cli_unverified');
+      assert.equal(failed.cli, undefined);
+      assert.ok(failed.errors[0].message);
+    }
     assert.equal(hit.state, 'managed_archive_entry');
     assert.equal(hit.process.matches_target, true);
     assert.equal(hit.handoff.phase, 'not_applicable');
