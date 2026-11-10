@@ -220,3 +220,19 @@ test("saved child IDs resolve after host rows move, with the same denied tools",
   spawn(def).config.toolFilter.deny.pop();
   assert.ok(!withLegacyChildIds(migratePresetDefinition(def, { stableChildIds: true }),home).some(x => x.id === oldId));
 });
+
+test("registration defers only to an effective declaration in the running profile", async () => {
+  const { profileOwnsPreset } = await import("../lib/preset-compat.js");
+  function entry(id, configId, disabled = false, owner = "include", name = "@deepseek-ai/dsh-agent-preset") {
+    return { options: { id, name, config: { id: configId } }, disabled,
+      parent: { tree: { ctx: { fiber: { entry: { id: owner } } } } } };
+  }
+  const active = [];
+  const ctx = { get: () => ({ entries: () => active.values() }) };
+  active.push(entry("preset-notes", "other"), entry("notes", "notes", true),
+    entry("nested", "notes", false, "include:other"), entry("service", "notes", false, "include", "unrelated"));
+  assert.equal(profileOwnsPreset(ctx, "notes"), false);
+  active.push(entry("arbitrary-name", "notes"));
+  assert.equal(profileOwnsPreset(ctx, "notes"), true);
+  assert.equal(profileOwnsPreset({}, "notes"), false);
+});

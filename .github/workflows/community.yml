@@ -145,6 +145,7 @@ jobs:
           mkdir -p "$PURGE_TEST_NPM_ROOT"
           touch "$PURGE_TEST_NPM_ROOT/.purge-test-only"
           npm install --prefix "$PURGE_TEST_NPM_ROOT" --no-package-lock --no-audit --no-fund @deepseek-ai/dsh@0.2.1-rc.2 pnpm@10.32.1
+          node --expose-internals test/fixtures/preset-ownership/run.mjs "$PURGE_TEST_NPM_ROOT"
           export PATH="$PURGE_TEST_NPM_ROOT/node_modules/.bin:$PATH"
           gh release download v1.6.36 --repo kingcharleslzy-ai/dsh-purge --pattern dsh-purge-community-1.6.36.tgz --dir "$RUNNER_TEMP/purge-baseline"
           npm pack --ignore-scripts

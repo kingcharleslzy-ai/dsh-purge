@@ -66,3 +66,32 @@ for (const code of ['EACCES', 'EIO']) {
     assert.ok(result.errors.every(error => error.code === code));
   });
 }
+
+test('Tauri managed entries are read-only process evidence on Windows and macOS', () => {
+  for (const [platform, base, stem] of [
+    ['win32', 'C:/AppData/dsh-tauri/dependencies/dsh/', 'windows'],
+    ['win32', 'C:/AppData/dsh-tauri/dependencies/dsh/', 'windows-arm64'],
+    ['darwin', '/Library/dsh-tauri/dependencies/dsh/', 'macos-x64'],
+    ['darwin', '/Library/dsh-tauri/dependencies/dsh/', 'macos-arm64'],
+  ]) {
+    const paths = platform === 'win32' ? path.win32 : path.posix;
+    const archive = paths.normalize(base + 'deepseek-harness-pkg-' + stem + '.asar');
+    const host = paths.join(archive, 'node_modules', '@deepseek-ai');
+    const entry = paths.join(host, 'dsh', 'lib', 'bin.js');
+    const options = {platform, argv:['node', entry, '--profile', 'desktop'], execArgv: [],
+      reader:{statSync(file) {assert.equal(file, archive); return {isFile:() => true};}}};
+    const hit = hostLayoutEvidence(host, options);
+    assert.equal(hit.family, 'tauri');
+    assert.equal(hit.state, 'managed_archive_entry');
+    assert.equal(hit.process.matches_target, true);
+    assert.equal(hit.handoff.phase, 'not_applicable');
+    assert.equal(hostLayoutEvidence('', options).process.matches_target, null);
+    assert.equal(hostLayoutEvidence(base, options).state, 'different_instance');
+    for (const [code, state] of [['ENOENT','archive_missing'],['EACCES','unreadable']]) {
+      const result = hostLayoutEvidence('', {...options, reader: {statSync() {throw Object.assign(Error(code), {code});}}});
+      assert.equal(result.state,state);
+      if (code === 'EACCES') assert.equal(result.errors[0].code,code);
+    }
+    assert.equal(hostLayoutEvidence('', {...options, argv:['node','elsewhere.js',entry]}).state, 'unknown_runtime');
+  }
+});

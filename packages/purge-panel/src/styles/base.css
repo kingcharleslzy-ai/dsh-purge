@@ -1161,3 +1161,17 @@ body:not([data-ds-dark-theme]) .dshpp-auth-ops button.primary {
     color-mix(in srgb, var(--dsw-alias-brand-primary, #6dbf8c) 28%, transparent);
 }
 /* 玻璃跟随宿主颜色。字重和底的不透明度分开：壳透，字坐在更实的一层上。 */
+
+/* Keep the historical IDs addressable by sessions. Collapse a healthy alias
+   in Settings only while a usable canonical child is in the same roster. */
+ul:has(
+    > li[data-agent-preset-id^="unrestricted-child-"]
+      > button[aria-disabled="false"]
+      [title$=" · 子任务"]
+  )
+  > li[data-agent-preset-id^="unrestricted-child-"]:has(
+    > button[aria-disabled="false"][aria-pressed="false"]
+      [title*=" · 子任务（历史兼容 · "][title$="）"]
+  ) {
+  display: none;
+}
