@@ -1175,3 +1175,7 @@ ul:has(
   ) {
   display: none;
 }
+
+button[data-purge-collapsed-alias] {
+  display: none !important;
+}

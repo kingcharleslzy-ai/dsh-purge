@@ -15,6 +15,7 @@ try {
     stdin: {
       contents: `
         import React from "react";
+        import {checkPresetMenu} from "./test/preset-menu.fixture.js";
         import {createRoot} from "react-dom/client";
         import {flushSync} from "react-dom";
         import {RewindButton, RewindFallback} from "./src/components/rewind.js";
@@ -85,7 +86,9 @@ try {
         if (!closed) throw Error("environment dialog did not receive cancel");
         flushSync(() => root.render(null));
         if (!settings.matches(":modal")) throw Error("underlying settings unexpectedly closed");
-        document.querySelector("output").textContent="passed";
+        settings.close();
+        checkPresetMenu(document).then(() => {document.querySelector("output").textContent="passed";},
+          err => {document.querySelector("output").textContent=err.message;});
       `,
       resolveDir: fileURLToPath(new URL("../", import.meta.url)),
     },
@@ -110,6 +113,7 @@ try {
       "--no-first-run",
       "--user-data-dir=" + path.join(root, "profile"),
       "--window-size=1000,700",
+      "--virtual-time-budget=1000",
       "--dump-dom",
       pathToFileURL(html).href,
     ],

@@ -7,6 +7,7 @@ import { NS, setTranslate, zh, en } from "./shared/locale.js";
 import { SettingsRoot } from "./components/settings-shell.js";
 import { PurgePage, PurgeGlyph } from "./components/page.js";
 import { bindSessionContext } from "./state/session-context.js";
+import { bindPresetMenu } from "./state/preset-menu.js";
 import { installLegacyVisibility } from "./state/legacy-visibility.js";
 import { installRewindUi } from "./components/rewind.js";
 import { WelcomeNotice } from "./components/welcome.js";
@@ -61,6 +62,12 @@ export function apply(ctx) {
   ctx.inject(["sessions", "uiWorkspace"], (host) => {
     host.effect(() => bindSessionContext(host), "panel session context");
   });
+  ctx.inject(["remote", "remote.agentPresets"], (host) =>
+    host.effect(
+      () => bindPresetMenu(document, () => host.remote.agentPresets.list()),
+      "preset menu aliases",
+    ),
+  );
   ctx.effect(startGrantSync, "panel grant sync");
   // Restored from 1.1.71 apply(): conversation.input.right rewind button.
   ctx.inject(["sessions", "uiWorkspace", "conversation"], (host) =>
