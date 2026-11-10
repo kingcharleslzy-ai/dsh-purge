@@ -966,6 +966,25 @@ body:not([data-ds-dark-theme]) .dshpp-auth-ops button.primary {
   border-color: var(--dsw-alias-brand-primary, #3f6b52);
   color: #fff;
 }
+.dshpp-env-dialog {
+  position: fixed;
+  inset: 0;
+  width: min(480px, calc(100% - 32px));
+  max-height: calc(100% - 32px);
+  margin: auto;
+  border: 0;
+  padding: 0;
+  border-radius: 12px;
+  background: transparent;
+}
+.dshpp-env-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.55);
+}
+.dshpp-env-dialog .dshpp-auth-modal {
+  box-sizing: border-box;
+  width: 100%;
+  overflow: auto;
+}
 .dshpp-auth-mask {
   position: fixed;
   inset: 0;

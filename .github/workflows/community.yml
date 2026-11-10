@@ -42,6 +42,10 @@ jobs:
         with:
           node-version: 22
       - run: npm ci --ignore-scripts --legacy-peer-deps
+      - name: Verify rewind against the published DSH session runtime
+        run: |
+          npm ci --prefix test/fixtures/rewind-session --ignore-scripts
+          node --test test/fixtures/rewind-session/rewind.mjs
       - name: Full test suite
         if: runner.os != 'Windows'
         run: npm test
@@ -69,7 +73,7 @@ jobs:
           if (-not (Test-Path -LiteralPath $env:PURGE_ELECTRON_EXEC)) { throw 'Electron binary was not installed' }
           powershell -NoProfile -ExecutionPolicy Bypass -File scripts/check-windows-job-handoff.ps1 -ElectronExe $env:PURGE_ELECTRON_EXEC -SourceRoot $PWD.Path
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          node --test test/windows-electron-handoff.test.mjs
+          node --test test/windows-electron-handoff.test.mjs test/windows-cli-archive.test.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           npm run test:electron
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

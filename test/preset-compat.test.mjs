@@ -211,7 +211,11 @@ test("saved child IDs resolve after host rows move, with the same denied tools",
   assert.equal(next.policies[0].childId,p.childId);
   assert.notDeepEqual(next.policies[0].at,p.at);
   const definitions = withLegacyChildIds(next,home);
-  assert.deepEqual(definitions.find(x => x.id === oldId).plugins,next.definitions[0].plugins);
+  const alias = definitions.find(x => x.id === oldId);
+  assert.deepEqual(alias.plugins, next.definitions[0].plugins);
+  assert.match(alias.name, /历史兼容/);
+  assert.equal(new Set(definitions.map(row => row.name)).size, definitions.length);
+  assert.equal(definitions[0].name, next.definitions[0].name);
   assert.equal(spawn(definitions.at(-1)).config.agentPreset,p.childId);
   spawn(def).config.toolFilter.deny.pop();
   assert.ok(!withLegacyChildIds(migratePresetDefinition(def, { stableChildIds: true }),home).some(x => x.id === oldId));
