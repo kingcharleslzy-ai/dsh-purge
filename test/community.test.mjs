@@ -128,6 +128,7 @@ test("no host layout still blocks writes with a clear message", () => {
     assert.equal(none.level, "no-host");
     assert.equal(none.patch_writes_allowed, false);
     assert.throws(() => requirePatchCompatibility(empty), /未定位到宿主/);
+    assert.doesNotMatch(compatibility(empty).message, /自动继续|解开 app\.asar/);
   } finally {
     fs.rmSync(empty, { recursive: true, force: true });
   }

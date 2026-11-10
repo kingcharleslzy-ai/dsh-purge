@@ -13,7 +13,7 @@
 
 1.6.86 为已授权测试入口增加一次性命令执行挑战，区分文件写入与命令执行。[发行说明](https://github.com/kingcharleslzy-ai/dsh-purge/releases/tag/v1.6.86)。
 
-**原项目与作者**：基于 [小杨 / YuJunZhiXue 的 dsh-purge](https://github.com/YuJunZhiXue/dsh-purge) 独立维护。原仓库已恢复；保留原作者署名、版权与 MIT 许可证。社区版由本仓库维护，并非原作者官方发行。
+**原项目与作者**：小杨 / YuJunZhiXue 是历史上游 dsh-purge 的作者署名。本仓库独立维护社区版，保留上游版权和 MIT 许可证。历史署名不代表对当前同名 GitHub 账号身份的核实。详见[署名记录](NOTICE.md)与[许可证](LICENSE)。
 
 </div>
 

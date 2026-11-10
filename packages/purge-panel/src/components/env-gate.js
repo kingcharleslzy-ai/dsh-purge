@@ -39,6 +39,34 @@ export function fetchEnvAdaptStatusSync() {
   return null;
 }
 
+// Use the browser top layer: the host settings dialog can itself be modal.
+export function EnvironmentDialog({ title, onDismiss, children }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const dialog = ref.current;
+    dialog.showModal();
+    return () => dialog.close();
+  }, []);
+  return h(
+    "dialog",
+    {
+      ref,
+      className: "dshp-env-gate dshpp-env-dialog",
+      "aria-label": title,
+      onCancel: (event) => {
+        event.preventDefault();
+        onDismiss();
+      },
+    },
+    h(
+      "section",
+      { className: "dshpp-auth-modal" },
+      h("h2", null, title),
+      children,
+    ),
+  );
+}
+
 /** 红队发送前门禁：未就绪 → 授权并打开环境适配；可确认跳过。 */
 export function EnvAdaptSendGate() {
   const t = useT();
@@ -221,113 +249,104 @@ export function EnvAdaptSendGate() {
 
   const message = (status && status.message) || t("envGate.lead");
   return h(
-    "div",
-    {
-      className: "dshp-auth-mask dshp-env-gate",
-      role: "dialog",
-      "aria-modal": "true",
-    },
+    EnvironmentDialog,
+    { title: t("envGate.title"), onDismiss: () => setOpen(false) },
+    h("div", { style: { fontSize: 13, lineHeight: 1.55 } }, message),
     h(
       "div",
-      { className: "dshp-auth-modal", style: { width: "min(480px,100%)" } },
-      h("h2", null, t("envGate.title")),
-      h("div", { style: { fontSize: 13, lineHeight: 1.55 } }, message),
-      h(
-        "div",
-        {
-          style: {
-            fontSize: 12,
-            color: "var(--dsw-alias-label-secondary,#999)",
-            lineHeight: 1.5,
-          },
+      {
+        style: {
+          fontSize: 12,
+          color: "var(--dsw-alias-label-secondary,#999)",
+          lineHeight: 1.5,
         },
-        t("envGate.kaliHint"),
-      ),
+      },
+      t("envGate.kaliHint"),
+    ),
+    confirmSkip
+      ? h("div", { className: "dshpp-auth-warn" }, t("envGate.skipConfirm"))
+      : null,
+    h(
+      "div",
+      { className: "dshpp-auth-ops" },
       confirmSkip
-        ? h("div", { className: "dshp-auth-warn" }, t("envGate.skipConfirm"))
-        : null,
-      h(
-        "div",
-        { className: "dshp-auth-ops" },
-        confirmSkip
-          ? [
-              h(
-                "button",
-                {
-                  key: "no",
-                  type: "button",
-                  onClick: () => setConfirmSkip(false),
-                },
-                t("envGate.skipNo"),
-              ),
-              h(
-                "button",
-                {
-                  key: "yes",
-                  type: "button",
-                  className: "primary",
-                  disabled: busy,
-                  onClick: () => {
-                    setBusy(true);
-                    fetch(apiUrl("/redteam/api"), {
-                      method: "POST",
-                      headers: { "content-type": "application/json" },
-                      body: JSON.stringify({
-                        op: "platformEnvAdaptSkip",
-                        skip: true,
-                      }),
+        ? [
+            h(
+              "button",
+              {
+                key: "no",
+                type: "button",
+                onClick: () => setConfirmSkip(false),
+              },
+              t("envGate.skipNo"),
+            ),
+            h(
+              "button",
+              {
+                key: "yes",
+                type: "button",
+                className: "primary",
+                disabled: busy,
+                onClick: () => {
+                  setBusy(true);
+                  fetch(apiUrl("/redteam/api"), {
+                    method: "POST",
+                    headers: { "content-type": "application/json" },
+                    body: JSON.stringify({
+                      op: "platformEnvAdaptSkip",
+                      skip: true,
+                    }),
+                  })
+                    .then((r) => r.json())
+                    .then((r) => {
+                      setBusy(false);
+                      cacheRef.current = {
+                        at: Date.now(),
+                        ready: true,
+                        skipped: true,
+                      };
+                      setStatus(r);
+                      setOpen(false);
+                      setConfirmSkip(false);
                     })
-                      .then((r) => r.json())
-                      .then((r) => {
-                        setBusy(false);
-                        cacheRef.current = {
-                          at: Date.now(),
-                          ready: true,
-                          skipped: true,
-                        };
-                        setStatus(r);
-                        setOpen(false);
-                        setConfirmSkip(false);
-                      })
-                      .catch(() => {
-                        setBusy(false);
-                        cacheRef.current = {
-                          at: Date.now(),
-                          ready: true,
-                          skipped: true,
-                        };
-                        setOpen(false);
-                      });
-                  },
+                    .catch(() => {
+                      setBusy(false);
+                      cacheRef.current = {
+                        at: Date.now(),
+                        ready: true,
+                        skipped: true,
+                      };
+                      setOpen(false);
+                    });
                 },
-                t("envGate.skipYes"),
-              ),
-            ]
-          : [
-              h(
-                "button",
-                {
-                  key: "skip",
-                  type: "button",
-                  onClick: () => setConfirmSkip(true),
+              },
+              t("envGate.skipYes"),
+            ),
+          ]
+        : [
+            h(
+              "button",
+              {
+                key: "skip",
+                type: "button",
+                onClick: () => setConfirmSkip(true),
+              },
+              t("envGate.skip"),
+            ),
+            h(
+              "button",
+              {
+                key: "go",
+                type: "button",
+                className: "primary",
+                onClick: () => {
+                  setOpen(false);
+                  requestDrillEnv();
                 },
-                t("envGate.skip"),
-              ),
-              h(
-                "button",
-                {
-                  key: "go",
-                  type: "button",
-                  className: "primary",
-                  onClick: () => {
-                    setOpen(false);
-                    requestDrillEnv();
-                  },
-                },
-                t("envGate.go"),
-              ),
-            ],
-      ),
+              },
+              t("envGate.go"),
+            ),
+          ],
     ),
   );
 }

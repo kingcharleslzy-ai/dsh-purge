@@ -18,6 +18,7 @@ try {
         import {createRoot} from "react-dom/client";
         import {flushSync} from "react-dom";
         import {RewindButton, RewindFallback} from "./src/components/rewind.js";
+        import {EnvironmentDialog} from "./src/components/env-gate.js";
         const slot = document.querySelector("#slot");
         const root = createRoot(slot);
         const scroll = document.querySelector("main");
@@ -38,6 +39,24 @@ try {
           if(document.querySelector("[role=menu]")) throw Error("menu did not dismiss");
           flushSync(() => root.render(null));
         }
+        const settings = document.createElement("dialog");
+        document.body.append(settings);
+        settings.showModal();
+        let closed = false;
+        flushSync(() => root.render(React.createElement(EnvironmentDialog, {
+          title: "Environment", onDismiss: () => { closed = true; },
+        }, React.createElement("button", null, "Dismiss"))));
+        const modal = slot.querySelector("dialog");
+        const box = modal.getBoundingClientRect();
+        if (!modal.matches(":modal") || Math.abs(box.x + box.width / 2 - innerWidth / 2) > 2 ||
+            Math.abs(box.y + box.height / 2 - innerHeight / 2) > 2 ||
+            !modal.contains(document.elementFromPoint(innerWidth / 2, innerHeight / 2))) {
+          throw Error("environment dialog obscured by settings or outside viewport center");
+        }
+        modal.dispatchEvent(new Event("cancel", { cancelable: true }));
+        if (!closed) throw Error("environment dialog did not receive cancel");
+        flushSync(() => root.render(null));
+        if (!settings.matches(":modal")) throw Error("underlying settings unexpectedly closed");
         document.querySelector("output").textContent="passed";
       `,
       resolveDir: fileURLToPath(new URL("../", import.meta.url)),
@@ -49,6 +68,7 @@ try {
   fs.writeFileSync(
     html,
     `<!doctype html><meta charset="utf-8"><style>
+    ${fs.readFileSync(new URL("../src/styles/base.css", import.meta.url), "utf8")}
     main{height:500px;overflow:auto}section{height:1200px;padding:300px 0 0 460px}
     #slot{width:max-content;will-change:transform}
     </style><main><section><div id="slot"></div></section></main>
