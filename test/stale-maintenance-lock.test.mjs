@@ -151,3 +151,29 @@ test('confirmed ownership loss does not cache a retry against future owners',t=>
  assert.equal(g.release().code,'LOCK_LOST');other.check();other.release();
  const next=acquireMaintenanceLock(f.root);next.check();next.release();
 });
+
+test('transient Windows directory denial is retried, persistent denial reports busy',t=>{
+ const f=fixture(t);const gate=path.join(f.root,'maintenance.guard');const token='a'.repeat(32);
+ fs.mkdirSync(gate);
+ fs.writeFileSync(path.join(gate,token+'.json'),JSON.stringify({schema:1,host:os.hostname(),pid:DEAD,createdAt:Date.now()-5000,token}));
+ let failures=1;
+ const once=new Proxy(fs,{get(target,key){
+   if(key==='readdirSync')return (dir,...args)=>{
+     if(dir===gate&&failures>0){failures-=1;throw Object.assign(Error('EPERM'),{code:'EPERM'});}
+     return fs.readdirSync(dir,...args);
+   };
+   return target[key];
+ }});
+ const g=acquireMaintenanceLock(f.root,{fs:once,kill:dead});g.check();g.release();
+ assert(!fs.existsSync(gate));
+ const gate2=path.join(f.root,'maintenance.guard');fs.mkdirSync(gate2);
+ fs.writeFileSync(path.join(gate2,token+'.json'),JSON.stringify({schema:1,host:os.hostname(),pid:DEAD,createdAt:Date.now()-5000,token}));
+ const always=new Proxy(fs,{get(target,key){
+   if(key==='readdirSync')return (dir,...args)=>{
+     if(dir===gate2)throw Object.assign(Error('EPERM'),{code:'EPERM'});
+     return fs.readdirSync(dir,...args);
+   };
+   return target[key];
+ }});
+ assert.throws(()=>acquireMaintenanceLock(f.root,{fs:always,kill:dead}),{code:'MAINTENANCE_BUSY'});
+});
