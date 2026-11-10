@@ -104,6 +104,13 @@ export function StatusStrip({ info }) {
 /** 磁盘归档与进程入口分别呈现；不能从磁盘写入推断运行时已加载。 */
 export function LayoutNotice({ info }) {
   if (!info || (!info.asar_still_sealed && !info.host_layout)) return null;
+  if (info.host_layout?.family === "tauri") {
+    return h(
+      "p",
+      { className: "dshpp-note", role: "status" },
+      info.host_layout.note,
+    );
+  }
   const sealed = info.asar_still_sealed === true;
   const note =
     info.host_layout?.note ||

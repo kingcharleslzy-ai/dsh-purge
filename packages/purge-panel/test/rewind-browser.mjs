@@ -39,6 +39,34 @@ try {
           if(document.querySelector("[role=menu]")) throw Error("menu did not dismiss");
           flushSync(() => root.render(null));
         }
+        const roster = document.createElement("ul");
+        document.body.append(roster);
+        function card(id, title, pressed = false, broken = false) {
+          const row = document.createElement("li");
+          row.dataset.agentPresetId = id;
+          const btn = document.createElement("button");
+          btn.setAttribute("aria-pressed", String(pressed));
+          btn.setAttribute("aria-disabled", String(broken));
+          const label = document.createElement("span");
+          label.title = title;
+          btn.append(label);
+          row.append(btn);
+          roster.append(row);
+          return row;
+        }
+        const name = "普通笔记 · 子任务";
+        const historical = name + "（历史兼容 · aaaaaaaaaa）";
+        const alias = card("unrestricted-child-aaaaaaaaaa", historical);
+        const visible = row => getComputedStyle(row).display !== "none";
+        if (!visible(alias)) throw Error("only available child hidden");
+        const stable = card("unrestricted-child-bbbbbbbbbb", name);
+        if (visible(alias) || !visible(stable)) throw Error("healthy alias duplicated");
+        for (const row of [card("unrestricted-child-cccccccccc", historical, true),
+          card("unrestricted-child-dddddddddd", historical, false, true),
+          card("user-notes", historical)]) if (!visible(row)) throw Error("protected row hidden");
+        stable.firstChild.setAttribute("aria-disabled","true");
+        if (!visible(alias)) throw Error("broken canonical child hides working alias");
+        roster.remove();
         const settings = document.createElement("dialog");
         document.body.append(settings);
         settings.showModal();
