@@ -1,3 +1,9 @@
+# 1.6.92
+
+- **0.2.2-rc.2 进入已验证清单**：`QUALIFIED_HOST_VERSIONS` 与 `package.json` 的 `dshReleases` 加入 `0.2.2-rc.2`（同时补上漏登记的 `0.2.2-rc.1`）。面板的「兼容级别」不再显示「未验证版本」。
+- 依据：官方 0.2.2-rc.2 桌面构建上 86 条补丁为 74 applied / 0 drift，自检 ok；破甲模块闸门、运行探针、四类模型层实跑与 rc.2 压缩回退锚点回归通过（macOS）。Windows 该构建仅验证预设卡片与启动诊断，未复测补丁。
+- `test/owner-review-fixes.test.mjs` 新增 official + bundled-host + rc.2 的 qualified 断言。
+
 # 1.6.91
 
 - **#92 幂等修复**：`HOST_MAX_HTTP_HEADER_SIZE` 原来每次「应用」都会在 desktop 启动参数里再插一条 `--max-http-header-size=262144`，因为锚点 `"--expose-internals",` 在写入后仍然存在。功能测试里连点两次「应用」暴露了这个问题（本机 main.js 一度堆到 5 条）。

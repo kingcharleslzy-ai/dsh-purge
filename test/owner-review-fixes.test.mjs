@@ -119,6 +119,16 @@ test("官方 bundled-host + rc.2：仍然判 qualified（回归不受影响）",
   assert.equal(compat.level, "qualified");
 });
 
+test("官方 bundled-host + 0.2.2-rc.2：进入已验证清单后判 qualified", () => {
+  const resources = makeResources(path.join(TMP, "c-official-022rc2"), { identity: "official" });
+  const base = seedHost(path.join(resources, "app", "node_modules", "@deepseek-ai"), { version: "0.2.2-rc.2" });
+  const compat = compatibility(base);
+  assert.equal(compat.kernel.qualified, true, "0.2.2-rc.2 必须在已验证清单里");
+  assert.equal(compat.family_qualified, true);
+  assert.equal(compat.qualified, true);
+  assert.equal(compat.level, "qualified");
+});
+
 test("非桌面路径（npm 全局安装）：家族层不拦，按内核判定", () => {
   const base = seedHost(path.join(TMP, "c-npm", "node_modules", "@deepseek-ai"));
   const compat = compatibility(base);

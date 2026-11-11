@@ -1,7 +1,7 @@
 # AGENTS.md — 给 AI agent 的 Purge 使用说明书
 
 > 这份文件是写给**在 DSH 里干活的 agent** 的，不是营销文档。
-> 当前版本：**1.6.91** · 适配 DSH Desktop **0.2.2-rc.1**（0.2.1-rc.1 / rc.2 / rc.3 / rc.5 同样通过）
+> 当前版本：**1.6.92** · 适配 DSH Desktop **0.2.2-rc.2**（0.2.1-rc.1 / rc.2 / rc.3 / rc.5 同样通过）
 > 版本号由 `npm run check:docs` 与 `package.json` 校验，发版必须同步。
 
 ---
@@ -133,9 +133,9 @@ purge-community probe new
 
 | 组件 | 值 |
 | --- | --- |
-| 插件 | `dsh-purge-community` 1.6.91 |
-| 已验证宿主 | DSH Desktop 0.2.2-rc.1 / 0.2.1-rc.1 / 0.2.1-rc.2 / 0.2.1-rc.3 / 0.2.1-rc.5 |
-| 0.2.2-rc.2 | Mac 和 Windows 4090 已验证预设卡片及启动诊断。1.6.90、1.6.91 的发布记录另有 RC.2 回退和连续应用测试；本版完整回归清单仍列到 0.2.2-rc.1。 |
+| 插件 | `dsh-purge-community` 1.6.92 |
+| 已验证宿主 | DSH Desktop 0.2.2-rc.2 / 0.2.2-rc.1 / 0.2.1-rc.1 / 0.2.1-rc.2 / 0.2.1-rc.3 / 0.2.1-rc.5 |
+| 0.2.2-rc.2 | 补丁 74 applied / 零漂移，自检与破甲/回退回归在 macOS 通过；Windows 仅验证预设卡片与启动诊断，未复测补丁。 |
 | 其它宿主 | 允许应用，但 `selfcheck` 会标"未验证"；先看 `diagnose` |
 | Node | ≥18（桌面版自带运行时即可）；**红队工具需 ≥22.5**（依赖 `node:sqlite`，低版本会在加载红队工具时失败） |
 

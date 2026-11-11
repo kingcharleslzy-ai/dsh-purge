@@ -1,6 +1,6 @@
 {
   "name": "dsh-purge-community",
-  "version": "1.6.91",
+  "version": "1.6.92",
   "description": "让 AI 更专注地辅助学习与动手实验：DSH 附加组件，提供状态自检、提示词与规则管理、本机备份与回滚。",
   "type": "module",
   "main": "lib/index.js",
@@ -97,7 +97,7 @@
     },
     "install": {
       "preferred": "tarball",
-      "tarball": "https://github.com/kingcharleslzy-ai/dsh-purge/releases/download/v1.6.91/dsh-purge-community-1.6.91.tgz",
+      "tarball": "https://github.com/kingcharleslzy-ai/dsh-purge/releases/download/v1.6.92/dsh-purge-community-1.6.92.tgz",
       "git": "https://github.com/kingcharleslzy-ai/dsh-purge.git"
     },
     "compatibility": {
@@ -112,7 +112,9 @@
         "0.2.1-rc.3": "compatible",
         "0.2.1-rc.4": "unknown",
         "0.2.1-rc.5": "compatible",
-        "0.2.2-alpha.2": "unknown"
+        "0.2.2-alpha.2": "unknown",
+        "0.2.2-rc.1": "compatible",
+        "0.2.2-rc.2": "compatible"
       }
     }
   },
