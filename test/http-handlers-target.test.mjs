@@ -20,7 +20,7 @@ const PLUGIN = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const CORDIS = path.join(PLUGIN, "node_modules/@deepseek-ai/cordis/lib/index.js");
 
 const { Context, Service } = await import(pathToFileURL(CORDIS).href);
-const { installWebServer } = await import(pathToFileURL(PLUGIN + "/lib/index.js").href);
+const { apply, installWebServer } = await import(pathToFileURL(PLUGIN + "/lib/index.js").href);
 
 // Electron on Windows retains ASAR handles until process exit. The explicit
 // runtime harness owns its fresh parent directory and verifies cleanup after
@@ -108,7 +108,7 @@ function makeInstall(root, { layout = "next", complete = true, identity = null }
   return { resources, physicalHost, sealedHost, home };
 }
 
-async function boot(fx) {
+async function boot(fx, { maintenanceOnly = false } = {}) {
   const saved = {
     DSH_HOME: process.env.DSH_HOME,
     DSH_BASE: process.env.DSH_BASE,
@@ -118,7 +118,7 @@ async function boot(fx) {
   process.env.DSH_HOME = fx.home;
   process.env.DSH_BASE = fx.sealedHost; // CI 的触发条件：显式指向归档里的宿主
   process.env.DSH_PROFILE = "desktop";
-  process.env.DSH_SURFACE = "desktop";
+  process.env.DSH_SURFACE = maintenanceOnly ? "web" : "desktop";
 
   class Web extends Service {
     constructor(ctx) {
@@ -132,7 +132,8 @@ async function boot(fx) {
   }
   const ctx = new Context();
   await ctx.plugin(Web);
-  installWebServer(ctx, {});
+  if (maintenanceOnly) apply(ctx, { enabled: false });
+  else installWebServer(ctx, {});
   await new Promise((resolve) => setTimeout(resolve, 250));
 
   const read = async (name) => {
@@ -286,6 +287,26 @@ test("缺失诊断在三个 handler 之间交叉一致", async () => {
       status.compatibility.level,
       "diagnose 与 status 的兼容级别必须一致",
     );
+  } finally {
+    await dispose();
+  }
+});
+
+test("startup and maintenance report the same mixed versions in a desktop-hosted web profile", async (t) => {
+  const fx = makeInstall(path.join(TMP, "startup-web"), { layout: "official", complete: false });
+  write(path.join(fx.physicalHost, "dsh-agent-loop", "package.json"),
+    JSON.stringify({ name: "@deepseek-ai/dsh-agent-loop", version: "0.2.2-rc.2" }));
+  const warnings = t.mock.method(console, "warn", () => {});
+  const { read, dispose } = await boot(fx, { maintenanceOnly: true });
+  try {
+    const { compatibility } = await read("community");
+    assert.equal(compatibility.layout_found, false);
+    assert.equal(compatibility.level, "mixed");
+    assert.equal(compatibility.host_version, "0.2.2-rc.2");
+    assert.equal(compatibility.prompt_version, "0.2.1-rc.2");
+    assert.equal(compatibility.qualified, false);
+    assert.ok(warnings.mock.calls.some(({ arguments: args }) =>
+      args[0] === `[dsh-purge-community] ${compatibility.message}`));
   } finally {
     await dispose();
   }
