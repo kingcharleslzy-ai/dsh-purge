@@ -15,6 +15,18 @@
   },
   "versions": [
     {
+      "version": "0.5.1",
+      "publishTimestamp": 1794409363,
+      "source": {
+        "type": "git",
+        "url": "https://github.com/kingcharleslzy-ai/dsh-h3-video",
+        "commit": "d155c10b559e27be6eef76a8827612ba8d6d4a13"
+      },
+      "engines": {
+        "dsh": ">=0.2.2-rc.1"
+      }
+    },
+    {
       "version": "0.5.0",
       "publishTimestamp": 1794150618,
       "source": {

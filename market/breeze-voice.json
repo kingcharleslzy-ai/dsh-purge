@@ -15,6 +15,18 @@
   },
   "versions": [
     {
+      "version": "0.4.2",
+      "publishTimestamp": 1794409356,
+      "source": {
+        "type": "git",
+        "url": "https://github.com/kingcharleslzy-ai/dsh-breeze-voice",
+        "commit": "45b1ac48d50ffe286460a0882f4e7f7b3895af77"
+      },
+      "engines": {
+        "dsh": ">=0.2.1-rc.5"
+      }
+    },
+    {
       "version": "0.4.1",
       "publishTimestamp": 1793852218,
       "source": {
