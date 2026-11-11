@@ -58,15 +58,22 @@ try {
         const name = "普通笔记 · 子任务";
         const historical = name + "（历史兼容 · aaaaaaaaaa）";
         const alias = card("unrestricted-child-aaaaaaaaaa", historical);
+        const secondAlias = card("unrestricted-child-eeeeeeeeee", name + "（历史兼容 · eeeeeeeeee）");
+        const aliases = [alias, secondAlias];
         const visible = row => getComputedStyle(row).display !== "none";
-        if (!visible(alias)) throw Error("only available child hidden");
+        if (!aliases.every(visible)) throw Error("historical rows hidden before current child loads");
         const stable = card("unrestricted-child-bbbbbbbbbb", name);
-        if (visible(alias) || !visible(stable)) throw Error("healthy alias duplicated");
+        if (aliases.some(visible) || !visible(stable)) throw Error("duplicate historical cards in settings (#188)");
         for (const row of [card("unrestricted-child-cccccccccc", historical, true),
           card("unrestricted-child-dddddddddd", historical, false, true),
           card("user-notes", historical)]) if (!visible(row)) throw Error("protected row hidden");
         stable.firstChild.setAttribute("aria-disabled","true");
-        if (!visible(alias)) throw Error("broken canonical child hides working alias");
+        if (!aliases.every(visible)) throw Error("broken canonical child hides working alias");
+        stable.firstChild.setAttribute("aria-disabled", "false");
+        stable.remove();
+        if (!aliases.every(visible) || !aliases.every(row => roster.contains(row))) {
+          throw Error("removing current child did not restore both historical cards");
+        }
         roster.remove();
         const settings = document.createElement("dialog");
         document.body.append(settings);
