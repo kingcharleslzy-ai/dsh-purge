@@ -72,11 +72,13 @@ A full page in the left sidebar: one line of state at the top, "Apply" as the pr
 
 ## Updates
 
-1.6.76 restores preset registration on DSH 0.2.2-rc.1 and verifies both observation methods on older hosts. See the [release notes](releases/1.6.76.md).
+1.6.91 fixes desktop startup arguments accumulating when Apply is used twice. It includes the RC.2 rewind fix from 1.6.90. See the [release notes](https://github.com/kingcharleslzy-ai/dsh-purge/releases/tag/v1.6.91).
 
 Two separate preferences (check / install), default check-only every six hours. Installing never restarts the app — you decide when to reopen it.
 
 ## Compatibility
+
+On DSH 0.2.2-rc.2, the preset cards and startup diagnostics were checked on macOS and Windows. The 1.6.90 and 1.6.91 release notes also record RC.2 tests for rewind and repeated application. The full-regression list in this release still ends at 0.2.2-rc.1.
 
 Plugin `dsh-purge-community` 1.6.91 · verified on DSH Desktop 0.2.2-rc.1 / 0.2.1-rc.1 / rc.2 / rc.3 / rc.5 · Node ≥ 18.
 

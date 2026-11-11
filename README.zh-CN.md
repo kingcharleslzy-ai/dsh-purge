@@ -11,7 +11,7 @@
 
 当前版本 **1.6.91** · 适配 **DSH Desktop 0.2.2-rc.1**（0.2.1-rc.1 / rc.2 / rc.3 / rc.5 同样通过） · [English](docs/README.en.md)
 
-1.6.91 为已授权测试入口增加一次性命令执行挑战，区分文件写入与命令执行。[发行说明](https://github.com/kingcharleslzy-ai/dsh-purge/releases/tag/v1.6.91)。
+1.6.91 修复了重复点击「应用」会叠加桌面启动参数的问题。1.6.90 已适配 DSH 0.2.2-rc.2 的会话回退显示。[发行说明](https://github.com/kingcharleslzy-ai/dsh-purge/releases/tag/v1.6.91)。
 
 **原项目与作者**：小杨 / YuJunZhiXue 是历史上游 dsh-purge 的作者署名。本仓库独立维护社区版，保留上游版权和 MIT 许可证。历史署名不代表对当前同名 GitHub 账号身份的核实。详见[署名记录](NOTICE.md)与[许可证](LICENSE)。
 
@@ -193,6 +193,7 @@ sh "$PURGE_INSTALL_DIR/install.sh" --dry-run
 | --- | --- |
 | 插件 | `dsh-purge-community` 1.6.91 |
 | 已验证宿主 | DSH Desktop 0.2.2-rc.1 / 0.2.1-rc.1 / 0.2.1-rc.2 / 0.2.1-rc.3 / 0.2.1-rc.5 |
+| 0.2.2-rc.2 | Mac 和 Windows 4090 已验证预设卡片及启动诊断。1.6.90、1.6.91 的发布记录另有 RC.2 回退和连续应用测试；本版完整回归清单仍列到 0.2.2-rc.1。 |
 | 其它宿主 | 允许安装，自检会标「未验证」；先看 `diagnose` |
 | Node | ≥18（桌面版自带运行时即可）；红队工具需 ≥22.5（`node:sqlite`） |
 
