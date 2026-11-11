@@ -1,3 +1,13 @@
+# 1.6.90
+
+- **0.2.2-rc.2 回退补丁重锚**：#56/#77 原来按 0.2.1 的格式化源码定位；rc.2 把会话客户端打成单行压缩包，旧锚点全部落空，自检的「回退不残留」一层变 `broken`。本版为压缩形态补了锚点：
+  - #56 在 `replaceWindow` 前过滤被 `surfaceOp{op:"replace",startSeq,endSeq}` 覆盖的事件，并连带藏掉整轮（含 turn/start、turn/end），保留 system/message；
+  - #77 在 `append` 收到 replace 操作时，先从现有窗口剔除被替换范围，再带上新记录重建，已发送但被撤回的消息立即消失。
+  两条都保留 0.2.1 旧锚点作为回退路径，新增 `test/rc2-rewind-client.test.mjs` 用压缩片段钉住。
+- 其余 84 条补丁在 rc.2 上维持 applied，无漂移。
+
+验证：本机 rc.2 宿主应用后自检 `ok`、零漂移；压缩片段回归通过；完整测试套件 570 通过。
+
 # 1.6.89
 
 - **#185 profile 预设重复注册**：注册前读取宿主 Loader 已合成的有效 profile 声明，同一 `config.id` 由宿主注册和释放；状态文件标为 profile-owned，委托登记不再算加载通过。判断不读其他 profile、不按 YAML 文本猜测。
