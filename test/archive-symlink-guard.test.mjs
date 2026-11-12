@@ -282,7 +282,7 @@ test("负的 base-256 大小字段被拒绝", () => {
 });
 
 test("base-256 扩展头（typeflag=x）后仍能检出链接条目", () => {
-  const pax = Buffer.from("30 path=pkg/link\n", "utf8");
+  const pax = paxRecord("path", "pkg/link");
   const archive = Buffer.concat([
     tarBlock({ name: "pkg/file.txt", size: 4, base256: true }),
     bodyBlocks(Buffer.from("data", "utf8")),
@@ -292,4 +292,180 @@ test("base-256 扩展头（typeflag=x）后仍能检出链接条目", () => {
     Buffer.alloc(BLOCK * 2, 0),
   ]);
   assert.throws(() => assertNoTarSymlinks(archive), /符号链接\/硬链接条目/);
+});
+
+/* ------------------------------------------------------------------ */
+/* PAX 扩展头：size 覆盖会改变条目布局                                  */
+/* ------------------------------------------------------------------ */
+
+/**
+ * PAX 记录：`<总字节长度> <key>=<value>\n`。
+ *
+ * 长度按 **UTF-8 字节**计（含自身），不是字符数 —— 中文值上两者不同，
+ * 用字符数会算出一条解析不出来的记录。
+ */
+function paxRecord(key, value) {
+  const body = Buffer.from(` ${key}=${value}\n`, "utf8");
+  let length = body.length;
+  for (;;) {
+    const next = Buffer.byteLength(String(length), "ascii") + body.length;
+    if (next === length) break;
+    length = next;
+  }
+  return Buffer.concat([Buffer.from(String(length), "ascii"), body]);
+}
+
+test("PAX size 覆盖后续条目大小时，仍能检出链接条目", () => {
+  // 解压器按 PAX 的 size=1024 读取，头部却写 512。扫描器若只跳 512 会落在
+  // 数据块中间，把数据当头部读，从而越过紧随其后的链接条目。
+  const paxData = paxRecord("size", "1024");
+  const data = Buffer.alloc(1024, 0x41);
+  // 伪大小放在「只跳 512 时会被当成头部」的那个位置
+  data.write("77777777777\0", BLOCK + 124, "ascii");
+
+  const archive = Buffer.concat([
+    tarBlock({ name: "PaxHeader/pkg/file.txt", size: paxData.length, typeflag: "x" }),
+    bodyBlocks(paxData),
+    tarBlock({ name: "pkg/file.txt", size: BLOCK }),
+    bodyBlocks(data),
+    tarBlock({ name: "pkg/link", typeflag: "2", linkname: "../../../victim" }),
+    Buffer.alloc(BLOCK * 2, 0),
+  ]);
+  assert.throws(() => assertNoTarSymlinks(archive), /符号链接\/硬链接条目/);
+});
+
+test("无 size 覆盖的 PAX 扩展头（长路径）不影响放行", () => {
+  const paxData = paxRecord("path", `pkg/${"a".repeat(120)}.txt`);
+  const content = Buffer.from("hi", "utf8");
+  const archive = Buffer.concat([
+    tarBlock({ name: "PaxHeader/long", size: paxData.length, typeflag: "x" }),
+    bodyBlocks(paxData),
+    tarBlock({ name: "pkg/long.txt", size: content.length }),
+    bodyBlocks(content),
+    Buffer.alloc(BLOCK * 2, 0),
+  ]);
+  assert.doesNotThrow(() => assertNoTarSymlinks(archive));
+});
+
+test("PAX 记录含 UTF-8 值（长度按字节计）时能被正确解析", () => {
+  // 中文名一个字符占 3 字节；若按解码后的字符下标切片会与长度字段错位。
+  const paxData = paxRecord("path", "技能/说明.md");
+  const content = Buffer.from("内容", "utf8");
+  const archive = Buffer.concat([
+    tarBlock({ name: "PaxHeader/技能", size: paxData.length, typeflag: "x" }),
+    bodyBlocks(paxData),
+    tarBlock({ name: "技能/说明.md", size: content.length }),
+    bodyBlocks(content),
+    Buffer.alloc(BLOCK * 2, 0),
+  ]);
+  assert.doesNotThrow(() => assertNoTarSymlinks(archive));
+});
+
+test("PAX linkpath 记录的条目按链接处理", () => {
+  const paxData = paxRecord("linkpath", "../../outside");
+  const archive = Buffer.concat([
+    tarBlock({ name: "PaxHeader/pkg/alias", size: paxData.length, typeflag: "x" }),
+    bodyBlocks(paxData),
+    // typeflag 仍是普通文件，链接目标由 PAX 提供
+    tarBlock({ name: "pkg/alias", size: 0 }),
+    Buffer.alloc(BLOCK * 2, 0),
+  ]);
+  assert.throws(() => assertNoTarSymlinks(archive), /PAX linkpath/);
+});
+
+test("PAX 记录损坏时整份拒绝，不猜着继续扫", () => {
+  // 长度字段 99，实际数据只有 20 字节 → 越界
+  const paxData = Buffer.from("99 path=short\n", "utf8");
+  const archive = Buffer.concat([
+    tarBlock({ name: "PaxHeader/x", size: paxData.length, typeflag: "x" }),
+    bodyBlocks(paxData),
+    tarBlock({ name: "pkg/file.txt", size: 0 }),
+    Buffer.alloc(BLOCK * 2, 0),
+  ]);
+  assert.throws(() => assertNoTarSymlinks(archive), /PAX 记录长度越界/);
+});
+
+test("PAX 记录未以换行结束时拒绝", () => {
+  // 长度字段与实际字节数一致（12），但末字节不是换行。
+  const paxData = Buffer.from("12 path=abcy", "utf8");
+  assert.equal(paxData.length, 12, "样本长度必须与声明一致，否则先触发越界检查");
+  const archive = Buffer.concat([
+    tarBlock({ name: "PaxHeader/x", size: paxData.length, typeflag: "x" }),
+    bodyBlocks(paxData),
+    Buffer.alloc(BLOCK * 2, 0),
+  ]);
+  assert.throws(() => assertNoTarSymlinks(archive), /未以换行结束/);
+});
+
+test("全局 PAX 头（typeflag=g）覆盖 size 时拒绝", () => {
+  const paxData = paxRecord("size", "1024");
+  const archive = Buffer.concat([
+    tarBlock({ name: "GlobalHead.0", size: paxData.length, typeflag: "g" }),
+    bodyBlocks(paxData),
+    tarBlock({ name: "pkg/file.txt", size: 0 }),
+    Buffer.alloc(BLOCK * 2, 0),
+  ]);
+  assert.throws(() => assertNoTarSymlinks(archive), /全局 PAX 头覆盖 size/);
+});
+
+/* ------------------------------------------------------------------ */
+/* 真实 tar 产出的归档不能被误拦                                        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * 用系统 tar 打一份归档，返回字节；tar 不可用时返回 null 让用例跳过。
+ * @param {string} label - 临时目录名。
+ * @param {(dir: string) => void} setup - 造文件。
+ * @param {(t: object) => void} tmpdir - 已注册清理的临时目录工厂。
+ */
+function realTarArchive(label, setup, dir) {
+  const src = path.join(dir, label);
+  fs.mkdirSync(src, { recursive: true });
+  setup(src);
+  const tar = path.join(dir, `${label}.tar`);
+  try {
+    execFileSync("tar", ["-cf", tar, "-C", src, "."], { windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
+  } catch {
+    return null;
+  }
+  return fs.readFileSync(tar);
+}
+
+test("真实 tar 归档：普通文件、长路径、中文名都放行", (t) => {
+  const dir = tmpdir(t);
+  const cases = {
+    plain: (src) => {
+      fs.mkdirSync(path.join(src, "pkg"));
+      fs.writeFileSync(path.join(src, "pkg", "SKILL.md"), "---\nname: p\n---\n");
+    },
+    // 超 100 字节路径 → bsdtar 会写 PAX path 记录
+    longpath: (src) => {
+      const deep = path.join(src, "a".repeat(60), "b".repeat(60), "c".repeat(60));
+      fs.mkdirSync(deep, { recursive: true });
+      fs.writeFileSync(path.join(deep, "d".repeat(60) + ".txt"), "hello");
+    },
+    // 中文名 → PAX 记录里长度按字节计，按字符解析会错位
+    utf8name: (src) => {
+      fs.mkdirSync(path.join(src, "技能"));
+      fs.writeFileSync(path.join(src, "技能", "说明.md"), "内容");
+    },
+    empty: (src) => fs.writeFileSync(path.join(src, "zero.txt"), ""),
+  };
+  for (const [label, setup] of Object.entries(cases)) {
+    const bytes = realTarArchive(label, setup, dir);
+    if (!bytes) return t.skip("系统 tar 不可用，跳过");
+    assert.doesNotThrow(() => assertNoTarSymlinks(bytes), `${label} 不应被拒`);
+  }
+});
+
+test("真实 tar 归档：含符号链接时仍被拒", (t) => {
+  const dir = tmpdir(t);
+  const bytes = realTarArchive("reallink", (src) => {
+    fs.mkdirSync(path.join(src, "pkg"), { recursive: true });
+    fs.writeFileSync(path.join(src, "pkg", "SKILL.md"), "x");
+    try { fs.symlinkSync("../../../victim", path.join(src, "pkg", "link"), "dir"); } catch { /* 无权限则跳过 */ }
+  }, dir);
+  if (!bytes) return t.skip("系统 tar 不可用，跳过");
+  if (!fs.existsSync(path.join(dir, "reallink", "pkg", "link"))) return t.skip("本机无法创建符号链接，跳过");
+  assert.throws(() => assertNoTarSymlinks(bytes), /符号链接\/硬链接条目/);
 });

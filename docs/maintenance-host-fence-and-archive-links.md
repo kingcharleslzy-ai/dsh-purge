@@ -51,6 +51,24 @@
 
 **认不出就抛错，不当成 0 继续扫**。回归里有一条样本专门把 `77777777777` 写进数据块偏移 124：旧实现把数据块当头部，按这个伪大小跳过 4GB，直接漏掉紧随其后的链接条目（实测漏检，且外部 tar 确实建出了那个链接）。
 
+### PAX 扩展头：size 覆盖会改变布局
+
+PAX 的 `size` 记录会覆盖紧随条目头部声明的大小，解压器按**覆盖值**读取。扫描器若仍按头部原值推进，两边对归档结构就分叉了。
+
+实测样本：PAX 写 `size=1024`，头部写 512，其后一个符号链接。
+
+```
+系统 tar 的解读:  pkg/file.txt (1024B)   pkg/link -> ../../../victim
+旧实现:           ❌ 未检出
+外部 tar 解压:    pkg/file.txt 实际 1024 字节（PAX 生效）  pkg/link 是符号链接: true
+```
+
+现在 `parsePaxRecords()` 解析 `x` 扩展头并采用生效值；`g`（全局）头若覆盖 size 则整份拒绝——无法安全地把一个覆盖值套用到任意多条后续条目上。
+
+**一个必须注意的实现细节**：PAX 记录长度以**字节**计，含记录自身。UTF-8 文件名上一个字符占多字节，按解码后的字符下标切片会与实际长度错位。这一版最初就是这样写的，被「中文名 skill 包」的真实归档测出误拦——`技能/说明.md` 的 `path` 记录解析失败。现在全程在 Buffer 上按字节推进。
+
+回归里有四条真实 tar 产出的归档（普通、超长路径、中文名、空文件）确保不被误拦，另有 `linkpath` 记录、损坏记录、无换行记录、全局 size 覆盖五条负向用例。
+
 ### tar.gz 的解压后上限
 
 归档本身限 12MB，但 gzip 压缩比不受此约束：几十 KB 的 tar.gz 可以解出上百 MB。无上限的 `gunzipSync()` 会在任何后续大小检查生效前先吃光内存（实测 49KB → 50MB）。
@@ -67,7 +85,7 @@
 
 新增三组，均登记进 `npm test`：
 
-- `test/archive-symlink-guard.test.mjs`（14 例）—— zip 符号链接、tar typeflag 1/2、base-256 大小、无法识别的大小字段、负大小
+- `test/archive-symlink-guard.test.mjs`（23 例，1 例按平台跳过）—— zip 符号链接、tar typeflag 1/2、base-256 大小、无法识别的大小字段、负大小、PAX size 覆盖、PAX linkpath、PAX 损坏记录、UTF-8 记录、真实 tar 归档不误拦
 - `test/plugin-request-host-fence.test.mjs`（13 例）—— 含 `PURGE_TRUSTED_HOSTS` 的实际解析与清空后回落
 - `test/skills-archive-limit.test.mjs`（4 例）—— gzip 炸弹被拒、正常包不受影响、接近上限的包不误伤
 
