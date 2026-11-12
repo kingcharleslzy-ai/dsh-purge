@@ -1,0 +1,19 @@
+name: Official desktop installer acceptance
+on:
+  pull_request:
+    paths:
+      - 'lib/official-installer.*'
+      - 'scripts/check-official-desktop-update.ps1'
+      - '.github/workflows/official-installer.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  signed-installer:
+    runs-on: windows-latest
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+      - name: Signed rc.1 and rc.2 installation, failure recovery and rollback
+        shell: pwsh
+        run: ./scripts/check-official-desktop-update.ps1
