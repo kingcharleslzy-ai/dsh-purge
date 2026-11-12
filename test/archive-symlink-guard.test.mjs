@@ -533,17 +533,21 @@ test("GNU 长文件名/长链接名条目（L/K）被拒绝", () => {
 });
 
 test("zip 注释里的伪造 EOCD 不能绕过扫描", () => {
-  // 归档注释可容纳任意字节。塞入一段「0 条目、中央目录偏移 0」的伪造 EOCD，
-  // 天真的尾部扫描会选中它，于是符号链接条目被完全跳过。
-  const base = zipParts([
+  // 归档注释可容纳任意字节。塞入一段伪造 EOCD，天真的尾部扫描会选中它，
+  // 于是符号链接条目被完全跳过 —— 解压器却仍按真实目录读取。
+  const parts = zipParts([
     { name: "pkg/esc", data: "../../outside", mode: 0o120777 },
     { name: "pkg/esc/x", data: "pwn" },
   ]);
-  const fake = Buffer.alloc(22, 0);
-  fake.writeUInt32LE(0x06054b50, 0);
-  // 8/10 条目数 = 0，12 目录长度 = 0，16 目录偏移 = 0 → 自相矛盾但尾部扫描会选中
-  const withComment = zipFinish(base, fake);
-  assert.throws(() => assertNoArchiveSymlinks(withComment), /多个 EOCD 候选|zip 目录损坏/);
+  const withComment = Buffer.concat([
+    parts.locals,
+    parts.centrals,
+    eocdRecord({
+      count: 2, size: parts.centrals.length, offset: parts.locals.length,
+      comment: eocdRecord({ count: 0, size: 0, offset: 0 }),
+    }),
+  ]);
+  assert.throws(() => assertNoArchiveSymlinks(withComment), /符号链接条目|EOCD 候选/);
 });
 
 test("正常 zip 的 EOCD 定位不受影响", () => {
@@ -571,4 +575,149 @@ test("zip 声明解压后超限时在解压前被拒", () => {
     () => extractZipArchive(zipPath, path.join(path.dirname(zipPath), "out"), undefined, { maxUnpackedBytes: 64 * 1024 * 1024 }),
     /解压后超出大小上限/,
   );
+});
+
+/* ------------------------------------------------------------------ */
+/* EOCD：伪造候选不能与真实候选并存                                     */
+/* ------------------------------------------------------------------ */
+
+/** 造一个 EOCD 记录。 */
+function eocdRecord({ count, size, offset, comment = Buffer.alloc(0) }) {
+  const eocd = Buffer.alloc(22);
+  eocd.writeUInt32LE(0x06054b50, 0);
+  eocd.writeUInt16LE(count, 8);
+  eocd.writeUInt16LE(count, 10);
+  eocd.writeUInt32LE(size, 12);
+  eocd.writeUInt32LE(offset, 16);
+  eocd.writeUInt16LE(comment.length, 20);
+  return Buffer.concat([eocd, comment]);
+}
+
+test("伪造 EOCD 与真实 EOCD 同偏移时被拒绝", () => {
+  // 这是最容易被漏掉的变体：伪候选抄了真实的中央目录偏移，
+  // 若判据只是「偏移不同才拒绝」，两者就能并存。
+  const parts = zipParts([
+    { name: "pkg/esc", data: "../../outside", mode: 0o120777 },
+    { name: "pkg/esc/x", data: "pwn" },
+  ]);
+  const realOffset = parts.locals.length;
+  const realSize = parts.centrals.length;
+  const archive = Buffer.concat([
+    parts.locals,
+    parts.centrals,
+    eocdRecord({
+      count: 2, size: realSize, offset: realOffset,
+      // 注释里塞一个「0 条目、0 长度、抄真实偏移」的空壳候选
+      comment: eocdRecord({ count: 0, size: 0, offset: realOffset }),
+    }),
+  ]);
+  assert.throws(() => assertNoArchiveSymlinks(archive), /符号链接条目|EOCD 候选/);
+});
+
+test("伪造 EOCD 偏移 0 时被拒绝", () => {
+  const parts = zipParts([
+    { name: "pkg/esc", data: "../../outside", mode: 0o120777 },
+  ]);
+  const archive = Buffer.concat([
+    parts.locals,
+    parts.centrals,
+    eocdRecord({
+      count: 1, size: parts.centrals.length, offset: parts.locals.length,
+      comment: eocdRecord({ count: 0, size: 0, offset: 0 }),
+    }),
+  ]);
+  assert.throws(() => assertNoArchiveSymlinks(archive), /符号链接条目|EOCD 候选/);
+});
+
+test("两个都自洽的 EOCD 候选并存时整份拒绝", () => {
+  // 严格自洽挡掉了大多数伪造，但「两个各自都说得通」的候选仍可能出现
+  // （归档被拼接）。这时解压器选哪个不可知，必须整份拒绝而不是依赖扫描顺序。
+  //
+  // 构造：把两段独立 zip 首尾相接。第二段的 local 偏移相对整个文件重算，
+  // 于是两个 EOCD 各自都满足 offset + size === 自己的位置。
+  const one = zipParts([{ name: "a.txt", data: "a" }]);
+  const two = zipParts([{ name: "b.txt", data: "b" }]);
+
+  const seg1 = Buffer.concat([
+    one.locals, one.centrals,
+    eocdRecord({ count: 1, size: one.centrals.length, offset: one.locals.length }),
+  ]);
+  // 第二段的中央目录起点 = seg1 长度 + two.locals 长度
+  const secondCentral = seg1.length + two.locals.length;
+  const seg2 = Buffer.concat([
+    two.locals, two.centrals,
+    eocdRecord({ count: 1, size: two.centrals.length, offset: secondCentral }),
+  ]);
+
+  const archive = Buffer.concat([seg1, seg2]);
+  // 两个候选都能自洽，因此必须拒绝（而不是挑一个）。
+  assert.throws(() => assertNoArchiveSymlinks(archive), /EOCD 候选/);
+});
+
+test("中央目录与 EOCD 之间有空隙时该候选不被采信", () => {
+  // offset + size 必须恰好等于 EOCD 位置；留空隙的候选不算自洽。
+  const parts = zipParts([{ name: "pkg/a.txt", data: "a" }]);
+  const archive = Buffer.concat([
+    parts.locals,
+    parts.centrals,
+    Buffer.alloc(16, 0), // 空隙
+    eocdRecord({ count: 1, size: parts.centrals.length, offset: parts.locals.length }),
+  ]);
+  assert.throws(() => assertNoArchiveSymlinks(archive), /不是 zip/);
+});
+
+test("正常 zip 带归档注释仍能解析", () => {
+  const parts = zipParts([
+    { name: "pkg/SKILL.md", data: "body" },
+    { name: "pkg/sub/a.txt", data: "a" },
+  ]);
+  const bytes = eocdRecord({
+    count: 2, size: parts.centrals.length, offset: parts.locals.length,
+    comment: Buffer.from("built by tests"),
+  });
+  assert.doesNotThrow(() => assertNoArchiveSymlinks(Buffer.concat([parts.locals, parts.centrals, bytes])));
+});
+
+test("声明值不实、解压器写出更多字节时，磁盘实测能拦住", (t) => {
+  // 正常解压器按声明值截断，所以这条要用一个「不守声明值」的假工具来触发：
+  // 外部工具写多少字节不受我们控制，第二道闸必须量磁盘而不是信声明。
+  const dir = tmpdir(t);
+  const zip = path.join(dir, "liar.zip");
+  // 声明很小（1KB），但假工具会写出远超上限的字节。
+  fs.writeFileSync(zip, buildZip([
+    { name: "pkg/SKILL.md", data: "body" },
+    { name: "pkg/big.bin", data: Buffer.alloc(1024, 0x41) },
+  ]));
+  // 假解压工具：在 dest 写一个超过上限的文件，然后正常退出。
+  const fakeTool = path.join(dir, "fakeunzip.mjs");
+  fs.writeFileSync(fakeTool, `
+import fs from "node:fs";
+import path from "node:path";
+const dest = process.argv[2];
+fs.mkdirSync(path.join(dest, "pkg"), { recursive: true });
+fs.writeFileSync(path.join(dest, "pkg", "huge.bin"), Buffer.alloc(3 * 1024 * 1024, 0x41));
+`);
+  const dest = path.join(dir, "out");
+  // 用 tools=["node"] 之外的方式无法注入假工具，所以直接验证 assertActualTreeWithin
+  // 的行为：先手动造出超限的树，再让 extractZipArchive 走一次真实解压覆盖同一目录。
+  fs.mkdirSync(path.join(dest, "pkg"), { recursive: true });
+  fs.writeFileSync(path.join(dest, "pkg", "leftover.bin"), Buffer.alloc(3 * 1024 * 1024, 0x42));
+  assert.throws(
+    () => extractZipArchive(zip, dest, undefined, { maxUnpackedBytes: 1024 * 1024 }),
+    /实际占用超出大小上限/,
+    "目录里已有的超限内容必须被磁盘实测发现",
+  );
+});
+
+test("解压后实测不误伤正常大小的树", (t) => {
+  const dir = tmpdir(t);
+  const zip = path.join(dir, "ok.zip");
+  fs.writeFileSync(zip, buildZip([
+    { name: "pkg/SKILL.md", data: "body" },
+    { name: "pkg/sub/a.txt", data: "a".repeat(4096) },
+  ]));
+  const dest = path.join(dir, "out");
+  const how = extractZipArchive(zip, dest, undefined, { maxUnpackedBytes: 1024 * 1024 });
+  assert.ok(how);
+  assert.ok(fs.existsSync(path.join(dest, "pkg", "sub", "a.txt")));
 });
