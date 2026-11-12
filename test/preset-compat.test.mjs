@@ -172,7 +172,7 @@ test("list_agents is adapted only for the verified merged provider in the same g
   const dir = path.join(root, "node_modules", name);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({name, version: "0.2.2-rc.1", exports: {".": "./index.js", "./package.json": "./package.json"}}));
-  fs.writeFileSync(path.join(dir, "index.js"), "");
+  fs.writeFileSync(path.join(dir, "index.js"), "function registerListAgents(){}");
   const anchor = path.join(root, "package.json");
   const main = {id:"control", name, disabled:false};
   const legacy = {id:"tool-subagent-list-agents", name:name + "/list-agents", disabled:false};
@@ -245,7 +245,7 @@ test("list_agents is adapted for rc.2 as well as rc.1", async t => {
   const dir = path.join(root, "node_modules", name);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ name, version: "0.2.2-rc.2", exports: { ".": "./index.js", "./package.json": "./package.json" } }));
-  fs.writeFileSync(path.join(dir, "index.js"), "");
+  fs.writeFileSync(path.join(dir, "index.js"), "function registerListAgents(){}");
   const anchor = path.join(root, "package.json");
   const main = { id: "control", name, disabled: false };
   const legacy = { id: "tool-subagent-list-agents", name: name + "/list-agents", disabled: false };
@@ -256,6 +256,36 @@ test("list_agents is adapted for rc.2 as well as rc.1", async t => {
   assert.deepEqual(input, copy);
 });
 
+test("a future 0.2.x version migrates when the entry still registers list_agents", async t => {
+  const { adaptListAgents } = await import("../lib/preset-compat.js");
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "preset-provider-future-"));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const name = "@deepseek-ai/dsh-tool-subagent-control";
+  const dir = path.join(root, "node_modules", name);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ name, version: "0.2.3-rc.1", exports: { ".": "./index.js", "./package.json": "./package.json" } }));
+  fs.writeFileSync(path.join(dir, "index.js"), "function registerListAgents(){}\nfunction apply(ctx){registerListAgents(ctx)}");
+  const main = { id: "control", name, disabled: false };
+  const legacy = { id: "tool-subagent-list-agents", name: name + "/list-agents", disabled: false };
+  const out = adaptListAgents({ plugins: [{ name: "group", group: true, config: [main, legacy] }] }, path.join(root, "package.json"));
+  assert.deepEqual(out.plugins[0].config, [main]);
+});
+
+test("a host that stops providing list_agents keeps the legacy row visible", async t => {
+  const { adaptListAgents } = await import("../lib/preset-compat.js");
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "preset-provider-gone-"));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const name = "@deepseek-ai/dsh-tool-subagent-control";
+  const dir = path.join(root, "node_modules", name);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ name, version: "0.2.3-rc.1", exports: { ".": "./index.js", "./package.json": "./package.json" } }));
+  fs.writeFileSync(path.join(dir, "index.js"), "export function apply(){}");
+  const main = { id: "control", name, disabled: false };
+  const legacy = { id: "tool-subagent-list-agents", name: name + "/list-agents", disabled: false };
+  const before = { plugins: [{ name: "group", group: true, config: [main, legacy] }] };
+  assert.deepEqual(adaptListAgents(before, path.join(root, "package.json")), before);
+});
+
 test("a preset that mounts its own tools row gets one native executor in that scope", async t => {
   const { ensureToolExecutor } = await import("../lib/preset-compat.js");
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "preset-executor-"));
@@ -264,7 +294,7 @@ test("a preset that mounts its own tools row gets one native executor in that sc
   const dir = path.join(root, "node_modules", native);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ name: native, version: "0.2.2-rc.2" }));
-  fs.writeFileSync(path.join(dir, "index.js"), "");
+  fs.writeFileSync(path.join(dir, "index.js"), "function registerListAgents(){}");
   const anchor = path.join(root, "package.json");
   const tools = { id: "tools", name: "@deepseek-ai/dsh-tools" };
   const nativeRow = { id: "tool-executor-native", name: native };

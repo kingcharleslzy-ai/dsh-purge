@@ -1,3 +1,13 @@
+# 1.6.96
+
+- **预设兼容改为能力探测**：`adaptListAgents()` 不再按 `0.2.2-rc.*` 版本号判断。子路径未导出时，读取 control 主入口，只有它确实仍注册 `list_agents` / `registerListAgents` 才移除旧条目；未来 0.2.x 继续合并就继续可用，停止提供则保留旧条目让宿主错误可见，不静默删工具。
+- 新增未来版本与「提供方消失」两组回归；本机 redteam / unrestricted 在 Electron 宿主下转换仍为 1 → 0。
+- 1.6.95 的锚点回退与自带 tools 预设补执行器全部保留。
+
+说明：宿主 86 条源码补丁无法完全免疫上游改写，升级后仍可能漂移；这一层继续依赖 `diagnose` / 逐条状态 / 备份与重锚流程，不能承诺零维护。
+
+验证：全套测试通过（新增能力探测用例）。
+
 # 1.6.95
 
 - **#209 list_agents 适配 rc.2**：`adaptListAgents()` 原来只接受精确版本 `0.2.2-rc.1`，rc.2 同样把 `list_agents` 合入 control 主入口，却跳过迁移，留下 `@deepseek-ai/dsh-tool-subagent-control/list-agents` 失效条目；现在接受 `0.2.2-rc.*`。
