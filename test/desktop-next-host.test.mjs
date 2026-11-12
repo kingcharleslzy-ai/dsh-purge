@@ -116,7 +116,9 @@ test("resolveInstance：显式选择器优先，指错就报错不回落", () =>
   const decoy = makeNextInstall(path.join(TMP, "resolve-decoy"));
   const bad = resolveInstance({ env: { DSH_BASE: decoy.root }, resourcesPath: next.resources, electron: "44.7.0", argv: [] });
   assert.equal(bad.resolved, false);
-  assert.equal(bad.host, "");
+  assert.equal(norm(bad.host), norm(decoy.root));
+  assert.equal(bad.source, "DSH_BASE");
+  assert.notEqual(norm(bad.host), norm(aiBase));
   assert.match(bad.reason, /不是有效插件根/);
 
   assert.throws(
