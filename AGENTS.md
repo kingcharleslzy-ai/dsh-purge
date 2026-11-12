@@ -513,3 +513,10 @@ Windows 换包仅对真实共享/锁冲突继续等待；其他错误保留 `det
 - 镜像覆盖发行查询、raw 元数据和归档传输；GitHub Token 不发送给镜像或镜像引发的重定向。安装前官方 API digest / SHA256SUMS 必须通过 GitHub（可走现有更新代理）取得；失败停止安装，不能把镜像同时提供的包和摘要当作独立来源证明，也不能关闭 TLS/SHA256。
 - #137：市场索引逐发行读取 manifest.dsh.compatibility.dsh；历史未声明版本保留原有限定。刷新索引即可读取新范围，不需要卸载插件、改用户兼容豁免或重启应用。
 - 本次不改宿主补丁定义，不改用户设置，不自动 apply/restart。隔离安装测试不代表模型行为或全部 GUI 功能验收。
+
+## 面板 Host 归属与归档链接条目
+
+- `/dsh-purge/*` 的准入先认 Host 归属：Host 必须是回环（`localhost` / `::1` / 任意 `127/8`）或 `webServer.host` 推导出的监听地址，缺 Host 一律拒绝。Origin 与 Host 相等不构成授权 —— rebinding 时浏览器把两者都写成攻击者域名。非回环部署用 `PURGE_TRUSTED_HOSTS` 显式追加主机名，不设就没有额外放行。回环判定口径与宿主 `isLoopbackHostname()` 一致。
+- 归档解压前拒收链接条目：zip 读中央目录 external attributes（`>>> 16` 得 unix mode），tar/tar.gz 读 512 字节头的 typeflag（`1` 硬链接、`2` 符号链接）。名字合法不代表条目是普通文件 —— `pkg/link` 这一条本身没问题，但外部 tar 会把它建成真实链接，随后 `pkg/link/xxx` 写到解压根之外。`extractZipArchive` 的 Node 分支不建链接，但平台首选的 tar 分支会，所以校验在派发任何工具之前、对整份归档生效。
+- 拒收是整份失败，不跳过链接条目继续解压；静默丢弃会让 skill 残缺且界面显示「导入成功」。
+- 直接调用 handler 的测试夹具必须带 `host`；真实 HTTP/1.1 请求必有 Host，宿主 `/api` 围栏同样拒绝缺 Host 的请求。详见 [维护说明](docs/maintenance-host-fence-and-archive-links.md)。

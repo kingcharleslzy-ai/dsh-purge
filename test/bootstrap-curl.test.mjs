@@ -5,9 +5,27 @@ import https from 'node:https';import http from 'node:http';import net from 'nod
 import {execFile} from 'node:child_process';import {promisify} from 'node:util';
 import {curlReleaseRequest,downloadReleaseFile} from '../scripts/bootstrap-install.mjs';
 const exec=promisify(execFile);
+// Git 不总装在 C:\Program Files：scoop/choco/自定义盘符都很常见，硬编码单一路径会让
+// 这台机器上"没装 openssl"和"Git 装到别的盘"看起来是同一个失败。按候选顺序探测。
+const OPENSSL_CANDIDATES=[
+  process.env.PURGE_OPENSSL,
+  ...(process.env.PATH||'').split(path.delimiter).filter(Boolean).map(dir=>path.join(dir,'openssl.exe')),
+  'C:\\Program Files\\Git\\usr\\bin\\openssl.exe',
+  'C:\\Program Files\\Git\\mingw64\\bin\\openssl.exe',
+  'D:\\Git\\usr\\bin\\openssl.exe',
+  'D:\\Git\\mingw64\\bin\\openssl.exe',
+  '/usr/bin/openssl',
+  '/usr/local/bin/openssl',
+];
+function resolveOpenssl(){
+  for(const candidate of OPENSSL_CANDIDATES){
+    if(candidate&&fs.existsSync(candidate))return candidate;
+  }
+  return 'openssl'; // 交给 PATH 解析；找不到时 exec 会抛 ENOENT，测试自然失败
+}
 test('real system curl: CONNECT/TLS, binary body, redirect validation, limits, timeout and curlrc isolation',async()=>{
   const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'purge-bootstrap-tls-'));
-  const openssl=process.platform==='win32'?path.join(process.env.ProgramFiles||'C:\\Program Files','Git/usr/bin/openssl.exe'):'openssl';
+  const openssl=resolveOpenssl();
   await exec(openssl,['req','-x509','-newkey','rsa:2048','-nodes','-keyout',path.join(tmp,'key.pem'),'-out',path.join(tmp,'cert.pem'),'-days','1','-subj','/CN=github.com','-addext','subjectAltName=DNS:github.com,DNS:release-assets.githubusercontent.com']);
   const sockets=new Set(),requests=[];
   const binary=Buffer.from([0,255,10,13,128,1,2]);
