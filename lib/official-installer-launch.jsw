@@ -1,0 +1,5 @@
+// A detached console PowerShell may exit before running its script on Windows.
+// WScript runs outside the desktop's process job and supplies a console to the child.
+var shell = new ActiveXObject("WScript.Shell");
+var powershell = shell.ExpandEnvironmentStrings("%SystemRoot%") + "\\System32\\WindowsPowerShell\\v1.0\\powershell.exe";
+WScript.Quit(shell.Run('"' + powershell + '" -NoLogo -NoProfile -NonInteractive -File "%DSH_UPDATE_WORKER%"', 0, true));
