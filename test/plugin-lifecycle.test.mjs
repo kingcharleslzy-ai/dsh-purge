@@ -40,7 +40,7 @@ test("real Cordis late service, replacement and parent reload retain commands an
     // The diagnostic route reads disk state only and must not wait forever for connection/loader.
     assert(!root.get("connection"));
     const response = {writeHead(code) {this.code=code;},end(body) {this.body=body;}};
-    await routes.get("/dsh-purge/status").handler({method:"GET",headers:{}},response);
+    await routes.get("/dsh-purge/status").handler({method:"GET",headers:{host:"127.0.0.1:3080"}},response);
     assert.equal(response.code,200);
     assert.equal(JSON.parse(response.body).ready,true);
     // Both independently registered update handlers must use their own scoped
@@ -48,7 +48,7 @@ test("real Cordis late service, replacement and parent reload retain commands an
     fs.mkdirSync(path.join(tmp,"dsh-purge"),{recursive:true});
     fs.writeFileSync(path.join(tmp,"dsh-purge/update-channel.json"),"FAKE_SECRET_broken_json");
     for(const method of ["GET","POST"]) {
-      const req=Object.assign(Readable.from(["{}"]),{method,headers:{}});
+      const req=Object.assign(Readable.from(["{}"]),{method,headers:{host:"127.0.0.1:3080"}});
       const res={writeHead(code){this.code=code;},end(body){this.body=body;}};
       await routes.get("/dsh-purge/update").handler(req,res);
       assert.equal(res.code,500);assert.match(JSON.parse(res.body).error,/无法读取更新密钥设置.*JSON/);assert(!res.body.includes("FAKE_SECRET"));

@@ -4,7 +4,7 @@ import {diskFs} from '../lib/extract-asar.js';
 const fs = diskFs();
 import os from 'node:os';
 import path from 'node:path';
-import {extractAsar, extractAsarToSide, overlayAsarUnpacked, hostFs} from '../lib/extract-asar.js';
+import {extractAsar, extractAsarToSide, verifyStagedAsar, overlayAsarUnpacked, hostFs} from '../lib/extract-asar.js';
 import {assertPathWithin} from '../lib/redteam/validate.js';
 import {restoreBackupFile, restoreBackupFileSync} from '../lib/restore-backup.js';
 import {revertAll} from '../lib/core.js';
@@ -122,4 +122,32 @@ test('Windows actual sharing lock blocks restore without truncation; retry succe
     fs.writeFileSync(release,'release');assert.equal(await exited,0);
     await restoreBackupFile(file,bak);assert.equal(fs.readFileSync(file,'utf8'),'backup');
   } finally {fs.writeFileSync(release,'release');if(child.exitCode===null)child.kill();await exited;}
+}));
+
+test('staged archive must have all packed and external files at their declared sizes', owned(root => {
+  const asar = archive(root, { original: content, native: { size: 3, unpacked: true } });
+  const dest = path.join(root, 'app');
+  fs.mkdirSync(dest);
+  fs.writeFileSync(path.join(dest, 'previous'), 'preserve');
+  const { next } = extractAsarToSide(asar, dest);
+  assert.throws(() => verifyStagedAsar(asar, next), /解包不完整.*native/);
+  fs.mkdirSync(asar + '.unpacked');
+  fs.writeFileSync(path.join(asar + '.unpacked', 'native'), 'ABC');
+  overlayAsarUnpacked(asar, next);
+  verifyStagedAsar(asar, next);
+  fs.truncateSync(path.join(next, 'original'), 1);
+  assert.throws(() => verifyStagedAsar(asar, next), /解包不完整.*original/);
+  assert.equal(fs.readFileSync(path.join(dest, 'previous'), 'utf8'), 'preserve');
+}));
+
+test('retry leaves recorded recovery tree in place and reads fresh archive data', owned(root => {
+  const dest = path.join(root, 'app');
+  const asar = archive(root, { original: content });
+  const original = extractAsarToSide(asar, dest);
+  fs.writeFileSync(dest + '.dshpurge-recover.json', JSON.stringify({ nextDir: original.next }));
+  fs.writeFileSync(path.join(original.next, 'evidence'), 'retained');
+  const retry = extractAsarToSide(asar, dest);
+  assert.notEqual(original.next, retry.next);
+  verifyStagedAsar(asar, retry.next);
+  assert.equal(fs.readFileSync(path.join(original.next, 'evidence'), 'utf8'), 'retained');
 }));

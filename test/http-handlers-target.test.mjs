@@ -149,7 +149,7 @@ async function boot(fx, { maintenanceOnly = false } = {}) {
         this.body = body;
       },
     };
-    await spec.handler({ method: "GET", headers: {} }, response);
+    await spec.handler({ method: "GET", headers: { host: "127.0.0.1:3080" } }, response);
     assert.equal(response.code, 200, String(response.body).slice(0, 300));
     return JSON.parse(response.body);
   };
