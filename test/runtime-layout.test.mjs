@@ -202,3 +202,18 @@ test('missing new target during canonical verification does not reclassify a liv
   assert.equal(fs.readlinkSync(f.link),before);
  }finally{hostFs.realpathSync=realpath;fs.rmSync(f.root,{recursive:true,force:true});}
 });
+
+test('diagnostics distinguish a missing app directory from a missing runtime entry', t => {
+  const f = fixture();
+  t.after(() => fs.rmSync(f.root, {recursive: true, force: true}));
+  fs.renameSync(path.join(f.resources, 'app'), path.join(f.root, 'saved-app'));
+  const missingApp = ensureAppRuntimeLink(f.resources);
+  assert.equal(missingApp.reason, 'missing_app');
+  assert.ok(missingApp.error.includes(path.join(f.resources, 'app')));
+  fs.mkdirSync(path.join(f.resources, 'app'));
+  fs.unlinkSync(f.pnpm);
+  const missingRuntime = ensureAppRuntimeLink(f.resources);
+  assert.equal(missingRuntime.reason, 'missing_runtime');
+  assert.ok(missingRuntime.error.includes(path.join(f.resources, 'runtime')));
+  assert.equal(fs.existsSync(f.link), false);
+});
