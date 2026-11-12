@@ -60,7 +60,6 @@ export async function main(args = process.argv.slice(2), dependencies = {}) {
     let failed = false;
     if (!state.ai_base) {
       console.log("[ERROR] " + hostCore.missingAiBaseMessage());
-      console.log("  fix: 把 DSH_BASE 指到含 dsh-agent-instructions/lib 的 @deepseek-ai 目录");
       process.exit(1);
     }
     const inject = hostRules.resolveInjectText(state.dsh_home);
