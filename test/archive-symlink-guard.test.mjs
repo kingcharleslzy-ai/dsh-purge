@@ -27,7 +27,13 @@ function crc32(buf) {
   for (let i = 0; i < buf.length; i += 1) c = CRC_TABLE[(c ^ buf[i]) & 0xff] ^ (c >>> 8);
   return (c ^ -1) >>> 0;
 }
-function buildZip(entries) {
+/**
+ * 构造 zip 的三段：本地区、中央区、条目数。
+ * 拆开是为了让用例能改中央目录字段（如未压缩大小）或追加归档注释。
+ * @param {Array<{name: string, data?: string|Buffer, mode?: number}>} entries - 条目。
+ * @returns {{locals: Buffer, centrals: Buffer, count: number}} 分段结果。
+ */
+function zipParts(entries) {
   const locals = [];
   const centrals = [];
   let offset = 0;
@@ -59,15 +65,28 @@ function buildZip(entries) {
     centrals.push(central, name);
     offset += 30 + name.length + data.length;
   }
-  const centralBuf = Buffer.concat(centrals);
-  const localBuf = Buffer.concat(locals);
+  return { locals: Buffer.concat(locals), centrals: Buffer.concat(centrals), count: entries.length };
+}
+
+/**
+ * 用分段结果拼出完整 zip，可追加归档注释。
+ * @param {{locals: Buffer, centrals: Buffer, count: number}} parts - zipParts 的结果。
+ * @param {Buffer} [comment] - 追加在 EOCD 之后的注释字节。
+ * @returns {Buffer} 完整 zip。
+ */
+function zipFinish(parts, comment = Buffer.alloc(0)) {
   const eocd = Buffer.alloc(22);
   eocd.writeUInt32LE(0x06054b50, 0);
-  eocd.writeUInt16LE(entries.length, 8);
-  eocd.writeUInt16LE(entries.length, 10);
-  eocd.writeUInt32LE(centralBuf.length, 12);
-  eocd.writeUInt32LE(localBuf.length, 16);
-  return Buffer.concat([localBuf, centralBuf, eocd]);
+  eocd.writeUInt16LE(parts.count, 8);
+  eocd.writeUInt16LE(parts.count, 10);
+  eocd.writeUInt32LE(parts.centrals.length, 12);
+  eocd.writeUInt32LE(parts.locals.length, 16);
+  eocd.writeUInt16LE(comment.length, 20);
+  return Buffer.concat([parts.locals, parts.centrals, eocd, comment]);
+}
+
+function buildZip(entries) {
+  return zipFinish(zipParts(entries));
 }
 
 function tmpdir(t) {
@@ -468,4 +487,88 @@ test("真实 tar 归档：含符号链接时仍被拒", (t) => {
   if (!bytes) return t.skip("系统 tar 不可用，跳过");
   if (!fs.existsSync(path.join(dir, "reallink", "pkg", "link"))) return t.skip("本机无法创建符号链接，跳过");
   assert.throws(() => assertNoTarSymlinks(bytes), /符号链接\/硬链接条目/);
+});
+
+/* ------------------------------------------------------------------ */
+/* 与解压器边界格式对齐                                                 */
+/* ------------------------------------------------------------------ */
+
+test("连续多个 x PAX 扩展头被拒绝（解压器视其为非法）", () => {
+  // bsdtar 对这种布局报 `Redundant 'x' header` 并拒绝；若扫描器自行选择
+  // 覆盖或合并语义，两份实现对生效 size 的理解就可能不同。
+  const first = paxRecord("size", "1024");
+  const second = paxRecord("path", "a.txt");
+  const archive = Buffer.concat([
+    tarBlock({ name: "PaxHeader/1", size: first.length, typeflag: "x" }),
+    bodyBlocks(first),
+    tarBlock({ name: "PaxHeader/2", size: second.length, typeflag: "x" }),
+    bodyBlocks(second),
+    tarBlock({ name: "a.txt", size: 0 }),
+    Buffer.alloc(BLOCK * 2, 0),
+  ]);
+  assert.throws(() => assertNoTarSymlinks(archive), /连续 PAX 扩展头/);
+});
+
+test("GNU 稀疏条目（typeflag=S）被拒绝", () => {
+  // S 类型在头部之后额外跟 4 个映射块，只按头部 size 推进会落在映射块中间。
+  const archive = Buffer.concat([
+    tarBlock({ name: "s.bin", size: 8, typeflag: "S" }),
+    Buffer.alloc(BLOCK * 4, 0),
+    bodyBlocks(Buffer.from("XXXXXXXX", "utf8")),
+    Buffer.alloc(BLOCK * 2, 0),
+  ]);
+  assert.throws(() => assertNoTarSymlinks(archive), /GNU 稀疏文件条目/);
+});
+
+test("GNU 长文件名/长链接名条目（L/K）被拒绝", () => {
+  for (const typeflag of ["L", "K"]) {
+    const archive = Buffer.concat([
+      tarBlock({ name: "longname", size: 4, typeflag }),
+      bodyBlocks(Buffer.from("abcd", "utf8")),
+      tarBlock({ name: "x.txt", size: 0 }),
+      Buffer.alloc(BLOCK * 2, 0),
+    ]);
+    assert.throws(() => assertNoTarSymlinks(archive), /GNU 长/, typeflag);
+  }
+});
+
+test("zip 注释里的伪造 EOCD 不能绕过扫描", () => {
+  // 归档注释可容纳任意字节。塞入一段「0 条目、中央目录偏移 0」的伪造 EOCD，
+  // 天真的尾部扫描会选中它，于是符号链接条目被完全跳过。
+  const base = zipParts([
+    { name: "pkg/esc", data: "../../outside", mode: 0o120777 },
+    { name: "pkg/esc/x", data: "pwn" },
+  ]);
+  const fake = Buffer.alloc(22, 0);
+  fake.writeUInt32LE(0x06054b50, 0);
+  // 8/10 条目数 = 0，12 目录长度 = 0，16 目录偏移 = 0 → 自相矛盾但尾部扫描会选中
+  const withComment = zipFinish(base, fake);
+  assert.throws(() => assertNoArchiveSymlinks(withComment), /多个 EOCD 候选|zip 目录损坏/);
+});
+
+test("正常 zip 的 EOCD 定位不受影响", () => {
+  const bytes = zipFinish(zipParts([
+    { name: "pkg/SKILL.md", data: "body" },
+    { name: "pkg/sub/a.txt", data: "a" },
+  ]));
+  assert.doesNotThrow(() => assertNoArchiveSymlinks(bytes));
+});
+
+test("zip 声明解压后超限时在解压前被拒", () => {
+  // 中央目录里的未压缩大小是解压器同样会用的值；外部工具不受
+  // maxOutputLength 约束，所以必须先用它拦一道。
+  const big = Buffer.alloc(1024, 0x41);
+  const parts = zipParts([
+    { name: "pkg/a.bin", data: big },
+  ]);
+  // 把中央目录里的未压缩大小改成超大值（偏移 24），模拟高压缩比声明
+  const central = parts.centrals;
+  central.writeUInt32LE(500 * 1024 * 1024, 24);
+  const bytes = zipFinish(parts);
+  const zipPath = path.join(tmpdir({ after: () => {} }), "big.zip");
+  fs.writeFileSync(zipPath, bytes);
+  assert.throws(
+    () => extractZipArchive(zipPath, path.join(path.dirname(zipPath), "out"), undefined, { maxUnpackedBytes: 64 * 1024 * 1024 }),
+    /解压后超出大小上限/,
+  );
 });

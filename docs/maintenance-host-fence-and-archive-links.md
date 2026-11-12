@@ -80,6 +80,34 @@ PAX 的 `size` 记录会覆盖紧随条目头部声明的大小，解压器按**
 
 回归里有四条真实 tar 产出的归档（普通、超长路径、中文名、空文件）确保不被误拦，另有 `linkpath` 记录、损坏记录、无换行记录、全局 size 覆盖五条负向用例。
 
+### 与解压器不一致的格式，一律拒绝而不是猜
+
+扫描器必须与解压器对归档结构得出同一个结论。凡是没有可依赖规范、或两边可能分叉的布局，宁可整份拒绝：
+
+| 布局 | 处理 | 依据 |
+|---|---|---|
+| 连续多个 `x` PAX 头 | 拒绝 | bsdtar 直接报 `Redundant 'x' header` 并拒绝解压；合并/覆盖语义无规范可依 |
+| `S`（GNU sparse 旧格式） | 拒绝 | 头部之后额外跟 4 个映射块，只按头部 size 推进会落在映射块中间 |
+| `L` / `K`（GNU 长文件名 / 长链接名） | 拒绝 | 内容是为下一条目保留的名字，与 size 语义无关，合并方式无规范 |
+| `g` 全局 PAX 覆盖 size | 拒绝 | 一个覆盖值无法安全套用到任意多条后续条目 |
+
+这几类在真实 skill 包里不会出现——本机 bsdtar 的 `-cS` 根本不产 `S` 类型，而是把稀疏文件写成完整普通文件。因此拒绝不误伤正常归档，回归里有真实归档对照。
+
+### ZIP 的 EOCD 不能只认第一个签名
+
+归档注释可容纳任意字节。尾部向前扫描时，注释里一段伪造 EOCD（「0 条目、中央目录偏移 0」）会被选中，于是符号链接条目被完全跳过 —— 扫描器放行，解压器照旧读取。
+
+`findEocd()` 现在要求候选自洽：中央目录偏移 + 长度必须落在该 EOCD 之前，且「0 条目 ⇔ 0 长度」。存在多个指向不同偏移的自洽候选时整份拒绝，因为无法确定解压器会选哪一个。
+
+### ZIP 的解压后上限分两道
+
+tar/tar.gz 在扫描前就把字节读进内存，上限由 `maxOutputLength` 收口。ZIP 走外部工具时，写入磁盘发生在实际字节统计之前，所以要先用中央目录声明的未压缩大小拦一道：
+
+- 第一道：`assertDeclaredUnpackedWithin()` —— 解压前按声明值求和，超限即拒；
+- 第二道：`importArchive` 里的 `walkFiles` 实际字节统计（原有逻辑）。
+
+声明值可以造假（偏小），所以第一道不能替代第二道；但只靠第二道时，高压缩比 zip 能在任何检查生效前把临时目录填满。
+
 ### tar.gz 的解压后上限
 
 归档本身限 12MB，但 gzip 压缩比不受此约束：几十 KB 的 tar.gz 可以解出上百 MB。无上限的 `gunzipSync()` 会在任何后续大小检查生效前先吃光内存（实测 49KB → 50MB）。
@@ -96,7 +124,7 @@ PAX 的 `size` 记录会覆盖紧随条目头部声明的大小，解压器按**
 
 新增三组，均登记进 `npm test`：
 
-- `test/archive-symlink-guard.test.mjs`（23 例，1 例按平台跳过）—— zip 符号链接、tar typeflag 1/2、base-256 大小、无法识别的大小字段、负大小、PAX size 覆盖、PAX linkpath、PAX 损坏记录、UTF-8 记录、真实 tar 归档不误拦
+- `test/archive-symlink-guard.test.mjs`（29 例，1 例按平台跳过）—— zip 符号链接、tar typeflag 1/2、base-256 大小、无法识别的大小字段、负大小、PAX size 覆盖、PAX linkpath、PAX 损坏记录、UTF-8 记录、连续 `x` 头、`S`/`L`/`K` 类型、伪造 EOCD、声明大小超限、真实 tar 归档不误拦
 - `test/plugin-request-host-fence.test.mjs`（13 例）—— 含 `PURGE_TRUSTED_HOSTS` 的实际解析与清空后回落
 - `test/community-route-admission.test.mjs`（4 例）—— `/dsh-purge/community` 与其他路由的准入一致性
 - `test/skills-archive-limit.test.mjs`（4 例）—— gzip 炸弹被拒、正常包不受影响、接近上限的包不误伤
