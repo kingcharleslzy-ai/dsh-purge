@@ -103,14 +103,55 @@ test("缺少 Host 头一律拒绝", () => {
   assert.equal(decide({ origin: "http://127.0.0.1:43120" }).allowed, false);
 });
 
-test("PURGE_TRUSTED_HOSTS 提供反向代理/局域网部署的逃生口", async () => {
-  const { trustedHostnamesForTest } = await import("../lib/index.js").then((mod) => ({
-    trustedHostnamesForTest: mod.__trustedHostnamesForTest,
-  })).catch(() => ({ trustedHostnamesForTest: undefined }));
-  // 该内部函数不导出时，退化为直接验证端到端行为（见上一个用例），此处只断言不抛错。
-  if (typeof trustedHostnamesForTest !== "function") return;
-  const names = trustedHostnamesForTest("192.168.1.50", " panel.example.com ; other.example.com ");
-  assert.ok(names.has("192.168.1.50"));
-  assert.ok(names.has("panel.example.com"));
-  assert.ok(names.has("other.example.com"));
+test("PURGE_TRUSTED_HOSTS 解析出可用的信任名单（默认参数路径）", (t) => {
+  const previous = process.env.PURGE_TRUSTED_HOSTS;
+  t.after(() => {
+    if (previous === undefined) delete process.env.PURGE_TRUSTED_HOSTS;
+    else process.env.PURGE_TRUSTED_HOSTS = previous;
+  });
+
+  // 分隔符混用：逗号、分号、空白、带端口、带方括号、大小写、前后空白。
+  process.env.PURGE_TRUSTED_HOSTS = " Panel.Example.COM ; 192.168.1.50:43120 ,[fd00::1]:8080 ";
+  // 省略第三个参数 → 走 allowPluginRequest 的默认值（= 从环境变量读）。
+  assert.equal(decide({ host: "panel.example.com", "sec-fetch-site": "same-origin" }).allowed, true);
+  assert.equal(decide({ host: "192.168.1.50:9999" }).allowed, true, "端口不同也应匹配主机名");
+  assert.equal(decide({ host: "[fd00::1]:43120" }).allowed, true);
+  // 未列出的域名仍拒绝。
+  assert.equal(decide({ host: "other.example.com" }).allowed, false);
+});
+
+test("清空 PURGE_TRUSTED_HOSTS 后不再放行非回环主机", (t) => {
+  const previous = process.env.PURGE_TRUSTED_HOSTS;
+  t.after(() => {
+    if (previous === undefined) delete process.env.PURGE_TRUSTED_HOSTS;
+    else process.env.PURGE_TRUSTED_HOSTS = previous;
+  });
+
+  process.env.PURGE_TRUSTED_HOSTS = "panel.example.com";
+  assert.equal(decide({ host: "panel.example.com" }).allowed, true);
+
+  delete process.env.PURGE_TRUSTED_HOSTS;
+  assert.equal(decide({ host: "panel.example.com" }).allowed, false, "取消信任后必须回落为拒绝");
+  // 回环不依赖该变量。
+  assert.equal(decide({ host: "127.0.0.1:3080" }).allowed, true);
+});
+
+test("信任名单不影响回环判定，也不能绕过 Origin 同源检查", (t) => {
+  const previous = process.env.PURGE_TRUSTED_HOSTS;
+  t.after(() => {
+    if (previous === undefined) delete process.env.PURGE_TRUSTED_HOSTS;
+    else process.env.PURGE_TRUSTED_HOSTS = previous;
+  });
+  process.env.PURGE_TRUSTED_HOSTS = "panel.example.com";
+
+  // 信任了 panel，但 Origin 指向别处 → 仍然拒绝。
+  assert.equal(
+    decide({ host: "panel.example.com", origin: "https://evil.example", "sec-fetch-site": "same-origin" }).allowed,
+    false,
+  );
+  // sec-fetch-site: cross-site 优先级高于信任名单。
+  assert.equal(
+    decide({ host: "panel.example.com", origin: "https://panel.example.com", "sec-fetch-site": "cross-site" }).allowed,
+    false,
+  );
 });

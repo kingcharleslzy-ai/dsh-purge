@@ -192,3 +192,104 @@ test("普通 tar（含子目录与扩展头）放行", (t) => {
 test("空 tar（仅结束块）不抛错", () => {
   assert.doesNotThrow(() => assertNoTarSymlinks(Buffer.alloc(1024)));
 });
+
+/* ------------------------------------------------------------------ */
+/* tar 大小字段编码：八进制 / base-256                                  */
+/* ------------------------------------------------------------------ */
+
+const BLOCK = 512;
+
+/**
+ * 造一个 tar 头块。
+ * @param {object} spec - name/size/typeflag/linkname/base256/rawSizeField。
+ * @returns {Buffer} 512 字节头。
+ */
+function tarBlock({ name, size = 0, typeflag = "0", linkname = "", base256 = false, rawSizeField }) {
+  const head = Buffer.alloc(BLOCK, 0);
+  head.write(name, 0, 100, "utf8");
+  head.write("0000644\0", 100, "ascii");
+  head.write("0000000\0", 108, "ascii");
+  head.write("0000000\0", 116, "ascii");
+  if (rawSizeField) {
+    head.write(rawSizeField, 124, "ascii");
+  } else if (base256) {
+    // base-256：首字节 0x80 置位，其余按大端写入。
+    head[124] = 0x80;
+    let rest = size;
+    for (let i = 135; i >= 125 && rest > 0; i -= 1) {
+      head[i] = rest % 256;
+      rest = Math.floor(rest / 256);
+    }
+  } else {
+    head.write(size.toString(8).padStart(11, "0") + "\0", 124, "ascii");
+  }
+  head.write("00000000000\0", 136, "ascii");
+  head[156] = typeflag.charCodeAt(0);
+  if (linkname) head.write(linkname, 157, 100, "utf8");
+  head.write("ustar\0", 257, "ascii");
+  head.write("00", 263, "ascii");
+  head.fill(" ", 148, 156);
+  let sum = 0;
+  for (const byte of head) sum += byte;
+  head.write(sum.toString(8).padStart(6, "0") + "\0 ", 148, "ascii");
+  return head;
+}
+
+function bodyBlocks(bytes) {
+  const pad = (BLOCK - (bytes.length % BLOCK)) % BLOCK;
+  return Buffer.concat([bytes, Buffer.alloc(pad, 0)]);
+}
+
+test("普通文件用 base-256 大小字段时，后面的链接条目仍能被检出", () => {
+  // 数据块里伪造一个巨大八进制大小：若扫描器把数据块误当头部，游标会跳过链接条目。
+  const data = Buffer.alloc(BLOCK, 0x41);
+  data.write("77777777777\0", 124, "ascii");
+  const archive = Buffer.concat([
+    tarBlock({ name: "pkg/file.txt", size: BLOCK, base256: true }),
+    data,
+    tarBlock({ name: "pkg/link", typeflag: "2", linkname: "../../../victim" }),
+    Buffer.alloc(BLOCK * 2, 0),
+  ]);
+  assert.throws(() => assertNoTarSymlinks(archive), /符号链接\/硬链接条目/);
+});
+
+test("普通文件用 base-256 大小字段、且无链接条目时放行", () => {
+  const data = Buffer.from("payload", "utf8");
+  const archive = Buffer.concat([
+    tarBlock({ name: "pkg/file.txt", size: data.length, base256: true }),
+    bodyBlocks(data),
+    tarBlock({ name: "pkg/second.txt", size: 3 }),
+    bodyBlocks(Buffer.from("abc", "utf8")),
+    Buffer.alloc(BLOCK * 2, 0),
+  ]);
+  assert.doesNotThrow(() => assertNoTarSymlinks(archive));
+});
+
+test("大小字段无法识别时整份拒绝，不当成 0 继续扫描", () => {
+  // "zzzzzzzzzzz" 既不是八进制也不是 base-256。
+  const archive = Buffer.concat([
+    tarBlock({ name: "pkg/file.txt", size: 0, rawSizeField: "zzzzzzzzzzz" }),
+    tarBlock({ name: "pkg/after.txt", size: 0 }),
+    Buffer.alloc(BLOCK * 2, 0),
+  ]);
+  assert.throws(() => assertNoTarSymlinks(archive), /大小字段无法识别/);
+});
+
+test("负的 base-256 大小字段被拒绝", () => {
+  const head = tarBlock({ name: "pkg/file.txt", size: 0 });
+  head[124] = 0xff;
+  assert.throws(() => assertNoTarSymlinks(Buffer.concat([head, Buffer.alloc(BLOCK * 2, 0)])), /大小字段为负/);
+});
+
+test("base-256 扩展头（typeflag=x）后仍能检出链接条目", () => {
+  const pax = Buffer.from("30 path=pkg/link\n", "utf8");
+  const archive = Buffer.concat([
+    tarBlock({ name: "pkg/file.txt", size: 4, base256: true }),
+    bodyBlocks(Buffer.from("data", "utf8")),
+    tarBlock({ name: "PaxHeader/pkg/link", size: pax.length, typeflag: "x", base256: true }),
+    bodyBlocks(pax),
+    tarBlock({ name: "pkg/link", typeflag: "2", linkname: "../../outside" }),
+    Buffer.alloc(BLOCK * 2, 0),
+  ]);
+  assert.throws(() => assertNoTarSymlinks(archive), /符号链接\/硬链接条目/);
+});

@@ -37,26 +37,49 @@
 ### 修复
 
 - `readZipEntries()` 补读中央目录 external attributes（`>>> 16` 取高 16 位 unix mode），新增 `assertNoArchiveSymlinks()`：解压前扫一遍，命中符号链接条目即整份拒收。
-- 新增 `assertNoTarSymlinks()`：只用 Node 读 512 字节头块，typeflag `1`（硬链接）与 `2`（符号链接）都拒收；扩展头（`x`/`g`/`L`/`K`）按其长度跳过。`skills.js` 对 tar/tar.gz 先经 `gunzipSync` 再扫描。
+- 新增 `assertNoTarSymlinks()`：只用 Node 读 512 字节头块，typeflag `1`（硬链接）与 `2`（符号链接）都拒收；扩展头（`x`/`g`/`L`/`K`）按其长度跳过。
 - 两处都发生在写盘**之前**：测试断言解压目录保持为空。
+
+### tar 大小字段：必须认两种编码，认不出就拒收
+
+扫描靠「头部 512 字节 + 按 size 跳过数据块」推进。size 读错会让游标停在数据块中间，之后把数据当头部读——**反而可能整段跳过后面的链接条目**，让校验失效。
+
+因此 `tarEntrySize()` 同时支持：
+
+- 八进制 ASCII（POSIX ustar 常规写法）；
+- base-256（首字节最高位置 1，其后大端二进制；GNU/bsdtar 对大于 8GB 的条目会用它）。
+
+**认不出就抛错，不当成 0 继续扫**。回归里有一条样本专门把 `77777777777` 写进数据块偏移 124：旧实现把数据块当头部，按这个伪大小跳过 4GB，直接漏掉紧随其后的链接条目（实测漏检，且外部 tar 确实建出了那个链接）。
+
+### tar.gz 的解压后上限
+
+归档本身限 12MB，但 gzip 压缩比不受此约束：几十 KB 的 tar.gz 可以解出上百 MB。无上限的 `gunzipSync()` 会在任何后续大小检查生效前先吃光内存（实测 49KB → 50MB）。
+
+`tarBytesForInspection()` 现在带 `maxOutputLength: MAX_UNPACKED_BYTES`，超限抛 `ERR_BUFFER_TOO_LARGE` 并转成明确的「解压后超过 50MB」。未压缩 tar 同样按读入字节数检查。
 
 ### 边界
 
-- 合法归档不受影响：普通文件、可执行位、目录条目、子目录、扩展头都放行（有回归覆盖）。
+- 合法归档不受影响：普通文件、可执行位、目录条目、子目录、扩展头、base-256 大小都放行（有回归覆盖）。
 - 只用 Node 内建模块，不新增依赖，不调用日志外的外部命令。
 - 拒收是整份失败，不做「跳过链接条目继续解压」—— 静默丢弃会让 skill 残缺且用户看到「导入成功」。
 
 ## 测试
 
-新增 `test/archive-symlink-guard.test.mjs`（9 例）与 `test/plugin-request-host-fence.test.mjs`（11 例），均登记进 `npm test`。
+新增三组，均登记进 `npm test`：
+
+- `test/archive-symlink-guard.test.mjs`（14 例）—— zip 符号链接、tar typeflag 1/2、base-256 大小、无法识别的大小字段、负大小
+- `test/plugin-request-host-fence.test.mjs`（13 例）—— 含 `PURGE_TRUSTED_HOSTS` 的实际解析与清空后回落
+- `test/skills-archive-limit.test.mjs`（4 例）—— gzip 炸弹被拒、正常包不受影响、接近上限的包不误伤
+
+`PURGE_TRUSTED_HOSTS` 的用例走 `allowPluginRequest` 的**默认参数**路径，即真的从环境变量读，而不是测一个内部函数。早先那版测试在函数未导出时直接 `return`，等于一个断言都没跑——已删除。
 
 `test/plugin-lifecycle.test.mjs` 与 `test/http-handlers-target.test.mjs` 里直接调用 handler 的夹具补了 `host: 127.0.0.1:3080`：这两个夹具绕过 HTTP 层、不带 Host 头，而真实 HTTP/1.1 请求必有 Host。宿主 `/api` 围栏同样对缺 Host 的请求返回 false，所以这是夹具问题，不是放宽准入。
 
 ## 复现与验收
 
 ```sh
-node --test test/archive-symlink-guard.test.mjs test/plugin-request-host-fence.test.mjs
-npm test                      # 全量；本机唯一失败项是缺 openssl.exe 的 bootstrap-curl
+node --test test/archive-symlink-guard.test.mjs test/plugin-request-host-fence.test.mjs test/skills-archive-limit.test.mjs
+npm test                      # 全量
 npm run check:docs            # 版本行一致性
 ```
 
