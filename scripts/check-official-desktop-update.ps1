@@ -40,26 +40,11 @@ fs.renameSync(archive, archive + '.purge-qa.bak');
 '@ | Set-Content -LiteralPath $layoutDriver -Encoding utf8
 & node $layoutDriver (Resolve-Path lib/extract-asar.js).Path (Join-Path $target 'resources')
 if ($LASTEXITCODE) { throw "Legacy layout preparation failed: $LASTEXITCODE" }
-$src = (Resolve-Path lib/official-installer.mjs).Path
-$driver = Join-Path $root 'drive.mjs'
-@'
-import fs from 'node:fs';
-import path from 'node:path';
-import {createHash} from 'node:crypto';
-import {pathToFileURL} from 'node:url';
-const [module, home, rc, installer] = process.argv.slice(2);
-const {handoffOfficialInstaller} = await import(pathToFileURL(module));
-const version = '0.2.2-rc.' + rc;
-const digest = createHash('sha512').update(fs.readFileSync(installer)).digest('base64');
-const owner = {candidate: version, updater:{installerPath: installer, downloadedUpdateHelper:{
-  file: installer, versionInfo:{version}, fileInfo:{info:{sha512:digest}}
-}}};
-if (!await handoffOfficialInstaller(owner, process.execPath, home)) throw Error('handoff did not become ready');
-'@ | Set-Content -LiteralPath $driver -Encoding utf8
+$driver = (Resolve-Path scripts/drive-official-desktop-update.mjs).Path
 function Invoke-Handoff($rc, $want) {
     $homeDir = Join-Path $root ([Guid]::NewGuid().ToString('N'))
     $env:ELECTRON_RUN_AS_NODE = '1'
-    $argsList = @($driver, $src, $homeDir, "$rc", (Join-Path $root "$rc.exe"))
+    $argsList = @($driver, $homeDir, "$rc", (Join-Path $root "$rc.exe"))
     # Use the official Electron executable as the parent PID that the external worker waits for.
     & $exe @argsList | Out-Host
     if ($LASTEXITCODE -ne 0) { throw "Coordinator exited $LASTEXITCODE" }

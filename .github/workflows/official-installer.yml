@@ -5,6 +5,7 @@ on:
       - 'lib/official-installer.*'
       - 'lib/official-installer-launch.jsw'
       - 'scripts/check-official-desktop-update.ps1'
+      - 'scripts/drive-official-desktop-update.mjs'
       - '.github/workflows/official-installer.yml'
   workflow_dispatch:
 permissions:
