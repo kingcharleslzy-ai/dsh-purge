@@ -91,7 +91,7 @@ try {
         await new Promise(resolve=>setImmediate(resolve));
         const read=async name=>{
           const response={writeHead(code){this.code=code;},end(body){this.body=body;}};
-          await ctx.webServer.routes.get('/dsh-purge/'+name).handler({method:'GET',headers:{}},response);
+          await ctx.webServer.routes.get('/dsh-purge/'+name).handler({method:'GET',headers:{host:'127.0.0.1:3080'}},response);
           assert.equal(response.code,200,response.body);
           return JSON.parse(response.body);
         };
