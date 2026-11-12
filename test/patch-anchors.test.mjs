@@ -218,3 +218,37 @@ test("rc.5 keeps complete persona, selected tools and required contexts; first-s
   assert.equal((await method.call(agent,"next-turn",{turn:1})).assembly, assembly);
   assert.deepEqual(events, ["prepare","assemble"]);
 });
+test("inspector 帧预算：#95 在宿主侧把 record 外壳计入预算并降级发布失败", () => {
+  const host = [
+    "\t\t\t\tmaxBytes: spec.maxSourceFrameBytes - 4096",
+    "",
+    "\tconst publish = () => {",
+    "\t\tscheduled = false;",
+    "\t\tif (closed) return;",
+    "\t\tlistener(collector.snapshot());",
+    "\t};",
+  ].join("\n");
+  const out = applyReplacementsToText(host, patch(95)).text;
+  assert.ok(out.includes("maxSourceFrameBytes - 4096 - 1024"));
+  assert.ok(out.includes("[dsh-purge] a source frame that cannot fit must not kill the Host"));
+  assert.ok(out.includes("listener(collector.snapshot());"));
+  assert.ok(patch(95).markers.every((m) => out.includes(m)));
+});
+
+test("inspector 帧预算：#96 在渲染端改的是 bootstrap.maxFrameBytes 那一份", () => {
+  const client = [
+    "\t\t\t\t\tmaxBytes: bootstrap.maxFrameBytes - 4096",
+    "",
+    "\t\t\tconst publish = () => {",
+    "\t\t\t\tscheduled = false;",
+    "\t\t\t\tif (closed) return;",
+    "\t\t\t\tlistener(collector.snapshot());",
+    "\t\t\t};",
+  ].join("\n");
+  const out = applyReplacementsToText(client, patch(96)).text;
+  assert.ok(out.includes("bootstrap.maxFrameBytes - 4096 - 1024"));
+  assert.ok(out.includes("must not kill the Host"));
+  // 不碰宿主那份锚点，避免两条补丁互相吃掉。
+  assert.ok(!out.includes("spec.maxSourceFrameBytes"));
+});
+
