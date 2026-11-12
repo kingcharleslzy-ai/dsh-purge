@@ -166,6 +166,10 @@ sh "$PURGE_INSTALL_DIR/install.sh" --dry-run
 - 维护页可看最近动作、备份占用、更新偏好；
 - 支持隐藏不用的入口（例如回退按钮），只影响显示。
 
+Web 面板默认接受回环地址和宿主配置的监听地址。通过自有反向代理访问时，可以在启动 Web 服务的环境中用 `PURGE_TRUSTED_HOSTS` 列出需要接受的主机名，以逗号分隔。已有的 Origin 和跨站检查仍然生效。
+
+技能压缩包支持 ZIP（存储或 Deflate）、TAR 和 TGZ。导入只接受普通文件和目录，检查路径、条目数和解压大小，校验通过后才安装技能。
+
 ### 在 dsh-go 中查看面板
 
 手机显示的是当前所选 DSH 宿主的状态和记录。先确认该宿主的 Web 配置已加载 Purge，再按连接方式打开面板。
@@ -291,5 +295,3 @@ npm run smoke            # 发行包冒烟
 ### DSH Store 收录信息
 
 DSH Store 申请必须填写 **Plugin path：`.`**，安装根目录的 `dsh-purge-community`；不要留空或选独立面板包。逐版本兼容声明已放入 manifest，未验证版本保持 `unknown`。元数据修正不等于市场已批准安装；[路径、兼容证据和收录边界](docs/DSH-STORE.md)。
-
-Web 面板默认接受回环地址和宿主配置的监听地址。通过自有反向代理访问时，可以在启动 Web 服务的环境中用 `PURGE_TRUSTED_HOSTS` 列出需要接受的主机名，以逗号分隔。已有的 Origin 和跨站检查仍然生效。
