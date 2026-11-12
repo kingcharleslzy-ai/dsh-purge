@@ -1,3 +1,12 @@
+# 1.6.95
+
+- **#209 list_agents 适配 rc.2**：`adaptListAgents()` 原来只接受精确版本 `0.2.2-rc.1`，rc.2 同样把 `list_agents` 合入 control 主入口，却跳过迁移，留下 `@deepseek-ai/dsh-tool-subagent-control/list-agents` 失效条目；现在接受 `0.2.2-rc.*`。
+- **宿主依赖锚点回退**：部分桌面 profile 的 `installAnchor` 看不到宿主 `@deepseek-ai` 包树（macOS 实测解析为 `MODULE_NOT_FOUND`，迁移被静默跳过）。现在会依次尝试 profile 锚点与 `resources/app/dsh|app/node_modules`，只有真正包含 control 包的锚点才参与判定。
+- **自带 tools 的预设补执行器**：rc.2 要求工具执行器显式挂载。预设若自己声明 `@deepseek-ai/dsh-tools` 却没有任何 `tool-executor-*` 条目，会在同一作用域补一个 `tool-executor-native`；已有 Native/PTC（包括显式 disabled）保持原样，不覆盖部署默认。原生执行器不可解析时不做改动。
+- 已用本机 redteam / unrestricted 预设做只读转换验证：旧 `list-agents` 条目均被移除，原文件未改写。
+
+验证：新增 rc.2 list_agents 与执行器回归，全套测试通过。报告者现场的执行器错误仍需 1.6.95 重启后复测。
+
 # 1.6.94
 
 本版合入 #201、#203、#204、#206、#207、#208。

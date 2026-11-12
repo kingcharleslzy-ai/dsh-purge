@@ -236,3 +236,51 @@ test("registration defers only to an effective declaration in the running profil
   assert.equal(profileOwnsPreset(ctx, "notes"), true);
   assert.equal(profileOwnsPreset({}, "notes"), false);
 });
+
+test("list_agents is adapted for rc.2 as well as rc.1", async t => {
+  const { adaptListAgents } = await import("../lib/preset-compat.js");
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "preset-provider-rc2-"));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const name = "@deepseek-ai/dsh-tool-subagent-control";
+  const dir = path.join(root, "node_modules", name);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ name, version: "0.2.2-rc.2", exports: { ".": "./index.js", "./package.json": "./package.json" } }));
+  fs.writeFileSync(path.join(dir, "index.js"), "");
+  const anchor = path.join(root, "package.json");
+  const main = { id: "control", name, disabled: false };
+  const legacy = { id: "tool-subagent-list-agents", name: name + "/list-agents", disabled: false };
+  const input = { plugins: [{ name: "group", group: true, config: [main, legacy] }] };
+  const copy = structuredClone(input);
+  const out = adaptListAgents(input, anchor);
+  assert.deepEqual(out.plugins[0].config, [main]);
+  assert.deepEqual(input, copy);
+});
+
+test("a preset that mounts its own tools row gets one native executor in that scope", async t => {
+  const { ensureToolExecutor } = await import("../lib/preset-compat.js");
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "preset-executor-"));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const native = "@deepseek-ai/dsh-tool-executor-native";
+  const dir = path.join(root, "node_modules", native);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ name: native, version: "0.2.2-rc.2" }));
+  fs.writeFileSync(path.join(dir, "index.js"), "");
+  const anchor = path.join(root, "package.json");
+  const tools = { id: "tools", name: "@deepseek-ai/dsh-tools" };
+  const nativeRow = { id: "tool-executor-native", name: native };
+  const ptc = { id: "tool-executor-ptc", name: "@deepseek-ai/dsh-tool-executor-ptc", disabled: true };
+
+  const added = ensureToolExecutor({ plugins: [{ id: "g", group: true, config: [tools] }] }, anchor);
+  assert.deepEqual(added.plugins[0].config, [tools, nativeRow]);
+  assert.deepEqual(ensureToolExecutor({ plugins: [{ id: "g", group: true, config: [tools, nativeRow] }] }, anchor).plugins[0].config, [tools, nativeRow]);
+  assert.deepEqual(ensureToolExecutor({ plugins: [{ id: "g", group: true, config: [tools, ptc] }] }, anchor).plugins[0].config, [tools, ptc], "explicit disabled executor is preserved");
+  assert.deepEqual(ensureToolExecutor({ plugins: [{ id: "g", group: true, config: [{ id: "tool-bash", name: "@deepseek-ai/dsh-tool-bash" }] }] }, anchor).plugins[0].config[0].id, "tool-bash", "no tools row, no executor added");
+  const before = { plugins: [tools] };
+  const copy = structuredClone(before);
+  ensureToolExecutor(before, anchor);
+  assert.deepEqual(before, copy, "input remains unchanged");
+
+  const missing = fs.mkdtempSync(path.join(os.tmpdir(), "preset-executor-missing-"));
+  t.after(() => fs.rmSync(missing, { recursive: true, force: true }));
+  assert.deepEqual(ensureToolExecutor({ plugins: [tools] }, path.join(missing, "package.json")), { plugins: [tools] });
+});
