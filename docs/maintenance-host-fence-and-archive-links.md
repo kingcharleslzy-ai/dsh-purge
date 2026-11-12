@@ -93,6 +93,22 @@ PAX 的 `size` 记录会覆盖紧随条目头部声明的大小，解压器按**
 
 这几类在真实 skill 包里不会出现——本机 bsdtar 的 `-cS` 根本不产 `S` 类型，而是把稀疏文件写成完整普通文件。因此拒绝不误伤正常归档，回归里有真实归档对照。
 
+### 头部 checksum：伪头不能引导游标
+
+扫描器与解压器之间有一类无法靠「读懂格式」消除的差异：**解压器有错误恢复，扫描器没有**。
+
+审查者复现过一个实例：`x`(PAX size=1024) → `g`(size=0) → 一段 1024 字节区域，它既是一条合法 PAX 记录（`1024 comment=…`），又在偏移 124 写成八进制 `2000`、偏移 156 写成 `'0'`，于是扫描器把它当成 size=1024 的普通头 → 紧随的符号链接头被游标越过。GNU tar 1.30 上 `tar -xf` 报 `This does not look like a tar archive / Skipping to next header`、退出码 2，**但仍建出了那个链接**。
+
+两层各自都能关掉它：
+
+1. **头部 checksum**：tar 头的 148..155 是八进制校验和（该字段按空格计入累加）。真实头部必须通过；伪头通不过。扫描器每一跳都校验，因此不能被数据段伪装。
+2. **`x`/`g` 交错拒绝**：扩展头必须紧邻它修饰的条目，交错排列没有可依赖的覆盖规范。
+
+两点必须记住：
+
+- **`skills.js` 把 rc≠0 当失败，但这不是安全网**。若根外写入真的发生，早在清理之前就已落盘了。
+- 扫描后仍交给外部 tar，这条路线**天然无法完全对齐**解压器的错误恢复行为。上面的两层只关掉了已知构造。**根治方向是不可信归档走 Node 自实现解压**（`extractZipBuffer` 那类，从不建链接），「解压后查树」只能当兜底 —— 因为那时写入已经发生。
+
 ### ZIP 的 EOCD 不能只认第一个签名
 
 归档注释可容纳任意字节。尾部向前扫描时，注释里一段伪造 EOCD（「0 条目、中央目录偏移 0」）会被选中，于是符号链接条目被完全跳过 —— 扫描器放行，解压器照旧读取。
@@ -127,10 +143,10 @@ tar/tar.gz 在扫描前就把字节读进内存，上限由 `maxOutputLength` �
 
 ## 测试
 
-新增三组，均登记进 `npm test`：
+新增四组，均登记进 `npm test`：
 
-- `test/archive-symlink-guard.test.mjs`（29 例，1 例按平台跳过）—— zip 符号链接、tar typeflag 1/2、base-256 大小、无法识别的大小字段、负大小、PAX size 覆盖、PAX linkpath、PAX 损坏记录、UTF-8 记录、连续 `x` 头、`S`/`L`/`K` 类型、伪造 EOCD、声明大小超限、真实 tar 归档不误拦
-- `test/plugin-request-host-fence.test.mjs`（13 例）—— 含 `PURGE_TRUSTED_HOSTS` 的实际解析与清空后回落
+- `test/archive-symlink-guard.test.mjs`（39 例，1 例按平台跳过）—— zip 符号链接、tar typeflag 1/2、base-256 大小、无法识别的大小字段、负大小、PAX size 覆盖、PAX linkpath、PAX 损坏记录、UTF-8 记录、连续 `x` 头、`x`/`g` 交错、`S`/`L`/`K` 类型、头部 checksum、伪造 EOCD（同偏移 / 偏移 0 / 留空隙 / 双自洽候选）、声明大小超限、解压器不守声明值、真实 tar 归档不误拦
+- `test/plugin-request-host-fence.test.mjs`（16 例）—— 含 `PURGE_TRUSTED_HOSTS` 的实际解析与清空后回落、IPv6 与 IPv4-mapped 回环、裸 IPv6 绑定与带方括号 Host 的匹配
 - `test/community-route-admission.test.mjs`（4 例）—— `/dsh-purge/community` 与其他路由的准入一致性
 - `test/skills-archive-limit.test.mjs`（4 例）—— gzip 炸弹被拒、正常包不受影响、接近上限的包不误伤
 

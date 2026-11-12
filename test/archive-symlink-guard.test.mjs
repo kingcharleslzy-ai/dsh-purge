@@ -8,7 +8,7 @@ import os from "node:os";
 import path from "node:path";
 import zlib from "node:zlib";
 import { execFileSync } from "node:child_process";
-import { assertNoArchiveSymlinks, assertNoTarSymlinks, extractZipArchive } from "../lib/zip-extract.js";
+import { assertNoArchiveSymlinks, assertNoTarSymlinks, extractTarBuffer, extractZipArchive } from "../lib/zip-extract.js";
 
 /* ------------------------------------------------------------------ */
 /* 最小 zip 构造器（store 方法），只为覆盖 external attributes 这条路径 */
@@ -181,6 +181,22 @@ test("tar.gz 在解压 gzip 后同样被拒收", (t) => {
   assert.throws(() => assertNoTarSymlinks(zlib.gunzipSync(fs.readFileSync(gz))), /符号链接\/硬链接条目/);
 });
 
+/**
+ * 重算 tar 头 checksum。
+ *
+ * 扫描器现在把 checksum 当作必要条件（伪头必须被发现），所以任何改过字段的
+ * 样本都要重新签名，否则测到的是「checksum 不合法」而不是原本要测的语义。
+ * @param block - 512 字节头（原地修改）。
+ * @returns 同一个 buffer。
+ */
+function reseal(block) {
+  block.fill(" ", 148, 156);
+  let sum = 0;
+  for (const byte of block) sum += byte;
+  block.write(sum.toString(8).padStart(6, "0") + "\0 ", 148, "ascii");
+  return block;
+}
+
 test("tar 硬链接条目（typeflag=1）同样被拒收", (t) => {
   const dir = tmpdir(t);
   const src = path.join(dir, "hard");
@@ -197,7 +213,9 @@ test("tar 硬链接条目（typeflag=1）同样被拒收", (t) => {
     off += 512 + Math.ceil((Number.parseInt(sizeText || "0", 8) || 0) / 512) * 512;
   }
   assert.ok(header >= 0, "构造样本失败");
+  // 改成硬链接后必须重算 checksum，否则先被结构校验拦下。
   buf[header + 156] = "1".charCodeAt(0);
+  reseal(buf.subarray(header, header + 512));
   assert.throws(() => assertNoTarSymlinks(buf), /符号链接\/硬链接条目/);
 });
 
@@ -206,6 +224,43 @@ test("普通 tar（含子目录与扩展头）放行", (t) => {
   const tar = tarFixture(dir, "plain", false);
   assert.ok(tar);
   assert.doesNotThrow(() => assertNoTarSymlinks(fs.readFileSync(tar)));
+});
+
+test("Node 自实现解压从不创建链接", async (t) => {
+  // 这是不可信归档的推荐路径：外部 tar 有错误恢复、会跳过坏头继续写，
+  // 自实现只写普通文件，天然不受扫描器/解压器分叉影响。
+  const dir = tmpdir(t);
+  const src = path.join(dir, "src");
+  fs.mkdirSync(path.join(src, "pkg", "sub"), { recursive: true });
+  fs.writeFileSync(path.join(src, "pkg", "SKILL.md"), "---\nname: p\n---\n");
+  fs.writeFileSync(path.join(src, "pkg", "sub", "a.txt"), "a");
+  const tar = path.join(dir, "plain.tar");
+  execFileSync("tar", ["-cf", tar, "-C", src, "pkg"], { windowsHide: true });
+
+  const dest = path.join(dir, "out");
+  extractTarBuffer(fs.readFileSync(tar), dest);
+  assert.ok(fs.existsSync(path.join(dest, "pkg", "SKILL.md")));
+  assert.ok(fs.existsSync(path.join(dest, "pkg", "sub", "a.txt")));
+
+  // 整棵树不能含链接
+  const findLink = (d) => {
+    for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
+      const full = path.join(d, entry.name);
+      if (entry.isSymbolicLink()) return full;
+      if (entry.isDirectory()) { const hit = findLink(full); if (hit) return hit; }
+    }
+    return null;
+  };
+  assert.equal(findLink(dest), null);
+});
+
+test("Node 解压遇到链接条目时拒绝而不是跳过", () => {
+  // 即使调用方忘了先扫描，解压器本身也不接受链接。
+  const archive = Buffer.concat([
+    tarBlock({ name: "esc", typeflag: "2", linkname: "../../outside" }),
+    Buffer.alloc(BLOCK * 2, 0),
+  ]);
+  assert.throws(() => extractTarBuffer(archive, path.join(os.tmpdir(), "purge-nolink")), /符号链接\/硬链接条目/);
 });
 
 test("空 tar（仅结束块）不抛错", () => {
@@ -297,7 +352,44 @@ test("大小字段无法识别时整份拒绝，不当成 0 继续扫描", () =>
 test("负的 base-256 大小字段被拒绝", () => {
   const head = tarBlock({ name: "pkg/file.txt", size: 0 });
   head[124] = 0xff;
+  reseal(head);
   assert.throws(() => assertNoTarSymlinks(Buffer.concat([head, Buffer.alloc(BLOCK * 2, 0)])), /大小字段为负/);
+});
+
+test("checksum 不合法的头部被拒绝（伪头不能引导游标）", () => {
+  // 审查者构造的缝隙：一段数据既像 PAX 记录、又在偏移 124/156 处写成
+  // 浮点数/typeflag。不校验 checksum 的话，游标会把它当头部并跳过其后的链接。
+  const head = tarBlock({ name: "pkg/file.txt", size: 0 });
+  head[0] = "Z".charCodeAt(0); // 改动内容但不重算 checksum
+  assert.throws(() => assertNoTarSymlinks(Buffer.concat([head, Buffer.alloc(BLOCK * 2, 0)])), /校验和不合法/);
+});
+
+test("x 与 g 扩展头交错时拒绝（数据段可伪装成头部）", () => {
+  // 审查者复现的完整构造：x(PAX size=1024) → g(size=0) → 1024 字节「双身份」
+  // 区域（既是合法 PAX 记录，又能在偏移 124/156 处读成 size=1024 的普通头）
+  // → 符号链接头。
+  //
+  // 不拦的话游标会从该区域按 1024 跳过，正好越过链接头；而 GNU tar 有错误
+  // 恢复，仍会建出那个链接。两层防护各自都能关掉它：checksum 校验发现该
+  // 区域不是合法头部；交错检查在结构层面直接拒绝这种布局。
+  const paxSize = paxRecord("size", "1024");
+
+  // 1024 字节双身份区域
+  const dual = Buffer.alloc(1024, 0x41);
+  Buffer.from("1024 comment=", "utf8").copy(dual, 0);
+  dual[1023] = 0x0a;                       // 作为 PAX 记录合法
+  dual.write("00000002000\0", 124, "ascii"); // 作为头部：size = 1024
+  dual[156] = 0x30;                        // 作为头部：typeflag '0'
+
+  const archive = Buffer.concat([
+    tarBlock({ name: "PaxHeader/1", size: paxSize.length, typeflag: "x" }),
+    bodyBlocks(paxSize),
+    tarBlock({ name: "GlobalHead", size: 0, typeflag: "g" }),
+    dual,
+    tarBlock({ name: "esc", typeflag: "2", linkname: "../../../victim" }),
+    Buffer.alloc(BLOCK * 2, 0),
+  ]);
+  assert.throws(() => assertNoTarSymlinks(archive), /扩展头交错排列|校验和不合法/);
 });
 
 test("base-256 扩展头（typeflag=x）后仍能检出链接条目", () => {
@@ -506,7 +598,7 @@ test("连续多个 x PAX 扩展头被拒绝（解压器视其为非法）", () =
     tarBlock({ name: "a.txt", size: 0 }),
     Buffer.alloc(BLOCK * 2, 0),
   ]);
-  assert.throws(() => assertNoTarSymlinks(archive), /连续 PAX 扩展头/);
+  assert.throws(() => assertNoTarSymlinks(archive), /连续 PAX 扩展头|扩展头交错排列/);
 });
 
 test("GNU 稀疏条目（typeflag=S）被拒绝", () => {
