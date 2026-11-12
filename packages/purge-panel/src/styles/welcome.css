@@ -101,3 +101,27 @@
     padding: 18px;
   }
 }
+
+/* Phone WebViews can put native navigation over the top-left of the page.
+   Reserve its row; keep a single scroll region for long notice text. */
+@media (max-width: 600px) and (min-height: 500px) {
+  .dshpp-welcome-mask {
+    padding: max(76px, env(safe-area-inset-top)) 12px
+      max(20px, env(safe-area-inset-bottom));
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  }
+  .dshpp-welcome-card {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    max-height: 100%;
+    padding: 16px;
+  }
+  .dshpp-welcome-copy {
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+  .dshpp-welcome-check,
+  .dshpp-welcome-ops {
+    margin-top: 10px;
+  }
+}

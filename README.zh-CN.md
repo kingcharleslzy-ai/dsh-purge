@@ -166,6 +166,19 @@ sh "$PURGE_INSTALL_DIR/install.sh" --dry-run
 - 维护页可看最近动作、备份占用、更新偏好；
 - 支持隐藏不用的入口（例如回退按钮），只影响显示。
 
+### 在 dsh-go 中查看面板
+
+手机显示的是当前所选 DSH 宿主的状态和记录。先确认该宿主的 Web 配置已加载 Purge，再按连接方式打开面板。
+
+| 当前宿主 | 在 dsh-go 中打开 Purge |
+| --- | --- |
+| 通过 SSH 连接电脑 | 连接电脑后打开「Chats → Switch to Web」。在 Web 视图点左上角「Chats and workspaces」，在「Global panels」中点「Purge」。 |
+| 手机本机引擎 | 选择「This phone」，等引擎显示「Running」。打开「Chats → All features（全部功能）」，点「Purge」面板。 |
+
+面板顶部显示宿主和插件版本。在「状态」页的维护区点「最近动作」，可查看当前宿主的操作记录。
+
+**验收范围**仅限 Android 15 ARM64 模拟器上的只读功能。测试使用 dsh-go 1.0.15 和 DSH 0.2.2-rc.1，通过只读测试后端核对了版本、状态、诊断和最近动作。SSH 测试使用 Purge 1.6.92，手机本机引擎还复测了 1.6.93。真机和写入操作（应用补丁、升级、回滚）尚未验收。
+
 ## 常用命令
 
 | 命令 | 作用 |

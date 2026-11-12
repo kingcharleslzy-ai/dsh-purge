@@ -14464,7 +14464,7 @@ function installRewindUi(ctx) {
 var rd3 = __toESM(require("react-dom"), 1);
 
 // src/styles/welcome.css
-var welcome_default = "/* The first-run dialog is rendered before any settings page. It must own its\n   styles and cannot depend on the optional drill vendor stylesheet. */\n.dshpp-welcome-mask {\n  position: fixed;\n  inset: 0;\n  z-index: 2147483000;\n  display: grid;\n  place-items: center;\n  padding: 24px;\n  overflow: auto;\n  box-sizing: border-box;\n  background: rgb(0 0 0 / 35%);\n  color: var(--dsw-alias-label-primary, #171717);\n  font-family: inherit;\n  font-size: 14px;\n  line-height: 1.6;\n  text-align: left;\n}\n.dshpp-welcome-card {\n  width: min(600px, 100%);\n  max-height: calc(100dvh - 48px);\n  overflow: auto;\n  box-sizing: border-box;\n  padding: 24px;\n  border: 1px solid var(--dsw-alias-border-l1, #ddd);\n  border-radius: 16px;\n  background: var(--dsw-alias-bg-layer-1, #fff);\n  box-shadow: 0 16px 64px rgb(0 0 0 / 18%);\n}\n.dshpp-welcome-card h2 {\n  margin: 0 0 6px;\n  font: inherit;\n  font-size: 20px;\n  font-weight: 600;\n}\n.dshpp-welcome-card h3 {\n  margin: 16px 0 6px;\n  font: inherit;\n  font-weight: 600;\n}\n.dshpp-welcome-lead {\n  color: var(--dsw-alias-label-secondary, #666);\n}\n.dshpp-welcome-warn {\n  margin: 16px 0;\n  padding: 12px;\n  border-radius: 8px;\n  background: var(--dsw-alias-bg-layer-2, #f5f5f5);\n}\n.dshpp-welcome-legal p {\n  margin: 10px 0;\n}\n.dshpp-welcome-legal a {\n  color: var(--dsw-alias-label-brand, #436ee8);\n  overflow-wrap: anywhere;\n}\n.dshpp-welcome-check {\n  display: flex;\n  align-items: flex-start;\n  gap: 10px;\n  margin-top: 20px;\n  cursor: pointer;\n}\n.dshpp-welcome-check input {\n  flex: 0 0 auto;\n  width: 16px;\n  height: 16px;\n  margin: 4px 0 0;\n  accent-color: var(--dsw-alias-label-brand, #436ee8);\n}\n.dshpp-welcome-ops {\n  display: flex;\n  justify-content: flex-end;\n  margin-top: 20px;\n}\n.dshpp-welcome-ops button {\n  min-height: 36px;\n  padding: 8px 16px;\n  border: 0;\n  border-radius: 8px;\n  background: var(--dsw-alias-label-primary, #171717);\n  color: var(--dsw-alias-bg-base, #fff);\n  font: inherit;\n  cursor: pointer;\n}\n.dshpp-welcome-ops button:disabled {\n  opacity: 0.4;\n  cursor: default;\n}\n.dshpp-welcome-ops button:focus-visible,\n.dshpp-welcome-check input:focus-visible {\n  outline: 2px solid var(--dsw-alias-label-brand, #436ee8);\n  outline-offset: 3px;\n}\n@media (max-height: 600px) {\n  .dshpp-welcome-mask {\n    padding: 12px;\n  }\n  .dshpp-welcome-card {\n    max-height: calc(100dvh - 24px);\n    padding: 18px;\n  }\n}\n";
+var welcome_default = "/* The first-run dialog is rendered before any settings page. It must own its\n   styles and cannot depend on the optional drill vendor stylesheet. */\n.dshpp-welcome-mask {\n  position: fixed;\n  inset: 0;\n  z-index: 2147483000;\n  display: grid;\n  place-items: center;\n  padding: 24px;\n  overflow: auto;\n  box-sizing: border-box;\n  background: rgb(0 0 0 / 35%);\n  color: var(--dsw-alias-label-primary, #171717);\n  font-family: inherit;\n  font-size: 14px;\n  line-height: 1.6;\n  text-align: left;\n}\n.dshpp-welcome-card {\n  width: min(600px, 100%);\n  max-height: calc(100dvh - 48px);\n  overflow: auto;\n  box-sizing: border-box;\n  padding: 24px;\n  border: 1px solid var(--dsw-alias-border-l1, #ddd);\n  border-radius: 16px;\n  background: var(--dsw-alias-bg-layer-1, #fff);\n  box-shadow: 0 16px 64px rgb(0 0 0 / 18%);\n}\n.dshpp-welcome-card h2 {\n  margin: 0 0 6px;\n  font: inherit;\n  font-size: 20px;\n  font-weight: 600;\n}\n.dshpp-welcome-card h3 {\n  margin: 16px 0 6px;\n  font: inherit;\n  font-weight: 600;\n}\n.dshpp-welcome-lead {\n  color: var(--dsw-alias-label-secondary, #666);\n}\n.dshpp-welcome-warn {\n  margin: 16px 0;\n  padding: 12px;\n  border-radius: 8px;\n  background: var(--dsw-alias-bg-layer-2, #f5f5f5);\n}\n.dshpp-welcome-legal p {\n  margin: 10px 0;\n}\n.dshpp-welcome-legal a {\n  color: var(--dsw-alias-label-brand, #436ee8);\n  overflow-wrap: anywhere;\n}\n.dshpp-welcome-check {\n  display: flex;\n  align-items: flex-start;\n  gap: 10px;\n  margin-top: 20px;\n  cursor: pointer;\n}\n.dshpp-welcome-check input {\n  flex: 0 0 auto;\n  width: 16px;\n  height: 16px;\n  margin: 4px 0 0;\n  accent-color: var(--dsw-alias-label-brand, #436ee8);\n}\n.dshpp-welcome-ops {\n  display: flex;\n  justify-content: flex-end;\n  margin-top: 20px;\n}\n.dshpp-welcome-ops button {\n  min-height: 36px;\n  padding: 8px 16px;\n  border: 0;\n  border-radius: 8px;\n  background: var(--dsw-alias-label-primary, #171717);\n  color: var(--dsw-alias-bg-base, #fff);\n  font: inherit;\n  cursor: pointer;\n}\n.dshpp-welcome-ops button:disabled {\n  opacity: 0.4;\n  cursor: default;\n}\n.dshpp-welcome-ops button:focus-visible,\n.dshpp-welcome-check input:focus-visible {\n  outline: 2px solid var(--dsw-alias-label-brand, #436ee8);\n  outline-offset: 3px;\n}\n@media (max-height: 600px) {\n  .dshpp-welcome-mask {\n    padding: 12px;\n  }\n  .dshpp-welcome-card {\n    max-height: calc(100dvh - 24px);\n    padding: 18px;\n  }\n}\n\n/* Phone WebViews can put native navigation over the top-left of the page.\n   Reserve its row; keep a single scroll region for long notice text. */\n@media (max-width: 600px) and (min-height: 500px) {\n  .dshpp-welcome-mask {\n    padding: max(76px, env(safe-area-inset-top)) 12px\n      max(20px, env(safe-area-inset-bottom));\n    grid-template: minmax(0, 1fr) / minmax(0, 1fr);\n  }\n  .dshpp-welcome-card {\n    display: grid;\n    grid-template-rows: auto minmax(0, 1fr) auto auto;\n    max-height: 100%;\n    padding: 16px;\n  }\n  .dshpp-welcome-copy {\n    overflow: auto;\n    overscroll-behavior: contain;\n  }\n  .dshpp-welcome-check,\n  .dshpp-welcome-ops {\n    margin-top: 10px;\n  }\n}\n";
 
 // src/components/welcome.js
 var WELCOME_KEY = "dsh-purge-user-notice-v1";
@@ -14500,29 +14500,33 @@ function WelcomeNotice(props = {}) {
       "div",
       { className: "dshpp-welcome-card" },
       h("h2", { id: "dshpp-welcome-title" }, t("welcome.title")),
-      h("div", { className: "dshpp-welcome-lead" }, t("welcome.lead")),
-      h("div", { className: "dshpp-welcome-warn" }, t("welcome.warn")),
       h(
         "div",
-        { className: "dshpp-welcome-legal" },
-        h("p", null, t("welcome.body")),
+        { className: "dshpp-welcome-copy", tabIndex: 0 },
+        h("div", { className: "dshpp-welcome-lead" }, t("welcome.lead")),
+        h("div", { className: "dshpp-welcome-warn" }, t("welcome.warn")),
         h(
-          "p",
-          null,
+          "div",
+          { className: "dshpp-welcome-legal" },
+          h("p", null, t("welcome.body")),
           h(
-            "a",
-            {
-              href: repo,
-              target: "_blank",
-              rel: "noopener noreferrer"
-            },
-            repo
-          )
-        ),
-        h("h3", null, t("welcome.bans")),
-        h("p", null, t("welcome.ban1")),
-        h("p", null, t("welcome.ban2")),
-        h("p", null, t("welcome.ban3"))
+            "p",
+            null,
+            h(
+              "a",
+              {
+                href: repo,
+                target: "_blank",
+                rel: "noopener noreferrer"
+              },
+              repo
+            )
+          ),
+          h("h3", null, t("welcome.bans")),
+          h("p", null, t("welcome.ban1")),
+          h("p", null, t("welcome.ban2")),
+          h("p", null, t("welcome.ban3"))
+        )
       ),
       h(
         "div",
