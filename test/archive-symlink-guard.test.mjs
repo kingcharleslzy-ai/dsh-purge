@@ -678,35 +678,54 @@ test("正常 zip 带归档注释仍能解析", () => {
   assert.doesNotThrow(() => assertNoArchiveSymlinks(Buffer.concat([parts.locals, parts.centrals, bytes])));
 });
 
-test("声明值不实、解压器写出更多字节时，磁盘实测能拦住", (t) => {
-  // 正常解压器按声明值截断，所以这条要用一个「不守声明值」的假工具来触发：
-  // 外部工具写多少字节不受我们控制，第二道闸必须量磁盘而不是信声明。
+test("解压器不守声明值、写出更多字节时，磁盘实测能拦住", (t) => {
+  // 实测表明 Expand-Archive / bsdtar 都按声明值截断输出，所以这条必须注入
+  // 一个「不守声明值」的解压器才能真正触发第二道闸。假工具会被实际执行，
+  // 并写出远超声明值的字节。
   const dir = tmpdir(t);
   const zip = path.join(dir, "liar.zip");
-  // 声明很小（1KB），但假工具会写出远超上限的字节。
+  // 声明 1KB（低于上限），假工具却会写出 3MB。
   fs.writeFileSync(zip, buildZip([
     { name: "pkg/SKILL.md", data: "body" },
     { name: "pkg/big.bin", data: Buffer.alloc(1024, 0x41) },
   ]));
-  // 假解压工具：在 dest 写一个超过上限的文件，然后正常退出。
-  const fakeTool = path.join(dir, "fakeunzip.mjs");
+
+  const fakeTool = path.join(dir, "fake-unzip.mjs");
   fs.writeFileSync(fakeTool, `
 import fs from "node:fs";
 import path from "node:path";
+// argv: [node, script, dest]
 const dest = process.argv[2];
 fs.mkdirSync(path.join(dest, "pkg"), { recursive: true });
 fs.writeFileSync(path.join(dest, "pkg", "huge.bin"), Buffer.alloc(3 * 1024 * 1024, 0x41));
 `);
+
   const dest = path.join(dir, "out");
-  // 用 tools=["node"] 之外的方式无法注入假工具，所以直接验证 assertActualTreeWithin
-  // 的行为：先手动造出超限的树，再让 extractZipArchive 走一次真实解压覆盖同一目录。
-  fs.mkdirSync(path.join(dest, "pkg"), { recursive: true });
-  fs.writeFileSync(path.join(dest, "pkg", "leftover.bin"), Buffer.alloc(3 * 1024 * 1024, 0x42));
+  const limit = 1024 * 1024;
   assert.throws(
-    () => extractZipArchive(zip, dest, undefined, { maxUnpackedBytes: 1024 * 1024 }),
+    () => extractZipArchive(zip, dest, [{ command: process.execPath, args: (_zip, out) => [fakeTool, out] }], {
+      maxUnpackedBytes: limit,
+    }),
     /实际占用超出大小上限/,
-    "目录里已有的超限内容必须被磁盘实测发现",
   );
+  // 证明确实是假工具写的：那个文件真实存在且超过上限。
+  const huge = path.join(dest, "pkg", "huge.bin");
+  assert.ok(fs.existsSync(huge), "假解压器必须被实际执行");
+  assert.ok(fs.statSync(huge).size > limit, "假解压器写出的内容必须超过上限");
+});
+
+test("解压器守声明值时，磁盘实测不误报", (t) => {
+  // 与上一条对照：同样的上限，真实解压器按声明值截断，不应触发。
+  const dir = tmpdir(t);
+  const zip = path.join(dir, "honest.zip");
+  fs.writeFileSync(zip, buildZip([
+    { name: "pkg/SKILL.md", data: "body" },
+    { name: "pkg/big.bin", data: Buffer.alloc(1024, 0x41) },
+  ]));
+  const dest = path.join(dir, "out");
+  const how = extractZipArchive(zip, dest, undefined, { maxUnpackedBytes: 1024 * 1024 });
+  assert.ok(how);
+  assert.ok(fs.existsSync(path.join(dest, "pkg", "SKILL.md")));
 });
 
 test("解压后实测不误伤正常大小的树", (t) => {

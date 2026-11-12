@@ -51,6 +51,41 @@ test("任意 127/8 都算回环，非回环公网地址不算", () => {
   assert.equal(decide({ host: "localhost.evil.example:3080" }).allowed, false);
 });
 
+test("IPv6 回环，含 IPv4-mapped 形式", () => {
+  // 宿主 isLoopbackHost() 用 range() === "loopback"，把 mapped 形式也算回环。
+  for (const host of ["[::1]:43120", "[::1]", "[0:0:0:0:0:0:0:1]:43120"]) {
+    assert.equal(decide({ host }).allowed, true, host);
+  }
+  for (const host of ["[::ffff:127.0.0.1]:43120", "[::ffff:127.0.0.53]:43120"]) {
+    assert.equal(decide({ host }).allowed, true, host);
+  }
+  // 非回环 IPv6 不应因为格式被误判为回环
+  for (const host of ["[2001:db8::1]:43120", "[::2]:43120", "[fe80::1]:43120"]) {
+    assert.equal(decide({ host }).allowed, false, host);
+  }
+});
+
+test("绑定裸 IPv6 地址时，带方括号的 Host 能匹配", () => {
+  // webServer.host 是配置原文：可能是 `2001:db8::1` 这种不带方括号的裸地址，
+  // 而 HTTP 的 Host 头必须写成 `[2001:db8::1]:端口`。两者规范化后必须相等。
+  const trusted = new Set(["2001:db8::1"]);
+  assert.equal(
+    decide({ host: "[2001:db8::1]:43120", origin: "http://[2001:db8::1]:43120", "sec-fetch-site": "same-origin" }, trusted).allowed,
+    true,
+  );
+  // 裸地址的端口写法有歧义，规范化后仍是地址本身
+  assert.equal(decide({ host: "2001:db8::1" }, trusted).allowed, true);
+  // 相邻地址仍拒绝
+  assert.equal(decide({ host: "[2001:db8::2]:43120" }, trusted).allowed, false);
+});
+
+test("绑定裸 ::1 时，回环请求仍放行", () => {
+  // 裸 `::1` 若按「最后一个冒号是端口」截断会变成 `:`，导致本机访问被拒。
+  const trusted = new Set(["::1"]);
+  assert.equal(decide({ host: "[::1]:43120" }, trusted).allowed, true);
+  assert.equal(decide({ host: "[::1]" }, trusted).allowed, true);
+});
+
 test("真跨站仍被原判定挡住", () => {
   const out = decide({
     host: "127.0.0.1:43120",
