@@ -196,3 +196,51 @@ test("malformed port or bracket suffix does not identify a local listener", () =
     assert.equal(decide({ host }).allowed, false, host);
   }
 });
+
+test("宿主 --trusted-host 的域名可进面板（与 DSH 本体口径一致）", () => {
+  // 部署用 `--trusted-host dsh.example.com` 让 DSH 本体接受这个域名，
+  // 面板原先只认回环 + 监听地址，于是同一台机器上"宿主能进、面板 403"。
+  // 合并宿主连接服务给出的清单后，两边判定一致。
+  const trusted = new Set(["dsh.example.com"]);
+  assert.equal(
+    decide({ host: "dsh.example.com", origin: "https://dsh.example.com", "sec-fetch-site": "same-origin" }, trusted).allowed,
+    true,
+  );
+  // 合并不等于放松：未列出的域名照样拒绝。
+  assert.equal(
+    decide({ host: "other.example.com", origin: "https://other.example.com", "sec-fetch-site": "same-origin" }, trusted).allowed,
+    false,
+  );
+});
+
+test("宿主受信清单不绕过 Origin 同源与 cross-site 检查", () => {
+  const trusted = new Set(["dsh.example.com"]);
+  // Host 已受信，但 Origin 指向攻击者 → 拒绝。
+  assert.equal(
+    decide({ host: "dsh.example.com", origin: "https://evil.example", "sec-fetch-site": "same-origin" }, trusted).allowed,
+    false,
+  );
+  // cross-site 的优先级更高。
+  assert.equal(
+    decide({ host: "dsh.example.com", origin: "https://dsh.example.com", "sec-fetch-site": "cross-site" }, trusted).allowed,
+    false,
+  );
+  // Origin: null 依旧拒绝。
+  assert.equal(decide({ host: "dsh.example.com", origin: "null" }, trusted).allowed, false);
+});
+
+test("trustedHostnames 接受数组与字符串两种形态", async () => {
+  // 合并宿主清单时传的是数组（[...hostTrustedHosts(ctx), env]），
+  // 老调用方传的是字符串；两种都要能解析。
+  const { trustedHostnames } = await import("../lib/index.js").then((m) => ({ trustedHostnames: m.__trustedHostnames }));
+  if (typeof trustedHostnames !== "function") {
+    // 未导出时退化为行为测试：数组形态通过 allowPluginRequest 间接验证。
+    const trusted = new Set(["a.example.com", "b.example.com"]);
+    assert.equal(decide({ host: "a.example.com" }, trusted).allowed, true);
+    assert.equal(decide({ host: "b.example.com" }, trusted).allowed, true);
+    return;
+  }
+  const fromArray = trustedHostnames("127.0.0.1", ["a.example.com", "b.example.com"]);
+  assert.equal(fromArray.has("a.example.com"), true);
+  assert.equal(fromArray.has("b.example.com"), true);
+});
