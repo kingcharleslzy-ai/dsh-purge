@@ -1,47 +1,15 @@
 // UI derived from YuJunZhiXue/dsh-purge 1.1.71 (MIT). See LICENSE.
 import { h, useState } from "../shared/react.js";
 import { useT } from "../shared/locale.js";
-import { Pill } from "./primitives.js";
+import { Pill, HelpTip } from "./primitives.js";
+import {
+  statusKind,
+  statusLabel,
+  shimKind,
+  markKind,
+} from "../shared/status.js";
 
-export function statusKind(st) {
-  if (st === "applied" || st === "already") return "ok";
-  if (st === "pending") return "wait";
-  if (st === "unmatched") return "bad";
-  if (st === "partial") return "bad";
-  if (st === "drifted") return "bad";
-  if (st === "disabled") return "muted";
-  if (st === "na") return "ok";
-  if (
-    st === "missing_file" ||
-    st === "skipped" ||
-    st === "unlocated" ||
-    st === "off"
-  )
-    return "miss";
-  return "bad";
-}
-
-export function statusLabel(st, t) {
-  if (st === "applied" || st === "already") return t("status.applied");
-  if (st === "off") return t("status.skipped");
-  if (st === "pending") return t("status.pending");
-  if (st === "unmatched") return t("status.unmatched");
-  if (st === "partial") return t("status.partial");
-  if (st === "drifted") return t("status.drifted");
-  if (st === "disabled") return t("status.disabled");
-  if (st === "skipped") return t("status.skipped");
-  if (st === "missing_file") return t("skip");
-  if (st === "unlocated") return t("status.unlocated");
-  if (st === "na") return t("status.na");
-  return st || t("unknown");
-}
-
-export function shimKind(v) {
-  if (v === "patched" || v === "n/a") return "ok";
-  if (v === "original") return "wait";
-  if (v === "missing" || !v) return "miss";
-  return "bad";
-}
+export { statusKind, statusLabel, shimKind, markKind };
 
 export const LAYER_GROUP = {
   提示词: "prompt",
@@ -92,6 +60,111 @@ export function tallyPatches(rows) {
     else out.skipped += 1;
   }
   return out;
+}
+
+/**
+ * 补丁矩阵：每个补丁一个方块，按组铺成二维轨道。
+ * 86 条补丁不再需要展开表格和滚动，方块颜色即状态，悬停读名称。
+ */
+export function PatchMatrix({ state }) {
+  const t = useT();
+  if (!state || state.ok === false) {
+    return h(
+      "section",
+      { className: "dshpp-card", "aria-label": "补丁矩阵" },
+      h("h3", null, "补丁矩阵"),
+      h(
+        "p",
+        { className: "dshpp-hint", role: "status" },
+        state
+          ? "读取失败，补丁明细暂不可用；请刷新重试。"
+          : "正在读取补丁状态…",
+      ),
+    );
+  }
+  const rows = patchRowsOf(state);
+  if (!state.ai_base) {
+    return h(
+      "section",
+      { className: "dshpp-card", "aria-label": "补丁矩阵" },
+      h("h3", null, "补丁矩阵"),
+      h("p", { className: "dshpp-hint" }, "未定位到宿主，补丁状态未知。"),
+    );
+  }
+  const grouped = new Map();
+  for (const row of rows) {
+    const key = LAYER_GROUP[row.layer] || "code";
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(row);
+  }
+  const keys = GROUP_ORDER.filter((key) => grouped.has(key));
+  const total = rows.length;
+  const applied = tallyPatches(rows).applied;
+  return h(
+    "section",
+    { className: "dshpp-card", "aria-label": "补丁矩阵" },
+    h(
+      "h3",
+      null,
+      "补丁矩阵",
+      h(
+        "span",
+        { className: "dshpp-card-sub" },
+        `${applied}/${total} 已应用`,
+        h(
+          HelpTip,
+          { title: "宿主补丁" },
+          "每条补丁一个方块，按组铺开。已应用为绿色，待应用为橙色，没对上或锚点漂移为红色，虚线框表示按选择关闭，灰底表示本机不适用。悬停方块可读补丁名。",
+        ),
+      ),
+    ),
+    keys.map((key) => {
+      const list = grouped
+        .get(key)
+        .slice()
+        .sort((a, b) => a.id - b.id);
+      const tally = tallyPatches(list);
+      const notes = [];
+      if (tally.pending)
+        notes.push(t("metric.pendingShort", { n: tally.pending }));
+      if (tally.unmatched)
+        notes.push(t("metric.unmatchedShort", { n: tally.unmatched }));
+      if (tally.partial)
+        notes.push(t("metric.partialShort", { n: tally.partial }));
+      if (tally.drifted)
+        notes.push(t("metric.driftedShort", { n: tally.drifted }));
+      if (tally.disabled)
+        notes.push(t("metric.disabledShort", { n: tally.disabled }));
+      return h(
+        "div",
+        { key: key, className: "dshpp-track" },
+        h("span", { className: "dshpp-track-name" }, t("group." + key)),
+        h(
+          "span",
+          { className: "dshpp-cells" },
+          list.map((row) =>
+            h("i", {
+              key: row.id,
+              className: "dshpp-cell-mark is-" + markKind(row.st),
+              title: `#${row.id} ${t("patch." + row.id)} · ${statusLabel(row.st, t)}`,
+            }),
+          ),
+        ),
+        h(
+          "span",
+          { className: "dshpp-track-count" },
+          `${tally.applied}/${tally.total}`,
+          notes.length
+            ? h(
+                "span",
+                { className: "dshpp-track-note" },
+                " " + notes.join(" "),
+              )
+            : null,
+        ),
+      );
+    }),
+  );
 }
 
 export function PatchGroups({ state }) {

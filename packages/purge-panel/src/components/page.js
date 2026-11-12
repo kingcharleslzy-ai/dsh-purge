@@ -1,25 +1,43 @@
-// Full-page shell for the left sidebar entry. Replaces the old right-sidebar
-// drawer: same components, but laid out like a DSH settings page (host font,
-// host tokens, one column, explanations in "?" tips instead of paragraphs).
+// 整页（左侧栏入口）骨架。
+// 布局原则：二维平面。页面主体是 12 列网格；补丁与自检这类行列表数据压成点阵，
+// 不做纵向堆叠，也不靠滚动才能看到全貌。
 import { h, useState, useEffect, useCallback } from "../shared/react.js";
 import { PURGE_CSS, NATIVE_CSS, PAGE_CSS } from "../styles/index.js";
 import { compatibilityLevelText, useT } from "../shared/locale.js";
 import { apiJson, unavailableStatus } from "../api/client.js";
 import { Btn, HelpTip } from "./primitives.js";
-import { PurgifySection } from "./settings-form.js";
+import {
+  ApplyBar,
+  VersionCard,
+  PromptEditor,
+  OwnServersEditor,
+} from "./settings-form.js";
+import {
+  usePurgeData,
+  useUpdateFlow,
+  useApplyFlow,
+  useDraftFlow,
+} from "../state/purge-flows.js";
+import { PatchMatrix } from "./patch-status.js";
 import { RulesSection } from "./rules.js";
 import { SkillsSection } from "./skills.js";
-import { CommunityMaintenance, StatusExtras } from "./maintenance.js";
+import { HooksDenySection } from "./advanced.js";
+import {
+  CommunityMaintenance,
+  SelfCheckCard,
+  SelfCheckDetail,
+  BoostCard,
+} from "./maintenance.js";
 import { __dshPurgeDrill } from "../vendor/drill.js";
 import { readDrillAuth, setDock, requestDrill } from "../state/dock.js";
 
 const TABS = [
-  ["status", "状态", "宿主兼容、补丁、破甲自检"],
+  ["status", "状态", "宿主兼容、补丁与破甲自检"],
   ["prompt", "提示词", "注入正文与破甲强化段"],
   ["rules", "规则", "规则集与工作区策略"],
   ["skills", "技能", "DSH 技能目录"],
   ["drill", "演练台", "红队演练与环境适配"],
-  ["more", "更多", "服务器名单、更新与维护"],
+  ["more", "更多", "服务器名单与本机维护"],
 ];
 
 function PurgeGlyph({ size = 18 } = {}) {
@@ -39,6 +57,26 @@ function PurgeGlyph({ size = 18 } = {}) {
   );
 }
 
+/** 一个事实槽：标签在上、值在下。圆点与标签并排，不挤掉标签文字。 */
+function Slot({ label, value, tone, help, hint, children }) {
+  return h(
+    "div",
+    { className: "dshpp-slot" + (tone ? " is-" + tone : "") },
+    h(
+      "span",
+      { className: "dshpp-slot-k" },
+      hint ? h("span", null, hint) : null,
+      label && typeof label === "string" ? h("span", null, label) : label,
+      help ? h(HelpTip, { title: help.title }, help.text) : null,
+    ),
+    h("span", { className: "dshpp-slot-v" }, value, children),
+  );
+}
+
+/**
+ * 状态槽的旧版形态：一条横向信息带。
+ * 新版整页用 StatusSlots 承担同一批事实，这里保留给插件设置页与回归测试。
+ */
 export function StatusStrip({ info }) {
   const t = useT();
   const compat = info?.compatibility || {};
@@ -101,13 +139,79 @@ export function StatusStrip({ info }) {
   );
 }
 
+/** 状态槽：DSH 版本、兼容级别、插件版本、运行来源。四格并列，不画卡片。 */
+export function StatusSlots({ info }) {
+  const t = useT();
+  const compat = info?.compatibility || {};
+  const level = compat.level || "";
+  const ok = level === "qualified";
+  const layout = info?.host_layout || {};
+  const confirmed =
+    layout.state === "unpacked_entry" &&
+    layout.process?.matches_target === true &&
+    layout.disk?.archive_exists === false;
+  const sourceText = !info
+    ? "检测中…"
+    : info.ok === false
+      ? "读取失败"
+      : confirmed
+        ? "已从解包目录启动"
+        : info.asar_still_sealed
+          ? "仍加载归档宿主"
+          : "来源待确认";
+  const sourceTone = !info
+    ? ""
+    : info.ok === false
+      ? "bad"
+      : confirmed
+        ? "ok"
+        : "warn";
+  return h(
+    "div",
+    { className: "dshpp-slots" },
+    h(Slot, {
+      label: h("i", {
+        className: "dshpp-dot " + (ok ? "is-ok" : level ? "is-warn" : ""),
+      }),
+      value: compat.host_version || "…",
+      hint: "DSH 宿主",
+    }),
+    h(Slot, {
+      label: "兼容级别",
+      value: level
+        ? compatibilityLevelText(t, level)
+        : info?.ok === false
+          ? "读取失败"
+          : "检测中",
+      help: {
+        title: "兼容级别",
+        text:
+          compat.message ||
+          "读取宿主组件版本后给出结论。qualified 表示该 DSH 版本的补丁锚点已逐条回归。",
+      },
+    }),
+    h(Slot, {
+      label: "插件",
+      value: info?.plugin_version || __PANEL_VERSION__,
+      children: __COMMUNITY__ ? h("small", null, "社区版") : null,
+    }),
+    h(Slot, {
+      label: h("i", {
+        className: "dshpp-dot " + (sourceTone ? "is-" + sourceTone : ""),
+      }),
+      value: sourceText,
+      hint: "运行来源",
+    }),
+  );
+}
+
 /** 磁盘归档与进程入口分别呈现；不能从磁盘写入推断运行时已加载。 */
 export function LayoutNotice({ info }) {
   if (!info || (!info.asar_still_sealed && !info.host_layout)) return null;
   if (info.host_layout?.family === "tauri") {
     return h(
       "p",
-      { className: "dshpp-note", role: "status" },
+      { className: "dshpp-warn", role: "status" },
       info.host_layout.note,
     );
   }
@@ -116,11 +220,33 @@ export function LayoutNotice({ info }) {
     info.host_layout?.note ||
     "目标磁盘仍有 app.asar；当前进程加载来源尚未确认。";
   const handoff = info.asar_handoff
-    ? ` 换包状态：${{ not_scheduled: "尚未应用：点「应用」后才会安排换包", archive_reappeared: "归档再次出现，旧换包记录不代表当前已完成", backup_missing: "原归档备份缺失，请检查诊断", unknown_target: "目标实例未确定", unreadable: "换包记录不可读，请检查诊断", starting: "助手启动中（尚未确认就绪）", ready: "助手已就绪", waiting_for_quit: "等待完整退出（macOS ⌘Q / Windows 系统托盘）", waiting_for_unlock: "等待归档解锁", moving: "正在保留原归档", complete: "换包完成，请手动打开 DSH", already_unsealed: "归档已移走，请手动打开 DSH", failed: "失败，请查看诊断并按恢复文档操作", expired: "等待超时，请重新应用或按恢复文档操作", helper_stopped: "助手意外结束，请重新应用或按恢复文档操作" }[info.asar_handoff.phase] || info.asar_handoff.phase}。`
+    ? ` 换包状态：${
+        {
+          not_scheduled: "尚未应用：点「应用」后才会安排换包",
+          archive_reappeared: "归档再次出现，旧换包记录不代表当前已完成",
+          backup_missing: "原归档备份缺失，请检查诊断",
+          unknown_target: "目标实例未确定",
+          unreadable: "换包记录不可读，请检查诊断",
+          starting: "助手启动中（尚未确认就绪）",
+          ready: "助手已就绪",
+          waiting_for_quit: "等待完整退出（macOS ⌘Q / Windows 系统托盘）",
+          waiting_for_unlock: "等待归档解锁",
+          moving: "正在保留原归档",
+          complete: "换包完成，请手动打开 DSH",
+          already_unsealed: "归档已移走，请手动打开 DSH",
+          failed: "失败，请查看诊断并按恢复文档操作",
+          expired: "等待超时，请重新应用或按恢复文档操作",
+          helper_stopped: "助手意外结束，请重新应用或按恢复文档操作",
+        }[info.asar_handoff.phase] || info.asar_handoff.phase
+      }。`
     : "";
   const failure = info.asar_handoff?.error;
   const detail = info.asar_handoff?.detail
-    ? ` 详情：${info.asar_handoff.detail}${failure?.win32_code != null ? `（Windows 错误 ${failure.win32_code}）` : ""}`
+    ? ` 详情：${info.asar_handoff.detail}${
+        failure?.win32_code != null
+          ? `（Windows 错误 ${failure.win32_code}）`
+          : ""
+      }`
     : "";
   const layout = info.host_layout;
   if (
@@ -146,7 +272,7 @@ export function LayoutNotice({ info }) {
       h("summary", null, "换包状态：不适用（Web 宿主）"),
       h(
         "p",
-        { className: "dshpp-note" },
+        { className: "dshpp-hint" },
         "Web 服务无需桌面归档换包。原始诊断：",
         layout.state,
         " / ",
@@ -155,13 +281,11 @@ export function LayoutNotice({ info }) {
     );
   }
   const confirmed =
-    info.host_layout?.state === "unpacked_entry" &&
-    info.host_layout?.process?.matches_target === true &&
-    info.host_layout?.disk?.archive_exists === false;
+    layout?.state === "unpacked_entry" &&
+    layout?.process?.matches_target === true &&
+    layout?.disk?.archive_exists === false;
   const diskNote =
-    info.host_layout?.disk?.archive_exists === true
-      ? " 目标磁盘仍有 app.asar。"
-      : "";
+    layout?.disk?.archive_exists === true ? " 目标磁盘仍有 app.asar。" : "";
   if (sealed || !confirmed) {
     return h(
       "p",
@@ -172,13 +296,11 @@ export function LayoutNotice({ info }) {
       detail,
     );
   }
-  // 换包正常时只留一行确认，说明折进 details：它讲的是"入口不代表已重载"，
-  // 属于常驻解释，不该每次都占一行注意力。
   return h(
     "details",
     { className: "dshpp-layout-details" },
     h("summary", null, "✓ 已从解包目录启动（换包完成）"),
-    h("p", { className: "dshpp-note" }, note, diskNote, handoff, detail),
+    h("p", { className: "dshpp-hint" }, note, diskNote, handoff, detail),
   );
 }
 
@@ -213,7 +335,6 @@ export function PurgePage() {
     apiJson("/dsh-purge/status")
       .then(setInfo)
       .catch((error) => setInfo(unavailableStatus(error)));
-  // 子组件的 onStatus 在依赖里，必须是稳定引用，否则每次渲染都会再 setInfo 一次。
   const mergeInfo = useCallback((s) => s && setInfo(s), []);
   useEffect(() => {
     if (tab === "status") loadInfo();
@@ -233,7 +354,13 @@ export function PurgePage() {
     const timer = setInterval(loadInfo, 2000);
     return () => clearInterval(timer);
   }, [info?.asar_handoff?.phase]);
+
+  const data = usePurgeData();
+  const update = useUpdateFlow();
+  const flow = useApplyFlow({ data, onStatus: mergeInfo });
+  const draft = useDraftFlow(data);
   const active = TABS.find((row) => row[0] === tab) || TABS[0];
+
   return h(
     "div",
     { className: "dshpp-page" },
@@ -246,21 +373,10 @@ export function PurgePage() {
         "div",
         { className: "dshpp-page-title" },
         h("h1", null, "Purge"),
-        h(
-          "p",
-          null,
-          active[2],
-          __COMMUNITY__
-            ? h(
-                "span",
-                { className: "dshpp-page-ver" },
-                "社区版 " + __PANEL_VERSION__,
-              )
-            : null,
-        ),
+        h("p", null, active[2]),
       ),
     ),
-    h(StatusStrip, { info }),
+    h(StatusSlots, { info }),
     h(VersionNotice, { info }),
     h(LayoutNotice, { info }),
     h(
@@ -283,38 +399,84 @@ export function PurgePage() {
     ),
     h(
       "div",
-      { className: "dshpp-page-body" },
+      { className: "dshpp-grid" },
+      // 状态页
       h(
         "div",
-        { hidden: tab !== "status", className: "dshpp-sec" },
-        h(PurgifySection, { page: "status", onStatus: mergeInfo }),
-        h(StatusExtras),
+        { className: "dshpp-cell dshpp-c12", hidden: tab !== "status" },
+        h(ApplyBar, { data, flow }),
+      ),
+      h(
+        "div",
+        { className: "dshpp-cell dshpp-c12", hidden: tab !== "status" },
+        h(PatchMatrix, { state: data.state }),
+      ),
+      h(
+        "div",
+        { className: "dshpp-cell dshpp-c7", hidden: tab !== "status" },
+        h(SelfCheckCard),
+      ),
+      h(
+        "div",
+        { className: "dshpp-cell dshpp-c5", hidden: tab !== "status" },
+        h(VersionCard, { data, update }),
+      ),
+      h(
+        "div",
+        { className: "dshpp-cell dshpp-c4", hidden: tab !== "status" },
+        h(BoostCard),
+      ),
+      h(
+        "div",
+        { className: "dshpp-cell dshpp-c4", hidden: tab !== "status" },
+        h(SelfCheckDetail),
+      ),
+      h(
+        "div",
+        { className: "dshpp-cell dshpp-c4", hidden: tab !== "status" },
+        h(
+          "details",
+          { className: "dshpp-fold" },
+          h("summary", null, "高级选项"),
+          h(HooksDenySection, { onSaved: data.loadAll }),
+        ),
+      ),
+      // 提示词页
+      h(
+        "div",
+        { className: "dshpp-cell dshpp-c8", hidden: tab !== "prompt" },
+        h(PromptEditor, { data, draft }),
+      ),
+      h(
+        "div",
+        { className: "dshpp-cell dshpp-c4", hidden: tab !== "prompt" },
+        h(PromptNotes),
+      ),
+      // 规则页：三栏直接占网格卡位
+      tab === "rules" && visited.rules ? h(RulesSection) : null,
+      // 技能页：两栏直接占网格卡位
+      tab === "skills" && visited.skills ? h(SkillsSection) : null,
+      // 更多页
+      h(
+        "div",
+        { className: "dshpp-cell dshpp-c6", hidden: tab !== "more" },
+        h(OwnServersEditor, { data, draft }),
+      ),
+      h(
+        "div",
+        { className: "dshpp-cell dshpp-c6", hidden: tab !== "more" },
+        h(DrillEntry),
+      ),
+      h(
+        "div",
+        { className: "dshpp-cell dshpp-c12", hidden: tab !== "more" },
         h(CommunityMaintenance),
       ),
-      h(
-        "div",
-        { hidden: tab !== "prompt", className: "dshpp-sec" },
-        visited.prompt ? h(PurgifySection, { page: "prompt" }) : null,
-      ),
-      h(
-        "div",
-        { hidden: tab !== "rules", className: "dshpp-sec" },
-        visited.rules ? h(RulesSection) : null,
-      ),
-      h(
-        "div",
-        { hidden: tab !== "skills", className: "dshpp-sec" },
-        visited.skills ? h(SkillsSection) : null,
-      ),
-      h(
-        "div",
-        { hidden: tab !== "more", className: "dshpp-sec" },
-        visited.more ? h(PurgifySection, { page: "more" }) : null,
-      ),
+      // 演练台
       tab === "drill"
         ? h(
             "div",
-            { className: "dshpp-sec dshpp-page-drill" },
+            { className: "dshpp-cell dshpp-c12 dshpp-page-drill" },
             __dshPurgeDrill && __dshPurgeDrill.CSS
               ? h("style", { "data-dsh-purge-drill": "1" }, __dshPurgeDrill.CSS)
               : null,
@@ -325,7 +487,7 @@ export function PurgePage() {
                   { className: "dshpp-card" },
                   h(
                     "p",
-                    { className: "dshpp-muted" },
+                    { className: "dshpp-hint" },
                     "演练台需要先完成一次授权。",
                   ),
                   h(
@@ -349,6 +511,53 @@ export function PurgePage() {
       __COMMUNITY__
         ? "基于 YuJunZhiXue/dsh-purge 1.1.71 独立维护 · MIT · 保留原作者署名"
         : "界面独立维护 · 基于 YuJunZhiXue/dsh-purge 1.1.71（MIT）",
+    ),
+  );
+}
+
+/** 提示词页右侧的说明栏：把常驻长文收进这里，只在需要时读。 */
+function PromptNotes() {
+  const t = useT();
+  return h(
+    "section",
+    { className: "dshpp-card", "aria-label": "注入说明" },
+    h("h3", null, "注入说明"),
+    h(
+      "div",
+      { className: "dshpp-kv" },
+      h("span", { className: "dshpp-kv-k" }, "正文来源"),
+      h("span", { className: "dshpp-kv-v" }, "本机 prompt-inject.md"),
+    ),
+    h(
+      "div",
+      { className: "dshpp-kv" },
+      h("span", { className: "dshpp-kv-k" }, "写入时机"),
+      h("span", { className: "dshpp-kv-v" }, "每轮对话前重贴"),
+    ),
+    h("p", { className: "dshpp-hint" }, t("apply.hint")),
+  );
+}
+
+/** 更多页的演练台入口。 */
+function DrillEntry() {
+  return h(
+    "section",
+    { className: "dshpp-card", "aria-label": "演练台" },
+    h("h3", null, "演练台"),
+    h(
+      "p",
+      { className: "dshpp-hint" },
+      "红队演练与环境适配工具，需要单独授权后使用。",
+    ),
+    h(
+      Btn,
+      {
+        onClick: () => {
+          setDock({ tab: "drill" });
+          requestDrill("tab");
+        },
+      },
+      "打开演练台",
     ),
   );
 }

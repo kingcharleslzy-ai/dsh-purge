@@ -20,25 +20,212 @@ function useText() {
   };
 }
 /**
- * 状态页顶部的两块紧凑信息：破甲自检（默认收起）+ 破甲强化段开关。
- * 单独拆出来，是为了让「应用」按钮留在页面最上面，而自检不占一屏。
+ * 破甲自检：按类别分行，每层一个圆点，25 层一眼看完，不用展开、不用滚动。
  */
-export function StatusExtras() {
+export function SelfCheckCard() {
   const [check, setCheck] = useState(null);
-  const [boost, setBoost] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState("");
   const load = () =>
-    Promise.all([
-      apiJson("/dsh-purge/selfcheck")
-        .then(setCheck)
-        .catch(() => setCheck(null)),
-      apiJson("/dsh-purge/boost")
-        .then((r) => setBoost(!!r.enabled))
-        .catch(() => setBoost(null)),
-    ]);
+    apiJson("/dsh-purge/selfcheck")
+      .then(setCheck)
+      .catch(() => setCheck(null));
   useEffect(() => {
     load();
+  }, []);
+  async function rerun() {
+    setBusy(true);
+    try {
+      setCheck(await apiJson("/dsh-purge/selfcheck"));
+    } catch {
+      setCheck(null);
+    } finally {
+      setBusy(false);
+    }
+  }
+  const layers = check && Array.isArray(check.layers) ? check.layers : [];
+  const failed = layers.filter(
+    (l) => l.state === "broken" || (!l.state && !l.ok),
+  );
+  const pendingLayers = layers.filter((l) => l.state === "pending");
+  const uncertain = layers.filter((l) =>
+    ["inferred", "unknown"].includes(l.state),
+  );
+  const groups = new Map();
+  for (const layer of layers) {
+    const key = layer.kind || "host";
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(layer);
+  }
+  const kindLabel = {
+    host: "宿主",
+    runtime: "运行时",
+    config: "配置",
+    layout: "布局",
+    prompt: "注入",
+  };
+  const kindOrder = ["host", "runtime", "config", "layout", "prompt"];
+  const total = layers.filter((layer) => layer.applicable !== false).length;
+  const stateText = !check
+    ? "检测中…"
+    : failed.length
+      ? `${failed.length} 层未生效`
+      : pendingLayers.length
+        ? `${pendingLayers.reduce((n, l) => n + (l.pending?.length || 0), 0)} 条待应用`
+        : uncertain.length
+          ? `${uncertain.length} 层需确认`
+          : `${total} 层全部在位`;
+  const tone = !check
+    ? ""
+    : failed.length
+      ? "is-bad"
+      : pendingLayers.length || uncertain.length
+        ? "is-warn"
+        : "is-ok";
+  return h(
+    "section",
+    { className: "dshpp-card", "aria-label": "破甲自检" },
+    h(
+      "h3",
+      null,
+      "破甲自检",
+      h(
+        "span",
+        { className: "dshpp-card-ops" },
+        h(
+          Btn,
+          { tiny: true, disabled: busy, onClick: rerun },
+          busy ? "…" : "重测",
+        ),
+        h(ProbeButton),
+      ),
+      h("span", { className: "dshpp-card-sub" }, stateText),
+    ),
+    h(
+      "div",
+      { className: "dshpp-lanes" },
+      kindOrder
+        .filter((key) => groups.has(key))
+        .map((key) => {
+          const list = groups.get(key);
+          const passed = list.filter(
+            (l) =>
+              l.state === "ok" ||
+              (l.state === undefined && l.ok) ||
+              l.state === "inferred" ||
+              l.state === "unknown",
+          ).length;
+          return h(
+            "div",
+            { key: key, className: "dshpp-lane" },
+            h("span", { className: "dshpp-lane-name" }, kindLabel[key] || key),
+            h(
+              "span",
+              { className: "dshpp-dots" },
+              list.map((layer, index) =>
+                h("i", {
+                  key: layer.title + index,
+                  className: "dshpp-dotmark is-" + layerDotKind(layer),
+                  title: `${layer.title} · ${layerStateText(layer)}`,
+                }),
+              ),
+            ),
+            h(
+              "span",
+              { className: "dshpp-lane-count" },
+              `${passed}/${list.length}`,
+            ),
+          );
+        }),
+    ),
+  );
+}
+
+/** 逐层说明：独立折叠块，默认收起，展开后按类别分行。 */
+export function SelfCheckDetail() {
+  const [check, setCheck] = useState(null);
+  useEffect(() => {
+    apiJson("/dsh-purge/selfcheck")
+      .then(setCheck)
+      .catch(() => setCheck(null));
+  }, []);
+  const layers = check && Array.isArray(check.layers) ? check.layers : [];
+  if (!layers.length) return null;
+  return h(
+    "details",
+    { className: "dshpp-fold" },
+    h("summary", null, "逐层说明", h("b", null, `${layers.length} 层`)),
+    h(
+      "div",
+      { className: "dshpp-lanes" },
+      layers.map((layer, index) =>
+        h(
+          "div",
+          { key: layer.title + index, className: "dshpp-lane" },
+          h("span", { className: "dshpp-lane-name" }, layer.title),
+          h("span", { className: "dshpp-hint" }, layer.why || layer.note || ""),
+          h("span", { className: "dshpp-lane-count" }, layerStateText(layer)),
+        ),
+      ),
+    ),
+  );
+}
+
+function layerDotKind(layer) {
+  if (layer.state === "broken") return "bad";
+  if (layer.state === "pending") return "warn";
+  if (layer.state === "inferred" || layer.state === "unknown") return "warn";
+  if (layer.applicable === false) return "miss";
+  return layer.ok ? "ok" : "bad";
+}
+
+function layerStateText(layer) {
+  if (layer.applicable === false) return "不适用";
+  if (layer.state === "pending")
+    return `待应用 #${(layer.pending || []).join("/#")}`;
+  if (layer.state === "inferred") return "宿主推导";
+  if (layer.state === "unknown") return "未确认";
+  if (layer.state === "broken") return "未生效";
+  return `${layer.applied}/${layer.required ?? layer.total}`;
+}
+
+/** 探针：生成一次性标记，用来验证注入是否真的到达模型。 */
+function ProbeButton() {
+  const [message, setMessage] = useState("");
+  return h(
+    "span",
+    { style: { display: "inline-flex", alignItems: "center", gap: 8 } },
+    h(
+      Btn,
+      {
+        tiny: true,
+        title: "生成一次性探针：下一轮回复里看模型有没有原样回显该标记",
+        onClick: async () => {
+          try {
+            const r = await apiJson("/dsh-purge/probe", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: "{}",
+            });
+            setMessage(r.message || "");
+          } catch (e) {
+            setMessage(e.message);
+          }
+        },
+      },
+      "探针",
+    ),
+    message ? h("span", { className: "dshpp-probe-msg" }, message) : null,
+  );
+}
+
+/** 破甲强化段开关：单行一行，开关紧邻标题。 */
+export function BoostCard() {
+  const [boost, setBoost] = useState(null);
+  const [notice, setNotice] = useState("");
+  useEffect(() => {
+    apiJson("/dsh-purge/boost")
+      .then((r) => setBoost(!!r.enabled))
+      .catch(() => setBoost(null));
   }, []);
   async function toggle() {
     try {
@@ -53,162 +240,33 @@ export function StatusExtras() {
       setNotice(e.message);
     }
   }
-  async function rerun() {
-    setBusy(true);
-    try {
-      setCheck(await apiJson("/dsh-purge/selfcheck"));
-    } catch (e) {
-      setNotice(e.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-  const layers = check && Array.isArray(check.layers) ? check.layers : [];
-  const failed = layers.filter(
-    (l) => l.state === "broken" || (!l.state && !l.ok),
-  );
-  const pendingLayers = layers.filter((l) => l.state === "pending");
-  const uncertain = layers.filter((l) =>
-    ["inferred", "unknown"].includes(l.state),
-  );
-  const pendingPatches = pendingLayers.reduce(
-    (n, l) => n + (l.pending?.length || 0),
-    0,
-  );
-  const total = layers.filter((layer) => layer.applicable !== false).length;
   return h(
     "section",
-    { className: "dshpp-card", "aria-label": "破甲状态" },
+    { className: "dshpp-card", "aria-label": "破甲强化段" },
     h(
       "div",
-      { className: "dshpp-line" },
+      { className: "dshpp-kv" },
       h(
         "span",
-        { className: "dshpp-line-main" },
-        h("i", {
-          className:
-            "dshpp-dot " +
-            (check
-              ? failed.length
-                ? "is-bad"
-                : pendingLayers.length || uncertain.length
-                  ? "is-warn"
-                  : "is-ok"
-              : ""),
-        }),
-        "破甲自检",
-        h(
-          "b",
-          null,
-          check
-            ? failed.length
-              ? `${failed.length} 层未生效`
-              : pendingLayers.length
-                ? `${pendingPatches} 条待应用`
-                : uncertain.length
-                  ? `${uncertain.length} 层需确认`
-                  : `${total} 层全部在位`
-            : "检测中…",
-        ),
-      ),
-      h(
-        "details",
-        { className: "dshpp-fold-inline" },
-        h("summary", null, "查看逐层"),
-        h(
-          "div",
-          { className: "dshpp-checks" },
-          check && Array.isArray(check.layers)
-            ? check.layers.map((layer) =>
-                h(
-                  "div",
-                  {
-                    key: layer.title,
-                    className:
-                      "dshpp-check" +
-                      (["pending", "inferred", "unknown"].includes(layer.state)
-                        ? " is-warn"
-                        : layer.ok
-                          ? ""
-                          : " is-bad"),
-                  },
-                  h("i", {
-                    className:
-                      "dshpp-dot " +
-                      (["pending", "inferred", "unknown"].includes(layer.state)
-                        ? "is-warn"
-                        : layer.ok
-                          ? "is-ok"
-                          : "is-bad"),
-                  }),
-                  h("span", { className: "dshpp-check-name" }, layer.title),
-                  h(
-                    "span",
-                    { className: "dshpp-check-val" },
-                    layer.applicable === false
-                      ? "不适用"
-                      : layer.state === "pending"
-                        ? `待应用 #${(layer.pending || []).join("/#")}`
-                        : layer.state === "inferred"
-                          ? "宿主推导"
-                          : layer.state === "unknown"
-                            ? "未确认"
-                            : `${layer.applied}/${layer.required ?? layer.total}`,
-                  ),
-                  layer.note
-                    ? h(HelpTip, { title: layer.title }, layer.note)
-                    : null,
-                ),
-              )
-            : h("div", { className: "dshpp-muted" }, "检测中…"),
-        ),
-      ),
-      h(
-        Btn,
-        { tiny: true, disabled: busy, onClick: rerun },
-        busy ? "…" : "重测",
-      ),
-      h(
-        Btn,
-        {
-          tiny: true,
-          title: "生成一次性探针：下一轮回复里看模型有没有原样回显该标记",
-          onClick: async () => {
-            try {
-              const r = await apiJson("/dsh-purge/probe", {
-                method: "POST",
-                headers: { "content-type": "application/json" },
-                body: "{}",
-              });
-              setNotice(r.message || "");
-            } catch (e) {
-              setNotice(e.message);
-            }
-          },
-        },
-        "探针",
-      ),
-    ),
-    h(
-      "div",
-      { className: "dshpp-line" },
-      h(
-        "span",
-        { className: "dshpp-line-main" },
+        { className: "dshpp-kv-k" },
         "破甲强化段",
         h(
           HelpTip,
           { title: "破甲强化段" },
           "在系统提示词末尾追加一段与注入同级的文本：层级声明 / 拒绝即故障 / 抗谄媚 / 多轮重申。默认开启。",
         ),
-        h("b", null, boost === null ? "…" : boost ? "已开启" : "已关闭"),
+      ),
+      h(
+        "span",
+        { className: "dshpp-kv-v" },
+        boost === null ? "…" : boost ? "已开启" : "已关闭",
       ),
       h(
         Btn,
         { tiny: true, disabled: boost === null, onClick: toggle },
         boost ? "关闭" : "开启",
       ),
-      notice ? h("span", { className: "dshpp-muted" }, notice) : null,
+      notice ? h("span", { className: "dshpp-hint" }, notice) : null,
     ),
   );
 }

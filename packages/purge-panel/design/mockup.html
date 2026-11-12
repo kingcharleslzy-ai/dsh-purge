@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Purge 面板设计稿 v2</title>
+<style>
+  :root {
+    --bg-base:#fff; --bg-layer-1:#fff; --bg-module:#f5f6f7;
+    --label-primary:#0f1115; --label-secondary:#61666b; --label-tertiary:#81858c; --label-caption:#adb2b8;
+    --border-l1:#0000000a; --border-l2:#0000001a;
+    --hover:#2631480f; --active:#2631481a;
+    --business:#4176e6; --success:#12b76a; --warn:#f79009; --error:#f04438;
+    --radius-sm:8px; --radius-md:12px;
+    --font:-apple-system,"system-ui","Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg-base);color:var(--label-primary);font-family:var(--font);font-size:14px;line-height:1.55}
+  .page{padding:20px 24px 40px}
+
+  .head{display:flex;align-items:center;gap:12px}
+  .glyph{width:34px;height:34px;border-radius:10px;border:1px solid var(--border-l2);background:var(--bg-module);color:var(--business);display:grid;place-items:center;flex:none}
+  .head h1{margin:0;font-size:1.15em;font-weight:600}
+  .head p{margin:2px 0 0;font-size:.86em;color:var(--label-secondary)}
+
+  /* 状态槽 */
+  .slots{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border-l1);margin-top:14px}
+  .slot{padding:10px 16px 12px;min-width:0}
+  .slot + .slot{border-left:1px solid var(--border-l1)}
+  .slot .k{display:flex;align-items:center;gap:6px;font-size:.82em;color:var(--label-secondary);margin-bottom:2px}
+  .slot .v{font-size:15px;font-weight:600;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .slot .v small{font-weight:400;font-size:.82em;color:var(--label-tertiary)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--label-tertiary);flex:none;display:inline-block}
+  .dot.ok{background:var(--success)} .dot.warn{background:var(--warn)} .dot.bad{background:var(--error)}
+
+  .tabs{display:flex;gap:2px;margin:10px 0 0;border-bottom:1px solid var(--border-l1)}
+  .tabs button{appearance:none;border:0;background:transparent;color:var(--label-secondary);font:inherit;font-size:.92em;padding:9px 12px 10px;border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer}
+  .tabs button.on{color:var(--label-primary);border-bottom-color:var(--business);font-weight:600}
+
+  .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px;padding-top:18px;align-items:start}
+
+  /* 主操作条 */
+  .bar{grid-column:span 12;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 16px;border:1px solid var(--border-l1);border-radius:var(--radius-md)}
+  .bar .state{display:flex;align-items:center;gap:8px;font-size:1.02em;font-weight:600;margin-right:auto}
+  .btn{appearance:none;font:inherit;font-size:.9em;height:32px;padding:0 14px;border-radius:var(--radius-sm);border:1px solid var(--border-l2);background:var(--bg-layer-1);color:var(--label-primary);cursor:pointer;white-space:nowrap}
+  .btn.primary{background:var(--label-primary);border-color:var(--label-primary);color:var(--bg-base);font-weight:600}
+  .btn.danger{color:var(--error);border-color:color-mix(in srgb,var(--error) 40%,transparent)}
+  .btn.tiny{height:26px;padding:0 10px;font-size:.85em}
+  .note{margin:0;font-size:.82em;color:var(--label-tertiary);display:inline-flex;align-items:center;gap:5px}
+  .help{position:relative;display:inline-flex}
+  .help>button{appearance:none;border:0;background:transparent;color:var(--label-tertiary);width:15px;height:15px;border-radius:50%;border:1px solid var(--border-l2);font-size:10px;line-height:1;cursor:help;padding:0;display:inline-grid;place-items:center}
+  .tip{position:absolute;right:0;top:calc(100% + 6px);z-index:50;width:max-content;max-width:300px;padding:9px 11px;border-radius:var(--radius-sm);border:1px solid var(--border-l2);background:var(--bg-layer-1);box-shadow:0 8px 24px rgba(0,0,0,.18);font-size:.82em;color:var(--label-primary);text-align:left}
+
+  /* 卡片 */
+  .card{border:1px solid var(--border-l1);border-radius:var(--radius-md);background:var(--bg-layer-1);padding:14px 16px 16px;min-width:0}
+  .card>h3{margin:0 0 12px;font-size:1em;font-weight:600;display:flex;align-items:center;gap:8px}
+  .card h3 .sub{margin-left:auto;font-weight:400;font-size:.85em;color:var(--label-tertiary)}
+  .card>h3 .acts{margin-left:auto;display:flex;gap:6px}
+  .card>h3 .acts+.sub{margin-left:0}
+
+  /* 补丁轨道 */
+  .tracks{grid-column:span 12;border:1px solid var(--border-l1);border-radius:var(--radius-md);padding:14px 16px 16px}
+  .track{display:grid;grid-template-columns:84px minmax(0,1fr) 62px;align-items:center;gap:12px;padding:3px 0}
+  .track + .track{border-top:1px solid var(--border-l1)}
+  .track .gname{font-size:.85em;color:var(--label-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cells{display:flex;flex-wrap:wrap;gap:3px}
+  .cell{width:10px;height:10px;border-radius:3px;border:1px solid transparent;cursor:default}
+  .cell.applied{background:color-mix(in srgb,var(--success) 22%,transparent);border-color:color-mix(in srgb,var(--success) 65%,transparent)}
+  .cell.pending{background:color-mix(in srgb,var(--warn) 22%,transparent);border-color:var(--warn)}
+  .cell.bad{background:color-mix(in srgb,var(--error) 22%,transparent);border-color:var(--error)}
+  .cell.skip{background:var(--bg-module);border-color:var(--border-l2)}
+  .cell.disabled{background:transparent;border:1px dashed var(--border-l2)}
+  .track .count{font-size:.82em;color:var(--label-tertiary);text-align:right;font-variant-numeric:tabular-nums}
+
+  /* 自检泳道 */
+  .lanes{display:flex;flex-direction:column;gap:3px}
+  .lane{display:grid;grid-template-columns:64px minmax(0,1fr) 44px;align-items:center;gap:12px;padding:3px 0}
+  .lane + .lane{border-top:1px solid var(--border-l1)}
+  .lane .gname{font-size:.85em;color:var(--label-secondary)}
+  .dots{display:flex;flex-wrap:wrap;gap:7px}
+  .d{width:8px;height:8px;border-radius:50%;background:var(--label-tertiary)}
+  .d.ok{background:var(--success)} .d.warn{background:var(--warn)} .d.bad{background:var(--error)} .d.miss{background:transparent;border:1px dashed var(--label-caption)}
+  .lane .count{font-size:.82em;color:var(--label-tertiary);text-align:right;font-variant-numeric:tabular-nums}
+
+  /* 行 */
+  .row{display:flex;align-items:center;gap:10px;padding:9px 0;min-width:0}
+  .row + .row{border-top:1px solid var(--border-l1)}
+  .row .name{font-size:.92em}
+  .row .val{margin-left:auto;font-size:.85em;color:var(--label-secondary);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  @media (max-width:1080px){ .slots{grid-template-columns:repeat(2,1fr)} .slots .slot:nth-child(3){border-left:0} .slots .slot:nth-child(n+3){border-top:1px solid var(--border-l1)} }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="head">
+    <span class="glyph"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l7 3v6c0 4.2-2.9 7.4-7 9-4.1-1.6-7-4.8-7-9V6l7-3z"/><path d="M9.5 12.2l1.8 1.8 3.4-3.6"/></svg></span>
+    <div><h1>Purge</h1><p>状态与本机配置</p></div>
+  </div>
+
+  <!-- 状态槽 -->
+  <div class="slots">
+    <div class="slot">
+      <div class="k"><i class="dot ok"></i>DSH 宿主</div>
+      <div class="v">0.2.2-rc.1</div>
+    </div>
+    <div class="slot">
+      <div class="k">兼容级别 <span class="help"><button>?</button><span class="tip">已回归验证表示该 DSH 版本的补丁锚点已逐条回归。</span></span></div>
+      <div class="v">已回归验证</div>
+    </div>
+    <div class="slot">
+      <div class="k">插件</div>
+      <div class="v">1.6.93 <small>社区版</small></div>
+    </div>
+    <div class="slot">
+      <div class="k"><i class="dot ok"></i>运行来源</div>
+      <div class="v">已从解包目录启动</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="on">状态</button><button>提示词</button><button>规则</button><button>技能</button><button>演练台</button><button>更多</button>
+  </div>
+
+  <div class="grid">
+    <!-- 主操作条 -->
+    <div class="bar">
+      <span class="state"><i class="dot ok"></i>74/81 条补丁已生效</span>
+      <button class="btn primary">应用</button>
+      <button class="btn">还原</button>
+      <button class="btn danger">卸载</button>
+      <button class="btn">刷新</button>
+      <span class="note">写入后需退出并重开 DSH
+        <span class="help"><button>?</button><span class="tip">点应用会写入补丁并把当前默认提示词挂上。待应用表示锚点还在、还没写入；跳过表示当前版本不需要或组件未安装。</span></span>
+      </span>
+    </div>
+
+    <!-- 补丁轨道 -->
+    <section class="tracks">
+      <h3 style="margin:0 0 12px;font-size:1em;font-weight:600;display:flex;gap:8px;align-items:center">补丁轨道<span class="sub" style="margin-left:auto;font-weight:400;font-size:.85em;color:var(--label-tertiary)">86 条 · 按组铺开</span></h3>
+      <div class="track">
+        <span class="gname">提示词</span>
+        <span class="cells">
+          <i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i>
+          <i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i>
+          <i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i>
+          <i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i>
+          <i class="cell pending"></i><i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i>
+        </span>
+        <span class="count">19/20</span>
+      </div>
+      <div class="track">
+        <span class="gname">代码</span>
+        <span class="cells">
+          <i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i>
+          <i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i>
+          <i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i>
+          <i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i>
+          <i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i>
+          <i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i>
+          <i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i>
+          <i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i>
+          <i class="cell applied"></i><i class="cell applied"></i><i class="cell bad"></i><i class="cell applied"></i>
+        </span>
+        <span class="count">37/38</span>
+      </div>
+      <div class="track">
+        <span class="gname">工具</span>
+        <span class="cells">
+          <i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i>
+          <i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i>
+          <i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i>
+          <i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i>
+          <i class="cell disabled"></i><i class="cell disabled"></i><i class="cell skip"></i><i class="cell skip"></i>
+        </span>
+        <span class="count">16/20</span>
+      </div>
+      <div class="track">
+        <span class="gname">兼容</span>
+        <span class="cells"><i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i><i class="cell applied"></i><i class="cell skip"></i></span>
+        <span class="count">5/6</span>
+      </div>
+      <div class="track">
+        <span class="gname">0.2.0</span>
+        <span class="cells"><i class="cell applied"></i><i class="cell applied"></i></span>
+        <span class="count">2/2</span>
+      </div>
+    </section>
+
+    <!-- 自检泳道 -->
+    <section class="card" style="grid-column:span 7">
+      <h3>破甲自检<span class="acts"><button class="btn tiny">重测</button><button class="btn tiny">探针</button></span><span class="sub">25 层</span></h3>
+      <div class="lanes">
+        <div class="lane"><span class="gname">宿主</span><span class="dots"><i class="d ok"></i><i class="d ok"></i><i class="d ok"></i><i class="d ok"></i><i class="d ok"></i><i class="d ok"></i><i class="d ok"></i><i class="d ok"></i><i class="d warn"></i><i class="d ok"></i><i class="d ok"></i><i class="d ok"></i><i class="d ok"></i><i class="d ok"></i><i class="d ok"></i></span><span class="count">14/15</span></div>
+        <div class="lane"><span class="gname">运行时</span><span class="dots"><i class="d ok"></i><i class="d ok"></i><i class="d ok"></i><i class="d ok"></i></span><span class="count">4/4</span></div>
+        <div class="lane"><span class="gname">配置</span><span class="dots"><i class="d ok"></i><i class="d ok"></i><i class="d ok"></i></span><span class="count">3/3</span></div>
+        <div class="lane"><span class="gname">布局</span><span class="dots"><i class="d ok"></i></span><span class="count">1/1</span></div>
+        <div class="lane"><span class="gname">注入</span><span class="dots"><i class="d ok"></i><i class="d ok"></i></span><span class="count">2/2</span></div>
+      </div>
+    </section>
+
+    <!-- 版本 -->
+    <section class="card" style="grid-column:span 5">
+      <h3>版本<span class="sub">正式版</span></h3>
+      <div class="row"><span class="name">本机版本</span><span class="val">v1.6.93</span></div>
+      <div class="row"><span class="name">通道</span><span class="val">正式版</span></div>
+      <div class="row"><span class="name">自动检查</span><span class="val">每 6 小时</span></div>
+      <div style="margin-top:12px;display:flex;gap:8px"><button class="btn tiny">检测更新</button><button class="btn tiny">切换通道</button></div>
+    </section>
+  </div>
+</div>
+</body>
+</html>

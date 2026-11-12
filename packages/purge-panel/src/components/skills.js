@@ -1,6 +1,7 @@
 // UI derived from YuJunZhiXue/dsh-purge 1.1.71 (MIT). See LICENSE.
 import {
   h,
+  react,
   useState,
   useEffect,
   useCallback,
@@ -320,107 +321,120 @@ export function SkillsSection() {
   }
 
   return h(
-    "section",
-    { className: "dshpp-panel", "aria-label": t("skills.title") },
+    react.Fragment,
+    null,
+    // 技能列表
     h(
       "div",
-      { className: "dshpp-head" },
-      h("h3", { className: "dshpp-title" }, t("skills.title")),
+      { className: "dshpp-cell dshpp-c4" },
       h(
-        "div",
-        { className: "dshpp-row", style: { margin: 0 } },
+        "section",
+        { className: "dshpp-card", "aria-label": t("skills.title") },
+        h(
+          "h3",
+          null,
+          t("skills.title"),
+          h(
+            "span",
+            { className: "dshpp-card-sub" },
+            `${st?.skills?.length ?? 0}`,
+          ),
+        ),
         noticeNode(notice),
-      ),
-    ),
-    h(
-      "p",
-      {
-        className: "dshpp-hint",
-        style: { margin: "0 0 10px", color: "var(--dshpp-mute)", fontSize: 12 },
-      },
-      hostText(t, "skills.hint", hostSurfaceOf()),
-    ),
-    h(
-      "div",
-      { className: "dshpp-split" },
-      h(
-        "div",
-        { className: "dshpp-rulelist" },
-        h("div", { className: "dshpp-rulebody" }, list),
         h(
           "div",
-          { className: "dshpp-create" },
+          { className: "dshpp-rulelist", style: { marginTop: 10 } },
+          h("div", { className: "dshpp-rulebody" }, list),
           h(
             "div",
-            { className: "dshpp-create-row" },
-            h("input", {
-              ref: zipRef,
-              type: "file",
-              accept: ".zip,.tgz,.tar.gz,.tar,.skill",
-              style: { display: "none" },
-              onChange: (e) => {
-                const file = e.target.files && e.target.files[0];
-                e.target.value = "";
-                importZip(file);
-              },
-            }),
-            h("input", {
-              ref: (el) => {
-                folderRef.current = el;
-                if (!el) return;
-                el.setAttribute("webkitdirectory", "");
-                el.setAttribute("directory", "");
-                el.multiple = true;
-              },
-              type: "file",
-              multiple: true,
-              style: { display: "none" },
-              onChange: (e) => {
-                const files = Array.from((e.target && e.target.files) || []);
-                e.target.value = "";
-                importFolder(files);
-              },
-            }),
+            { className: "dshpp-create" },
             h(
-              Btn,
-              {
-                kind: "primary",
-                tiny: true,
-                disabled: busy,
-                onClick: () => zipRef.current && zipRef.current.click(),
-              },
-              t("btn.importZip"),
-            ),
-            h(
-              Btn,
-              {
-                tiny: true,
-                disabled: busy,
-                onClick: () => folderRef.current && folderRef.current.click(),
-              },
-              t("btn.importFolder"),
+              "div",
+              { className: "dshpp-create-row" },
+              h("input", {
+                ref: zipRef,
+                type: "file",
+                accept: ".zip,.tgz,.tar.gz,.tar,.skill",
+                style: { display: "none" },
+                onChange: (e) => {
+                  const file = e.target.files && e.target.files[0];
+                  e.target.value = "";
+                  importZip(file);
+                },
+              }),
+              h("input", {
+                ref: (el) => {
+                  folderRef.current = el;
+                  if (!el) return;
+                  el.setAttribute("webkitdirectory", "");
+                  el.setAttribute("directory", "");
+                  el.multiple = true;
+                },
+                type: "file",
+                multiple: true,
+                style: { display: "none" },
+                onChange: (e) => {
+                  const files = Array.from((e.target && e.target.files) || []);
+                  e.target.value = "";
+                  importFolder(files);
+                },
+              }),
+              h(
+                Btn,
+                {
+                  kind: "primary",
+                  tiny: true,
+                  disabled: busy,
+                  onClick: () => zipRef.current && zipRef.current.click(),
+                },
+                t("btn.importZip"),
+              ),
+              h(
+                Btn,
+                {
+                  tiny: true,
+                  disabled: busy,
+                  onClick: () => folderRef.current && folderRef.current.click(),
+                },
+                t("btn.importFolder"),
+              ),
             ),
           ),
         ),
       ),
+    ),
+    // 技能编辑
+    h(
+      "div",
+      { className: "dshpp-cell dshpp-c8" },
       h(
-        "div",
-        { className: "dshpp-editor" },
+        "section",
+        { className: "dshpp-card", "aria-label": t("skills.title") },
+        h(
+          "h3",
+          null,
+          editId ? editId : t("skills.pick"),
+          h(
+            "span",
+            { className: "dshpp-card-sub" },
+            hostText(t, "skills.hint", hostSurfaceOf()),
+          ),
+        ),
         editId
           ? [
-              h(
-                "div",
-                { key: "meta", className: "dshpp-row" },
-                h("input", {
-                  className: "dshpp-field",
-                  placeholder: t("ph.skill.desc"),
-                  value: editDesc,
-                  onChange: (e) => setEditDesc(e.target.value),
-                }),
-              ),
+              h("input", {
+                key: "desc",
+                className: "dshpp-field",
+                style: { width: "100%" },
+                "aria-label": t("ph.skill.desc"),
+                placeholder: t("ph.skill.desc"),
+                value: editDesc,
+                onChange: (e) => setEditDesc(e.target.value),
+              }),
               h("textarea", {
                 key: "body",
                 className: "dshpp-area",
+                "aria-label": "技能正文",
                 value: content,
                 onChange: (e) => setContent(e.target.value),
                 spellCheck: false,
@@ -443,7 +457,6 @@ export function SkillsSection() {
                   },
                   t("btn.saveSkill"),
                 ),
-                noticeNode(notice),
               ),
             ]
           : h("div", { className: "dshpp-editor-empty" }, t("skills.pick")),

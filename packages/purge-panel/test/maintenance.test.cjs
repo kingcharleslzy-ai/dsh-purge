@@ -312,7 +312,7 @@ test("selfcheck inferred and unknown values show warning labels and explanation 
               ],
             },
       ),
-    "StatusExtras",
+    "SelfCheckCard",
   );
   const tree = await mount(h);
   const rendered = text(tree);
