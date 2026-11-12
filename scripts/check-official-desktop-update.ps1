@@ -23,6 +23,23 @@ function Assert-Version($rc) {
 $first = Start-Process (Join-Path $root '1.exe') -ArgumentList ("/S /D=" + $target) -Wait -PassThru
 if ($first.ExitCode -ne 0) { throw "Initial install exited $($first.ExitCode)" }
 Assert-Version 1
+# Mirror the reported rc.1 disk layout using the unmodified contents of the vendor ASAR.
+$layoutDriver = Join-Path $root 'legacy-layout.mjs'
+@'
+import fs from 'node:fs';
+import path from 'node:path';
+import {pathToFileURL} from 'node:url';
+const [source, resources] = process.argv.slice(2);
+const {extractAsarToSide, overlayAsarUnpacked, verifyStagedAsar, commitExtractedDir} = await import(pathToFileURL(source));
+const archive = path.join(resources,'app.asar'), dest=path.join(resources,'app');
+const {next}=extractAsarToSide(archive,dest);
+overlayAsarUnpacked(archive,next);
+verifyStagedAsar(archive,next);
+commitExtractedDir(dest,next);
+fs.renameSync(archive, archive + '.purge-qa.bak');
+'@ | Set-Content -LiteralPath $layoutDriver -Encoding utf8
+& node $layoutDriver (Resolve-Path lib/extract-asar.js).Path (Join-Path $target 'resources')
+if ($LASTEXITCODE) { throw "Legacy layout preparation failed: $LASTEXITCODE" }
 $src = (Resolve-Path lib/official-installer.mjs).Path
 $driver = Join-Path $root 'drive.mjs'
 @'
@@ -56,9 +73,13 @@ function Invoke-Handoff($rc, $want) {
     Write-Output ($last | ConvertTo-Json -Compress)
     if ($last.phase -ne $want) { throw "Expected $want, got $($last.phase)" }
 }
-$holdPath = Join-Path $target 'resources/app.asar'
+$holdPath = Join-Path $target 'resources/app/package.json'
 $hold = [IO.File]::Open($holdPath, 'Open', 'Read','Read')
-try { Invoke-Handoff 2 'failed'; Assert-Version 1 } finally { $hold.Dispose() }
+try {
+    Invoke-Handoff 2 'failed'
+    Assert-Version 1
+    if ((Get-Content $holdPath -Raw | ConvertFrom-Json).version -ne '0.2.2-rc.1' -or -not (Test-Path (Join-Path $target 'resources/app.asar.purge-qa.bak'))) { throw 'Previous layout was not restored' }
+} finally { $hold.Dispose() }
 Invoke-Handoff 2 'installed'
 Assert-Version 2
 Invoke-Handoff 1 'installed'

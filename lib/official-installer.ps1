@@ -20,8 +20,8 @@ try {
         throw "Invalid official installer signature: $($signature.Status)"
     }
     Write-State 'waiting-for-exit' $null
-    [Console]::WriteLine('READY')
     if (-not $parent.WaitForExit(600000)) { throw 'Desktop did not exit within ten minutes; installer was not launched' }
+    if (-not [IO.File]::Exists($log + '.confirmed')) { throw 'The host did not acknowledge this handoff; installer was not launched' }
     $env:ELECTRON_RUN_AS_NODE = $null
     $target = [IO.Path]::GetDirectoryName($exe)
     Write-State 'installing' $null
