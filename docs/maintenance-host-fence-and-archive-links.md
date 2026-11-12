@@ -20,6 +20,17 @@
 
 回环判定与宿主 `isLoopbackHostname()` 同一口径。缺少 Host 头一律拒绝，与宿主 `/api` 围栏一致。
 
+### 所有路由必须走同一口径
+
+`/dsh-purge/community` 在 `apply()` 里单独注册，不走 `installWebServer` 的 `registerPluginRoute` 包装，因此一度漏掉了 `trustedHostnames(webServer.host)` 这个参数。后果是非回环绑定时**只有这一条路由返回 403**，其余正常：
+
+```
+绑定 192.168.1.50，PURGE_TRUSTED_HOSTS 未设置
+  Host: 192.168.1.50:43120  →  其他路由 200 / community 403
+```
+
+`allowPluginRequest` 的第三个参数默认值是 `trustedHostnames()`（不含绑定地址），所以任何新增路由只要忘了传，就会复现这个不一致。回归用两组断言钉住：直接对照「传 / 不传」，以及驱动真实注册的 handler 确认绑定地址不再 403、rebinding 仍 403。
+
 ### 边界
 
 - 不改端口、不扩大 Cookie 域、不合并多实例；绑定地址仍来自 `webServer` 配置。
@@ -87,6 +98,7 @@ PAX 的 `size` 记录会覆盖紧随条目头部声明的大小，解压器按**
 
 - `test/archive-symlink-guard.test.mjs`（23 例，1 例按平台跳过）—— zip 符号链接、tar typeflag 1/2、base-256 大小、无法识别的大小字段、负大小、PAX size 覆盖、PAX linkpath、PAX 损坏记录、UTF-8 记录、真实 tar 归档不误拦
 - `test/plugin-request-host-fence.test.mjs`（13 例）—— 含 `PURGE_TRUSTED_HOSTS` 的实际解析与清空后回落
+- `test/community-route-admission.test.mjs`（4 例）—— `/dsh-purge/community` 与其他路由的准入一致性
 - `test/skills-archive-limit.test.mjs`（4 例）—— gzip 炸弹被拒、正常包不受影响、接近上限的包不误伤
 
 `PURGE_TRUSTED_HOSTS` 的用例走 `allowPluginRequest` 的**默认参数**路径，即真的从环境变量读，而不是测一个内部函数。早先那版测试在函数未导出时直接 `return`，等于一个断言都没跑——已删除。
