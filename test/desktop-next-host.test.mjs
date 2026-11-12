@@ -318,3 +318,22 @@ test("补丁：写失败显式报错，原文与备份都可回滚，恢复后�
     if (savedBase === undefined) delete process.env.DSH_BASE; else process.env.DSH_BASE = savedBase;
   }
 });
+
+test("有效 DSH_BASE 不会收到重复设置目录的建议", () => {
+  const base = path.join(TMP, "validated-base", "@deepseek-ai");
+  fs.mkdirSync(path.join(base, "dsh-agent-instructions", "lib"), { recursive: true });
+  const before = { DSH_BASE: process.env.DSH_BASE, DSH_SURFACE: process.env.DSH_SURFACE };
+  try {
+    process.env.DSH_BASE = base;
+    process.env.DSH_SURFACE = "web";
+    const message = core.missingAiBaseMessage();
+    assert.match(message, /已通过校验/);
+    assert.match(message, /web/);
+    assert.doesNotMatch(message, /set DSH_BASE/);
+  } finally {
+    for (const [key, value] of Object.entries(before)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+});
