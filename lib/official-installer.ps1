@@ -1,4 +1,7 @@
 $ErrorActionPreference = 'Stop'
+# A desktop launched from pwsh can inherit PowerShell 7 module paths. Load the
+# system modules belonging to this Windows PowerShell process.
+$env:PSModulePath = Join-Path $PSHOME 'Modules'
 $log = $env:DSH_UPDATE_LOG
 $exe = $env:DSH_UPDATE_EXE
 $installer = $env:DSH_UPDATE_FILE

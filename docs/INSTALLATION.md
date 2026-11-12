@@ -220,3 +220,9 @@ macOS 不复制顶层 `Info.plist`，不创建 `.app` 路径，不通过 Finder�
 症状是安装另一个插件时，pnpm 报错的地址却是 Purge 的 `releases/latest/download`。在插件页停用只会改变加载状态，profile 依赖仍会参与解析。
 
 取得包含此修复的发行包并按上文核对 SHA256 后，用该包解出的 `bin/community.js migrate <已校验的本地 tgz 路径>` 对原 profile 执行迁移。保留原 DSH_HOME 和 DSH_PROFILE。迁移器会把本项目已识别的旧浮动地址替换为本机持久归档，已停用的插件继续停用。迁移失败会恢复原清单；发生错误时保留报错用于诊断。
+
+### Windows 官方桌面更新交接（主分支）
+
+从 DSH 确认安装官方桌面更新后，社区版会在 desktop 和 web profile 中查找交接助手，兼容两个包名 `dsh-purge-community` 和 `dsh-purge`。普通单文件更新会先比对官方更新器提供的 SHA512、目标版本和 DeepSeek 的 Authenticode 发布者，等待桌面正常退出，再运行安装器。整个过程不自动重写更新后的宿主。
+
+如果更新后版本未变，可查看 `<DSH_HOME>/logs/official-installer/update-*/result.jsonl` 的最后一条记录。`waiting-for-exit` 表示助手仍在等原桌面进程退出，`failed` 会记录失败原因，`installed` 表示安装器返回成功，目标 EXE 的 FileVersion 也符合预期。分包和需要提权的安装由 DSH 官方更新器直接处理，请查看官方安装器日志。
