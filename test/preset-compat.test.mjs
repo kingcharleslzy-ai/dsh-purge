@@ -314,3 +314,12 @@ test("a preset that mounts its own tools row gets one native executor in that sc
   t.after(() => fs.rmSync(missing, { recursive: true, force: true }));
   assert.deepEqual(ensureToolExecutor({ plugins: [tools] }, path.join(missing, "package.json")), { plugins: [tools] });
 });
+
+test("redteam entry imports every preset-compat helper it calls", async () => {
+  const source = await fs.promises.readFile(new URL("../lib/redteam/index.js", import.meta.url), "utf8");
+  const imported = source.match(/import \{([^}]+)\} from ['"]\.\.\/preset-compat\.js['"]/);
+  assert(imported, "preset-compat import present");
+  for (const name of ["adaptListAgents", "ensureToolExecutor", "migratePresetDefinition", "registerPresetDefinitions", "backupPresetMigration"]) {
+    assert.match(imported[1], new RegExp(`(^|,)\\s*${name}\\s*(,|$)`), `${name} imported`);
+  }
+});

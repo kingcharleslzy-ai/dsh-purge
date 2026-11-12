@@ -1,3 +1,10 @@
+# 1.6.97
+
+- **热修 1.6.95/1.6.96 红队入口**：`lib/redteam/index.js` 调用了 `ensureToolExecutor`，但 import 列表漏了它，重启后预设注册直接 `read-failed: ensureToolExecutor is not defined`。已补上并加回归，检查入口实际调用的 helper 都在 import 中。
+- 1.6.96 的能力探测、1.6.95 的锚点回退与执行器补齐全部保留。
+
+验证：预设兼容 12 项通过，全套测试通过。
+
 # 1.6.96
 
 - **预设兼容改为能力探测**：`adaptListAgents()` 不再按 `0.2.2-rc.*` 版本号判断。子路径未导出时，读取 control 主入口，只有它确实仍注册 `list_agents` / `registerListAgents` 才移除旧条目；未来 0.2.x 继续合并就继续可用，停止提供则保留旧条目让宿主错误可见，不静默删工具。
