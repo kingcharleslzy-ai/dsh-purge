@@ -1,6 +1,16 @@
 # 维护、迁移与恢复
 
-当前版本 **1.6.102**。包名 `dsh-purge-community`，来源仅本仓库正式 GitHub Releases；保留内部 Cordis ID `dsh-purge`、HTTP `/dsh-purge/*` 及用户数据目录。主安装步骤与镜像故障决策树统一见 [安装指南](INSTALLATION.md)；[AGENTS.md](../AGENTS.md) 是 Agent 操作说明。
+当前版本 **1.7.13**。包名 `dsh-purge-community`，来源仅本仓库正式 GitHub Releases；保留内部 Cordis ID `dsh-purge`、HTTP `/dsh-purge/*` 及用户数据目录。主安装步骤与镜像故障决策树统一见 [安装指南](INSTALLATION.md)；[AGENTS.md](../AGENTS.md) 是 Agent 操作说明。
+
+## 发行版本号
+
+新正式版使用 `主版本.次版本.补丁号`，三个数字都不补前导零。例如 `1.7.1` 和 `1.7.11` 都是有效写法。
+
+本项目将新补丁号限制在 0–99。达到 `.99` 后，下一次发行启用新的次版本线，补丁号归零。此约定只用于新发行；已发布的 `1.6.100` 和 `1.6.101` 保留原版本、标签和历史身份。
+
+## GitHub Release 正文
+
+发布流程使用 `docs/releases/<版本>.md`。首行写 `# <版本>`，接着用几条要点说明用户能看到的变化、升级时需要的操作和仍存在的限制。详细诊断、测试记录和历次更新用链接引用。整篇正文上限为 8 KiB，`npm run check:docs` 会在提交和发版时校验。仓库根目录的 `release-notes.md` 用于查阅累计历史。
 
 ## 兼容与操作边界
 

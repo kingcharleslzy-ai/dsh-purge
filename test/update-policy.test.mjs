@@ -252,3 +252,33 @@ test('malformed channel credentials produce a redacted error rather than JSON pa
     assert.throws(()=>preferences(home),e=>/JSON/.test(e.message)&&!e.message.includes('SENSITIVE'));
   }finally{fs.rmSync(home,{recursive:true,force:true});}
 });
+
+test("an unsuccessful or stale check cannot replace last confirmed metadata or trigger installation", async () => {
+  let result = { ok: true, hasUpdate: true, remoteVersion: "1.7.11" };
+  const f = setup({ check: async () => {
+    if (result instanceof Error) throw result;
+    return result;
+  } });
+  try {
+    f.c.start();
+    await f.c.run();
+    savePreferences(f.home, { autoInstall: true });
+    for (const failure of [
+      { ok: false, error: "发行列表过大；备用源失败" },
+      { ok: true, stale: true, hasUpdate: true, remoteVersion: "1.6.99", degraded: "备用源超时，只有缓存" },
+      new Error("读取发行列表超时"),
+    ]) {
+      result = failure;
+      await f.c.run();
+      const state = updateStatus(f.home);
+      assert.equal(state.hasUpdate, null);
+      assert.equal(state.availableVersion, "1.7.11");
+      assert.match(state.error, /过大|超时/);
+      assert.equal(f.counts().installs, 0);
+    }
+    result = { ok: true, hasUpdate: false, remoteVersion: "1.7.11" };
+    await f.c.run();
+    assert.equal(updateStatus(f.home).error, "");
+    assert.equal(updateStatus(f.home).hasUpdate, false);
+  } finally { f.close(); }
+});

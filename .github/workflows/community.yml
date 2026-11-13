@@ -26,6 +26,8 @@ jobs:
       - run: npm run test:ui
       - run: npm --prefix packages/purge-panel run format:check
       - run: npm --prefix packages/purge-panel test
+      - name: Settings saved from sidebar and detail in Chrome
+        run: node packages/purge-panel/test/settings-entries-browser.mjs
       - name: Rewind menu geometry in Chrome
         run: node packages/purge-panel/test/rewind-browser.mjs
       - run: node --check lib/index.js && node --check lib/core.js && node --check lib/reapply.js && node --input-type=module -e "import './lib/index.js'"

@@ -6,7 +6,7 @@ const React = require("react");
 const { renderToStaticMarkup } = require("react-dom/server");
 const { buildSync } = require("esbuild");
 const code = buildSync({
-  entryPoints: [path.join(__dirname, "../src/components/layout-notice.js")],
+  entryPoints: [path.join(__dirname, "../src/components/page.js")],
   bundle: true,
   write: false,
   format: "cjs",

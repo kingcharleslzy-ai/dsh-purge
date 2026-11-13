@@ -229,302 +229,254 @@ export function RulesSection() {
     { className: "dshpp-panel", "aria-label": t("rules.title") },
     h(
       "div",
-      { className: "dpg-field dpg-field-inline" },
+      { className: "dshpp-head" },
+      h("h3", { className: "dshpp-title" }, t("rules.title")),
       h(
         "div",
-        { className: "dpg-field-text" },
+        { className: "dshpp-row", style: { margin: 0 } },
+        noticeNode(notice),
         h(
-          "label",
-          { className: "dpg-field-label", htmlFor: "dshpp-policy-select" },
-          t("policy.title"),
-        ),
-        h("p", { className: "dpg-field-hint" }, t("policy.hint")),
-      ),
-      h(
-        "div",
-        { className: "dpg-field-control" },
-        h(
-          "span",
-          { className: "dpg-select" },
-          h(
-            "select",
-            {
-              id: "dshpp-policy-select",
-              value: policyValue,
-              disabled: busy || !st,
-              onChange: (e) => doPost("set-policy", { policy: e.target.value }),
+          Btn,
+          {
+            tiny: true,
+            kind: "danger",
+            disabled: busy,
+            onClick: () => {
+              if (!window.confirm(t("rules.reset.confirm"))) return;
+              clearEditor();
+              doPost("reset", {});
             },
-            policyOptions.map((p) =>
-              h("option", { key: p, value: p }, t("policy." + p)),
-            ),
-          ),
+          },
+          t("rules.reset"),
         ),
       ),
     ),
     h(
       "div",
-      { className: "dpg-field" },
+      { className: "dshpp-block" },
       h(
         "div",
-        { className: "dpg-field-inline" },
+        { className: "dshpp-policy-row" },
+        h("label", { htmlFor: "dshpp-policy-select" }, t("policy.title")),
         h(
-          "div",
-          { className: "dpg-field-text" },
-          h("h4", { className: "dpg-field-label" }, t("cwd.title")),
-          cwdValue
-            ? h("p", { className: "dpg-field-hint dpg-mono" }, cwdValue)
-            : null,
-        ),
-        h(
-          "div",
-          { className: "dpg-field-control" },
-          h(
-            Btn,
-            {
-              tiny: true,
-              disabled: busy,
-              onClick: () => {
-                let cwd = cwdValue;
-                if (!cwd) {
-                  try {
-                    cwd = clientCurrentCwd();
-                  } catch {
-                    /* ignore */
-                  }
-                }
-                doPost("scan-cwd", cwd ? { cwd: cwd } : {});
-              },
-            },
-            t("cwd.rescan"),
+          "select",
+          {
+            id: "dshpp-policy-select",
+            className: "dshpp-field",
+            value: policyValue,
+            disabled: busy || !st,
+            onChange: (e) => doPost("set-policy", { policy: e.target.value }),
+          },
+          policyOptions.map((p) =>
+            h("option", { key: p, value: p }, t("policy." + p)),
           ),
         ),
       ),
+      h("p", { className: "dshpp-block-hint" }, t("policy.hint")),
+    ),
+    h(
+      "div",
+      { className: "dshpp-block" },
       h(
         "div",
-        { className: "dpg-field-control" },
-        !st || !cwdValue
-          ? h("p", { className: "dshpp-empty" }, t("cwd.no.workspace"))
-          : cwdCandidates.length === 0
-            ? h("p", { className: "dshpp-empty" }, t("cwd.empty"))
-            : h(
-                "div",
-                { className: "dshpp-cwd-list" },
-                cwdCandidates.map((item) =>
+        { className: "dshpp-block-head" },
+        h("h4", null, t("cwd.title")),
+        h(
+          Btn,
+          {
+            tiny: true,
+            disabled: busy,
+            onClick: () => {
+              let cwd = cwdValue;
+              if (!cwd) {
+                try {
+                  cwd = clientCurrentCwd();
+                } catch {
+                  /* ignore */
+                }
+              }
+              doPost("scan-cwd", cwd ? { cwd: cwd } : {});
+            },
+          },
+          t("cwd.rescan"),
+        ),
+      ),
+      cwdValue ? h("p", { className: "dshpp-cwd-path" }, cwdValue) : null,
+      !st || !cwdValue
+        ? h("p", { className: "dshpp-empty" }, t("cwd.no.workspace"))
+        : cwdCandidates.length === 0
+          ? h("p", { className: "dshpp-empty" }, t("cwd.empty"))
+          : h(
+              "div",
+              { className: "dshpp-cwd-list" },
+              cwdCandidates.map((item) =>
+                h(
+                  "label",
+                  {
+                    key: item.path,
+                    className:
+                      "dshpp-cwd-item" + (item.selected ? " is-on" : ""),
+                  },
+                  h("input", {
+                    type: "checkbox",
+                    checked: Boolean(item.selected),
+                    disabled: busy,
+                    onChange: (e) =>
+                      doPost("toggle-cwd", {
+                        path: item.path,
+                        enabled: e.target.checked,
+                      }),
+                  }),
                   h(
-                    "label",
-                    {
-                      key: item.path,
-                      className:
-                        "dshpp-cwd-item" + (item.selected ? " is-on" : ""),
-                    },
-                    h("input", {
-                      type: "checkbox",
-                      checked: Boolean(item.selected),
-                      disabled: busy,
-                      onChange: (e) =>
-                        doPost("toggle-cwd", {
-                          path: item.path,
-                          enabled: e.target.checked,
-                        }),
-                    }),
+                    "div",
+                    { className: "dshpp-cwd-main" },
                     h(
                       "div",
-                      { className: "dshpp-cwd-main" },
+                      { className: "dshpp-cwd-name" },
+                      h("span", null, item.name),
                       h(
-                        "div",
-                        { className: "dshpp-cwd-name" },
-                        h("span", null, item.name),
-                        h(
-                          "span",
-                          { className: "dshpp-cwd-badge" },
-                          t("cwd.scope." + (item.scope || "cwd")),
-                        ),
-                        h(
-                          "span",
-                          { className: "dshpp-cwd-size" },
-                          formatSize(item.size || 0),
-                        ),
+                        "span",
+                        { className: "dshpp-cwd-badge" },
+                        t("cwd.scope." + (item.scope || "cwd")),
                       ),
-                      h("div", { className: "dshpp-cwd-sub" }, item.path),
-                      item.preview
-                        ? h(
-                            "div",
-                            { className: "dshpp-cwd-prev" },
-                            item.preview,
-                          )
-                        : null,
+                      h(
+                        "span",
+                        { className: "dshpp-cwd-size" },
+                        formatSize(item.size || 0),
+                      ),
                     ),
+                    h("div", { className: "dshpp-cwd-sub" }, item.path),
+                    item.preview
+                      ? h("div", { className: "dshpp-cwd-prev" }, item.preview)
+                      : null,
                   ),
                 ),
               ),
-      ),
-      h("p", { className: "dpg-field-hint" }, t("cwd.hint")),
+            ),
+      h("p", { className: "dshpp-block-hint" }, t("cwd.hint")),
     ),
     h(
       "div",
-      { className: "dpg-field" },
+      { className: "dshpp-block" },
       h(
         "div",
-        { className: "dpg-field-head" },
-        h("h4", { className: "dpg-field-label" }, t("rules.list")),
+        { className: "dshpp-split" },
         h(
           "div",
-          { className: "dpg-view-actions" },
-          noticeNode(notice),
-          h(
-            Btn,
-            {
-              tiny: true,
-              kind: "danger",
-              disabled: busy,
-              onClick: () => {
-                if (!window.confirm(t("rules.reset.confirm"))) return;
-                clearEditor();
-                doPost("reset", {});
-              },
-            },
-            t("rules.reset"),
-          ),
-        ),
-      ),
-      h(
-        "div",
-        { className: "dpg-field-control" },
-        h(
-          "div",
-          { className: "dshpp-split" },
+          { className: "dshpp-rulelist" },
+          h("div", { className: "dshpp-rulebody" }, list),
           h(
             "div",
-            { className: "dshpp-rulelist" },
-            h("div", { className: "dshpp-rulebody" }, list),
+            { className: "dshpp-create" },
             h(
               "div",
-              { className: "dshpp-create" },
+              { className: "dshpp-create-row" },
+              h("input", {
+                className: "dshpp-field",
+                placeholder: t("ph.id"),
+                value: newId,
+                onChange: (e) => setNewId(e.target.value),
+              }),
+              h("input", {
+                className: "dshpp-field",
+                placeholder: t("ph.alias"),
+                value: newName,
+                onChange: (e) => setNewName(e.target.value),
+              }),
               h(
-                "div",
-                { className: "dshpp-create-row" },
-                h("input", {
+                "select",
+                {
                   className: "dshpp-field",
-                  placeholder: t("ph.id"),
-                  value: newId,
-                  onChange: (e) => setNewId(e.target.value),
-                }),
-                h("input", {
-                  className: "dshpp-field",
-                  placeholder: t("ph.alias"),
-                  value: newName,
-                  onChange: (e) => setNewName(e.target.value),
-                }),
-                h(
-                  "select",
-                  {
-                    className: "dshpp-field",
-                    style: { minWidth: 120, flex: "0 0 auto" },
-                    value: newTarget,
-                    onChange: (e) => setNewTarget(e.target.value),
+                  style: { minWidth: 120, flex: "0 0 auto" },
+                  value: newTarget,
+                  onChange: (e) => setNewTarget(e.target.value),
+                },
+                TARGETS.map((x) => h("option", { key: x, value: x }, x)),
+              ),
+              h(
+                Btn,
+                {
+                  kind: "primary",
+                  tiny: true,
+                  disabled: busy,
+                  onClick: () => {
+                    const id = newId.trim();
+                    if (!id) {
+                      setNotice({ kind: "error", text: t("need.id") });
+                      return;
+                    }
+                    const name = newName.trim() || id;
+                    const target = newTarget;
+                    doPost("save", { id, content: "", name, target }, () => {
+                      setEditId(id);
+                      setEditName(name);
+                      setEditTarget(target);
+                      setContent("");
+                    });
+                    setNewId("");
+                    setNewName("");
+                    setNewTarget("AGENTS.md");
                   },
-                  TARGETS.map((x) => h("option", { key: x, value: x }, x)),
-                ),
-                h(
-                  Btn,
-                  {
-                    kind: "primary",
-                    tiny: true,
-                    disabled: busy,
-                    onClick: () => {
-                      const id = newId.trim();
-                      if (!id) {
-                        setNotice({ kind: "error", text: t("need.id") });
-                        return;
-                      }
-                      const name = newName.trim() || id;
-                      const target = newTarget;
-                      doPost("save", { id, content: "", name, target }, () => {
-                        setEditId(id);
-                        setEditName(name);
-                        setEditTarget(target);
-                        setContent("");
-                      });
-                      setNewId("");
-                      setNewName("");
-                      setNewTarget("AGENTS.md");
-                    },
-                  },
-                  t("btn.create"),
-                ),
+                },
+                t("btn.create"),
               ),
             ),
           ),
-          h(
-            "div",
-            { className: "dpg-field" },
-            editId
-              ? h(
+        ),
+        h(
+          "div",
+          { className: "dshpp-editor" },
+          editId
+            ? [
+                h(
                   "div",
-                  { className: "dpg-field-text" },
-                  h("h4", { className: "dpg-field-label" }, editId),
-                )
-              : null,
-            h(
-              "div",
-              { className: "dpg-field-control" },
-              editId
-                ? [
-                    h(
-                      "div",
-                      { key: "meta", className: "dpg-actions" },
-                      h("input", {
-                        className: "dshpp-field",
-                        placeholder: t("ph.alias.short"),
-                        value: editName,
-                        onChange: (e) => setEditName(e.target.value),
-                      }),
-                      h(
-                        "span",
-                        { className: "dpg-select" },
-                        h(
-                          "select",
-                          {
-                            value: editTarget,
-                            onChange: (e) => setEditTarget(e.target.value),
-                          },
-                          TARGETS.map((x) =>
-                            h("option", { key: x, value: x }, x),
-                          ),
-                        ),
-                      ),
-                    ),
-                    h("textarea", {
-                      key: "body",
-                      className: "dshpp-area",
-                      value: content,
-                      onChange: (e) => setContent(e.target.value),
-                      placeholder: "",
-                    }),
-                    h(
-                      "div",
-                      { key: "save", className: "dpg-actions" },
-                      h(
-                        Btn,
-                        {
-                          kind: "primary",
-                          disabled: busy,
-                          onClick: () =>
-                            doPost("save", {
-                              id: editId,
-                              content,
-                              name: editName,
-                              target: editTarget,
-                            }),
-                        },
-                        t("btn.saveRule"),
-                      ),
-                      noticeNode(notice),
-                    ),
-                  ]
-                : h("p", { className: "dpg-empty" }, t("rules.pick")),
-            ),
-          ),
+                  { key: "meta", className: "dshpp-row" },
+                  h("input", {
+                    className: "dshpp-field",
+                    placeholder: t("ph.alias.short"),
+                    value: editName,
+                    onChange: (e) => setEditName(e.target.value),
+                  }),
+                  h(
+                    "select",
+                    {
+                      className: "dshpp-field",
+                      style: { minWidth: 120 },
+                      value: editTarget,
+                      onChange: (e) => setEditTarget(e.target.value),
+                    },
+                    TARGETS.map((x) => h("option", { key: x, value: x }, x)),
+                  ),
+                ),
+                h("textarea", {
+                  key: "body",
+                  className: "dshpp-area",
+                  value: content,
+                  onChange: (e) => setContent(e.target.value),
+                  placeholder: "",
+                }),
+                h(
+                  "div",
+                  { key: "save", className: "dshpp-row" },
+                  h(
+                    Btn,
+                    {
+                      kind: "primary",
+                      disabled: busy,
+                      onClick: () =>
+                        doPost("save", {
+                          id: editId,
+                          content,
+                          name: editName,
+                          target: editTarget,
+                        }),
+                    },
+                    t("btn.saveRule"),
+                  ),
+                  noticeNode(notice),
+                ),
+              ]
+            : h("div", { className: "dshpp-editor-empty" }, t("rules.pick")),
         ),
       ),
     ),

@@ -144,8 +144,22 @@ if (LEGACY[op]) {
     if (sub === "on" || sub === "off") {
       const next = writeTuning({ refusalRetry: sub === "on" });
       result = { ok: true, refusalRetry: next.refusalRetry, restart_required: false, effective: "next-turn" };
+    } else if (sub === "decompose") {
+      const mode = (argument2 || "status").toLowerCase();
+      if (mode === "on" || mode === "off") {
+        const next = writeTuning({ refusalDecompose: mode === "on" });
+        result = { ok: true, refusalDecompose: next.refusalDecompose, restart_required: false, effective: "next-turn" };
+      } else {
+        result = { ok: true, refusalDecompose: readTuning(home).refusalDecompose !== false, hint: "purge-community retry decompose on|off" };
+      }
     } else {
-      result = { ok: true, refusalRetry: readTuning(home).refusalRetry === true, hint: "purge-community retry on|off" };
+      const tuning = readTuning(home);
+      result = {
+        ok: true,
+        refusalRetry: tuning.refusalRetry === true,
+        refusalDecompose: tuning.refusalDecompose !== false,
+        hint: "purge-community retry on|off | retry decompose on|off",
+      };
     }
   } else if (op === "rewind") {
     const sub = (argument || "status").toLowerCase();

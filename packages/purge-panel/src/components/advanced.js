@@ -2,7 +2,7 @@
 import { h, useState, useEffect } from "../shared/react.js";
 import { useT } from "../shared/locale.js";
 import { apiJson } from "../api/client.js";
-import { noticeNode, Switch } from "./primitives.js";
+import { noticeNode } from "./primitives.js";
 
 export function HooksDenySection({ onSaved }) {
   const t = useT();
@@ -48,31 +48,35 @@ export function HooksDenySection({ onSaved }) {
   if (!cfg) return null;
   return h(
     "div",
-    { className: "dshpp-cr" },
+    { className: "dshpp-cr", style: { marginTop: 12 } },
     h(
       "div",
-      { className: "dpg-field" },
-      h(
-        "div",
-        { className: "dpg-switch-row" },
-        h(
-          "div",
-          { className: "dpg-field-text" },
-          h(
-            "span",
-            { className: "dpg-field-label" },
-            t("hooksDeny.title") + "：" + t("hooksDeny.bypass"),
-          ),
-          h("p", { className: "dpg-field-hint" }, t("hooksDeny.hint")),
-        ),
-        h(Switch, {
-          checked: cfg.hooksDenyBypass === true,
-          label: t("hooksDeny.bypass"),
-          disabled: busy,
-          onChange: (next) => save(next),
-        }),
-      ),
+      { className: "dshpp-sub" },
+      h("h4", null, t("hooksDeny.title")),
       noticeNode(notice),
+    ),
+    h(
+      "p",
+      {
+        className: "dshpp-hint",
+        style: { margin: "0 0 4px", color: "var(--dshpp-mute)", fontSize: 12 },
+      },
+      t("hooksDeny.hint"),
+    ),
+    h(
+      "div",
+      { className: "dshpp-cr-row" },
+      h(
+        "label",
+        null,
+        h("input", {
+          type: "checkbox",
+          checked: cfg.hooksDenyBypass === true,
+          disabled: busy,
+          onChange: (e) => save(e.target.checked),
+        }),
+        t("hooksDeny.bypass"),
+      ),
     ),
   );
 }

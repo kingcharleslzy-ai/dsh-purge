@@ -9,7 +9,7 @@ import {
   useCallback,
   useRef,
 } from "../shared/react.js";
-import { compatibilityLevelText, useT } from "../shared/locale.js";
+import { useT } from "../shared/locale.js";
 import {
   clientGuessSurface,
   hostSurfaceOf,
@@ -28,7 +28,6 @@ import {
 } from "./patch-status.js";
 import { noticeNode, Btn } from "./primitives.js";
 import { HooksDenySection } from "./advanced.js";
-import { RewindSetting } from "./rewind-setting.js";
 import { RestartAsk, restartDsh, detectHostTheme } from "./restart.js";
 import {
   listedCeiling,
@@ -38,8 +37,6 @@ import {
 } from "../shared/versions.js";
 
 export function PurgifySection({ page = "status", onStatus } = {}) {
-  // `all` is the plugin detail page: one instance, every group on one page.
-  const all = page === "all";
   const t = useT();
   const tRef = useRef(t);
   tRef.current = t;
@@ -773,37 +770,33 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
           : null,
       ),
       h(
-        "span",
-        { className: "dpg-select" },
-        h(
-          "select",
-          {
-            className: "dshpp-field dshpp-ver",
-            value: list.length ? (hit && hit.ref) || "" : "",
-            disabled: updateBusy || !list.length,
-            onChange: (e) =>
-              setPick((prev) =>
-                Object.assign({}, prev, { [id]: e.target.value }),
-              ),
-            "aria-label": t("update.pick"),
-          },
-          list.length
-            ? list.map((item) =>
-                h(
-                  "option",
-                  {
-                    key: item.ref + (item.sha || ""),
-                    value: item.ref,
-                  },
-                  versionChoiceLabel(item, t),
-                ),
-              )
-            : h(
+        "select",
+        {
+          className: "dshpp-field dshpp-ver",
+          value: list.length ? (hit && hit.ref) || "" : "",
+          disabled: updateBusy || !list.length,
+          onChange: (e) =>
+            setPick((prev) =>
+              Object.assign({}, prev, { [id]: e.target.value }),
+            ),
+          "aria-label": t("update.pick"),
+        },
+        list.length
+          ? list.map((item) =>
+              h(
                 "option",
-                { value: "" },
-                noBeta ? t("update.noBeta") : t("update.pick"),
+                {
+                  key: item.ref + (item.sha || ""),
+                  value: item.ref,
+                },
+                versionChoiceLabel(item, t),
               ),
-        ),
+            )
+          : h(
+              "option",
+              { value: "" },
+              noBeta ? t("update.noBeta") : t("update.pick"),
+            ),
       ),
       h(
         Btn,
@@ -822,118 +815,92 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
     { className: "dshpp-panel", "aria-label": t("purge.title") },
     h(
       "div",
-      { hidden: !all && page !== "status" },
+      { hidden: page !== "status" },
       h(
         "div",
         { className: "dshpp-hero" },
-        all
-          ? null
-          : h(
-              "div",
-              { className: "dshpp-hero-state" },
-              h("i", {
-                className:
-                  "dshpp-dot " +
-                  (!located
-                    ? "is-warn"
-                    : patchBusy
-                      ? ""
-                      : s?.asar_still_sealed || tally.pending
-                        ? "is-warn"
-                        : "is-ok"),
-              }),
-              h(
-                "b",
-                null,
-                !s
-                  ? "正在读取宿主状态…"
-                  : s.ok === false
-                    ? "状态读取失败，宿主与补丁状态未知"
-                    : !located
-                      ? sealedReady
-                        ? "宿主还没解开：点「应用」"
-                        : "未定位到宿主：点「应用」重试"
-                      : s?.asar_still_sealed
-                        ? `${applied}/${total} 条磁盘补丁（退出重开后加载）`
-                        : tally.pending
-                          ? `还有 ${tally.pending} 条待应用`
-                          : `${applied}/${total} 条补丁已生效`,
-              ),
-              h(
-                "span",
-                { className: "dshpp-hero-sub" },
-                t("surface." + hostSurface),
-              ),
-            ),
         h(
           "div",
-          { className: "dpg-field" },
+          { className: "dshpp-hero-state" },
+          h("i", {
+            className:
+              "dshpp-dot " +
+              (!located
+                ? "is-warn"
+                : patchBusy
+                  ? ""
+                  : s?.asar_still_sealed || tally.pending
+                    ? "is-warn"
+                    : "is-ok"),
+          }),
           h(
-            "div",
-            { className: "dpg-field-text" },
-            h("span", { className: "dpg-field-label" }, t("field.apply")),
-            h("p", { className: "dpg-field-hint" }, t("apply.hint")),
+            "b",
+            null,
+            !s
+              ? "正在读取宿主状态…"
+              : s.ok === false
+                ? "状态读取失败，宿主与补丁状态未知"
+                : !located
+                  ? sealedReady
+                    ? "宿主还没解开：点「应用」"
+                    : "未定位到宿主：点「应用」重试"
+                  : s?.asar_still_sealed
+                    ? `${applied}/${total} 条磁盘补丁（退出重开后加载）`
+                    : tally.pending
+                      ? `还有 ${tally.pending} 条待应用`
+                      : `${applied}/${total} 条补丁已生效`,
           ),
           h(
-            "div",
-            { className: "dpg-field-control" },
-            h(
-              "div",
-              { className: "dpg-actions" },
-              h(
-                Btn,
-                {
-                  kind: "primary",
-                  className: "dshpp-btn-lead",
-                  disabled: patchBusy || uninstallBusy || !overrideLoaded,
-                  onClick: () => doAction("apply", "action.apply"),
-                },
-                patchBusy ? t("btn.apply.busy") : t("btn.apply"),
-              ),
-              h(
-                Btn,
-                {
-                  kind: "danger",
-                  disabled: patchBusy || uninstallBusy,
-                  onClick: () => doAction("revert", "action.revert"),
-                },
-                t("btn.revert"),
-              ),
-              h(
-                Btn,
-                {
-                  kind: "solid-danger",
-                  disabled: patchBusy || uninstallBusy,
-                  onClick: () => setAskUninstall(true),
-                },
-                uninstallBusy ? t("btn.uninstall.busy") : t("btn.uninstall"),
-              ),
-              h(
-                Btn,
-                {
-                  tiny: true,
-                  onClick: loadAll,
-                  disabled: patchBusy || uninstallBusy,
-                },
-                "刷新",
-              ),
-            ),
-          ),
-          h(
-            "p",
-            { className: "dpg-status-line" },
-            h("i", {
-              className:
-                "dpg-status-dot" +
-                (patchBusy ? "" : tally.pending ? " is-warn" : " is-ok"),
-            }),
-            applied + "/" + total,
-            " 条磁盘补丁",
-            tally.pending ? "（" + tally.pending + " 条待应用）" : "已生效",
-            " · ",
+            "span",
+            { className: "dshpp-hero-sub" },
             t("surface." + hostSurface),
           ),
-          h("p", { className: "dpg-field-hint" }, t("apply.restartHint")),
+        ),
+        h(
+          "div",
+          { className: "dshpp-hero-actions" },
+          h(
+            Btn,
+            {
+              kind: "primary",
+              className: "dshpp-btn-lead",
+              disabled: patchBusy || uninstallBusy || !overrideLoaded,
+              onClick: () => doAction("apply", "action.apply"),
+            },
+            patchBusy ? t("btn.apply.busy") : t("btn.apply"),
+          ),
+          h(
+            Btn,
+            {
+              kind: "danger",
+              disabled: patchBusy || uninstallBusy,
+              onClick: () => doAction("revert", "action.revert"),
+            },
+            t("btn.revert"),
+          ),
+          h(
+            Btn,
+            {
+              kind: "solid-danger",
+              disabled: patchBusy || uninstallBusy,
+              onClick: () => setAskUninstall(true),
+            },
+            uninstallBusy ? t("btn.uninstall.busy") : t("btn.uninstall"),
+          ),
+          h(
+            Btn,
+            {
+              tiny: true,
+              onClick: loadAll,
+              disabled: patchBusy || uninstallBusy,
+            },
+            "刷新",
+          ),
+        ),
+        h(
+          "p",
+          { className: "dshpp-hero-hint" },
+          "装好插件、更新过 DSH、或发现模型又开始推脱时：点一次「应用」，然后退出并重开 DSH，就会恢复。",
         ),
         noticeNode(notice),
       ),
@@ -942,34 +909,14 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
         { className: "dshpp-rel" },
         h(
           "div",
-          { className: "dpg-statusline" },
+          { className: "dshpp-now" },
+          h("span", { className: "dshpp-now-label" }, t("channel.local")),
           h(
-            "span",
-            null,
-            h("b", null, "DSH "),
-            (s && s.compatibility && s.compatibility.host_version) || "—",
-          ),
-          h(
-            "span",
-            null,
-            h("b", null, t("strip.compat") + " "),
-            s && s.compatibility && s.compatibility.level
-              ? compatibilityLevelText(t, s.compatibility.level)
-              : t("panel.na"),
-          ),
-          h(
-            "span",
-            null,
-            h("b", null, t("strip.disk") + " "),
-            applied + "/" + total,
-            s && s.patches_na ? " · " + t("strip.na", { n: s.patches_na }) : "",
-          ),
-          h(
-            "span",
-            null,
-            h("b", null, t("strip.plugin") + " "),
+            "b",
+            { className: "dshpp-now-ver" },
             localVer ? "v" + localVer : "—",
           ),
+          h("em", { className: "dshpp-now-mark" }, t("update.current")),
         ),
         h(
           "details",
@@ -1006,7 +953,6 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
         null,
         h("summary", null, "高级选项"),
         h(HooksDenySection, { onSaved: loadAll }),
-        h(RewindSetting, null),
       ),
       askUninstall
         ? h(
@@ -1050,6 +996,18 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
             ),
           )
         : null,
+      h(
+        "p",
+        {
+          className: "dshpp-hint",
+          style: {
+            margin: "8px 0 0",
+            color: "var(--dshpp-mute)",
+            fontSize: 12,
+          },
+        },
+        t("apply.hint"),
+      ),
       s?.ok === true && !s.ai_base
         ? h(
             "p",
@@ -1096,105 +1054,110 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
     ),
     h(
       "div",
-      { hidden: !all && page !== "prompt" },
+      { hidden: page !== "prompt" },
       h(
         "div",
-        { className: "dpg-field" },
+        { className: "dshpp-sub" },
+        h("h4", null, t("override.title")),
         h(
           "div",
-          { className: "dpg-field-text" },
-          h("span", { className: "dpg-field-label" }, t("override.title")),
-          h("p", { className: "dpg-field-hint" }, t("override.hint")),
-        ),
-        h(
-          "div",
-          { className: "dpg-field-control" },
-          h("textarea", {
-            className: "dshpp-area",
-            ref: promptAreaRef,
-            "aria-label": "提示词内容",
-            disabled: !overrideLoaded,
-            value: override,
-            onChange: (e) => {
-              overrideRef.current = e.target.value;
-              setOverride(e.target.value);
-            },
-            spellCheck: false,
-            placeholder: "",
-          }),
-          promptBoxEmpty(override)
-            ? h("p", { className: "dpg-field-error" }, t("need.prompt"))
-            : null,
+          { className: "dshpp-row", style: { margin: 0 } },
           h(
-            "div",
-            { className: "dpg-actions" },
-            h(
-              Btn,
-              {
-                kind: "primary",
-                tiny: true,
-                disabled: patchBusy || !overrideLoaded,
-                onClick: saveOverride,
-              },
-              t("btn.saveInject"),
-            ),
-            h(
-              Btn,
-              {
-                tiny: true,
-                disabled: patchBusy || !overrideLoaded || !defaultOverride,
-                onClick: restoreOverride,
-              },
-              t("btn.restoreInject"),
-            ),
+            Btn,
+            {
+              kind: "primary",
+              tiny: true,
+              disabled: patchBusy || !overrideLoaded,
+              onClick: saveOverride,
+            },
+            t("btn.saveInject"),
+          ),
+          h(
+            Btn,
+            {
+              tiny: true,
+              disabled: patchBusy || !overrideLoaded || !defaultOverride,
+              onClick: restoreOverride,
+            },
+            t("btn.restoreInject"),
           ),
         ),
       ),
+      h("textarea", {
+        className: "dshpp-area",
+        ref: promptAreaRef,
+        "aria-label": "提示词内容",
+        disabled: !overrideLoaded,
+        value: override,
+        onChange: (e) => {
+          overrideRef.current = e.target.value;
+          setOverride(e.target.value);
+        },
+        spellCheck: false,
+        placeholder: "",
+      }),
       noticeNode(notice),
+      promptBoxEmpty(override)
+        ? h(
+            "p",
+            {
+              className: "dshpp-hint",
+              style: {
+                margin: "8px 0 0",
+                color: "var(--dshpp-danger, #c44)",
+                fontSize: 12,
+              },
+            },
+            t("need.prompt"),
+          )
+        : null,
     ),
     h(
       "div",
-      { hidden: !all && page !== "more" },
+      { hidden: page !== "more" },
       h(
         "div",
-        { className: "dpg-field" },
+        { className: "dshpp-sub" },
+        h("h4", null, t("own.title")),
         h(
           "div",
-          { className: "dpg-field-text" },
-          h("span", { className: "dpg-field-label" }, t("own.title")),
-          h("p", { className: "dpg-field-hint" }, t("own.hint")),
-        ),
-        h(
-          "div",
-          { className: "dpg-field-control" },
-          h("textarea", {
-            className: "dshpp-area",
-            "aria-label": "服务器名单",
-            disabled: !ownLoaded,
-            value: ownServers,
-            onChange: (e) => {
-              ownRef.current = e.target.value;
-              setOwnServers(e.target.value);
-            },
-            spellCheck: false,
-            rows: 4,
-            style: { minHeight: 96 },
-          }),
+          { className: "dshpp-row", style: { margin: 0 } },
           h(
-            "div",
-            { className: "dpg-actions" },
-            h(
-              Btn,
-              {
-                kind: "primary",
-                tiny: true,
-                disabled: !ownLoaded || ownBusy,
-                onClick: saveOwnServers,
-              },
-              t("own.save"),
-            ),
+            Btn,
+            {
+              kind: "primary",
+              tiny: true,
+              disabled: !ownLoaded || ownBusy,
+              onClick: saveOwnServers,
+            },
+            t("own.save"),
           ),
         ),
+      ),
+      h("textarea", {
+        className: "dshpp-area",
+        "aria-label": "服务器名单",
+        disabled: !ownLoaded,
+        value: ownServers,
+        onChange: (e) => {
+          ownRef.current = e.target.value;
+          setOwnServers(e.target.value);
+        },
+        spellCheck: false,
+        rows: 4,
+        style: { minHeight: 96 },
+      }),
+      h(
+        "p",
+        {
+          className: "dshpp-hint",
+          style: {
+            margin: "8px 0 0",
+            color: "var(--dshpp-mute)",
+            fontSize: 12,
+          },
+        },
+        t("own.hint"),
       ),
       noticeNode(notice),
     ),

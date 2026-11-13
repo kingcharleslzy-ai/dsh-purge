@@ -184,20 +184,13 @@ const ctx = {
   },
 };
 plugin.apply(ctx);
-// The gate must still be the first stylesheet apply installs, before any overlay
-// renders. The detail page's own sheet is installed right after it, once for the
-// whole plugin (it used to be rendered inside each page component).
-assert(
-  headStyles.length >= 1,
+assert.equal(
+  headStyles.length,
+  1,
   "Legacy visibility must install before any overlay is rendered",
 );
 assert(
   headStyles[0].textContent.includes(".dshp-dock{display:none!important}"),
-  "legacy visibility gate is the first stylesheet",
-);
-assert(
-  headStyles.some((el) => el.textContent.includes(".dpg-card")),
-  "detail page stylesheet is installed once at apply",
 );
 if (process.env.PANEL_CLIENT) {
   assert.equal(plugin.name, "dsh-purge-community");
@@ -208,19 +201,13 @@ if (process.env.PANEL_CLIENT) {
   assert.equal(rewindSeat.spec.id, "dsh-purge-rewind");
   assert.equal(rewindSeat.spec.order, 20);
 }
-assert(
-  !seats.some((x) => x.spec.name === "sidebar.panellist"),
-  "the left rail entry is gone: the plugin detail page is the single entry",
-);
-assert(
-  !seats.some((x) => x.spec.name === "main"),
-  "the standalone page is gone: the plugin detail page is the single entry",
-);
-assert.equal(
-  seats.find((x) => x.spec.name === "plugins.bundle.config"),
-  undefined,
-  "the plugin page has no configuration slot",
-);
+const railSeat = seats.find((x) => x.spec.name === "sidebar.panellist");
+assert(railSeat, "left rail entry is registered");
+assert.equal(railSeat.spec.id, "dsh-purge");
+const pageSeat = seats.find((x) => x.spec.name === "main");
+assert(pageSeat, "full page is registered on the main slot");
+assert.equal(pageSeat.spec.key, "dsh-purge");
+const body = pageSeat.body;
 
 responses["/dsh-purge/community"] = {
   version: "1.2.0",
@@ -239,102 +226,62 @@ responses["/dsh-purge/community"] = {
 };
 win.confirm = () => true;
 (async () => {
-  // The plugin page: a status area and one business component, nothing else.
-  let page;
+  let tree;
   await act(async () => {
-    page = create(
-      React.createElement(
-        seats.find((s) => s.spec.name === "plugins.detail.section").body,
-        {
-          t: ctx.locale.bind(),
-          subject: { kind: "bundle", pkg: { name: "dsh-purge-community" } },
-        },
-      ),
-    );
+    tree = create(React.createElement(body, { t: ctx.locale.bind() }));
     await new Promise((r) => setTimeout(r, 15));
   });
-  const byClass = (node, name) =>
-    node.findAll(
-      (x) =>
-        typeof x.props.className === "string" &&
-        x.props.className.split(/\s+/).includes(name),
-    );
-  assert.equal(
-    byClass(page.root, "dpg-card").length,
-    1,
-    "the plugin page carries the status area only",
-  );
-  assert.equal(
-    byClass(page.root, "dpg-facts").length,
-    1,
-    "the status area renders its facts",
-  );
-  assert.equal(
-    byClass(page.root, "dpg-tab").length,
-    0,
-    "the plugin page carries no business area",
-  );
+  const root = tree.root,
+    button = (text) =>
+      root.findAllByType("button").find((x) => x.children.join("") === text);
   assert(
-    JSON.stringify(page.toJSON()).includes("0.2.1-rc.1"),
-    "the status area reports the host version from the backend",
+    root.findAllByType("h1").some((x) => x.children.join("") === "Purge"),
+    "page title renders",
   );
-  const button = (text) =>
-    page.root.findAllByType("button").find((x) => x.children.join("") === text);
-  assert(button("刷新"), "the status area carries its action");
-  await act(async () => page.unmount());
-  // Everything else — business and configuration — is on the row page.
-  await act(async () => {
-    page = create(
-      React.createElement(
-        seats.find((s) => s.spec.name === "plugins.row.config").body,
-        { t: ctx.locale.bind(), view: "page" },
-      ),
-    );
-    await new Promise((r) => setTimeout(r, 15));
-  });
-  assert.equal(
-    byClass(page.root, "dpg-tab").length,
-    4,
-    "the business component switches views",
-  );
-  await act(async () => {
-    page.root.findByProps({ "data-view": "maintenance" }).props.onClick();
-    await new Promise((r) => setTimeout(r, 15));
-  });
-  assert(page.root.findAllByProps({ "aria-label": "社区版维护" }).length);
-  const snapshot = JSON.stringify(page.toJSON());
-  assert(snapshot.includes("破甲自检"), "self-check block renders");
+  assert(root.findAllByProps({ "aria-label": "社区版维护" }).length);
   assert(
-    snapshot.includes("破甲强化段"),
+    JSON.stringify(tree.toJSON()).includes("0.2.1-rc.1"),
+    "the status strip reports the host version from the backend",
+  );
+  assert(button("刷新"), "original status page renders in the community build");
+  assert(
+    JSON.stringify(tree.toJSON()).includes("Hooks 拦截"),
+    "original hooks deny section renders in the community build",
+  );
+  const selfcheckTree = JSON.stringify(tree.toJSON());
+  assert(selfcheckTree.includes("破甲自检"), "self-check block renders");
+  assert(
+    selfcheckTree.includes("破甲强化段"),
     "boost toggle renders next to the self-check",
   );
   assert(
-    snapshot.includes("沙箱 confine 直通") &&
-      snapshot.includes("文件系统围栏禁用"),
+    selfcheckTree.includes("沙箱 confine 直通") &&
+      selfcheckTree.includes("文件系统围栏禁用"),
     "self-check renders every layer reported by /dsh-purge/selfcheck",
   );
   assert(
-    snapshot.includes("#16") ||
-      snapshot.includes("1 层未生效") ||
-      snapshot.includes("有 1 层未生效"),
+    selfcheckTree.includes("#16") ||
+      selfcheckTree.includes("1 层未生效") ||
+      selfcheckTree.includes("有 1 层未生效"),
     "self-check surfaces the failing layer",
   );
-  // The rules view reads its state with a POST `{op:"status"}`; that is a read,
-  // not a write, so the ledger counts mutations only.
-  const mutations = () =>
-    writes.filter((w) => !(w.body && w.body.op === "status"));
-  assert.deepEqual(mutations(), [], "opening never writes configuration");
-  writes.length = 0;
+  assert.equal(writes.length, 0, "opening never writes configuration");
+  for (const label of ["应用", "还原", "卸载"])
+    assert.equal(
+      button(label).props.disabled,
+      false,
+      "community build keeps " + label + " usable",
+    );
   await act(async () => {
     button("立即备份").props.onClick();
     await new Promise((r) => setTimeout(r, 15));
   });
   assert.deepEqual(
-    mutations().map((x) => x.body.op),
+    writes.map((x) => x.body.op),
     ["backup"],
   );
   await act(async () => {
-    page.root
+    root
       .findByProps({ "aria-label": "选择回滚备份" })
       .props.onChange({ target: { value: "backup-fixture" } });
   });
@@ -342,37 +289,13 @@ win.confirm = () => true;
     button("回滚插件").props.onClick();
     await new Promise((r) => setTimeout(r, 15));
   });
-  assert.equal(mutations()[1].body.id, "backup-fixture");
-  assert.equal(mutations()[1].body.op, "rollback");
+  assert.equal(writes[1].body.id, "backup-fixture");
+  assert.equal(writes[1].body.op, "rollback");
   assert(
-    !mutations().some((x) => /apply|restart|revert/.test(x.path)),
+    !writes.some((x) => /apply|restart|revert/.test(x.path)),
     "maintenance never applies host patches or restarts DSH",
   );
-  await act(async () => page.unmount());
-  // The row page: the configuration area, with the upstream actions intact.
-  let row;
-  await act(async () => {
-    row = create(
-      React.createElement(
-        seats.find((s) => s.spec.name === "plugins.row.config").body,
-        { t: ctx.locale.bind(), view: "page" },
-      ),
-    );
-    await new Promise((r) => setTimeout(r, 15));
-  });
-  const rowButton = (text) =>
-    row.root.findAllByType("button").find((x) => x.children.join("") === text);
-  assert(
-    JSON.stringify(row.toJSON()).includes("Hooks 拦截"),
-    "original hooks deny section renders in the community build",
-  );
-  for (const label of ["应用", "还原", "卸载"])
-    assert.equal(
-      rowButton(label).props.disabled,
-      false,
-      "community build keeps " + label + " usable",
-    );
-  await act(async () => row.unmount());
+  await act(async () => tree.unmount());
   for (const life of lifecycle.reverse())
     if (typeof life.dispose === "function") life.dispose();
   console.log(

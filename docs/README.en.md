@@ -8,7 +8,7 @@ A self-hosted add-on for DeepSeek Harness (known in the community as a 破甲 / 
 
 [![Release](https://img.shields.io/github/v/release/kingcharleslzy-ai/dsh-purge?label=release)](https://github.com/kingcharleslzy-ai/dsh-purge/releases)
 
-Current version 1.6.102 · targets **DSH Desktop 0.2.2-rc.3** (0.2.2-rc.1 / 0.2.1-rc.1 / rc.2 / rc.3 / rc.5 also pass)
+Current version 1.7.13 · targets **DSH Desktop 0.2.2-rc.3** (0.2.2-rc.1 / 0.2.1-rc.1 / rc.2 / rc.3 / rc.5 also pass)
 
 **Original project and author:** independently maintained from [dsh-purge by 小杨 / YuJunZhiXue](https://github.com/YuJunZhiXue/dsh-purge). The original repository is available again. Original attribution, copyright and the MIT license are retained; this community distribution is not an official upstream release.
 
@@ -55,7 +55,7 @@ Local learning, personal projects, automation experiments and maintenance work. 
 - CLI/Web users who already have `dsh` on PATH and use the `web` profile can use the official command below. Desktop users should not download another npx host to install into their existing desktop profile.
 
 ```sh
-dsh plugin --profile web add "https://github.com/kingcharleslzy-ai/dsh-purge/releases/download/v1.6.102/dsh-purge-community-1.6.102.tgz"
+dsh plugin --profile web add "https://github.com/kingcharleslzy-ai/dsh-purge/releases/download/v1.7.13/dsh-purge-community-1.7.13.tgz"
 ```
 
 Use the actual instance's profile and `DSH_HOME`. This project distributes via GitHub; do not substitute bare npm package names. The official command does not run our extra Release SHA256 check, migration snapshot or rollback wrapper.
@@ -76,7 +76,7 @@ A full page in the left sidebar: one line of state at the top, "Apply" as the pr
 
 ## Updates
 
-1.6.102 hides the composer rewind button by default with a session-appearance switch and aligns the settings page with DSH on desktop and mobile. See the [release notes](https://github.com/kingcharleslzy-ai/dsh-purge/releases/tag/v1.6.102).
+1.7.13 fixes oversized, timed-out and stale-cache update diagnostics, separates a reported release tag from a verified installable update, and caps a single release summary at 8 KiB. See the [release notes](https://github.com/kingcharleslzy-ai/dsh-purge/releases/tag/v1.7.13).
 
 Two separate preferences (check / install), default check-only every six hours. Installing never restarts the app — you decide when to reopen it.
 
@@ -84,7 +84,7 @@ Two separate preferences (check / install), default check-only every six hours. 
 
 On DSH 0.2.2-rc.2 the 86 patches apply as 74 applied / 0 drift and selfcheck is ok on macOS; bypass gates and the minified rewind anchors were verified there. Windows coverage for this host build is limited to preset cards and startup diagnostics.
 
-Plugin `dsh-purge-community` 1.6.102 · verified on DSH Desktop 0.2.2-rc.3 / 0.2.2-rc.2 / 0.2.2-rc.1 / 0.2.1-rc.1 / rc.2 / rc.3 / rc.5 · Node ≥ 18.
+Plugin `dsh-purge-community` 1.7.13 · verified on DSH Desktop 0.2.2-rc.3 / 0.2.2-rc.2 / 0.2.2-rc.1 / 0.2.1-rc.1 / rc.2 / rc.3 / rc.5 · Node ≥ 18.
 
 ## Troubleshooting
 
@@ -93,6 +93,8 @@ purge-community selfcheck --json
 purge-community diagnose
 purge-community audit --limit 20
 ```
+
+New releases use patch numbers 0–99 without leading zeros. Existing releases keep their original numbers. See the [release numbering policy](MAINTENANCE.md#发行版本号).
 
 If the panel does not open, confirm both sides run the same version, then follow [MAINTENANCE.md](MAINTENANCE.md); do not overwrite `Resources/app` directly.
 

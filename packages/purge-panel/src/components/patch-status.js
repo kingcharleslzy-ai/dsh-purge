@@ -133,44 +133,26 @@ export function PatchGroups({ state }) {
       notes.push(t("metric.disabledShort", { n: tally.disabled }));
     if (tally.skipped) notes.push(t("metric.skipShort", { n: tally.skipped }));
     const expanded = !!open[key];
-    const metric =
-      tally.applied +
-      "/" +
-      tally.total +
-      (notes.length ? " · " + notes.join(" · ") : "");
     return h(
       "div",
-      { key: key, className: "dpg-patch-group" },
+      { key: key, className: "dshpp-group" },
       h(
         "button",
         {
           type: "button",
-          className: "dpg-row-toggle",
+          className: "dshpp-group-h",
           "aria-expanded": expanded ? "true" : "false",
           onClick: () =>
             setOpen((prev) => Object.assign({}, prev, { [key]: !prev[key] })),
         },
-        h(
-          "svg",
-          {
-            className: "dpg-chevron" + (expanded ? " is-open" : ""),
-            width: 12,
-            height: 12,
-            viewBox: "0 0 16 16",
-            fill: "none",
-            strokeWidth: 1,
-            "aria-hidden": true,
-          },
-          h("path", {
-            d: "M4 6L7.29289 9.29289C7.68342 9.68342 8.31658 9.68342 8.70711 9.29289L12 6",
-            stroke: "currentColor",
-          }),
-        ),
+        h("strong", null, t("group." + key)),
         h(
           "span",
-          { className: "dpg-field-text" },
-          h("span", { className: "dpg-field-label" }, t("group." + key)),
-          h("span", { className: "dpg-field-hint" }, metric),
+          { className: "dshpp-count" },
+          tally.applied +
+            "/" +
+            tally.total +
+            (notes.length ? " · " + notes.join(" · ") : ""),
         ),
       ),
       expanded

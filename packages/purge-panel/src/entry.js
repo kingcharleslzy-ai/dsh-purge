@@ -1,11 +1,10 @@
 // UI derived from YuJunZhiXue/dsh-purge 1.1.71 (MIT). See LICENSE.
 import { h, react } from "./shared/react.js";
-import { DETAIL_CARD_CSS, NATIVE_CSS, PURGE_CSS } from "./styles/index.js";
+import { PURGE_CSS } from "./styles/index.js";
 import { useDock, startGrantSync } from "./state/dock.js";
 import { AuthGate } from "./components/auth.js";
 import { NS, setTranslate, zh, en } from "./shared/locale.js";
-import { StatusSection, RowConfig } from "./components/detail-page.js";
-import { PatchBadge, BUNDLE_NAME, ROW_ID } from "./components/detail-info.js";
+import { PurgePage, PurgeGlyph } from "./components/page.js";
 import { bindSessionContext } from "./state/session-context.js";
 import { bindPresetMenu } from "./state/preset-menu.js";
 import { installLegacyVisibility } from "./state/legacy-visibility.js";
@@ -35,6 +34,16 @@ export function PurgeIcon({ size = 20 } = {}) {
   );
 }
 
+function PurgeGlyphIcon({ size = 16 } = {}) {
+  return h(PurgeGlyph, { size });
+}
+
+// The host also renders the row contribution as a compact list item.
+function DetailSettings({ view } = {}) {
+  if (view === "summary") return h("span", null, "Purge · " + __PANEL_VERSION__);
+  return h("div", { className: "dshpp-detail-settings" }, h(PurgePage));
+}
+
 export function PanelOverlays() {
   const st = useDock();
   return h(
@@ -55,21 +64,6 @@ export function PanelOverlays() {
 
 export function apply(ctx) {
   ctx.effect(() => installLegacyVisibility(), "panel legacy visibility");
-  // One stylesheet for every surface this plugin paints (panel, detail page,
-  // config page). Installing it with the fiber keeps it out of the render tree:
-  // two pages open at once still share one <style>, the way the host packages and
-  // dsh-ops do it. Registered after the legacy visibility gate so that gate keeps
-  // being the first effect this plugin installs.
-  ctx.effect(() => {
-    // Host-side harnesses apply this module without a DOM; styling is a browser
-    // concern and must not make those runs fail.
-    if (typeof document === "undefined" || !document.head) return () => {};
-    const el = document.createElement("style");
-    el.setAttribute("data-dsh-purge-styles", "1");
-    el.textContent = PURGE_CSS + "\n" + NATIVE_CSS + "\n" + DETAIL_CARD_CSS;
-    document.head.append(el);
-    return () => el.remove();
-  }, "dsh-purge styles");
   ctx.inject(["sessions", "uiWorkspace"], (host) => {
     host.effect(() => bindSessionContext(host), "panel session context");
   });
@@ -97,39 +91,47 @@ export function apply(ctx) {
       PanelOverlays,
     ),
   );
-  // 状态区走 detail.section（与 dsh-ops 同一处），bundle 页不再有配置面。
-  ctx.slots.inject("plugins.detail.section", () =>
+  // 左侧栏入口：图标 + 整页。右侧抽屉不再注册，避免两处重复。
+  ctx.slots.inject("sidebar.panellist", () =>
     ctx.slots.register(
       {
-        name: "plugins.detail.section",
-        id: "dsh-purge-status",
-        order: 50,
+        name: "sidebar.panellist",
+        id: "dsh-purge",
+        order: 30,
+        label: "Purge",
         inject: () => ({ t }),
       },
-      StatusSection,
+      PurgeGlyphIcon,
     ),
   );
-  // 行页：summary 一行摘要，page = 状态 + 业务 + 配置（宿主按我们的行 id 派发）。
+  ctx.slots.inject("main", () =>
+    ctx.slots.register(
+      {
+        name: "main",
+        key: "dsh-purge",
+        inject: () => ({ t }),
+      },
+      PurgePage,
+    ),
+  );
+  ctx.slots.inject("plugins.bundle.config", () =>
+    ctx.slots.register(
+      {
+        name: "plugins.bundle.config",
+        key: __COMMUNITY__ ? "dsh-purge-community" : "dsh-purge-panel",
+        inject: () => ({ t }),
+      },
+      DetailSettings,
+    ),
+  );
   ctx.slots.inject("plugins.row.config", () =>
     ctx.slots.register(
       {
         name: "plugins.row.config",
-        key: BUNDLE_NAME + "#" + ROW_ID,
+        key: name + "#" + (__COMMUNITY__ ? "dsh-purge" : "dsh-purge-panel"),
         inject: () => ({ t }),
       },
-      RowConfig,
-    ),
-  );
-  // 标题旁补丁计数；detail.* 会广播到每个插件页，组件自己过滤。
-  ctx.slots.inject("plugins.detail.badge", () =>
-    ctx.slots.register(
-      {
-        name: "plugins.detail.badge",
-        id: "dsh-purge-patches",
-        order: 10,
-        inject: () => ({ t }),
-      },
-      PatchBadge,
+      DetailSettings,
     ),
   );
 }

@@ -54,5 +54,20 @@
         capabilityProtocol: true
         hooksDenyBypass: true
 
-    # 演练台、预设、事实库与 HTTP 桥由 lib/index.js 在本 row 内组合：
-    # 插件页的「包含的组件」只应有这一个（dsh-ops 同款）。
+    # 演练台：预设 + 技能落地（本插件 lib/redteam）
+    - id: dsh-purge-redteam
+      name: dsh-purge-community/redteam
+
+    # 自带 agent 预设：unrestricted（无限制模式）
+    - id: dsh-purge-presets
+      name: dsh-purge-community/presets-plugin
+
+    # 演练台事实库（SQLite），数据在 $DSH_HOME/redteam
+    - id: dsh-purge-redteam-store
+      name: dsh-purge-community/redteam/store
+      config:
+        root: !!js dshHomePath('redteam')
+
+    # 演练台 HTTP 桥 POST /redteam/api
+    - id: dsh-purge-redteam-ui
+      name: dsh-purge-community/redteam/ui

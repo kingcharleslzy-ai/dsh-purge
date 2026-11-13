@@ -1,0 +1,701 @@
+/* 整页（左侧栏入口）样式：沿用 DSH 自己的字体、间距与主题变量，不引入自定义字体。 */
+.dshpp-page {
+  --dshpp-line: var(--dsw-alias-border-l1, rgba(127, 127, 127, 0.22));
+  --dshpp-line-strong: var(--dsw-alias-border-l2, rgba(127, 127, 127, 0.4));
+  --dshpp-fg: var(--dsw-alias-label-primary, currentColor);
+  --dshpp-mute: var(
+    --dsw-alias-label-secondary,
+    color-mix(in srgb, currentColor 62%, transparent)
+  );
+  --dshpp-bg: var(--dsw-alias-bg-layer-1, transparent);
+  --dshpp-bg-2: var(--dsw-alias-bg-layer-2, rgba(127, 127, 127, 0.06));
+  --dshpp-accent: var(--dsw-alias-brand-primary, #4d6bfe);
+  --dshpp-ok: var(--dsw-alias-state-success-primary, #1f9d55);
+  --dshpp-warn: var(--dsw-alias-state-warn-primary, #b7791f);
+  --dshpp-bad: var(--dsw-alias-state-error-primary, #d14343);
+  box-sizing: border-box;
+  container: purge-page / inline-size;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  padding: 20px clamp(12px, 3%, 32px) 32px;
+  color: var(--dshpp-fg);
+  font: inherit;
+  font-size: var(--dsh-content-font-size, 14px);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+.dshpp-page *,
+.dshpp-page *::before,
+.dshpp-page *::after {
+  box-sizing: border-box;
+}
+
+.dshpp-page-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.dshpp-page-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--dshpp-line);
+  background: var(--dshpp-bg-2);
+  color: var(--dshpp-accent);
+  flex: none;
+}
+.dshpp-page-title {
+  min-width: 0;
+}
+.dshpp-page-title h1 {
+  margin: 0;
+  font-size: 1.3em;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.dshpp-page-title p {
+  margin: 2px 0 0;
+  font-size: 0.86em;
+  color: var(--dshpp-mute);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.dshpp-page-ver {
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--dshpp-line);
+  font-size: 0.92em;
+}
+
+/* 顶部一行状态摘要：不用卡片，跟 DSH 的 subtitle 行一致 */
+.dshpp-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 0;
+  padding: 0 0 12px;
+  border-bottom: 1px solid var(--dshpp-line);
+  font-size: 0.86em;
+  color: var(--dshpp-mute);
+}
+.dshpp-strip-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.dshpp-strip-item b {
+  color: var(--dshpp-fg);
+  font-weight: 600;
+}
+.dshpp-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--dshpp-mute);
+  flex: none;
+}
+.dshpp-dot.is-ok {
+  background: var(--dshpp-ok);
+}
+.dshpp-dot.is-warn {
+  background: var(--dshpp-warn);
+}
+.dshpp-dot.is-bad {
+  background: var(--dshpp-bad);
+}
+
+/* 页签：下划线式，跟 DSH 设置页的 tab 一致 */
+.dshpp-page-tabs {
+  display: flex;
+  gap: 2px;
+  margin: 10px 0 0;
+  border-bottom: 1px solid var(--dshpp-line);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.dshpp-page-tabs::-webkit-scrollbar {
+  display: none;
+}
+.dshpp-page-tabs button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--dshpp-mute);
+  font: inherit;
+  font-size: 1em;
+  padding: 10px 12px;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.dshpp-page-tabs button:hover {
+  color: var(--dshpp-fg);
+}
+.dshpp-page-tabs button[aria-selected="true"] {
+  color: var(--dshpp-fg);
+  border-bottom-color: var(--dshpp-accent);
+  font-weight: 600;
+}
+
+.dshpp-page-body {
+  padding-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.dshpp-sec {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.dshpp-sec[hidden] {
+  display: none;
+}
+
+/* 卡片：DSH 的 layer-1 面板 */
+.dshpp-page .dshpp-card,
+.dshpp-page section.dshpp-panel {
+  border: 1px solid var(--dshpp-line);
+  border-radius: var(--dsw-radius-md, 10px);
+  background: var(--dshpp-bg);
+  padding: 16px 18px;
+  margin: 0;
+  min-width: 0;
+}
+.dshpp-page .dshpp-card > h3:first-child,
+.dshpp-page section.dshpp-panel > h3:first-child {
+  margin: 0 0 12px;
+  font-size: 1em;
+  font-weight: 600;
+}
+.dshpp-page .dshpp-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 字段行：左标题右控件；窄屏自动换行 */
+.dshpp-page .dshpp-field {
+  display: grid;
+  grid-template-columns: minmax(120px, 190px) 1fr;
+  gap: 8px 14px;
+  align-items: center;
+}
+.dshpp-page .dshpp-field > .dshpp-field-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.92em;
+  color: var(--dshpp-fg);
+}
+.dshpp-page .dshpp-field > .dshpp-field-body {
+  min-width: 0;
+}
+@container purge-page (max-width: 640px) {
+  .dshpp-page .dshpp-field {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dshpp-page .dshpp-muted,
+.dshpp-page .dshpp-hint {
+  color: var(--dshpp-mute) !important;
+  font-size: 0.86em !important;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.dshpp-page .dshpp-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+}
+.dshpp-page input,
+.dshpp-page select,
+.dshpp-page textarea {
+  font: inherit;
+  color: var(--dshpp-fg);
+  background: var(--dshpp-bg-2);
+  border: 1px solid var(--dshpp-line);
+  border-radius: 8px;
+  padding: 7px 10px;
+  max-width: 100%;
+}
+.dshpp-page input:focus-visible,
+.dshpp-page select:focus-visible,
+.dshpp-page textarea:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--dshpp-accent) 55%, transparent);
+  outline-offset: 1px;
+}
+.dshpp-page textarea {
+  width: 100%;
+  min-height: 320px;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.86em;
+  line-height: 1.6;
+}
+
+.dshpp-page .dshpp-btn {
+  font: inherit;
+  font-size: 0.9em;
+  border-radius: 8px;
+  padding: 6px 12px;
+  border: 1px solid var(--dshpp-line);
+  background: var(--dshpp-bg-2);
+  color: var(--dshpp-fg);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.dshpp-page .dshpp-btn:hover:not(:disabled) {
+  border-color: var(--dshpp-line-strong);
+}
+.dshpp-page .dshpp-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+/* 主按钮：不要用 brand-primary 当底色——深色模式下它是高亮文字色，
+   直接铺成背景就成了"白底白字"的方块。这里用固定的实心绿 + 白字。 */
+.dshpp-page {
+  --dshpp-solid: #2f6b4f;
+  --dshpp-solid-hover: #3a8260;
+  --dshpp-solid-danger: #a63b3b;
+  --dshpp-solid-danger-hover: #bd4747;
+}
+.dshpp-page .dshpp-btn-primary {
+  background: var(--dshpp-solid);
+  border-color: var(--dshpp-solid);
+  color: #fff;
+  font-weight: 600;
+}
+.dshpp-page .dshpp-btn-primary:hover:not(:disabled) {
+  background: var(--dshpp-solid-hover);
+  border-color: var(--dshpp-solid-hover);
+}
+.dshpp-page .dshpp-btn-solid-danger {
+  background: var(--dshpp-solid-danger);
+  border-color: var(--dshpp-solid-danger);
+  color: #fff;
+}
+.dshpp-page .dshpp-btn-solid-danger:hover:not(:disabled) {
+  background: var(--dshpp-solid-danger-hover);
+  border-color: var(--dshpp-solid-danger-hover);
+}
+.dshpp-page .dshpp-btn-danger {
+  color: var(--dshpp-bad);
+  border-color: color-mix(in srgb, var(--dshpp-bad) 40%, transparent);
+}
+.dshpp-page .dshpp-btn-tiny {
+  padding: 3px 8px;
+  font-size: 0.82em;
+}
+
+.dshpp-page .dshpp-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.8em;
+  border: 1px solid var(--dshpp-line);
+  color: var(--dshpp-mute);
+}
+.dshpp-page .dshpp-pill.is-ok {
+  color: var(--dshpp-ok);
+  border-color: color-mix(in srgb, var(--dshpp-ok) 35%, transparent);
+}
+.dshpp-page .dshpp-pill.is-wait {
+  color: var(--dshpp-warn);
+  border-color: color-mix(in srgb, var(--dshpp-warn) 35%, transparent);
+}
+.dshpp-page .dshpp-pill.is-bad {
+  color: var(--dshpp-bad);
+  border-color: color-mix(in srgb, var(--dshpp-bad) 40%, transparent);
+}
+
+.dshpp-page .dshpp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86em;
+}
+.dshpp-page .dshpp-table th,
+.dshpp-page .dshpp-table td {
+  text-align: left;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--dshpp-line);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.dshpp-page .dshpp-table th {
+  color: var(--dshpp-mute);
+  font-weight: 500;
+  font-size: 0.95em;
+}
+.dshpp-page .dshpp-group-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 8px 0;
+  cursor: pointer;
+}
+.dshpp-page .dshpp-count {
+  color: var(--dshpp-mute);
+  font-size: 0.85em;
+}
+
+/* 演练台占满剩余高度 */
+.dshpp-page-drill {
+  min-height: 60vh;
+}
+.dshpp-page-drill .rt-dock.rt-embedded {
+  width: 100%;
+  min-width: 0;
+}
+
+.dshpp-page-foot {
+  margin-top: 28px;
+  padding-top: 14px;
+  border-top: 1px solid var(--dshpp-line);
+  font-size: 0.8em;
+  color: var(--dshpp-mute);
+}
+
+/* 名词解释：标题后面的小问号 */
+.dshpp-help {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.dshpp-help-btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--dshpp-mute);
+  font: inherit;
+  font-size: 0.85em;
+  line-height: 1;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--dshpp-line);
+  cursor: help;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.dshpp-help-btn:hover,
+.dshpp-help-btn[aria-expanded="true"] {
+  color: var(--dshpp-fg);
+  border-color: var(--dshpp-line-strong);
+  background: var(--dshpp-bg-2);
+}
+.dshpp-tip {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 6px);
+  z-index: 2147483000;
+  width: max-content;
+  max-width: min(340px, 70vw);
+  padding: 9px 11px;
+  border-radius: 8px;
+  border: 1px solid var(--dshpp-line);
+  background: var(--dsw-alias-bg-overlay, canvas);
+  color: var(--dshpp-fg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  font-size: 0.82em;
+  line-height: 1.6;
+  white-space: normal;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dshpp-tip b {
+  font-weight: 600;
+}
+
+.dshpp-page .dshpp-warn {
+  margin: 10px 0 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--dshpp-warn) 45%, transparent);
+  color: var(--dshpp-warn);
+  background: color-mix(in srgb, var(--dshpp-warn) 10%, transparent);
+  font-size: 0.86em;
+}
+
+/* 操作条：最常用的「应用」固定在内容区顶部 */
+.dshpp-page .dshpp-actions {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0 12px;
+  margin: -4px 0 6px;
+  background: linear-gradient(
+    var(--dsw-alias-bg-base, canvas) 78%,
+    transparent
+  );
+  backdrop-filter: blur(2px);
+  border-bottom: 1px solid var(--dshpp-line);
+}
+.dshpp-page .dshpp-actions .dshpp-pill {
+  margin-left: auto;
+}
+
+/* 指标：三列紧凑 */
+.dshpp-page .dshpp-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  margin: 4px 0 2px;
+}
+.dshpp-page .dshpp-metric {
+  border: 1px solid var(--dshpp-line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: var(--dshpp-bg-2);
+  min-width: 0;
+}
+.dshpp-page .dshpp-metric b {
+  display: block;
+  font-size: 1.05em;
+  font-weight: 600;
+  margin-bottom: 2px;
+  overflow-wrap: anywhere;
+}
+.dshpp-page .dshpp-metric span {
+  color: var(--dshpp-mute);
+  font-size: 0.82em;
+}
+
+/* 折叠块：补丁明细 / 维护 / 自检 */
+.dshpp-page .dshpp-fold,
+.dshpp-page .dshpp-fold-inline {
+  border: 1px solid var(--dshpp-line);
+  border-radius: 10px;
+  background: var(--dshpp-bg);
+  padding: 0 12px;
+}
+.dshpp-page .dshpp-fold > summary,
+.dshpp-page .dshpp-fold-inline > summary {
+  cursor: pointer;
+  padding: 10px 0;
+  font-size: 0.92em;
+  color: var(--dshpp-fg);
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.dshpp-page .dshpp-fold > summary::-webkit-details-marker,
+.dshpp-page .dshpp-fold-inline > summary::-webkit-details-marker {
+  display: none;
+}
+.dshpp-page .dshpp-fold > summary::before,
+.dshpp-page .dshpp-fold-inline > summary::before {
+  content: "▸";
+  color: var(--dshpp-mute);
+  font-size: 0.9em;
+  transition: transform 0.12s ease;
+}
+.dshpp-page .dshpp-fold[open] > summary::before,
+.dshpp-page .dshpp-fold-inline[open] > summary::before {
+  transform: rotate(90deg);
+}
+.dshpp-page .dshpp-fold > summary b,
+.dshpp-page .dshpp-fold-inline > summary b {
+  color: var(--dshpp-mute);
+  font-weight: 500;
+  margin-left: auto;
+}
+
+/* 状态行（自检 / 强化段） */
+.dshpp-page .dshpp-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 6px 0;
+}
+.dshpp-page .dshpp-line + .dshpp-line {
+  border-top: 1px solid var(--dshpp-line);
+}
+.dshpp-page .dshpp-line-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.92em;
+  min-width: 0;
+}
+.dshpp-page .dshpp-line-main b {
+  font-weight: 600;
+}
+.dshpp-page .dshpp-fold-inline {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+.dshpp-page .dshpp-fold-inline > summary {
+  padding: 2px 0;
+  color: var(--dshpp-mute);
+  font-size: 0.86em;
+}
+.dshpp-page .dshpp-fold-inline[open] {
+  flex-basis: 100%;
+}
+
+/* 逐层自检：两列/多列网格，不再一条一行 */
+.dshpp-page .dshpp-checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 2px 14px;
+  padding: 6px 0 10px;
+}
+.dshpp-page .dshpp-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.84em;
+  min-width: 0;
+  padding: 2px 0;
+}
+.dshpp-page .dshpp-check.is-bad {
+  color: var(--dshpp-bad);
+}
+.dshpp-page .dshpp-check-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.dshpp-page .dshpp-check-val {
+  margin-left: auto;
+  color: var(--dshpp-mute);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 状态页 hero：一眼看到"现在什么状态、下一步点哪" */
+.dshpp-page .dshpp-hero {
+  border: 1px solid var(--dshpp-line);
+  border-radius: var(--dsw-radius-md, 10px);
+  background: var(--dshpp-bg);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dshpp-page .dshpp-hero-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.02em;
+  min-width: 0;
+}
+.dshpp-page .dshpp-hero-state b {
+  font-weight: 600;
+}
+.dshpp-page .dshpp-hero-sub {
+  margin-left: auto;
+  color: var(--dshpp-mute);
+  font-size: 0.82em;
+}
+.dshpp-page .dshpp-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.dshpp-page .dshpp-btn-lead {
+  padding: 9px 20px;
+  font-size: 0.98em;
+  font-weight: 600;
+  border-radius: 10px;
+}
+.dshpp-page .dshpp-hero-hint {
+  margin: 0;
+  color: var(--dshpp-mute);
+  font-size: 0.84em;
+  line-height: 1.6;
+}
+.dshpp-check.is-warn {
+  color: var(--dshpp-warn);
+}
+
+.dshpp-page .dshpp-probe-msg {
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px dashed var(--dshpp-line);
+  background: var(--dshpp-bg-2);
+  font-size: 0.82em;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@container purge-page (max-width: 520px) {
+  .dshpp-page-head {
+    gap: 8px;
+  }
+  .dshpp-page-tabs {
+    gap: 0;
+  }
+  .dshpp-page-tabs button {
+    flex: 1 0 auto;
+    padding-inline: 6px;
+    min-height: 44px;
+  }
+  .dshpp-page-body {
+    padding-top: 12px;
+  }
+  .dshpp-sec {
+    gap: 12px;
+  }
+  .dshpp-page :is(.dshpp-card, section.dshpp-panel, .dshpp-hero) {
+    padding: 12px;
+  }
+  .dshpp-strip {
+    column-gap: 12px;
+  }
+  .dshpp-page :is(.dshpp-row, .dshpp-sub, .dshpp-hero-state) {
+    flex-wrap: wrap;
+  }
+  .dshpp-page :is(input, select, textarea) {
+    max-width: 100%;
+    min-width: 0;
+  }
+  .dshpp-page .dshpp-table {
+    table-layout: fixed;
+    overflow-wrap: anywhere;
+  }
+}
+
+/* The detail route owns scrolling; the sidebar owns its own viewport. */
+.dshpp-detail-settings .dshpp-page {
+  height: auto;
+  overflow: visible;
+  padding-inline: 0;
+}

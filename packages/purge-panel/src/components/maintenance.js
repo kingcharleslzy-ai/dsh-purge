@@ -7,7 +7,7 @@ import {
 } from "../shared/react.js";
 import { apiJson } from "../api/client.js";
 import { useT } from "../shared/locale.js";
-import { Btn, Switch } from "./primitives.js";
+import { Btn, HelpTip } from "./primitives.js";
 /**
  * 词条未注册时 t() 会原样返回 key；这里兜一层中文，
  * 免得面板上出现「updch.open」这种字样。
@@ -78,77 +78,39 @@ export function StatusExtras() {
   const total = layers.filter((layer) => layer.applicable !== false).length;
   return h(
     "section",
-    { className: "dshpp-panel", "aria-label": "破甲状态" },
+    { className: "dshpp-card", "aria-label": "破甲状态" },
     h(
       "div",
-      { className: "dpg-field" },
+      { className: "dshpp-line" },
       h(
-        "div",
-        { className: "dpg-field-inline" },
-        h(
-          "div",
-          { className: "dpg-field-text" },
-          h("h4", { className: "dpg-field-label" }, "破甲自检"),
-          h(
-            "p",
-            { className: "dpg-field-hint" },
-            h("i", {
-              className:
-                "dpg-status-dot " +
-                (check
-                  ? failed.length
-                    ? "is-bad"
-                    : pendingLayers.length || uncertain.length
-                      ? "is-warn"
-                      : "is-ok"
-                  : "is-idle"),
-            }),
-            check
+        "span",
+        { className: "dshpp-line-main" },
+        h("i", {
+          className:
+            "dshpp-dot " +
+            (check
               ? failed.length
-                ? failed.length + " 层未生效"
-                : pendingLayers.length
-                  ? pendingPatches + " 条待应用"
-                  : uncertain.length
-                    ? uncertain.length + " 层需确认"
-                    : total + " 层全部在位"
-              : "检测中…",
-          ),
-        ),
+                ? "is-bad"
+                : pendingLayers.length || uncertain.length
+                  ? "is-warn"
+                  : "is-ok"
+              : ""),
+        }),
+        "破甲自检",
         h(
-          "div",
-          { className: "dpg-field-control" },
-          h(
-            "div",
-            { className: "dpg-actions" },
-            h(
-              Btn,
-              { tiny: true, disabled: busy, onClick: rerun },
-              busy ? "…" : "重测",
-            ),
-            h(
-              Btn,
-              {
-                tiny: true,
-                title: "生成一次性探针：下一轮回复里看模型有没有原样回显该标记",
-                onClick: async () => {
-                  try {
-                    const r = await apiJson("/dsh-purge/probe", {
-                      method: "POST",
-                      headers: { "content-type": "application/json" },
-                      body: "{}",
-                    });
-                    setNotice(r.message || "");
-                  } catch (e) {
-                    setNotice(e.message);
-                  }
-                },
-              },
-              "探针",
-            ),
-          ),
+          "b",
+          null,
+          check
+            ? failed.length
+              ? `${failed.length} 层未生效`
+              : pendingLayers.length
+                ? `${pendingPatches} 条待应用`
+                : uncertain.length
+                  ? `${uncertain.length} 层需确认`
+                  : `${total} 层全部在位`
+            : "检测中…",
         ),
       ),
-      // 逐层明细占满宽度，展开时才出现。
       h(
         "details",
         { className: "dshpp-fold-inline" },
@@ -162,7 +124,6 @@ export function StatusExtras() {
                   "div",
                   {
                     key: layer.title,
-                    title: layer.note || undefined,
                     className:
                       "dshpp-check" +
                       (["pending", "inferred", "unknown"].includes(layer.state)
@@ -173,7 +134,7 @@ export function StatusExtras() {
                   },
                   h("i", {
                     className:
-                      "dpg-status-dot " +
+                      "dshpp-dot " +
                       (["pending", "inferred", "unknown"].includes(layer.state)
                         ? "is-warn"
                         : layer.ok
@@ -187,56 +148,67 @@ export function StatusExtras() {
                     layer.applicable === false
                       ? "不适用"
                       : layer.state === "pending"
-                        ? "待应用 #" + (layer.pending || []).join("/#")
+                        ? `待应用 #${(layer.pending || []).join("/#")}`
                         : layer.state === "inferred"
                           ? "宿主推导"
                           : layer.state === "unknown"
                             ? "未确认"
-                            : layer.applied +
-                              "/" +
-                              (layer.required ?? layer.total),
+                            : `${layer.applied}/${layer.required ?? layer.total}`,
                   ),
                   layer.note
-                    ? h("span", { className: "dshpp-check-note" }, layer.note)
+                    ? h(HelpTip, { title: layer.title }, layer.note)
                     : null,
                 ),
               )
             : h("div", { className: "dshpp-muted" }, "检测中…"),
         ),
       ),
+      h(
+        Btn,
+        { tiny: true, disabled: busy, onClick: rerun },
+        busy ? "…" : "重测",
+      ),
+      h(
+        Btn,
+        {
+          tiny: true,
+          title: "生成一次性探针：下一轮回复里看模型有没有原样回显该标记",
+          onClick: async () => {
+            try {
+              const r = await apiJson("/dsh-purge/probe", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: "{}",
+              });
+              setNotice(r.message || "");
+            } catch (e) {
+              setNotice(e.message);
+            }
+          },
+        },
+        "探针",
+      ),
     ),
     h(
       "div",
-      { className: "dpg-field" },
+      { className: "dshpp-line" },
       h(
-        "div",
-        { className: "dpg-field-inline" },
+        "span",
+        { className: "dshpp-line-main" },
+        "破甲强化段",
         h(
-          "div",
-          { className: "dpg-field-text" },
-          h("h4", { className: "dpg-field-label" }, "破甲强化段"),
-          h(
-            "p",
-            { className: "dpg-field-hint" },
-            (boost === null ? "…" : boost ? "已开启" : "已关闭") +
-              "：在系统提示词末尾追加一段与注入同级的文本（层级声明 / 拒绝即故障 / 抗谄媚 / 多轮重申）。",
-          ),
-          notice ? h("p", { className: "dpg-field-hint" }, notice) : null,
+          HelpTip,
+          { title: "破甲强化段" },
+          "在系统提示词末尾追加一段与注入同级的文本：层级声明 / 拒绝即故障 / 抗谄媚 / 多轮重申。默认开启。",
         ),
-        h(
-          "div",
-          { className: "dpg-field-control" },
-          h(
-            "div",
-            { className: "dpg-actions" },
-            h(
-              Btn,
-              { tiny: true, disabled: boost === null, onClick: toggle },
-              boost ? "关闭" : "开启",
-            ),
-          ),
-        ),
+        h("b", null, boost === null ? "…" : boost ? "已开启" : "已关闭"),
       ),
+      h(
+        Btn,
+        { tiny: true, disabled: boost === null, onClick: toggle },
+        boost ? "关闭" : "开启",
+      ),
+      notice ? h("span", { className: "dshpp-muted" }, notice) : null,
     ),
   );
 }
@@ -282,12 +254,6 @@ export function maintenanceNotice(op, result) {
   return result.note || "维护操作已完成";
 }
 
-// 开关回调既接受布尔，也接受 { target: { checked } }（旧设置页用的是 checkbox）。
-const boolOf = (v) =>
-  v && v.target && typeof v.target.checked === "boolean"
-    ? v.target.checked
-    : v === true;
-
 export function UpdatePreferences({
   value,
   status = {},
@@ -321,94 +287,79 @@ export function UpdatePreferences({
   }
   return h(
     "section",
-    { "aria-label": "自动更新设置", className: "dpg-view" },
+    { "aria-label": "自动更新设置", className: "dshpp-card" },
     h(
       "div",
-      { className: "dpg-field dpg-field-inline" },
+      { className: "dshpp-row" },
       h(
-        "div",
-        { className: "dpg-field-text" },
-        h("span", { className: "dpg-field-label" }, "自动检查更新"),
-        h(
-          "p",
-          { className: "dpg-field-hint" },
+        "label",
+        null,
+        h("input", {
+          type: "checkbox",
+          checked: value.autoCheck,
+          disabled: saving,
+          onChange: (e) => save({ autoCheck: e.target.checked }),
+          "aria-label": "自动检查更新",
+        }),
+        "自动检查更新",
+      ),
+      h(HelpTip, {
+        title: "自动检查更新",
+        children:
           "启动 30 秒后检查，之后按间隔检查。关闭不会改变已保存的自动安装偏好，但会暂停自动安装。",
-        ),
-      ),
+      }),
       h(
-        "div",
-        { className: "dpg-field-control" },
-        h(
-          "div",
-          { className: "dpg-actions" },
-          h(Switch, {
-            checked: value.autoCheck,
-            "aria-label": "自动检查更新",
-            disabled: saving,
-            onChange: (next) => save({ autoCheck: boolOf(next) }),
-          }),
-          h(
-            "span",
-            { className: "dpg-select" },
-            h(
-              "select",
-              {
-                "aria-label": "更新检查间隔",
-                value: value.intervalHours,
-                disabled: saving || !value.autoCheck,
-                onChange: (e) =>
-                  save({ intervalHours: Number(e.target.value) }),
-              },
-              [...new Set([1, 6, 12, 24, value.intervalHours])]
-                .sort((a, b) => a - b)
-                .map((v) =>
-                  h("option", { key: v, value: v }, "每 " + v + " 小时"),
-                ),
-            ),
-          ),
-          onOpenChannel
-            ? h(
-                Btn,
-                {
-                  tiny: true,
-                  className: "dshpp-updch-open",
-                  disabled: saving,
-                  onClick: () => onOpenChannel(),
-                  title: tr("updch.title", "更新通道：代理与 GitHub 密钥"),
-                },
-                tr("updch.open", "更新通道"),
-              )
-            : null,
-        ),
+        "select",
+        {
+          "aria-label": "更新检查间隔",
+          value: value.intervalHours,
+          disabled: saving || !value.autoCheck,
+          onChange: (e) => save({ intervalHours: Number(e.target.value) }),
+        },
+        [...new Set([1, 6, 12, 24, value.intervalHours])]
+          .sort((a, b) => a - b)
+          .map((v) => h("option", { key: v, value: v }, `每 ${v} 小时`)),
       ),
+      // 「更新通道」与上面两个控件同行并排，尺寸与 select 一致：
+      // 它配置的正是这条更新检查走的代理/密钥，不该漂到标题最右端。
+      onOpenChannel
+        ? h(
+            Btn,
+            {
+              tiny: true,
+              className: "dshpp-updch-open",
+              disabled: saving,
+              onClick: () => onOpenChannel(),
+              title: tr("updch.title", "更新通道：代理与 GitHub 密钥"),
+            },
+            tr("updch.open", "更新通道"),
+          )
+        : null,
     ),
     h(
       "div",
-      { className: "dpg-field" },
+      { className: "dshpp-row" },
       h(
-        "div",
-        { className: "dpg-switch-row" },
-        h(
-          "div",
-          { className: "dpg-field-text" },
-          h("span", { className: "dpg-field-label" }, "自动安装更新"),
-          h(
-            "p",
-            { className: "dpg-field-hint" },
-            "仅在自动检查开启、发现未锁定的新正式版时安装。安装前备份、校验发行包；失败不自动切换来源。安装后等待你手动重启，不会自动重启 DSH。",
-          ),
-        ),
-        h(Switch, {
+        "label",
+        null,
+        h("input", {
+          type: "checkbox",
           checked: value.autoInstall,
-          "aria-label": "自动安装更新",
           disabled: saving,
-          onChange: (next) => save({ autoInstall: boolOf(next) }),
+          onChange: (e) => save({ autoInstall: e.target.checked }),
+          "aria-label": "自动安装更新",
         }),
+        "自动安装更新",
       ),
+      h(HelpTip, {
+        title: "自动安装更新",
+        children:
+          "仅在自动检查开启、发现未锁定的新正式版时安装。安装前备份、校验发行包；失败不自动切换来源。安装后等待你手动重启，不会自动重启 DSH。",
+      }),
     ),
     h(
       "p",
-      { className: "dpg-status-line" },
+      { className: "dshpp-hint" },
       status.reconciliationError
         ? "安装状态待核对，自动安装已暂停。"
         : status.restartRequired
@@ -419,15 +370,16 @@ export function UpdatePreferences({
               ? `上次检查：${new Date(status.checkedAt).toLocaleString()}${status.hasUpdate ? ` · 可用版本 ${status.availableVersion}` : ""}`
               : "启动后自动检查；安装后仅提示手动重启。",
     ),
-    status.reconciliationError
-      ? h("p", { role: "alert" }, status.reconciliationError)
-      : null,
-    // 安装失败的原文单独一条：它和「上次检查」不是互斥信息，压在状态行里会丢。
-    status.installError ? h("p", { role: "alert" }, status.installError) : null,
-    [...new Set([status.error, status.installError].filter(Boolean))].map(
-      (message) => h("p", { key: message, role: "alert" }, message),
-    ),
-    error ? h("p", { role: "alert" }, error) : null,
+    [
+      ...new Set(
+        [
+          status.reconciliationError,
+          status.error,
+          status.installError,
+          error,
+        ].filter(Boolean),
+      ),
+    ].map((message) => h("p", { key: message, role: "alert" }, message)),
   );
 }
 
@@ -526,8 +478,6 @@ export function UpdateChannelDialog({ value, onClose, onSaved }) {
         h("span", null, "GitHub 镜像（可选）"),
         h("input", {
           type: "text",
-          className: "dshpp-field dshpp-updch-field",
-          "aria-label": "GitHub 镜像",
           value: mirror,
           placeholder: "https://镜像主机/",
           onChange: (e) => setMirror(e.target.value),
@@ -595,27 +545,16 @@ export function UpdateChannelDialog({ value, onClose, onSaved }) {
       ),
       hasToken
         ? h(
-            "div",
-            { className: "dpg-field" },
-            h(
-              "div",
-              { className: "dpg-switch-row" },
-              h(
-                "div",
-                { className: "dpg-field-text" },
-                h(
-                  "span",
-                  { className: "dpg-field-label" },
-                  tr("updch.token.clear", "清除已保存的密钥"),
-                ),
-              ),
-              h(Switch, {
-                checked: clearToken,
-                label: tr("updch.token.clear", "清除已保存的密钥"),
-                disabled: saving,
-                onChange: (next) => setClearToken(!!next),
-              }),
-            ),
+            "label",
+            { className: "dshpp-updch-check" },
+            h("input", {
+              type: "checkbox",
+              checked: clearToken,
+              disabled: saving,
+              "aria-label": tr("updch.token.clear", "清除已保存的密钥"),
+              onChange: (e) => setClearToken(!!e.target.checked),
+            }),
+            h("span", null, tr("updch.token.clear", "清除已保存的密钥")),
           )
         : null,
       error ? h("p", { role: "alert" }, error) : null,
@@ -637,6 +576,12 @@ export function UpdateChannelDialog({ value, onClose, onSaved }) {
   );
 }
 
+// A successful save updates any other mounted settings entry in this client.
+const preferenceListeners = new Set();
+function publishPreferences(next) {
+  for (const receive of preferenceListeners) receive(next);
+}
+
 export function CommunityMaintenance() {
   const [value, setValue] = useState(null),
     [notice, setNotice] = useState(""),
@@ -651,7 +596,9 @@ export function CommunityMaintenance() {
   const mounted = useRef(false),
     generation = useRef(0),
     running = useRef(false);
+  const latestSave = useRef(null);
   const load = useCallback(async () => {
+    const previousSave = latestSave.current;
     const request = ++generation.current;
     setListState("loading");
     setListError("");
@@ -660,7 +607,11 @@ export function CommunityMaintenance() {
       assertMaintenanceResult(result);
       if (!Array.isArray(result.backups)) throw new Error("备份列表响应无效");
       if (!mounted.current || request !== generation.current) return;
-      setValue(result);
+      setValue(
+        previousSave === latestSave.current
+          ? result
+          : { ...result, update_preferences: latestSave.current },
+      );
       setSelected((current) =>
         result.backups.some((b) => b.id === current) ? current : "",
       );
@@ -673,8 +624,16 @@ export function CommunityMaintenance() {
   }, []);
   useEffect(() => {
     mounted.current = true;
+    const receive = (next) => {
+      latestSave.current = next;
+      setValue(
+        (current) => current && { ...current, update_preferences: next },
+      );
+    };
+    preferenceListeners.add(receive);
     load();
     return () => {
+      preferenceListeners.delete(receive);
       mounted.current = false;
       generation.current++;
     };
@@ -740,194 +699,149 @@ export function CommunityMaintenance() {
   return h(
     "section",
     { className: "dshpp-panel", "aria-label": "社区版维护" },
+    h("h3", null, "维护：更新与本机备份"),
+    // 通道现状摘要：代理是否直连、密钥是否已配置（密钥明文永不回显）。
+    // 入口按钮不在这里，它跟「自动检查更新」放在同一行。
+    value
+      ? h(
+          "p",
+          { className: "dshpp-hint" },
+          (value.update_preferences?.proxyUrl
+            ? tr("updch.state.proxy", "更新通道代理：") +
+              value.update_preferences.proxyUrl
+            : tr("updch.state.direct", "更新通道：继承环境或系统代理")) +
+            " · " +
+            (value.update_preferences?.hasGithubToken
+              ? tr("updch.state.token.on", "GitHub 密钥已配置")
+              : tr("updch.state.token.off", "未配置 GitHub 密钥")),
+        )
+      : null,
     h(UpdatePreferences, {
       value: value?.update_preferences,
       status: value?.update_status,
-      onSaved: (next) =>
-        setValue((current) => ({ ...current, update_preferences: next })),
+      onSaved: publishPreferences,
       onOpenChannel: () => setChannelOpen(true),
     }),
     h(
       "div",
-      { className: "dpg-field" },
+      { className: "dshpp-row" },
+      h(Btn, { disabled: busy, onClick: () => run("check") }, "检查社区版更新"),
       h(
-        "div",
-        { className: "dpg-field-head" },
-        h("h4", { className: "dpg-field-label" }, "社区版更新"),
-        h(
-          "div",
-          { className: "dpg-view-actions" },
-          h(
-            Btn,
-            { disabled: busy, onClick: () => run("check") },
-            "检查社区版更新",
-          ),
-          h(
-            Btn,
-            {
-              disabled: busy,
-              onClick: async () => {
-                try {
-                  const r = await apiJson("/dsh-purge/audit?limit=10");
-                  const lines = (r.entries || []).map(
-                    (x) =>
-                      new Date(x.at).toLocaleString() +
-                      "  " +
-                      x.event +
-                      "  " +
-                      JSON.stringify(
-                        Object.fromEntries(
-                          Object.entries(x).filter(
-                            ([k]) => !["at", "event", "pid"].includes(k),
-                          ),
-                        ),
+        Btn,
+        {
+          disabled: busy,
+          onClick: async () => {
+            try {
+              const r = await apiJson("/dsh-purge/audit?limit=10");
+              const lines = (r.entries || []).map(
+                (x) =>
+                  `${new Date(x.at).toLocaleString()}  ${x.event}  ${JSON.stringify(
+                    Object.fromEntries(
+                      Object.entries(x).filter(
+                        ([k]) => !["at", "event", "pid"].includes(k),
                       ),
-                  );
-                  setNotice(lines.length ? lines.join("\n") : "还没有动作记录");
-                } catch (e) {
-                  setNotice(e.message);
-                }
-              },
+                    ),
+                  )}`,
+              );
+              setNotice(lines.length ? lines.join("\n") : "还没有动作记录");
+            } catch (e) {
+              setNotice(e.message);
+            }
+          },
+        },
+        "最近动作",
+      ),
+      h(
+        "a",
+        {
+          href: "https://github.com/kingcharleslzy-ai/dsh-purge/releases",
+          target: "_blank",
+          rel: "noreferrer",
+        },
+        "发行记录",
+      ),
+    ),
+    releases?.length
+      ? h(
+          "div",
+          { className: "dshpp-row" },
+          h(
+            "select",
+            {
+              "aria-label": "选择社区发行版本",
+              value: release,
+              onChange: (e) => setRelease(e.target.value),
+              disabled: busy,
             },
-            "最近动作",
+            releases.map((r) =>
+              h("option", { key: r.ref, value: r.ref }, r.label),
+            ),
           ),
           h(
-            "a",
-            {
-              href: "https://github.com/kingcharleslzy-ai/dsh-purge/releases",
-              target: "_blank",
-              rel: "noreferrer",
-            },
-            "发行记录",
+            Btn,
+            { disabled: busy || !release, onClick: () => run("update") },
+            "安装所选版本",
           ),
-        ),
-      ),
-      releases?.length
-        ? h(
-            "div",
-            { className: "dpg-field-control" },
-            h(
-              "div",
-              { className: "dpg-actions" },
-              h(
-                "span",
-                { className: "dpg-select" },
-                h(
-                  "select",
-                  {
-                    "aria-label": "选择社区发行版本",
-                    value: release,
-                    onChange: (e) => setRelease(e.target.value),
-                    disabled: busy,
-                  },
-                  releases.map((r) =>
-                    h("option", { key: r.ref, value: r.ref }, r.label),
-                  ),
-                ),
-              ),
-              h(
-                Btn,
-                { disabled: busy || !release, onClick: () => run("update") },
-                "安装所选版本",
-              ),
-            ),
-          )
-        : null,
-      value
-        ? h(
-            "p",
-            { className: "dpg-field-hint" },
-            (value.update_preferences?.proxyUrl
-              ? tr("updch.state.proxy", "更新通道代理：") +
-                value.update_preferences.proxyUrl
-              : tr("updch.state.direct", "更新通道：继承环境或系统代理")) +
-              " · " +
-              (value.update_preferences?.hasGithubToken
-                ? tr("updch.state.token.on", "GitHub 密钥已配置")
-                : tr("updch.state.token.off", "未配置 GitHub 密钥")),
-          )
-        : null,
+        )
+      : null,
+    h("h3", { style: { marginTop: 20 } }, "本机备份"),
+    h(
+      Btn,
+      { disabled: busy || listState === "loading", onClick: load },
+      "刷新备份列表",
     ),
+    listState === "loading"
+      ? h("p", { role: "status" }, "正在读取备份…")
+      : null,
+    listState === "error"
+      ? h("p", { role: "alert" }, `读取备份失败：${listError}`)
+      : null,
+    listState === "ready" && !value.backups.length
+      ? h("p", { role: "status" }, "暂无备份")
+      : null,
     h(
       "div",
-      { className: "dpg-field" },
+      { className: "dshpp-row" },
+      h(Btn, { disabled: busy, onClick: () => run("backup") }, "立即备份"),
       h(
-        "div",
-        { className: "dpg-field-head" },
-        h("h4", { className: "dpg-field-label" }, "本机备份"),
-        h(
-          "div",
-          { className: "dpg-view-actions" },
+        "select",
+        {
+          "aria-label": "选择回滚备份",
+          value: selected,
+          onChange: (e) => setSelected(e.target.value),
+          disabled: busy || listState !== "ready",
+        },
+        h("option", { value: "" }, "选择备份"),
+        ...(value?.backups || []).map((b) =>
           h(
-            Btn,
-            { disabled: busy || listState === "loading", onClick: load },
-            "刷新备份列表",
+            "option",
+            { key: b.id, value: b.id },
+            `${new Date(b.created_at).toLocaleString()} · ${b.plugins.map((p) => p.version).join(" / ")}`,
           ),
         ),
       ),
       h(
-        "p",
-        { className: "dpg-field-hint" },
-        "备份只保存在本机。回滚保留当前提示词、规则和其他插件设置；安装或回滚后需要重启 DSH 进程；仅刷新浏览器不会加载新版后端。",
-      ),
-      h(
-        "div",
-        { className: "dpg-field-control" },
-        listState === "loading"
-          ? h("p", { role: "status" }, "正在读取备份…")
-          : null,
-        listState === "error"
-          ? h("p", { role: "alert" }, `读取备份失败：${listError}`)
-          : null,
-        listState === "ready" && !value.backups.length
-          ? h("p", { role: "status" }, "暂无备份")
-          : null,
-        h(
-          "div",
-          { className: "dpg-actions" },
-          h(Btn, { disabled: busy, onClick: () => run("backup") }, "立即备份"),
-          h(
-            "span",
-            { className: "dpg-select" },
-            h(
-              "select",
-              {
-                "aria-label": "选择回滚备份",
-                value: selected,
-                onChange: (e) => setSelected(e.target.value),
-                disabled: busy || listState !== "ready",
-              },
-              h("option", { value: "" }, "选择备份"),
-              ...(value?.backups || []).map((b) =>
-                h(
-                  "option",
-                  { key: b.id, value: b.id },
-                  `${new Date(b.created_at).toLocaleString()} · ${b.plugins.map((p) => p.version).join(" / ")}`,
-                ),
-              ),
-            ),
-          ),
-          h(
-            Btn,
-            {
-              disabled: busy || !selected || listState !== "ready",
-              onClick: () => run("rollback"),
-            },
-            "回滚插件",
-          ),
-        ),
+        Btn,
+        {
+          disabled: busy || !selected || listState !== "ready",
+          onClick: () => run("rollback"),
+        },
+        "回滚插件",
       ),
     ),
-    notice
-      ? h("p", { className: "dpg-status-line", role: "status" }, notice)
-      : null,
+    h(
+      "p",
+      { className: "dshpp-hint" },
+      "备份只保存在本机。回滚保留当前提示词、规则和其他插件设置；安装或回滚后需要重启 DSH 进程；仅刷新浏览器不会加载新版后端。",
+    ),
+    notice ? h("p", { role: "status" }, notice) : null,
     // 对话框挂在面板内部，靠固定定位脱离容器，不依赖 portal。
     channelOpen && value
       ? h(UpdateChannelDialog, {
           value: value.update_preferences,
           onClose: () => setChannelOpen(false),
           onSaved: (next) => {
-            setValue((current) => ({ ...current, update_preferences: next }));
+            publishPreferences(next);
             setNotice(
               tr("updch.saved", "更新通道已保存，下一次检查更新即生效。"),
             );
