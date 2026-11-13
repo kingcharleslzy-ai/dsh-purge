@@ -116,14 +116,15 @@ test("real CLI records effective setting changes once and keeps unknown settings
     env: { ...process.env, DSH_HOME: home }, encoding: "utf8",
   });
   try {
-    writeTuning({ customPrivateField: "private fixture", rewind: false }, home);
+    assert.equal(JSON.parse(run("rewind").stdout).rewind, false);
+    writeTuning({ customPrivateField: "private fixture", rewind: true }, home);
     let rows = readAudit({ home });
     assert.equal(rows.length, 1); assert.equal(rows[0].key, "rewind");
     assert(!JSON.stringify(rows).includes("private fixture"));
-    const a = run("rewind", "on"); assert.equal(a.status, 0, a.stderr);
-    assert.equal(JSON.parse(a.stdout).restart_required, true);
+    const a = run("rewind", "off"); assert.equal(a.status, 0, a.stderr);
+    assert.equal(JSON.parse(a.stdout).restart_required, false);
     assert.equal(readTuning(home).customPrivateField, "private fixture");
-    const b = run("rewind", "on"); assert.equal(b.status, 0, b.stderr);
+    const b = run("rewind", "off"); assert.equal(b.status, 0, b.stderr);
     rows = readAudit({ home }); assert.equal(rows.length, 2);
     assert(rows.every(r => r.event === "tuning_setting"));
     const c = run("retry", "off"); assert.equal(c.status, 0, c.stderr);

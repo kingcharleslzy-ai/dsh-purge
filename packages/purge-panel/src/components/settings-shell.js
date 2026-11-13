@@ -6,6 +6,7 @@ import {
   setTranslate,
   useT,
 } from "../shared/locale.js";
+import { RewindSetting } from "./rewind-setting.js";
 import { apiJson } from "../api/client.js";
 import { PURGE_CSS, NATIVE_CSS } from "../styles/index.js";
 import { Btn } from "./primitives.js";
@@ -139,6 +140,7 @@ export function SettingsRoot(props = {}) {
       h(
         "div",
         { hidden: !["status", "prompt", "more"].includes(page) },
+        __COMMUNITY__ && page === "more" ? h(RewindSetting) : null,
         h(PurgifySection, { page, onStatus: setBackendStatus }),
       ),
       visited.rules

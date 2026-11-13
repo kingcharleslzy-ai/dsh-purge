@@ -8,6 +8,7 @@
   --dshpp-mute: var(--dsw-alias-label-secondary, #777);
   --dshpp-accent: var(--dsw-alias-brand-primary, #4775ed);
   --dshpp-fill: var(--dsw-alias-interactive-bg-hover, #f3f3f3);
+  container: purge-settings / inline-size;
   font: inherit;
   font-size: var(--dsh-content-font-size, 14px);
   width: 100%;
@@ -36,7 +37,7 @@
 }
 .dshpp-native-head h2 {
   font: inherit;
-  font-size: 1.15em;
+  font-size: 1.3em;
   font-weight: 600;
   margin: 0;
 }
@@ -76,7 +77,7 @@
   min-height: 0;
   flex: 1;
   overflow: auto;
-  padding: 20px;
+  padding: 16px 20px;
   scrollbar-gutter: stable;
   overscroll-behavior: contain;
 }
@@ -349,4 +350,84 @@
   justify-content: flex-end;
   gap: 8px;
   margin-top: 4px;
+}
+
+:is(.dshpp-native, .dshpp-page) .dshpp-composer-settings {
+  padding-block: 2px 8px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--dshpp-line);
+}
+.dshpp-composer-settings h3 {
+  margin: 0;
+  font: inherit;
+  font-weight: 600;
+}
+.dshpp-setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.dshpp-setting-row input[role="switch"] {
+  appearance: none;
+  flex: none;
+  box-sizing: border-box;
+  width: 32px;
+  height: 20px;
+  margin: 0 2px;
+  padding: 2px;
+  border: 1px solid var(--dshpp-line);
+  border-radius: 12px;
+  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.23));
+  cursor: pointer;
+}
+.dshpp-setting-row input::before {
+  content: "";
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--dsw-alias-label-secondary, #777);
+}
+.dshpp-setting-row input:checked {
+  background: var(--dshpp-accent);
+  border-color: var(--dshpp-accent);
+}
+.dshpp-setting-row input:checked::before {
+  transform: translateX(12px);
+  background: white;
+}
+.dshpp-setting-row input:focus-visible {
+  outline: 2px solid var(--dshpp-accent);
+  outline-offset: 3px;
+}
+.dshpp-setting-row input:disabled {
+  opacity: 0.6;
+}
+@media (forced-colors: active) {
+  .dshpp-setting-row input[role="switch"] {
+    appearance: auto;
+  }
+  .dshpp-setting-row input::before {
+    content: none;
+  }
+}
+@container purge-settings (max-width: 520px) {
+  .dshpp-native-head {
+    padding: 14px 12px 8px;
+  }
+  .dshpp-native-nav {
+    padding-inline: 8px;
+    gap: 0;
+  }
+  .dshpp-native-nav button {
+    flex: 1 0 auto;
+    min-height: 44px;
+  }
+  .dshpp-native-content {
+    padding: 12px;
+    scrollbar-gutter: auto;
+  }
 }

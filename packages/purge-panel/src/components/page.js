@@ -4,6 +4,7 @@
 import { h, useState, useEffect, useCallback } from "../shared/react.js";
 import { PURGE_CSS, NATIVE_CSS, PAGE_CSS } from "../styles/index.js";
 import { compatibilityLevelText, useT } from "../shared/locale.js";
+import { RewindSetting } from "./rewind-setting.js";
 import { apiJson, unavailableStatus } from "../api/client.js";
 import { Btn, HelpTip } from "./primitives.js";
 import { PurgifySection } from "./settings-form.js";
@@ -19,7 +20,7 @@ const TABS = [
   ["rules", "规则", "规则集与工作区策略"],
   ["skills", "技能", "DSH 技能目录"],
   ["drill", "演练台", "红队演练与环境适配"],
-  ["more", "更多", "服务器名单、更新与维护"],
+  ["more", "更多", "会话外观与服务器设置"],
 ];
 
 function PurgeGlyph({ size = 18 } = {}) {
@@ -260,7 +261,6 @@ export function PurgePage() {
         ),
       ),
     ),
-    h(StatusStrip, { info }),
     h(VersionNotice, { info }),
     h(LayoutNotice, { info }),
     h(
@@ -287,6 +287,7 @@ export function PurgePage() {
       h(
         "div",
         { hidden: tab !== "status", className: "dshpp-sec" },
+        h(StatusStrip, { info }),
         h(PurgifySection, { page: "status", onStatus: mergeInfo }),
         h(StatusExtras),
         h(CommunityMaintenance),
@@ -309,6 +310,7 @@ export function PurgePage() {
       h(
         "div",
         { hidden: tab !== "more", className: "dshpp-sec" },
+        __COMMUNITY__ && tab === "more" ? h(RewindSetting) : null,
         visited.more ? h(PurgifySection, { page: "more" }) : null,
       ),
       tab === "drill"
