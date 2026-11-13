@@ -109,3 +109,14 @@ test('a broker PID alone cannot keep a never-acknowledged attempt pending', () =
    assert.equal(fs.readFileSync(asar,'utf8'),'fixture');
  } finally {fs.rmSync(root,{recursive:true,force:true});}
 });
+
+test('an unreadable attempt does not start a second Windows handoff', t => {
+  const {root, asar} = fixture();
+  t.after(() => fs.rmSync(root, {recursive: true, force: true}));
+  const state = asar + '.purge-handoff.json';
+  fs.writeFileSync(state, '{truncated');
+  assert.equal(readWindowsAsarHandoff(asar), null);
+  assert.throws(() => scheduleWindowsAsarHandoff({exe: 'unused.exe', asar}), SyntaxError);
+  assert.equal(fs.readFileSync(state, 'utf8'), '{truncated');
+  assert.equal(fs.existsSync(asar + '.rename-pending'), false);
+});

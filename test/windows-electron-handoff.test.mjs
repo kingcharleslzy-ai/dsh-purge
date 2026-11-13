@@ -143,3 +143,19 @@ for (const [scenario, script, exitCode] of [
   assert.ok(observed === String(exitCode) || observed === 'unknown', log);
   assert.equal(fs.readFileSync(asar, 'utf8'), 'original');
 });
+
+test('concurrent state readers see complete JSON through archive lock retries and offline rollback', {
+  skip: process.platform !== 'win32',
+}, t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'purge-state-json-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const helper = path.join(root, 'helper.ps1');
+  fs.writeFileSync(helper, WINDOWS_ASAR_HANDOFF_PS1, 'utf8');
+  const fixture = fileURLToPath(new URL('./fixtures/windows-handoff-state-reader.ps1', import.meta.url));
+  const stdout = execFileSync('powershell.exe', ['-NoProfile', '-File', fixture, '-Helper', helper],
+    { encoding: 'utf8', timeout: 40000 });
+  const result = JSON.parse(stdout);
+  assert.ok(result.reads >= 3);
+  assert.equal(result.lockCycles, 3);
+  assert.equal(result.rollback, true);
+});
