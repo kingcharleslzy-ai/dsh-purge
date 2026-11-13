@@ -101,10 +101,12 @@ test("oversized and slow release lists retain both source errors and cannot conf
   for (const listing of [large, slow]) {
     const result = await checkUpdate({listVersions:async()=>({
       versions:[], releases:[], error:listing.error, degraded:listing.degraded, stale:listing.stale,
-    }), installSites:()=>[]});
+    }), installSites:()=>[], readPublishedVersion:async()=>"1.7.11"});
     assert.equal(result.ok, false);
     assert.equal(result.hasUpdate, null);
     assert.match(result.error, /备用源超时/);
+    assert.equal(result.publishedVersion, "1.7.11");
+    assert.deepEqual(result.releases, []);
   }
 });
 
@@ -115,4 +117,20 @@ test('oversized Content-Length is reported before reading the release body', asy
     maxBytes: 2097152,
     fetch: async () => new Response('short fixture', { headers }),
   }), /上限 2097152 B，响应至少 3000000 B/);
+});
+
+test('metadata-only version check requires the official published tag and never follows redirects', async () => {
+  const { readPublishedVersion } = await import('../lib/update.js');
+  const repo = 'kingcharleslzy-ai/dsh-purge';
+  const release = { tag_name:'v1.7.11', draft:false, prerelease:false, html_url:`https://github.com/${repo}/releases/tag/v1.7.11` };
+  const fetch = override => async url => {
+    assert.equal(url.href, `https://api.github.com/repos/${repo}/releases/latest`);
+    return Response.json({...release,...override});
+  };
+  assert.equal(await readPublishedVersion(fetch({})), '1.7.11');
+  for (const override of [{draft:true},{prerelease:true},{html_url:'https://example.com/release'},{tag_name:'main'}])
+    await assert.rejects(readPublishedVersion(fetch(override)), /元数据不匹配/);
+  let calls=0;
+  await assert.rejects(readPublishedVersion(async()=>{ calls++; return Response.redirect('https://example.com'); }));
+  assert.equal(calls,1);
 });
