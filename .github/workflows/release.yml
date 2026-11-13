@@ -31,6 +31,10 @@ jobs:
           version="$(node -p "require('./package.json').version")"
           test "$GITHUB_REF_NAME" = "v$version"
           test "$(head -n 1 release-notes.md)" = "# $version"
+          notes="docs/releases/$version.md"
+          test "$(head -n 1 "$notes")" = "# $version"
+          test "$(grep -cE '^# [0-9]+\.[0-9]+\.[0-9]+' "$notes")" = 1
+          test -n "$(tail -n +2 "$notes" | tr -d '[:space:]')"
           test "$(node -p "require('./package.json').name")" = "dsh-purge-community"
           npm pack --ignore-scripts
           cp "dsh-purge-community-$version.tgz" dsh-purge-community.tgz
@@ -41,7 +45,7 @@ jobs:
         run: |
           set -euo pipefail
           version="$(node -p "require('./package.json').version")"
-          gh release create "$GITHUB_REF_NAME" "dsh-purge-community-$version.tgz" dsh-purge-community.tgz SHA256SUMS.txt --verify-tag --title "dsh-purge Community $version" --notes-file release-notes.md
+          gh release create "$GITHUB_REF_NAME" "dsh-purge-community-$version.tgz" dsh-purge-community.tgz SHA256SUMS.txt --verify-tag --title "dsh-purge Community $version" --notes-file "docs/releases/$version.md"
 
   installer:
     strategy:
