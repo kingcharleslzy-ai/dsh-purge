@@ -14912,7 +14912,8 @@ function PurgeGlyphIcon({ size = 16 } = {}) {
   return h(PurgeGlyph, { size });
 }
 function DetailSettings({ view } = {}) {
-  if (view === "summary") return h("span", null, "Purge \xB7 1.1.2");
+  if (view === "summary")
+    return h("span", null, "Purge \xB7 1.1.2");
   return h("div", { className: "dshpp-detail-settings" }, h(PurgePage));
 }
 function PanelOverlays() {

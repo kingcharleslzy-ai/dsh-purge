@@ -40,7 +40,8 @@ function PurgeGlyphIcon({ size = 16 } = {}) {
 
 // The host also renders the row contribution as a compact list item.
 function DetailSettings({ view } = {}) {
-  if (view === "summary") return h("span", null, "Purge · " + __PANEL_VERSION__);
+  if (view === "summary")
+    return h("span", null, "Purge · " + __PANEL_VERSION__);
   return h("div", { className: "dshpp-detail-settings" }, h(PurgePage));
 }
 
