@@ -1,3 +1,12 @@
+# 1.6.98
+
+- **DSH 0.2.2-rc.3 适配**：#13 `ESCALATION_WIDENING_EXEMPT` 的三处 throw 从 `Error` 改成带错误码的 `SandboxEscalationError`，旧锚点不再命中。新增 rc.3 精确变体并保留 rc.2 回退。
+- 在官方 rc.3 的 `app.asar` 隔离副本上逐条验证：86 条补丁 **74 applied / 0 drift / 0 missing**，第二次应用幂等；`desktop-shell` 目标按 `package.main` 解析，45/46/82/83/84/92 均正常。
+- rc.3 真实宿主 Loader 的预设注册验收通过（工具目录、重载/卸载、旧预设源不改写）；加入已验证宿主清单。
+- Windows rc.3 未复测补丁；结论仅覆盖 macOS x64 隔离副本。
+
+验证：新增 rc.3 沙箱锚点回归；全套测试通过。
+
 # 1.6.97
 
 - **热修 1.6.95/1.6.96 红队入口**：`lib/redteam/index.js` 调用了 `ensureToolExecutor`，但 import 列表漏了它，重启后预设注册直接 `read-failed: ensureToolExecutor is not defined`。已补上并加回归，检查入口实际调用的 helper 都在 import 中。

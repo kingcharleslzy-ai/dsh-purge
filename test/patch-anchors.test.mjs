@@ -218,3 +218,16 @@ test("rc.5 keeps complete persona, selected tools and required contexts; first-s
   assert.equal((await method.call(agent,"next-turn",{turn:1})).assembly, assembly);
   assert.deepEqual(events, ["prepare","assemble"]);
 });
+
+test("0.2.2-rc.3 sandbox escalation: #13 still replaces the coded errors", () => {
+  const rc3 = [
+    '\tif (!(WIDER_MODES[effectiveMode] ?? []).includes(mode)) throw new SandboxEscalationError(`sandbox escalation to "${mode}" is not strictly wider than this call\'s current "${effectiveMode}" mode`, "SANDBOX_ESCALATION_INVALID_ARGUMENT");',
+    '\tif (approval.approver === void 0) throw new SandboxEscalationError(`sandbox escalation to "${mode}" requires approval, but no approval service is composed`, "SANDBOX_ESCALATION_UNAVAILABLE");',
+    '\tif (approval.agent === void 0) throw new SandboxEscalationError(`sandbox escalation to "${mode}" requires approval, but the call has no agent to route it through`, "SANDBOX_ESCALATION_UNAVAILABLE");',
+  ].join("\n");
+  const out = applyReplacementsToText(rc3, patch(13));
+  assert.equal(out.changed, true);
+  assert.ok(out.text.includes("[dsh-purge] escalation bypass"));
+  assert.ok(!out.text.includes("SandboxEscalationError"));
+  assert.equal(applyReplacementsToText(out.text, patch(13)).changed, false);
+});
