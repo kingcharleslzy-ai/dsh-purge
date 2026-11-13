@@ -14,12 +14,16 @@
   --dshpp-warn: var(--dsw-alias-state-warn-primary, #b7791f);
   --dshpp-bad: var(--dsw-alias-state-error-primary, #d14343);
   box-sizing: border-box;
+  container: purge-page / inline-size;
+  width: 100%;
+  min-width: 0;
   height: 100%;
   min-height: 0;
   overflow: auto;
-  padding: 20px 24px 40px;
+  padding: 20px clamp(12px, 3%, 32px) 32px;
   color: var(--dshpp-fg);
   font: inherit;
+  font-size: var(--dsh-content-font-size, 14px);
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
@@ -52,7 +56,7 @@
 }
 .dshpp-page-title h1 {
   margin: 0;
-  font-size: 1.15em;
+  font-size: 1.3em;
   font-weight: 600;
   letter-spacing: 0.01em;
 }
@@ -77,8 +81,8 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px 18px;
-  margin: 14px 0 2px;
-  padding: 10px 0 12px;
+  margin: 0;
+  padding: 0 0 12px;
   border-bottom: 1px solid var(--dshpp-line);
   font-size: 0.86em;
   color: var(--dshpp-mute);
@@ -128,8 +132,8 @@
   background: transparent;
   color: var(--dshpp-mute);
   font: inherit;
-  font-size: 0.92em;
-  padding: 9px 12px 10px;
+  font-size: 1em;
+  padding: 10px 12px;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
   cursor: pointer;
@@ -165,7 +169,7 @@
 .dshpp-page .dshpp-card,
 .dshpp-page section.dshpp-panel {
   border: 1px solid var(--dshpp-line);
-  border-radius: 12px;
+  border-radius: var(--dsw-radius-md, 10px);
   background: var(--dshpp-bg);
   padding: 16px 18px;
   margin: 0;
@@ -200,7 +204,7 @@
 .dshpp-page .dshpp-field > .dshpp-field-body {
   min-width: 0;
 }
-@media (max-width: 720px) {
+@container purge-page (max-width: 640px) {
   .dshpp-page .dshpp-field {
     grid-template-columns: 1fr;
   }
@@ -597,7 +601,7 @@
 /* 状态页 hero：一眼看到"现在什么状态、下一步点哪" */
 .dshpp-page .dshpp-hero {
   border: 1px solid var(--dshpp-line);
-  border-radius: 12px;
+  border-radius: var(--dsw-radius-md, 10px);
   background: var(--dshpp-bg);
   padding: 16px 18px;
   display: flex;
@@ -650,4 +654,41 @@
   font-size: 0.82em;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+@container purge-page (max-width: 520px) {
+  .dshpp-page-head {
+    gap: 8px;
+  }
+  .dshpp-page-tabs {
+    gap: 0;
+  }
+  .dshpp-page-tabs button {
+    flex: 1 0 auto;
+    padding-inline: 6px;
+    min-height: 44px;
+  }
+  .dshpp-page-body {
+    padding-top: 12px;
+  }
+  .dshpp-sec {
+    gap: 12px;
+  }
+  .dshpp-page :is(.dshpp-card, section.dshpp-panel, .dshpp-hero) {
+    padding: 12px;
+  }
+  .dshpp-strip {
+    column-gap: 12px;
+  }
+  .dshpp-page :is(.dshpp-row, .dshpp-sub, .dshpp-hero-state) {
+    flex-wrap: wrap;
+  }
+  .dshpp-page :is(input, select, textarea) {
+    max-width: 100%;
+    min-width: 0;
+  }
+  .dshpp-page .dshpp-table {
+    table-layout: fixed;
+    overflow-wrap: anywhere;
+  }
 }

@@ -2,7 +2,18 @@
 // 1.1.71 (MIT). Original block: client.js 1.1.71 lines 2835-3474:
 // REWIND_CSS, RewindSafe/RewindFallback/RewindButton, installRewindUi,
 // installRewindWatch.
-import { h, useState, useEffect, useRef, Component } from "../shared/react.js";
+import {
+  react,
+  h,
+  useState,
+  useEffect,
+  useRef,
+  Component,
+} from "../shared/react.js";
+import {
+  readRewindVisibility,
+  subscribeRewind,
+} from "../state/rewind-visibility.js";
 import { createPortal } from "react-dom";
 import { NS, useT } from "../shared/locale.js";
 import { apiJson } from "../api/client.js";
@@ -272,26 +283,10 @@ export class RewindFallback extends Component {
   }
 }
 
-/** 回退按钮是否显示：默认显示（原版功能），可用 `purge-community rewind off` 关掉。 */
-let rewindVisible = true;
-let rewindProbe = null;
-
-function loadRewindVisibility() {
-  if (!rewindProbe) {
-    rewindProbe = apiJson("/dsh-purge/boost")
-      .then((r) => {
-        rewindVisible = r && r.rewind !== false;
-        return rewindVisible;
-      })
-      .catch(() => true);
-  }
-  return rewindProbe;
-}
-
 export class RewindSafe extends Component {
   constructor(p) {
     super(p);
-    this.state = { failed: false };
+    this.state = { failed: false, visible: false };
   }
   static getDerivedStateFromError() {
     return { failed: true };
@@ -304,32 +299,36 @@ export class RewindSafe extends Component {
     }
   }
   componentDidMount() {
-    loadRewindVisibility().then((on) => {
-      if (!on && !this.unmounted) this.forceUpdate();
+    this.unsubscribe = subscribeRewind((visible) => this.setState({ visible }));
+    readRewindVisibility().catch(() => {
+      // A separately installed panel may be paired with the original backend,
+      // which has no visibility preference.
+      if (
+        typeof __COMMUNITY__ !== "undefined" &&
+        !__COMMUNITY__ &&
+        this.unsubscribe
+      )
+        this.setState({ visible: true });
     });
   }
   componentWillUnmount() {
-    this.unmounted = true;
+    this.unsubscribe?.();
+    this.unsubscribe = null;
   }
   render() {
-    if (!rewindVisible) return null;
-    if (this.state.failed) return h(RewindFallback, this.props);
-    return h(RewindButton, this.props);
+    return h(
+      react.Fragment,
+      null,
+      !this.state.failed && h(RewindDraftSync, this.props),
+      this.state.visible
+        ? h(this.state.failed ? RewindFallback : RewindButton, this.props)
+        : null,
+    );
   }
 }
 
-export function RewindButton(props) {
-  const fallbackT = useT();
-  const t = props.t || fallbackT;
-  const sessions = hostSessions();
-  const inputActions = props.inputActions;
-  const sessionId = props.sessionId || currentSessionId(sessions);
-  const wrapRef = useRef(null);
-  const menuRef = useRef(null);
-  const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState("");
-  const [menu, setMenu] = useState(false);
-
+function RewindDraftSync({ sessionId: slotSession, inputActions }) {
+  const sessionId = slotSession || currentSessionId(hostSessions());
   useEffect(() => {
     if (!sessionId) return;
     const armed = takeArmedFill(sessionId);
@@ -339,6 +338,20 @@ export function RewindButton(props) {
     }
     scheduleEchoClear(sessionId, inputActions);
   }, [sessionId, inputActions]);
+
+  return null;
+}
+
+export function RewindButton(props) {
+  const fallbackT = useT();
+  const t = props.t || fallbackT;
+  const sessions = hostSessions();
+  const sessionId = props.sessionId || currentSessionId(sessions);
+  const wrapRef = useRef(null);
+  const menuRef = useRef(null);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [menu, setMenu] = useState(false);
 
   useEffect(() => {
     if (!menu) return;

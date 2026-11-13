@@ -151,9 +151,9 @@ if (LEGACY[op]) {
     const sub = (argument || "status").toLowerCase();
     if (sub === "on" || sub === "off") {
       const next = writeTuning({ rewind: sub === "on" });
-      result = { ok: true, rewind: next.rewind, restart_required: true };
+      result = { ok: true, rewind: next.rewind, restart_required: false, effective: "page-refresh" };
     } else {
-      result = { ok: true, rewind: readTuning(home).rewind !== false, hint: "purge-community rewind on|off" };
+      result = { ok: true, rewind: readTuning(home).rewind === true, hint: "purge-community rewind on|off" };
     }
   } else if (op === "inject") {
     // 注入位置：head / tail / both。改完下一轮对话即生效（section 每轮回读 tuning），

@@ -11,6 +11,7 @@ import {
   armComposerFill,
   bindRewindHost,
 } from "../src/state/rewind-draft.js";
+import { RewindSetting } from "../src/components/rewind-setting.js";
 import { RewindSafe } from "../src/components/rewind.js";
 
 const store = new Map();
@@ -36,6 +37,8 @@ globalThis.document = {
 };
 const t = (key) => zh[key] || key;
 const posts = [];
+let visible = false;
+let saveFails = false;
 const opened = [];
 const drafts = new Map();
 // Real slot prop path: conversation.input.right hands the entry `inputActions`.
@@ -82,6 +85,22 @@ bindRewindHost({ sessions, uiWorkspace, conversation });
 globalThis.fetch = async (url, init = {}) => {
   const path = new URL(url).pathname;
   const method = (init.method || "GET").toUpperCase();
+  if (path === "/dsh-purge/boost") {
+    if (method === "POST") {
+      if (saveFails)
+        return {
+          ok: false,
+          status: 500,
+          text: async () => JSON.stringify({ error: "save failed" }),
+        };
+      assert.deepEqual(Object.keys(JSON.parse(init.body)), ["rewind"]);
+      visible = JSON.parse(init.body).rewind;
+    }
+    return {
+      ok: true,
+      text: async () => JSON.stringify({ ok: true, rewind: visible }),
+    };
+  }
   if (path === "/dsh-purge/rewind" && method === "POST") {
     posts.push(JSON.parse(init.body));
     return {
@@ -121,6 +140,27 @@ const rewindButton = () =>
   tree.root.findAll(
     (x) => x.type === "button" && x.props.className === "dshp-rewind",
   )[0];
+assert.equal(tree.toJSON(), null, "hidden slot renders no placeholder");
+let settings;
+await act(async () => {
+  settings = create(React.createElement(RewindSetting));
+});
+const toggle = () => settings.root.findByProps({ role: "switch" });
+const set = (checked) =>
+  act(async () => toggle().props.onChange({ target: { checked } }));
+assert.equal(toggle().props.checked, false);
+await set(true);
+assert.equal(toggle().props.checked, true);
+saveFails = true;
+await set(false);
+assert(settings.root.findByProps({ role: "alert" }));
+assert.equal(toggle().props.checked, true);
+assert(rewindButton());
+saveFails = false;
+await set(false);
+assert.equal(tree.toJSON(), null);
+await set(true);
+await act(async () => settings.unmount());
 assert.equal(rewindButton().props.disabled, false);
 assert(rewindButton().props.children.join("").includes("回退"));
 await act(async () => rewindButton().props.onClick());
@@ -153,6 +193,7 @@ await act(async () => tree.unmount());
 // 3) a rewind from the host (arm) fills the box when the slot mounts
 store.clear();
 drafts.clear();
+visible = false;
 armComposerFill("s2", "restored from host");
 assert.equal(store.get(ARM_KEY + "s2") !== undefined, true);
 box = "";
@@ -160,6 +201,7 @@ composerActions.length = 0;
 tree = await render({ sessionId: "s2", inputActions });
 await flush();
 assert.equal(drafts.get("s2"), "restored from host");
+assert.equal(tree.toJSON(), null, "hidden button still restores drafts");
 assert.equal(box, "restored from host", "armed text lands in the composer");
 assert.equal(store.has(ARM_KEY + "s2"), false, "armed fill is consumed");
 await act(async () => tree.unmount());
