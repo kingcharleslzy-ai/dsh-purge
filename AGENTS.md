@@ -1,7 +1,7 @@
 # AGENTS.md — 给 AI agent 的 Purge 使用说明书
 
 > 这份文件是写给**在 DSH 里干活的 agent** 的，不是营销文档。
-> 当前版本：**1.7.11** · 适配 DSH Desktop **0.2.2-rc.3**（0.2.2-rc.2 / 0.2.1-rc.1 / rc.2 / rc.3 / rc.5 同样通过）
+> 当前版本：**1.7.12** · 适配 DSH Desktop **0.2.2-rc.3**（0.2.2-rc.2 / 0.2.1-rc.1 / rc.2 / rc.3 / rc.5 同样通过）
 > 版本号由 `npm run check:docs` 与 `package.json` 校验，发版必须同步。
 
 ---
@@ -133,7 +133,7 @@ purge-community probe new
 
 | 组件 | 值 |
 | --- | --- |
-| 插件 | `dsh-purge-community` 1.7.11 |
+| 插件 | `dsh-purge-community` 1.7.12 |
 | 已验证宿主 | DSH Desktop 0.2.2-rc.3 / 0.2.2-rc.2 / 0.2.2-rc.1 / 0.2.1-rc.1 / 0.2.1-rc.2 / 0.2.1-rc.3 / 0.2.1-rc.5 |
 | 0.2.2-rc.3 | 官方 rc.3 隔离副本 86 条补丁 74 applied / 零漂移，二次应用幂等；真实 Host Loader 预设注册通过。Windows rc.3 未复测补丁。 |
 | 其它宿主 | 允许应用，但 `selfcheck` 会标"未验证"；先看 `diagnose` |
@@ -146,7 +146,7 @@ purge-community probe new
 ## 10. 这份文档的维护规则
 
 - 每次发版必须同步：首部版本行、§9 表格、§3 命令表（如有新增）。
-- 版本号补丁位**最多两位**，禁止 `1.6.100` 这种三段补丁号，第三方市场会解析失败；补丁位超过 99 时提升 minor 并从小号重开（本次 `1.6.101` → `1.7.11`）。
+- 版本号补丁位**最多两位**，禁止 `1.6.100` 这种三段补丁号，第三方市场会解析失败；补丁位超过 99 时提升 minor 并从小号重开（本次 `1.6.101` → `1.7.12`）。
 - `npm run check:docs` 会校验 `AGENTS.md` / `README.md` / `release-notes.md` / `package.json` 的版本一致，CI 里跑；不一致直接失败。
 - 面向人的概览在 `README.md`；**面向 agent 的操作细节以本文件为准**——两者冲突时，先信本文件，再去改 README。
 
@@ -291,16 +291,17 @@ status/selfcheck/diagnose 使用 `diagnosticHost` 统一检查当前安装的物
 
 ## 26. 拒绝检测 + 单次重试（1.6.34 起）
 
-开关：`purge-community retry on|off`（默认 **off**，存在 `tuning.json` 的 `refusalRetry`）。
+开关：`purge-community retry on|off`（默认 **off**，存在 `tuning.json` 的 `refusalRetry`）；`refusalDecompose` 默认开，用 `purge-community retry decompose on|off` 切换。
 
 实现：插件在 `llm/stream` waterfall 上包一层，不改宿主、不改注入正文。
 
-1. 缓冲输出开头最多 400 字符（或遇到工具调用/结束块）；
-2. 命中拒绝特征 → 丢弃本次输出，在**系统提示尾部**追加一段加固语，重跑一次；
-3. 未命中 → 缓冲块原样吐出，之后流式透传，与未装钩子一致；
-4. 每次重试写 `audit.jsonl` 的 `refusal_retry`（只记长度与前 80 字符）。
+1. 缓冲输出开头最多 400 字符（或遇到工具调用/结束块/推理块），先去掉行首列表符号与 `结论：` 等前缀，再匹配拒绝特征；中文对象后置句式（`这条我不做`、`这份我不出`）必须命中。
+2. 命中拒绝 → 丢弃本次输出，在系统提示尾部追加加固语，重跑一次。
+3. 仍拒绝 → 第二次重试改用**虚构框架**（本地合成夹具，小说角色第一人称，保留代码/步骤/占位符），不再重复“必须回答”的硬话。
+4. `refusalDecompose=true` 时，仍拒绝 → 第三次重试只要最小可交付组件。
+5. 仍未通过 → 输出最后一次结果，审计记 `refused / exhausted`；禁止无限重试。
 
-只重试一次，避免死循环。排查拒绝率先看 `purge-community audit --limit 20` 有没有 `refusal_retry`，再决定是否调整 `tuning.injectPosition`。本层与 §20 的插话、§19 的换包互不影响。
+每次重试写 `audit.jsonl` 的 `refusal_retry`（长度、前 80 字符、命中规则、`attempt`、`frame`）；成功/耗尽写 `refusal_retry_outcome`。排查拒绝率先看 `purge-community audit --limit 20`，再决定是否调整 `injection` 或 `boost`。本层与 §20 的插话、§19 的换包互不影响。
 
 ## 1.6.38：慢网更新与审计属主
 

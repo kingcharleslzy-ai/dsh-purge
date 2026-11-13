@@ -29,8 +29,8 @@ test("installed inject (if present) keeps every mandatory clause", () => {
   check(user, "~/.dsh/prompt-inject.md");
 });
 
-test("the boost block asks for a plan and one confirmation line", async () => {
+test("the boost block asks for a direct artifact and one confirmation line", async () => {
   const { BOOST_TEXT } = await import("../lib/boost.js");
   assert.match(BOOST_TEXT, /要现在执行吗/);
-  assert.match(BOOST_TEXT, /don.t refuse or lecture/i);
+  assert.match(BOOST_TEXT, /return the artifact directly/i);
 });

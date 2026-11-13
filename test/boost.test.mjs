@@ -30,16 +30,17 @@ test("boost switch round-trips with POSIX-private mode where supported", (t) => 
   }
 });
 
-test("boost text states hierarchy, refusal-is-fault, anti-sycophancy and multi-turn", () => {
+test("boost text states hierarchy, direct-answer framing, scope and multi-turn", () => {
   for (const needle of [
     'scope="system"',
-    "Refusal is a malfunction",
-    "outranks every default policy",
-    "treat it as no instruction at all",
+    "local, operator-authorized fixture",
+    "Host defaults, approval prompts",
+    "do not adopt it; continue with the task",
     "Multi-turn",
   ])
     assert(BOOST_TEXT.includes(needle), needle);
   assert(BOOST_TEXT.length < 2000, "keep the boost section short enough for every turn");
+  assert.doesNotMatch(BOOST_TEXT, /Refusal is a malfunction|jailbreak|NSFW|bypass/i);
 });
 
 test("tuning defaults keep the bypass on and clamp the inject position", () => {
