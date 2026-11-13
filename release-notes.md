@@ -1,12 +1,3 @@
-# 1.6.98
-
-- **修复宿主 inspector 帧预算死区导致的进程崩溃**：`@deepseek-ai/dsh-experimental-inspector`（0.2.2-rc.1 及更早）剪枝预算按 payload 算、缓冲区校验按 record 数组算，约 60 B 的 record 外壳没被扣掉；Cordis 树撑到 `maxCordisNodes = 2048` 时必然落进死区，抛错又发生在 `queueMicrotask` 里无人捕获，host 直接以 `dsh: fatal uncaught exception` 退出（多 agent/teammate 会话最常见的现场）。
-- 新增补丁 **#95**（宿主 `lib/index.js`）与 **#96**（渲染端 `lib/client.js` 同源产物）：剪枝预算再扣 1,024 B，对齐上游 master 的 `STATE_RECORD_OVERHEAD_BYTES`；发布回调包 try/catch，单帧装不下只丢帧，不再杀 host。两条都是 `optional`，宿主已修或换了写法时显示「不适用」。
-- 新增回归：`test/inspector-budget.test.mjs`（死区算术 + 两条锚点的文本变换），`test/patch-anchors.test.mjs` 增两条锚点；两个文件都可在沙箱内同进程跑。
-- 补丁表 86 → 88 条；其余补丁定义未改。
-
-验证：`check:docs` / `test:ui` / `format:check` 通过；`npm test` 与 `check:client` 由 CI 复核（沙箱内子进程 `EPERM`）。
-
 # 1.6.97
 
 - **热修 1.6.95/1.6.96 红队入口**：`lib/redteam/index.js` 调用了 `ensureToolExecutor`，但 import 列表漏了它，重启后预设注册直接 `read-failed: ensureToolExecutor is not defined`。已补上并加回归，检查入口实际调用的 helper 都在 import 中。
