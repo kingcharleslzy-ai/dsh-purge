@@ -229,18 +229,19 @@ test("宿主受信清单不绕过 Origin 同源与 cross-site 检查", () => {
   assert.equal(decide({ host: "dsh.example.com", origin: "null" }, trusted).allowed, false);
 });
 
-test("trustedHostnames 接受数组与字符串两种形态", async () => {
-  // 合并宿主清单时传的是数组（[...hostTrustedHosts(ctx), env]），
-  // 老调用方传的是字符串；两种都要能解析。
-  const { trustedHostnames } = await import("../lib/index.js").then((m) => ({ trustedHostnames: m.__trustedHostnames }));
-  if (typeof trustedHostnames !== "function") {
-    // 未导出时退化为行为测试：数组形态通过 allowPluginRequest 间接验证。
-    const trusted = new Set(["a.example.com", "b.example.com"]);
-    assert.equal(decide({ host: "a.example.com" }, trusted).allowed, true);
-    assert.equal(decide({ host: "b.example.com" }, trusted).allowed, true);
-    return;
+test("a host deployment and the environment can each allow additional same-origin names", async (t) => {
+  const { trustedHostnames } = await import("../lib/index.js");
+  const previous = process.env.PURGE_TRUSTED_HOSTS;
+  t.after(() => {
+    if (previous === undefined) delete process.env.PURGE_TRUSTED_HOSTS;
+    else process.env.PURGE_TRUSTED_HOSTS = previous;
+  });
+  process.env.PURGE_TRUSTED_HOSTS = "a.example,b.example; c.example d.example";
+  const trusted = trustedHostnames("0.0.0.0", ["host.example"]);
+  for (const host of ["a.example", "b.example", "c.example", "d.example", "host.example"]) {
+    assert.equal(decide({ host, origin: "https://" + host }, trusted).allowed, true, host);
   }
-  const fromArray = trustedHostnames("127.0.0.1", ["a.example.com", "b.example.com"]);
-  assert.equal(fromArray.has("a.example.com"), true);
-  assert.equal(fromArray.has("b.example.com"), true);
+  assert.equal(decide({host: "unknown.example"}, trusted).allowed, false);
+  assert.equal(decide({host: "host.example", origin: "https://a.example"}, trusted).allowed, false);
+  assert.equal(decide({host: "a.example", "sec-fetch-site": "cross-site"}, trusted).allowed, false);
 });

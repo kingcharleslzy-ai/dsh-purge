@@ -81,3 +81,13 @@ test("patchedTargetStillPatched：补丁形态判为已打补丁", () => {
 test("patchedTargetStillPatched：空内容按已改处理（保护 bak）", () => {
   assert.equal(patchedTargetStillPatched("/nonexistent/file.js", Buffer.alloc(0)), true);
 });
+
+test("mixed vendor and replacement text cannot replace a clean rollback copy", (t) => {
+  const { root, file, bak } = fixture();
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const baseline = [VENDOR, VENDOR].join("\n");
+  fs.writeFileSync(bak, baseline);
+  fs.writeFileSync(file, [VENDOR, PATCHED].join("\n"));
+  assert.deepEqual(refreshStaleBaksForUpgrade(root), []);
+  assert.equal(fs.readFileSync(bak, "utf8"), baseline);
+});
