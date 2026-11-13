@@ -74,6 +74,8 @@ dsh-purge Community 是一个跑在你自己机器上的 Harness 附加组件。
 
 ## 安装
 
+手动选择 GitHub 源码文件夹时，先在含 `package-lock.json` 的插件根目录运行 `npm ci --omit=dev --ignore-scripts`，再选择该目录。发行 TGZ 走下方官方安装流程。
+
 **DSH 官方入口负责安装插件；下面的社区安装器由本仓库维护，不是 DeepSeek 官方脚本。** 首次安装可用官方界面或 CLI；已经装过 `dsh-purge` / 旧独立面板时，用社区安装器原地迁移，不要先卸载。安装、应用宿主补丁、手动重启是独立动作。
 
 ### 方式一：DSH 官方界面（首次安装）
