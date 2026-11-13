@@ -19,20 +19,13 @@
 
 ---
 
-## 搭配：本机出图（Qwen Studio）
+## 搭配插件 · DSH-Spicy
 
-破甲之后最直接的玩法，是把「生图」也搬到本机——不用网页、不用会员、不把提示词发到别人服务器。
+**完美适配 purge 的 nsfw content creation 插件**
 
-配套插件 **Qwen Studio**（`dsh-qwen-studio`）把 Qwen Image 2.1 接进 DSH：
+在 DSH 侧栏打开 **DSH-Spicy**，用 Qwen Image 2.1 生图或改图，再把参考图交给 MiniMax H3 生成有声镜头。需要多镜头成片时，可让 Agent 规划分镜、逐镜审片、配旁白并导出 MP4。随包技能提供本机或远程模型的安装与配置步骤。
 
-- **Apple Silicon Mac**：MLX / MFLUX 本机推理，模型用时加载、空闲释放；
-- **Windows / Linux + NVIDIA**：连你自己的 GPU 网关（ComfyUI 或 vLLM-Omni 协议），也支持 SSH 按需拉起；
-- 支持参考图编辑（按图改画风、换材质）、LoRA、ControlNet、蒙版、整套预设、图库与批量任务；
-- 装好之后，会话里直接说「画一张…」或「把这张改成水彩」，Agent 调用 `qwen_generate_image` 并把图返回到对话里。
-
-**组合效果**：破甲让 Agent 不再反复确认「要不要画」，出图插件让它真的画出来，全程在你自己的机器上完成。
-
-**仓库**：[kingcharleslzy-ai/dsh-qwen-studio](https://github.com/kingcharleslzy-ai/dsh-qwen-studio) · **下载**：[最新 Releases](https://github.com/kingcharleslzy-ai/dsh-qwen-studio/releases/latest) · **安装与硬件自查**：[docs/SETUP.md](https://github.com/kingcharleslzy-ai/dsh-qwen-studio/blob/main/docs/SETUP.md)（先看「这台机器能不能跑」再动手）
+[插件主页](https://kingcharleslzy-ai.github.io/dsh-qwen-studio/) · [下载 DSH-Spicy](https://github.com/kingcharleslzy-ai/dsh-qwen-studio/releases/latest) · [Agent 安装指南](https://github.com/kingcharleslzy-ai/dsh-qwen-studio/blob/main/AGENTS.md)
 
 ## 它是什么
 
