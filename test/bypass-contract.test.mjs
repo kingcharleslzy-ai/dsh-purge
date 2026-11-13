@@ -15,7 +15,9 @@ const GATE_FINGERPRINTS = {
   10: "1e1197b70cd4bcd9",
   11: "f732bb54043fe3f6",
   12: "e7e94c2c5d5d6e0f",
-  13: "eac61898ab7bddde",
+  // 0.2.2-rc.3: add the identical bypass for SandboxEscalationError; the
+  // three checks and the replacement text are unchanged.
+  13: "439a5b6d85c9eecb",
   14: "7aec29a1b4b82ddb",
   15: "68bd19d2e61b65bb",
   16: "9698a6c3b4e9e7ba",

@@ -1,6 +1,6 @@
 # 安装、升级与故障排查
 
-当前版本 **1.6.97**。面向用户与协助安装的 Agent。支持的安装器环境：Linux CLI/Web；macOS Desktop；Windows 11 的 PowerShell 5.1/7。完整 Windows 宿主补丁及界面验收与安装器测试分开，不能因安装通过就宣称全部功能正常。
+当前版本 **1.6.98**。面向用户与协助安装的 Agent。支持的安装器环境：Linux CLI/Web；macOS Desktop；Windows 11 的 PowerShell 5.1/7。完整 Windows 宿主补丁及界面验收与安装器测试分开，不能因安装通过就宣称全部功能正常。
 
 ## 安装前
 
@@ -8,6 +8,17 @@
 - 默认数据目录 `~/.dsh`；旧 Desktop CLI 默认 profile `desktop`；带独立 `@deepseek-ai/dsh` CLI 的新桌面壳及 CLI/Web 默认 `web`。不同目录/profile 必须显式指定，不能自动选另一个实例。
 - 保留正在运行的任务；安装不会停止进程或自动重启。用户在任务结束后手动重开。
 - 不需要管理员权限或全局 Node/pnpm；Desktop 入口使用该应用的 Electron 运行时和 CLI。遇到权限问题先核对路径，不建议盲目提权。
+
+## 手动选择插件源码目录
+
+从 GitHub 下载 Source code ZIP 或 clone 后，进入同时含有插件的 `package.json` 和 `package-lock.json` 的目录。在该目录用 Node.js 和 npm 执行以下两条命令，两条均成功后再去 DSH 选择这个目录。下载 ZIP 的外层解压目录可能还有一层同名子目录。
+
+```sh
+npm ci --omit=dev --ignore-scripts
+node --input-type=module -e "await import('./lib/index.js'); console.log('插件入口加载成功')"
+```
+
+源码归档不包含运行依赖。报错若点名缺少 `yaml`，先核对执行目录和 npm 的退出状态。其它模块或语法错误请保留原报错。通过官方 CLI 添加发行 TGZ 时由包管理器解析依赖。
 
 ## pnpm 源码工作区的 Web 升级与回滚
 
