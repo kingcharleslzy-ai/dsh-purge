@@ -1,0 +1,30 @@
+{
+  "name": "dsh-copyback",
+  "title": {
+    "en": "CopyBack - Clipboard History",
+    "zh": "复制找回 · 剪贴板历史"
+  },
+  "description": {
+    "en": "Recall, search, pin and re-copy text you copied earlier on this machine. Local-only recorder; secret markers from browsers/password managers are skipped.",
+    "zh": "找回并重新粘贴本机复制过的文字：搜索、按日筛选、置顶收藏。仅本机记录，密码等敏感内容自动跳过，与 WorkBuddy 版可并存。"
+  },
+  "author": "redkiller79; upstream scripts by ELLA (MIT)",
+  "homepage": "https://github.com/redkiller79/dsh-copyback#readme",
+  "repository": {
+    "url": "https://github.com/redkiller79/dsh-copyback"
+  },
+  "versions": [
+    {
+      "version": "1.0.0",
+      "publishTimestamp": 1794589020,
+      "source": {
+        "type": "git",
+        "url": "https://github.com/redkiller79/dsh-copyback",
+        "commit": "09f3f427c1dfafddd2eed81ad7bd206e4127ee81"
+      },
+      "engines": {
+        "dsh": ">=0.2.1-rc.1 <0.3.0"
+      }
+    }
+  ]
+}
