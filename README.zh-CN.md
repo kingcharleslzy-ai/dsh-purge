@@ -217,6 +217,8 @@ purge-community diagnose             # 锚点漂移时看候选位置
 purge-community audit --limit 20     # 最近动作
 ```
 
+本项目新发行的补丁号使用 0–99，不补前导零；历史版本保留原编号。见[发行版本号](docs/MAINTENANCE.md#发行版本号)。
+
 面板打不开时，先确认版本一致，再按 [维护文档](docs/MAINTENANCE.md) 恢复；不要直接覆盖 `Resources/app`。
 
 ## 开发与验证

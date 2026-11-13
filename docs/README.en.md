@@ -94,6 +94,8 @@ purge-community diagnose
 purge-community audit --limit 20
 ```
 
+New releases use patch numbers 0–99 without leading zeros. Existing releases keep their original numbers. See the [release numbering policy](MAINTENANCE.md#发行版本号).
+
 If the panel does not open, confirm both sides run the same version, then follow [MAINTENANCE.md](MAINTENANCE.md); do not overwrite `Resources/app` directly.
 
 ## Development
