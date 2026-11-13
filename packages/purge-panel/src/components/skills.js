@@ -322,87 +322,89 @@ export function SkillsSection() {
   return h(
     "section",
     { className: "dshpp-panel", "aria-label": t("skills.title") },
+    // 技能列表：名称（+ 说明在列表下方）与右侧的导入动作，内容全宽在下。
     h(
       "div",
-      { className: "dshpp-head" },
-      h("h3", { className: "dshpp-title" }, t("skills.title")),
+      { className: "dpg-field" },
       h(
         "div",
-        { className: "dshpp-row", style: { margin: 0 } },
-        noticeNode(notice),
-      ),
-    ),
-    h(
-      "p",
-      {
-        className: "dshpp-hint",
-        style: { margin: "0 0 10px", color: "var(--dshpp-mute)", fontSize: 12 },
-      },
-      hostText(t, "skills.hint", hostSurfaceOf()),
-    ),
-    h(
-      "div",
-      { className: "dshpp-split" },
-      h(
-        "div",
-        { className: "dshpp-rulelist" },
-        h("div", { className: "dshpp-rulebody" }, list),
+        { className: "dpg-field-head" },
+        h("h4", { className: "dpg-field-label" }, t("skills.list")),
         h(
           "div",
-          { className: "dshpp-create" },
+          { className: "dpg-view-actions" },
+          noticeNode(notice),
           h(
-            "div",
-            { className: "dshpp-create-row" },
-            h("input", {
-              ref: zipRef,
-              type: "file",
-              accept: ".zip,.tgz,.tar.gz,.tar,.skill",
-              style: { display: "none" },
-              onChange: (e) => {
-                const file = e.target.files && e.target.files[0];
-                e.target.value = "";
-                importZip(file);
-              },
-            }),
-            h("input", {
-              ref: (el) => {
-                folderRef.current = el;
-                if (!el) return;
-                el.setAttribute("webkitdirectory", "");
-                el.setAttribute("directory", "");
-                el.multiple = true;
-              },
-              type: "file",
-              multiple: true,
-              style: { display: "none" },
-              onChange: (e) => {
-                const files = Array.from((e.target && e.target.files) || []);
-                e.target.value = "";
-                importFolder(files);
-              },
-            }),
-            h(
-              Btn,
-              {
-                kind: "primary",
-                tiny: true,
-                disabled: busy,
-                onClick: () => zipRef.current && zipRef.current.click(),
-              },
-              t("btn.importZip"),
-            ),
-            h(
-              Btn,
-              {
-                tiny: true,
-                disabled: busy,
-                onClick: () => folderRef.current && folderRef.current.click(),
-              },
-              t("btn.importFolder"),
-            ),
+            Btn,
+            {
+              kind: "primary",
+              tiny: true,
+              disabled: busy,
+              onClick: () => zipRef.current && zipRef.current.click(),
+            },
+            t("btn.importZip"),
+          ),
+          h(
+            Btn,
+            {
+              tiny: true,
+              disabled: busy,
+              onClick: () => folderRef.current && folderRef.current.click(),
+            },
+            t("btn.importFolder"),
           ),
         ),
       ),
+      h("input", {
+        ref: zipRef,
+        type: "file",
+        accept: ".zip,.tgz,.tar.gz,.tar,.skill",
+        style: { display: "none" },
+        onChange: (e) => {
+          const file = e.target.files && e.target.files[0];
+          e.target.value = "";
+          importZip(file);
+        },
+      }),
+      h("input", {
+        ref: (el) => {
+          folderRef.current = el;
+          if (!el) return;
+          el.setAttribute("webkitdirectory", "");
+          el.setAttribute("directory", "");
+          el.multiple = true;
+        },
+        type: "file",
+        multiple: true,
+        style: { display: "none" },
+        onChange: (e) => {
+          const files = Array.from((e.target && e.target.files) || []);
+          e.target.value = "";
+          importFolder(files);
+        },
+      }),
+      h(
+        "div",
+        { className: "dpg-field-control" },
+        h("div", { className: "dshpp-rulebody" }, list),
+      ),
+      h(
+        "p",
+        { className: "dpg-field-hint" },
+        hostText(t, "skills.hint", hostSurfaceOf()),
+      ),
+    ),
+    // 编辑器：独立字段，靠发丝线与列表分开。
+    h(
+      "div",
+      { className: "dpg-field" },
+      editId
+        ? h(
+            "div",
+            { className: "dpg-field-text" },
+            h("h4", { className: "dpg-field-label" }, editId),
+          )
+        : null,
       h(
         "div",
         { className: "dshpp-editor" },
@@ -410,7 +412,7 @@ export function SkillsSection() {
           ? [
               h(
                 "div",
-                { key: "meta", className: "dshpp-row" },
+                { key: "meta", className: "dpg-actions" },
                 h("input", {
                   className: "dshpp-field",
                   placeholder: t("ph.skill.desc"),
@@ -428,7 +430,7 @@ export function SkillsSection() {
               }),
               h(
                 "div",
-                { key: "save", className: "dshpp-row" },
+                { key: "save", className: "dpg-actions" },
                 h(
                   Btn,
                   {
@@ -446,7 +448,7 @@ export function SkillsSection() {
                 noticeNode(notice),
               ),
             ]
-          : h("div", { className: "dshpp-editor-empty" }, t("skills.pick")),
+          : h("p", { className: "dpg-empty" }, t("skills.pick")),
       ),
     ),
   );

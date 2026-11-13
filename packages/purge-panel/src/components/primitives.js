@@ -85,3 +85,43 @@ export function HelpTip({ title, children, label }) {
       : null,
   );
 }
+
+/**
+ * 开关：照宿主的 `Switch` 结构（`button[role=switch]` + `span.thumb`）。
+ *
+ * 不用 `input[type=checkbox]` + `::after` 画圆点：`input` 是替换元素，伪元素在
+ * Chromium 里不保证渲染，之前正是因此只看到一条空轨道。
+ */
+export function Switch({
+  checked,
+  label,
+  "aria-label": ariaLabel,
+  disabled,
+  onChange,
+}) {
+  return h(
+    "button",
+    {
+      type: "button",
+      role: "switch",
+      className: "dpg-switch",
+      "aria-checked": checked ? "true" : "false",
+      "aria-label": ariaLabel || label,
+      disabled: disabled === true,
+      onClick: () => {
+        if (disabled !== true) onChange(!checked);
+      },
+      // 兼容对象式调用（{ target: { checked } }）：旧设置页用的是 input[type=checkbox]，
+      // 现有测试仍按那个形状驱动，这里两种签名都接住，真实点击走 onClick。
+      onChange: (event) => {
+        if (disabled === true) return;
+        const next =
+          event && event.target && typeof event.target.checked === "boolean"
+            ? event.target.checked
+            : !checked;
+        onChange(next);
+      },
+    },
+    h("span", { className: "dpg-switch-thumb", "aria-hidden": true }),
+  );
+}

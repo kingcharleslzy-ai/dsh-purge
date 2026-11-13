@@ -157,13 +157,22 @@ if (process.env.PANEL_CLIENT) {
   assert.equal(rewindSeat.spec.id, "dsh-purge-rewind");
   assert.equal(rewindSeat.spec.order, 20);
 }
-const railSeat = seats.find((x) => x.spec.name === "sidebar.panellist");
-assert(railSeat, "left rail entry is registered");
-assert.equal(railSeat.spec.id, "dsh-purge");
-const pageSeat = seats.find((x) => x.spec.name === "main");
-assert(pageSeat, "full page is registered on the main slot");
-assert.equal(pageSeat.spec.key, "dsh-purge");
-const body = pageSeat.body;
+assert(
+  !seats.some((x) => x.spec.name === "sidebar.panellist"),
+  "the left rail entry is gone: the plugin detail page is the single entry",
+);
+assert(
+  !seats.some((x) => x.spec.name === "main"),
+  "the standalone page is gone: the plugin detail page is the single entry",
+);
+assert.equal(
+  seats.find((x) => x.spec.name === "plugins.bundle.config"),
+  undefined,
+  "the plugin page has no configuration slot",
+);
+const rowSeat = seats.find((x) => x.spec.name === "plugins.row.config");
+assert(rowSeat, "the configuration is registered on the row slot");
+const body = rowSeat.body;
 
 (async () => {
   let tree, resolveGet;
@@ -195,7 +204,6 @@ const body = pageSeat.body;
   assert.equal(area("提示词内容").props.disabled, false);
   fetchHook = null;
   await act(async () => {
-    btn("提示词").props.onClick();
     area("提示词内容").props.onChange({ target: { value: "first draft" } });
   });
   let resolvePost;
@@ -241,7 +249,6 @@ const body = pageSeat.body;
   );
   assert(JSON.stringify(tree.toJSON()).includes("500 Error"));
   await act(async () => {
-    btn("更多").props.onClick();
     area("服务器名单").props.onChange({
       target: { value: "first.example.test" },
     });

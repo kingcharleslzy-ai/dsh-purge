@@ -264,18 +264,15 @@ test("update switches save separate preferences without invoking install or rest
     tree.root.findByProps({ "aria-label": "自动安装更新" }).props.checked,
     true,
   );
-  assert.equal(
-    tree.root.findByProps({ "aria-label": "更新检查间隔" }).props.disabled,
-    true,
-  );
+  // 旧断言查的是「保存瞬间 disabled」，那是 checkbox 时代的瞬时态；
+  // 现在说明常显、禁用只在保存的一瞬，改为断言稳定可观测的状态。
+  const interval = tree.root.findByProps({ "aria-label": "更新检查间隔" });
+  assert.equal(interval.props.value, 6);
+  assert.equal(interval.props.disabled, false);
   assert(
     h.calls.every((c) => c.method === "GET" || c.body.op === "preferences"),
   );
-  await act(async () => {
-    tree.root
-      .findByProps({ "aria-label": "自动安装更新（查看说明）" })
-      .props.onMouseEnter();
-  });
+  // 旧 UI 用 hover 气泡解释开关；现在说明常显在字段描述里，不再需要 hover。
   assert(text(tree).includes("不会自动重启 DSH"));
   await unmount(tree);
 });

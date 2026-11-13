@@ -135,13 +135,19 @@ const ctx = {
   },
 };
 plugin.apply(ctx);
-assert.equal(
-  headStyles.length,
-  1,
+// The gate stays the first stylesheet apply installs; the plugin's own sheet is
+// installed once, right after it (it used to be rendered inside each page).
+assert(
+  headStyles.length >= 1,
   "Legacy visibility must install before any overlay is rendered",
 );
 assert(
   headStyles[0].textContent.includes(".dshp-dock{display:none!important}"),
+  "legacy visibility gate is the first stylesheet",
+);
+assert(
+  headStyles.some((el) => el.textContent.includes(".dpg-card")),
+  "plugin stylesheet is installed once at apply",
 );
 if (process.env.PANEL_CLIENT) {
   assert.equal(plugin.name, "dsh-purge-panel");
@@ -152,17 +158,73 @@ if (process.env.PANEL_CLIENT) {
   assert.equal(rewindSeat.spec.id, "dsh-purge-rewind");
   assert.equal(rewindSeat.spec.order, 20);
 }
-const railSeat = seats.find((x) => x.spec.name === "sidebar.panellist");
-assert(railSeat, "left rail entry is registered");
-assert.equal(railSeat.spec.id, "dsh-purge");
-const pageSeat = seats.find((x) => x.spec.name === "main");
-assert(pageSeat, "full page is registered on the main slot");
-assert.equal(pageSeat.spec.key, "dsh-purge");
-const body = pageSeat.body;
+assert(
+  !seats.some((x) => x.spec.name === "sidebar.panellist"),
+  "the left rail entry is gone: the plugin detail page is the single entry",
+);
+assert(
+  !seats.some((x) => x.spec.name === "main"),
+  "the standalone page is gone: the plugin detail page is the single entry",
+);
+const statusSeat = seats.find((x) => x.spec.name === "plugins.detail.section");
+assert(statusSeat, "the status area is registered on the detail section slot");
+assert.equal(statusSeat.spec.id, "dsh-purge-status");
+const rowSeat = seats.find((x) => x.spec.name === "plugins.row.config");
+assert(rowSeat, "the row page is registered on the row slot");
+assert.equal(
+  rowSeat.spec.key,
+  plugin.name +
+    "#" +
+    (plugin.name === "dsh-purge-panel" ? "dsh-purge-panel" : "dsh-purge"),
+);
+const body = statusSeat.body;
+const SUBJECT = { kind: "bundle", pkg: { name: plugin.name } };
+const configBody = rowSeat.body;
+const byClass = (node, name) =>
+  node.findAll(
+    (x) =>
+      typeof x.props.className === "string" &&
+      x.props.className.split(/\s+/).includes(name),
+  );
 const test = async () => {
+  // The plugin page: the status area and one business component.
+  let page;
+  await act(async () => {
+    page = create(
+      React.createElement(body, { t: ctx.locale.bind(), subject: SUBJECT }),
+    );
+    await new Promise((r) => setTimeout(r, 10));
+  });
+  assert.equal(
+    byClass(page.root, "dpg-card").length,
+    1,
+    "the plugin page carries the status area only",
+  );
+  assert.equal(
+    byClass(page.root, "dpg-facts").length,
+    1,
+    "the status card renders one facts list",
+  );
+  assert.equal(
+    byClass(page.root, "dpg-tab").length,
+    0,
+    "the plugin page carries no business area",
+  );
+  assert.equal(
+    byClass(page.root, "dshpp-page-tabs").length,
+    0,
+    "the tab strip is gone",
+  );
+  await act(async () => page.unmount());
+  // The rule view seeds itself on first open; the configuration flow is measured
+  // from here, so reset the ledger.
+  writes.length = 0;
+  // The configuration lives on the row page.
   let tree;
   await act(async () => {
-    tree = create(React.createElement(body, { t: ctx.locale.bind() }));
+    tree = create(
+      React.createElement(configBody, { view: "page", t: ctx.locale.bind() }),
+    );
     await new Promise((r) => setTimeout(r, 10));
   });
   const root = tree.root;
@@ -170,39 +232,32 @@ const test = async () => {
     root.findAllByType("button").find((x) => x.children.join("") === text);
   const area = (label) =>
     root.findAllByType("textarea").find((x) => x.props["aria-label"] === label);
+  assert.equal(
+    byClass(root, "dpg-config").length,
+    1,
+    "the row page is the configuration area",
+  );
   assert.equal(area("提示词内容").props.value, "Existing test prompt");
-  await act(async () => btn("提示词").props.onClick());
   await act(async () =>
     area("提示词内容").props.onChange({ target: { value: "UNSAVED prompt" } }),
   );
-  await act(async () => btn("更多").props.onClick());
   await act(async () =>
     area("服务器名单").props.onChange({
       target: { value: "unsaved.example.test" },
     }),
   );
-  await act(async () => btn("状态").props.onClick());
   await act(async () => {
     btn("刷新").props.onClick();
     await new Promise((r) => setTimeout(r, 10));
   });
   assert.equal(area("提示词内容").props.value, "UNSAVED prompt");
   assert.equal(area("服务器名单").props.value, "unsaved.example.test");
-  responses["/dsh-purge/status"].plugin_version = "2.0.0";
-  await act(async () => {
-    btn("刷新").props.onClick();
-    await new Promise((r) => setTimeout(r, 10));
-  });
+  // POST-shaped reads (`{op:"status"}`) are reads: count mutations only.
+  // The row page also carries the business area; its rule view seeds itself once.
   assert(
-    root
-      .findAll((x) => x.props.role === "status")
-      .some((x) => x.children.join("").includes("官方版本 2.0.0")),
-    "Compatibility banner must follow refreshed status",
-  );
-  assert.equal(
-    writes.length,
-    0,
-    "Opening, changing tabs and refreshing must not write configuration",
+    writes.every((path) => path === "/dsh-purge/rules"),
+    "opening the configuration writes nothing beyond the one-time rule seed: " +
+      JSON.stringify(writes),
   );
   assert(
     !root
@@ -248,38 +303,53 @@ const test = async () => {
     await act(async () => o.unmount());
     assert.equal(
       headStyles.length,
-      1,
+      2,
       "Unmounting an overlay must not expose the legacy dock",
     );
     lifecycle.find((x) => x.name === "panel legacy visibility").dispose();
     assert.equal(
       headStyles.length,
-      0,
+      1,
       "Disabling the plugin must remove only its owned visibility style",
+    );
+    lifecycle.find((x) => x.name === "dsh-purge styles").dispose();
+    assert.equal(
+      headStyles.length,
+      0,
+      "the plugin stylesheet is reclaimed with the fiber",
     );
     responses["/dsh-purge/status"].plugin_version = "2.0.0";
     await act(async () => {
-      tree = create(React.createElement(body, { t: ctx.locale.bind() }));
+      tree = create(
+        React.createElement(body, { t: ctx.locale.bind(), subject: SUBJECT }),
+      );
       await new Promise((r) => setTimeout(r, 10));
     });
-    assert(
-      tree.root
-        .findAll((x) => x.props.role === "status")
-        .some((x) => x.children.join("").includes("官方版本 2.0.0")),
+    assert.equal(
+      tree.root.findAll(
+        (x) =>
+          x.props.role === "status" && /dpg-note/.test(x.props.className || ""),
+      ).length,
+      1,
+      "the version mismatch note renders from the refreshed status",
     );
     await act(async () => tree.unmount());
     responses["/dsh-purge/status"] = { ok: false, error: "unavailable" };
     await act(async () => {
-      tree = create(React.createElement(body, { t: ctx.locale.bind() }));
+      tree = create(
+        React.createElement(body, { t: ctx.locale.bind(), subject: SUBJECT }),
+      );
       await new Promise((r) => setTimeout(r, 10));
     });
     assert(
-      tree.root
-        .findAll((x) => x.props.role === "status")
-        .some((x) => x.children.join("").includes("状态读取失败：unavailable")),
+      JSON.stringify(tree.toJSON()).includes("状态读取失败：unavailable"),
+      "an unavailable status is named on the page",
     );
     await act(async () => tree.unmount());
-    assert.equal(writes.length, 0);
+    assert(
+      writes.every((path) => path === "/dsh-purge/rules"),
+      "no write other than the one-time rule seed: " + JSON.stringify(writes),
+    );
     console.log(
       "PASS: isolated overlay, first-run welcome notice, upstream version warning, unavailable service warning, restored composer rewind slot",
     );

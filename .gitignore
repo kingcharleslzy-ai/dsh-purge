@@ -34,3 +34,10 @@ default-prompt-inject.md
 *.asar.bak
 
 market-dist/
+
+# local evidence runs (browser profiles, screenshots)
+notes/evidence/tmp/
+
+# 私有材料：只保留入口说明
+docs-private/*
+!docs-private/README.md
