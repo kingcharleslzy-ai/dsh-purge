@@ -19,13 +19,13 @@
 
 ---
 
-## 搭配插件 · DSH-Spicy
+## 搭配插件 · [DSH-Spicy](https://github.com/kingcharleslzy-ai/DSH-Spicy)
 
 **完美适配 purge 的 nsfw content creation 插件**
 
-在 DSH 侧栏打开 **DSH-Spicy**，用 Qwen Image 2.1 生图或改图，再把参考图交给 MiniMax H3 生成有声镜头。需要多镜头成片时，可让 Agent 规划分镜、逐镜审片、配旁白并导出 MP4。随包技能提供本机或远程模型的安装与配置步骤。
+用 Qwen Image 2.1 为成年虚构角色制作写真和插画，用参考图、LoRA 或蒙版调整造型。选定一张图后，用 MiniMax H3 拍成有声镜头，也可以让 Agent 按角色卡做分镜、逐镜审片，再剪成完整的成人向短片。图像和视频模型可部署在本机或自己的 GPU 服务器。
 
-[插件主页](https://kingcharleslzy-ai.github.io/dsh-qwen-studio/) · [下载 DSH-Spicy](https://github.com/kingcharleslzy-ai/dsh-qwen-studio/releases/latest) · [Agent 安装指南](https://github.com/kingcharleslzy-ai/dsh-qwen-studio/blob/main/AGENTS.md)
+[打开 DSH-Spicy 的 GitHub 仓库](https://github.com/kingcharleslzy-ai/DSH-Spicy)
 
 ## 它是什么
 

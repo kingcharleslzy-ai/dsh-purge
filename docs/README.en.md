@@ -16,6 +16,10 @@ Current version 1.6.99 · targets **DSH Desktop 0.2.2-rc.3** (0.2.2-rc.1 / 0.2.1
 
 ---
 
+## Companion plugin · [DSH-Spicy](https://github.com/kingcharleslzy-ai/DSH-Spicy)
+
+Create NSFW portraits and illustrations of fictional adults with Qwen Image 2.1. Use a portrait as a MiniMax H3 reference for a shot with sound, or have your agent storyboard, review and edit a multi-shot film on your own hardware. [Open the DSH-Spicy GitHub repository](https://github.com/kingcharleslzy-ai/DSH-Spicy).
+
 ## What it is
 
 dsh-purge Community runs entirely on your own machine and gathers the parts of daily use that cost the most attention:
