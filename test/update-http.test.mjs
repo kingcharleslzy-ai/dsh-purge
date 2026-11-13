@@ -80,3 +80,39 @@ test('SOCKS handshake rejects unoffered authentication, invalid versions, abort 
  await assert.rejects(socksTunnel(new URL('socks5://'+ 'a'.repeat(256)+':p@127.0.0.1:1'),'api.github.com',443,new AbortController().signal),/长度/);
  await assert.rejects(socksTunnel(new URL('socks5://%zz:p@127.0.0.1:1'),'api.github.com',443,new AbortController().signal),/编码/);
 });
+
+test("oversized and slow release lists retain both source errors and cannot confirm a version", async t => {
+  const { listForkReleases, checkUpdate } = await import('../lib/update.js');
+  const { download } = await import('../lib/community.js');
+  const { LIST_BUDGET_MS } = await import('../lib/update-net.js');
+  const url = 'https://api.github.com/repos/example/test/releases?per_page=20';
+  const primary = () => download(url, 2 * 1024 * 1024, async () =>
+    new Response(Buffer.alloc(2 * 1024 * 1024 + 1))).then(() => []);
+  const atom = async () => ({ tags: [], error: '备用源超时' });
+  const large = await listForkReleases({fresh:true, services:{releases:primary, atom}});
+  assert.match([large.error, large.degraded].join(' '), /上限 2097152 B，响应至少 2097153 B/);
+  assert.match(large.degraded, /备用源超时/);
+  t.mock.timers.enable({apis:['setTimeout']});
+  const pending = listForkReleases({fresh:true, services:{releases:()=>new Promise(()=>{}), atom}});
+  t.mock.timers.tick(LIST_BUDGET_MS);
+  const slow = await pending;
+  assert.match([slow.error, slow.degraded].join(' '), /读取发行列表超时/);
+  assert.match(slow.degraded, /备用源超时/);
+  for (const listing of [large, slow]) {
+    const result = await checkUpdate({listVersions:async()=>({
+      versions:[], releases:[], error:listing.error, degraded:listing.degraded, stale:listing.stale,
+    }), installSites:()=>[]});
+    assert.equal(result.ok, false);
+    assert.equal(result.hasUpdate, null);
+    assert.match(result.error, /备用源超时/);
+  }
+});
+
+
+test('oversized Content-Length is reported before reading the release body', async () => {
+  const headers = { 'content-length': '3000000' };
+  await assert.rejects(requestUpdate('https://api.github.com/x', {
+    maxBytes: 2097152,
+    fetch: async () => new Response('short fixture', { headers }),
+  }), /上限 2097152 B，响应至少 3000000 B/);
+});
