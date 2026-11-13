@@ -53,14 +53,14 @@ test("回环与非回环绑定地址之外的 Host 一律拒绝", () => {
  * apply() 还依赖若干宿主服务；这里只需要 web 部分能把路由挂上，
  * 其余服务缺失时 apply 会抛错，但路由往往已经注册完毕 —— 所以用 try 包住。
  */
-async function bootRoutes(t) {
+async function bootRoutes(t, hostEntries = []) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "purge-community-route-"));
   const savedHome = process.env.DSH_HOME;
   const savedTrusted = process.env.PURGE_TRUSTED_HOSTS;
   process.env.DSH_HOME = home;
   delete process.env.PURGE_TRUSTED_HOSTS;
 
-  const { apply } = await import("../lib/index.js");
+  const { apply, installWebServer } = await import("../lib/index.js");
 
   class Web extends Service {
     constructor(ctx) {
@@ -76,8 +76,16 @@ async function bootRoutes(t) {
   }
 
   const ctx = new Context();
+  class Connection extends Service {
+    constructor(ctx) {
+      super(ctx, "connection");
+      this.trustedHosts = hostEntries;
+    }
+  }
+  await ctx.plugin(Connection);
   await ctx.plugin(Web);
   try { apply(ctx, { enabled: false }); } catch { /* 只关心 web 路由是否挂上 */ }
+  if (hostEntries.length) installWebServer(ctx, {});
   await new Promise((resolve) => setTimeout(resolve, 200));
 
   t.after(async () => {
@@ -132,4 +140,17 @@ test("/dsh-purge/community 仍然拒绝 DNS rebinding", async (t) => {
     "sec-fetch-site": "same-origin",
   });
   assert.equal(result.code, 403);
+});
+
+test("registered routes use the same host and environment allowlists", async (t) => {
+  const {call} = await bootRoutes(t, ["host.example"]);
+  process.env.PURGE_TRUSTED_HOSTS = "one.example,two.example";
+  for (const route of ["/dsh-purge/community", "/dsh-purge/skills", "/dsh-purge/rules"]) {
+    for (const host of ["one.example", "two.example", "host.example"]) {
+      const result = await call(route, {host, origin: "https://" + host});
+      assert.ok(result.registered, route);
+      assert.ok(result.code >= 200 && result.code !== 403, JSON.stringify({route, host, result}));
+    }
+    assert.equal((await call(route, {host: "unknown.example"})).code, 403);
+  }
 });
