@@ -692,3 +692,10 @@
     overflow-wrap: anywhere;
   }
 }
+
+/* The detail route owns scrolling; the sidebar owns its own viewport. */
+.dshpp-detail-settings .dshpp-page {
+  height: auto;
+  overflow: visible;
+  padding-inline: 0;
+}

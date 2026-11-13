@@ -395,6 +395,17 @@ test("update status distinguishes loaded code, pending disk version and independ
     0,
     "rendering status must never install or restart",
   );
+  await render({
+    error: "network timeout",
+    installError: "network timeout",
+    reconciliationError: "package unreadable",
+  });
+  assert.deepEqual(
+    tree.root
+      .findAllByProps({ role: "alert" })
+      .map((node) => node.children.join("")),
+    ["package unreadable", "network timeout"],
+  );
   await unmount(tree);
 });
 

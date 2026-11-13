@@ -370,13 +370,16 @@ export function UpdatePreferences({
               ? `上次检查：${new Date(status.checkedAt).toLocaleString()}${status.hasUpdate ? ` · 可用版本 ${status.availableVersion}` : ""}`
               : "启动后自动检查；安装后仅提示手动重启。",
     ),
-    status.reconciliationError
-      ? h("p", { role: "alert" }, status.reconciliationError)
-      : null,
-    [...new Set([status.error, status.installError].filter(Boolean))].map(
-      (message) => h("p", { key: message, role: "alert" }, message),
-    ),
-    error ? h("p", { role: "alert" }, error) : null,
+    [
+      ...new Set(
+        [
+          status.reconciliationError,
+          status.error,
+          status.installError,
+          error,
+        ].filter(Boolean),
+      ),
+    ].map((message) => h("p", { key: message, role: "alert" }, message)),
   );
 }
 
@@ -573,6 +576,12 @@ export function UpdateChannelDialog({ value, onClose, onSaved }) {
   );
 }
 
+// A successful save updates any other mounted settings entry in this client.
+const preferenceListeners = new Set();
+function publishPreferences(next) {
+  for (const receive of preferenceListeners) receive(next);
+}
+
 export function CommunityMaintenance() {
   const [value, setValue] = useState(null),
     [notice, setNotice] = useState(""),
@@ -587,7 +596,9 @@ export function CommunityMaintenance() {
   const mounted = useRef(false),
     generation = useRef(0),
     running = useRef(false);
+  const latestSave = useRef(null);
   const load = useCallback(async () => {
+    const previousSave = latestSave.current;
     const request = ++generation.current;
     setListState("loading");
     setListError("");
@@ -596,7 +607,11 @@ export function CommunityMaintenance() {
       assertMaintenanceResult(result);
       if (!Array.isArray(result.backups)) throw new Error("备份列表响应无效");
       if (!mounted.current || request !== generation.current) return;
-      setValue(result);
+      setValue(
+        previousSave === latestSave.current
+          ? result
+          : { ...result, update_preferences: latestSave.current },
+      );
       setSelected((current) =>
         result.backups.some((b) => b.id === current) ? current : "",
       );
@@ -609,8 +624,16 @@ export function CommunityMaintenance() {
   }, []);
   useEffect(() => {
     mounted.current = true;
+    const receive = (next) => {
+      latestSave.current = next;
+      setValue(
+        (current) => current && { ...current, update_preferences: next },
+      );
+    };
+    preferenceListeners.add(receive);
     load();
     return () => {
+      preferenceListeners.delete(receive);
       mounted.current = false;
       generation.current++;
     };
@@ -696,8 +719,7 @@ export function CommunityMaintenance() {
     h(UpdatePreferences, {
       value: value?.update_preferences,
       status: value?.update_status,
-      onSaved: (next) =>
-        setValue((current) => ({ ...current, update_preferences: next })),
+      onSaved: publishPreferences,
       onOpenChannel: () => setChannelOpen(true),
     }),
     h(
@@ -819,7 +841,7 @@ export function CommunityMaintenance() {
           value: value.update_preferences,
           onClose: () => setChannelOpen(false),
           onSaved: (next) => {
-            setValue((current) => ({ ...current, update_preferences: next }));
+            publishPreferences(next);
             setNotice(
               tr("updch.saved", "更新通道已保存，下一次检查更新即生效。"),
             );

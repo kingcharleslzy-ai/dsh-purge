@@ -31,6 +31,8 @@
     "client.js",
     "cordis.patch.yml",
     "screenshots.json",
+    "locale",
+    "icon.png",
     "README.md",
     "README.zh-CN.md",
     "LICENSE",
