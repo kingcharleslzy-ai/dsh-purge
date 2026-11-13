@@ -1,5 +1,11 @@
 param([Parameter(Mandatory=$true)][string]$Helper)
 $ErrorActionPreference = 'Stop'
+# PowerShell 5.1 started by pwsh may inherit a module path without Get-FileHash.
+function FixtureHash([string]$file) {
+    $sha = [Security.Cryptography.SHA256]::Create()
+    try { return [BitConverter]::ToString($sha.ComputeHash([IO.File]::ReadAllBytes($file))).Replace('-', '') }
+    finally { $sha.Dispose() }
+}
 $root = Join-Path $env:TEMP ('purge-state-reader-' + [guid]::NewGuid())
 $null = New-Item -ItemType Directory -Path (Join-Path $root 'app')
 $asar = Join-Path $root 'app.asar'
@@ -12,7 +18,7 @@ $archiveReader = $null
 try {
     [IO.File]::WriteAllText((Join-Path $root 'app/package.json'), '{}')
     [IO.File]::WriteAllText($asar, 'isolated archive fixture')
-    $hash = (Get-FileHash -LiteralPath $asar).Hash
+    $hash = (FixtureHash $asar)
     [IO.File]::WriteAllText($state, $starting)
     $stateReader = [IO.File]::Open($state, 'Open', 'Read', 'ReadWrite')
     $archiveReader = [IO.File]::Open($asar, 'Open', 'Read', 'ReadWrite')
@@ -62,17 +68,17 @@ try {
         }
         Start-Sleep -Milliseconds 1
     }
-    if ((Get-FileHash -LiteralPath $asar).Hash -ne $hash) { throw 'Locked archive changed' }
+    if ((FixtureHash $asar) -ne $hash) { throw 'Locked archive changed' }
     $archiveReader.Dispose()
     $archiveReader = $null
     if (!$process.WaitForExit(10000) -or $process.ExitCode -ne 0) { throw 'Helper did not finish' }
     $row = [IO.File]::ReadAllText($state) | ConvertFrom-Json
     $backup = $asar + '.purge-' + $token + '.bak'
-    if ($row.phase -ne 'complete' -or $row.archive_sha256 -ne $hash -or (Test-Path -LiteralPath $asar) -or (Get-FileHash -LiteralPath $backup).Hash -ne $hash) {
+    if ($row.phase -ne 'complete' -or $row.archive_sha256 -ne $hash -or (Test-Path -LiteralPath $asar) -or (FixtureHash $backup) -ne $hash) {
         throw 'Handoff did not preserve the archive'
     }
     [IO.File]::Move($backup, $asar)
-    if ((Get-FileHash -LiteralPath $asar).Hash -ne $hash) { throw 'Offline rollback did not restore original archive' }
+    if ((FixtureHash $asar) -ne $hash) { throw 'Offline rollback did not restore original archive' }
     @{reads=$reads; lockCycles=$cycles; rollback=$true} | ConvertTo-Json -Compress
 } finally {
     if ($stateReader) { $stateReader.Dispose() }
