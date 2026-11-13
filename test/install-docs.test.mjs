@@ -73,3 +73,24 @@ test('cyclic entry aliases terminate without overlooking a following legacy entr
   const cyclic = '```yaml\n&entries\n- group: *entries\n- name: dsh-purge\n```';
   assert.equal(checkInstallExamples(cyclic).length, 1);
 });
+
+test('source installation identifies a missing yaml dependency and preserves other import errors', async (t) => {
+  const { tmpdir } = await import('node:os');
+  const path = await import('node:path');
+  const { spawnSync } = await import('node:child_process');
+  const dir = fs.mkdtempSync(path.join(tmpdir(), 'purge-source-deps-'));
+  t.after(() => fs.rmSync(dir, {recursive: true, force: true}));
+  fs.copyFileSync(new URL('../lib/yaml-runtime.mjs', import.meta.url), path.join(dir, 'yaml-runtime.mjs'));
+  const run = () => spawnSync(process.execPath, ['yaml-runtime.mjs'], {cwd: dir, encoding: 'utf8'});
+  const missing = run();
+  assert.equal(missing.status, 1);
+  assert.match(missing.stderr, /npm ci --omit=dev --ignore-scripts/);
+  const yaml = path.join(dir, 'node_modules', 'yaml');
+  fs.mkdirSync(yaml, {recursive: true});
+  fs.writeFileSync(path.join(yaml, 'package.json'), JSON.stringify({name:'yaml', type:'module', exports:'./index.js'}));
+  fs.writeFileSync(path.join(yaml, 'index.js'), 'import "./missing-internal.js";');
+  const broken = run();
+  assert.equal(broken.status, 1);
+  assert.match(broken.stderr, /missing-internal/);
+  assert.doesNotMatch(broken.stderr, /源码安装缺少 yaml/);
+});

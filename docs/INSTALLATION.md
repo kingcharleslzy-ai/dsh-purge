@@ -9,6 +9,17 @@
 - 保留正在运行的任务；安装不会停止进程或自动重启。用户在任务结束后手动重开。
 - 不需要管理员权限或全局 Node/pnpm；Desktop 入口使用该应用的 Electron 运行时和 CLI。遇到权限问题先核对路径，不建议盲目提权。
 
+## 手动选择插件源码目录
+
+从 GitHub 下载 Source code ZIP 或 clone 后，进入同时含有插件的 `package.json` 和 `package-lock.json` 的目录。在该目录用 Node.js 和 npm 执行以下两条命令，两条均成功后再去 DSH 选择这个目录。下载 ZIP 的外层解压目录可能还有一层同名子目录。
+
+```sh
+npm ci --omit=dev --ignore-scripts
+node --input-type=module -e "await import('./lib/index.js'); console.log('插件入口加载成功')"
+```
+
+源码归档不包含运行依赖。报错若点名缺少 `yaml`，先核对执行目录和 npm 的退出状态。其它模块或语法错误请保留原报错。通过官方 CLI 添加发行 TGZ 时由包管理器解析依赖。
+
 ## pnpm 源码工作区的 Web 升级与回滚
 
 从工作区启动时，先核对运行进程的入口、`DSH_HOME` 和 profile。工作区包名应为 `@deepseek-ai/dsh`，读取它的 `package.json` 中声明的 `bin.dsh`。链接解析到 `apps/cli` 属于正常布局。修订版使用该包的入口进行升级和回滚。
