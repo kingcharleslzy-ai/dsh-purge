@@ -231,3 +231,14 @@ test("0.2.2-rc.3 sandbox escalation: #13 still replaces the coded errors", () =>
   assert.ok(!out.text.includes("SandboxEscalationError"));
   assert.equal(applyReplacementsToText(out.text, patch(13)).changed, false);
 });
+
+test("0.2.2-rc.2 minified inspector client: #96 drops only the oversized tree frame", () => {
+  const minified = 'if(!this.stateFits()){if(previous===void 0)this.state.delete(topic);else this.state.set(topic,previous);throw new Error(`inspector: source state exceeds the source-frame byte limit`)}this.enqueue(record)';
+  const out = applyReplacementsToText(minified, patch(96));
+  assert.equal(out.changed, true);
+  assert.ok(out.text.includes('[dsh-purge] discard oversized Cordis tree'));
+  assert.ok(out.text.includes('if(topic===`cordis/tree`)return;'));
+  const again = applyReplacementsToText(out.text, patch(96));
+  assert.equal(again.changed, false);
+  assert.equal(again.hitMismatch, undefined);
+});
