@@ -115,7 +115,7 @@ async function bootRoutes(t, hostEntries = []) {
     return { registered: true, code: res.code, body: String(res.body || "") };
   };
 
-  return { ctx, call };
+  return { ctx, call, home };
 }
 
 test("/dsh-purge/community 在非回环绑定下不再返回 403", async (t) => {
@@ -153,4 +153,20 @@ test("registered routes use the same host and environment allowlists", async (t)
     }
     assert.equal((await call(route, {host: "unknown.example"})).code, 403);
   }
+});
+
+test("settings route reports corrupt tuning without leaking contents or replacing it", async t => {
+  const { call, home } = await bootRoutes(t, ["localhost"]);
+  const dir = path.join(home, "dsh-purge");
+  fs.mkdirSync(dir, { recursive: true });
+  const file = path.join(dir, "tuning.json");
+  const invalid = '{"private-setting":';
+  fs.writeFileSync(file, invalid);
+  const result = await call("/dsh-purge/boost", { host: `${BIND}:43120` });
+  assert.equal(result.code, 500);
+  const response = JSON.parse(result.body);
+  assert.equal(response.ok, false);
+  assert.match(response.error, /tuning\.json/);
+  assert.doesNotMatch(response.error, /private-setting/);
+  assert.equal(fs.readFileSync(file, "utf8"), invalid);
 });
