@@ -12,6 +12,12 @@ const readmeEn = read("docs/README.en.md");
 const agents = read("AGENTS.md");
 
 const problems = [];
+const releaseSummary = `docs/releases/${version}.md`;
+if (!fs.existsSync(releaseSummary)) {
+  problems.push(`${releaseSummary} 缺少本版发行摘要`);
+} else if (fs.statSync(releaseSummary).size > 8 * 1024) {
+  problems.push(`${releaseSummary} 超过 8 KiB。请保留本版变化和已知限制，将详细记录改为链接。`);
+}
 if (read("README.zh-CN.md") !== readme) problems.push("README.zh-CN.md 必须与 README.md 保持一致");
 for (const file of ["docs/MAINTENANCE.md", "docs/INSTALLATION.md"]) {
   if (!read(file).includes(`当前版本 **${version}**`)) problems.push(`${file} 当前版本未同步到 ${version}`);
