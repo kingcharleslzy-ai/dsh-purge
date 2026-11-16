@@ -337,3 +337,87 @@ test("有效 DSH_BASE 不会收到重复设置目录的建议", () => {
     }
   }
 });
+
+// ---------------------------------------------------------------------------
+// 回归：真实 NEXT 归档里同时带 @deepseek-ai/dsh（内核）。
+// 上面的 makeNextInstall 默认不写这个包，所以 identity() 撞不到 bundled-cli 分支，
+// 套件一直是绿的——这就是缺陷能长期存在的原因。
+// ---------------------------------------------------------------------------
+
+/** 往已有安装里补内核包：node_modules/@deepseek-ai/dsh（bin 指向真实文件） */
+function withKernelPackage(install) {
+  const dshRoot = path.join(install.app, "node_modules", "@deepseek-ai", "dsh");
+  write(path.join(dshRoot, "package.json"), JSON.stringify({
+    name: "@deepseek-ai/dsh",
+    version: "0.2.2-rc.3",
+    bin: { dsh: "lib/bin.js" },
+  }));
+  write(path.join(dshRoot, "lib", "bin.js"), "// kernel bin");
+  return install;
+}
+
+test("NEXT：归档同时带内核包时仍判 next，不被 bundled-cli 抢占", () => {
+  const inst = withKernelPackage(makeNextInstall(path.join(TMP, "next-kernel")));
+  // 修复前必然失败：bundled-cli 分支先命中，kind 变成 "bundled-cli"。
+  assert.equal(desktopIdentity(inst.resources).kind, "next");
+});
+
+test("官方 bundled-host：归档同时带内核包时仍判 bundled-host", () => {
+  // Review 要求覆盖「同样内含 CLI 的官方壳」：NEXT 判定提前后，不能把官方壳抢走。
+  const inst = makeOfficialInstall(path.join(TMP, "official-kernel"));
+  withKernelPackage({ app: path.join(inst.resources, "app") });
+  const found = desktopIdentity(inst.resources);
+  assert.equal(found.kind, "bundled-host");
+  assert.equal(found.package, "@deepseek-ai/dsh-desktop-host");
+});
+
+test("未知壳：带内核包但身份不在已知家族里，仍判 bundled-cli", () => {
+  // Review 要求覆盖「未知壳」：ordering 改动只让 NEXT 提前，其他壳的结论必须不变。
+  const inst = makeNextInstall(path.join(TMP, "unknown-shell"), { name: "some-other-electron-app" });
+  withKernelPackage(inst);
+  assert.equal(desktopIdentity(inst.resources).kind, "bundled-cli");
+});
+
+test("未知壳：既无已知身份也无内核包时仍返回 null", () => {
+  const inst = makeNextInstall(path.join(TMP, "unknown-bare"), { name: "some-other-electron-app" });
+  assert.equal(desktopIdentity(inst.resources), null);
+});
+
+test("NEXT：内核包在场时 CLI 闸门不得阻断换包", () => {
+  const inst = withKernelPackage(makeNextInstall(path.join(TMP, "next-gate")));
+  const verdict = repairOfficialCliAfterUnpack(inst.exe);
+  assert.equal(verdict.notApplicable, true, "NEXT 没有官方 runtime/cli shim，应报 notApplicable");
+  assert.equal(verdict.reason, "next_family_has_no_runtime_cli");
+  // 密封包 + handoff 时 notApplicable 必须放行；修复前拿到 not_official 会返回 true。
+  assert.equal(
+    cliRepairBlocksApply({
+      handoff: { exe: inst.exe, asar: path.join(inst.resources, "app.asar"), swapAsar: true },
+      sealed: true,
+      cliRepair: verdict,
+    }),
+    false,
+  );
+});
+
+test("家族探针目录与补丁写入目录必须是同一处", () => {
+  // Review 要求：目标实例需与当前 resources 目录一致。
+  // probe 可以回退到 process.resourcesPath，但官方路径写补丁时不能沿用它。
+  const inst = withKernelPackage(makeNextInstall(path.join(TMP, "probe-same")));
+  const before = process.resourcesPath;
+  try {
+    // 把 process.resourcesPath 指向一个完全不相干的目录：
+    // 若实现把 probe 目录泄漏进写入路径，这里就会改错地方。
+    Object.defineProperty(process, "resourcesPath", {
+      value: path.join(TMP, "decoy-resources"),
+      configurable: true,
+    });
+    const verdict = repairOfficialCliAfterUnpack(inst.exe);
+    // NEXT 家族走 notApplicable，不会写任何 shim；结论必须来自 inst 自己。
+    assert.equal(verdict.notApplicable, true);
+    assert.equal(verdict.reason, "next_family_has_no_runtime_cli");
+    // 且诱饵目录不能被创建或写入。
+    assert.equal(fs.existsSync(path.join(TMP, "decoy-resources")), false);
+  } finally {
+    Object.defineProperty(process, "resourcesPath", { value: before, configurable: true });
+  }
+});
