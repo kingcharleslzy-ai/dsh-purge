@@ -45,3 +45,55 @@ test("YAML comments, other plugins, malformed YAML and JS tags cannot fabricate 
   delete globalThis.purgeYamlExecuted;
   assert.equal(permissionState(config(), {get(){throw Error("disposed service")}}).state, "unknown");
 });
+
+test("permission default patches require explicit selection", async () => {
+  const { ALL_PATCHES, patchEnabled } = await import("../lib/core.js");
+  for (const id of [7, 8, 10, 51]) {
+    const patch = ALL_PATCHES.find(item => item.id === id);
+    assert.equal(patchEnabled(patch, []), false);
+    assert.equal(patchEnabled(patch, [18, 19]), false);
+    assert.equal(patchEnabled(patch, [id]), true);
+  }
+});
+
+test("permission migration recovers only reproducible plugin output", async () => {
+  const {migratedPermissions} = await import("../lib/permission-migration.mjs");
+  const permission = {id:7, patterns:["native default"], replace:"wide default"};
+  const feature = {id:21, patterns:["old feature"], replace:"new feature"};
+  const patches = [permission, feature], disabled = new Set([7]);
+  const migrate = (base, live) => migratedPermissions(base, live, patches, disabled, "host.js");
+  const original = "native default\r\nold feature";
+  assert.equal(migrate(original, "wide default\r\nnew feature"), "native default\r\nnew feature");
+  assert.equal(migrate(original, "native default\r\nnew feature"), "native default\r\nnew feature");
+  assert.equal(migrate("wide default", "wide default"), "wide default", "user-selected baseline");
+  assert.throws(() => migrate(original, "wide default\r\nmy edit"), /differ/);
+  assert.throws(() => migrate(null, "wide default"), /missing/);
+  assert.throws(() => migrate("", "wide default"), /empty/);
+  assert.throws(() => migrate(original, "partially changed default\r\nold feature"), /differ/);
+  assert.equal(migratedPermissions(original, "wide default\r\nnew feature", patches, new Set(), "host.js"), "wide default\r\nnew feature");
+});
+
+test("a partial legacy permission edit is reported before Apply and leaves the file intact", async (t) => {
+  const fs = await import("node:fs");
+  const path = await import("node:path");
+  const os = await import("node:os");
+  const {inspectPermissionMigration} = await import("../lib/permission-migration.mjs");
+  const root = fs.mkdtempSync(path.join(os.tmpdir(),"purge-permission-proof-"));
+  t.after(() => fs.rmSync(root,{recursive:true,force:true}));
+  const file = path.join(root,"module.js"), backup = file + ".dshpurge.bak";
+  const patch = {id:16, file:"fs-sandbox", patterns:["native fence"], replace:"pass // [dsh-purge] test"};
+  const inspect = save => inspectPermissionMigration({files:{"fs-sandbox":file}, all:[patch],
+    disabled:new Set([16]), roots:[root], fs, save});
+  fs.writeFileSync(backup,"native fence");
+  fs.writeFileSync(file,patch.replace + "\nuser modification");
+  const failWrite = () => assert.fail("ambiguous files must not be written");
+  assert.equal((await inspect()).get(16)[0].status, "unmatched");
+  assert.match((await inspect(failWrite)).get(16)[0].error, /differ/);
+  assert.equal(fs.readFileSync(file,"utf8"), patch.replace + "\nuser modification");
+  fs.unlinkSync(backup);
+  assert.match((await inspect(failWrite)).get(16)[0].error, /missing/);
+  fs.writeFileSync(backup,patch.replace);
+  assert.match((await inspect(failWrite)).get(16)[0].error, /previous plugin marker/);
+  fs.writeFileSync(backup,Buffer.from([0xff]));
+  assert.match((await inspect(failWrite)).get(16)[0].error, /UTF-8/);
+});
