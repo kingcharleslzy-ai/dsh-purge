@@ -97,3 +97,36 @@ test("#74: hosts without the recall seam keep migrating unchanged", () => {
   assert.ok(!result.text.includes("dshGoRecall"));
   assert.doesNotThrow(() => new vm.Script(`({${result.text}})`));
 });
+
+test("#90 reports both controller and loop evidence in either direction", async t => {
+  const { mkdtempSync, mkdirSync, writeFileSync, rmSync } = fs;
+  const { default: os } = await import("node:os");
+  const { default: path } = await import("node:path");
+  const { patchStatusDetail, applyPatches } = await import("../lib/core.js");
+  const { summarizeApplyReport } = await import("../lib/core/verify.mjs");
+  const root = mkdtempSync(path.join(os.tmpdir(),"purge-mobile-anchors-"));
+  const home = path.join(root, "profile");
+  mkdirSync(home);
+  const ai = path.join(root, "host", "node_modules", "@deepseek-ai");
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const oldHome = process.env.DSH_HOME;
+  process.env.DSH_HOME = home;
+  t.after(() => { if (oldHome === undefined) delete process.env.DSH_HOME; else process.env.DSH_HOME = oldHome; });
+  const files = ["dsh-api-session-controller","dsh-agent-loop"].map(pkg => path.join(ai,pkg,"lib","index.js"));
+  const native = [rc2.controller.replace(NATIVE_QUEUE_CASE,HOST_QUEUE_CASE_GATED),rc2.agentMethods];
+  const opts = {dshHome:home, surface:"web", extraPatches:[]};
+  for (const file of files) mkdirSync(path.dirname(file),{recursive:true});
+  for (const side of [0,1]) {
+    for (const missing of [false,true]) {
+      files.forEach((file,i) => writeFileSync(file, i === side ? "// unknown layout" : native[i]));
+      if (missing) rmSync(files[side]);
+      const read = await patchStatusDetail(ai,[steering],opts);
+      assert.equal(read.status[90],"partial");
+      const report = await applyPatches(ai,[steering],opts);
+      assert.equal(summarizeApplyReport(report,[steering]).failed.length,1);
+    }
+  }
+  files.forEach((file,i) => writeFileSync(file,native[i]));
+  assert.equal((await patchStatusDetail(ai,[steering],opts)).status[90],"applied");
+  assert.equal(summarizeApplyReport(await applyPatches(ai,[steering],opts),[steering]).failed.length,0);
+});
