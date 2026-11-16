@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$ElectronExe, [Parameter(Mandatory=$true)][string]$SourceRoot, [switch]$ExpectLegacyFailure)
+param([Parameter(Mandatory=$true)][string]$ElectronExe, [Parameter(Mandatory=$true)][string]$SourceRoot, [switch]$ExpectLegacyFailure, [switch]$EarlyExit)
 $ErrorActionPreference='Stop'
 # Controlled Job Object reproduction, not the user's running DSH. No archive
 # from an installed application is read or changed; no model patches run.
@@ -44,11 +44,23 @@ try {
  $module=([Uri](Join-Path $SourceRoot 'lib/windows-asar-handoff.js')).AbsoluteUri
  $js=@"
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {spawn} from 'node:child_process';
 import {setTimeout as wait} from 'node:timers/promises';
 import {scheduleWindowsAsarHandoff} from $($module|ConvertTo-Json -Compress);
 if(!process.versions.electron)throw Error('Electron required');
 while(!fs.existsSync($($go|ConvertTo-Json -Compress)))await wait(50);
-scheduleWindowsAsarHandoff({exe:$($holderExe|ConvertTo-Json -Compress),asar:$($asar|ConvertTo-Json -Compress)});
+const target = {exe:$($holderExe|ConvertTo-Json -Compress), asar:$($asar|ConvertTo-Json -Compress)};
+const earlyExit = $($EarlyExit.IsPresent | ConvertTo-Json -Compress);
+const io = earlyExit ? { spawn(...args) {
+  // Fault only this fixture's child, after it is written and before its real broker starts.
+  const state = JSON.parse(fs.readFileSync(target.asar + '.purge-handoff.json', 'utf8'));
+  const script = path.join(os.tmpdir(), 'dsh-purge-handoff-' + state.token + '.ps1');
+  fs.writeFileSync(script, 'Start-Sleep -Milliseconds 400; [Environment]::Exit(73)');
+  return spawn(...args);
+}} : {};
+scheduleWindowsAsarHandoff(target, io);
 setInterval(()=>{},1000);
 "@
  $script=Join-Path $root 'launch.mjs';[IO.File]::WriteAllText($script,$js)
@@ -62,7 +74,17 @@ setInterval(()=>{},1000);
    Start-Sleep -Milliseconds 100
    try { $state=Get-Content -LiteralPath $statePath -Raw|ConvertFrom-Json } catch {}
    if($state.phase -eq 'waiting_for_quit'){break}
-   if($state.phase -eq 'failed'){throw $state.detail}
+   if($state.phase -eq 'failed'){if($EarlyExit){break};throw $state.detail}
+ }
+ if($EarlyExit) {
+   $log = Get-Content -LiteralPath ($statePath + '.broker.log') -Raw
+   if ($state.phase -ne 'failed' -or $log -notmatch 'WMI.Create return=0 child_pid=\d+' -or
+       $log -notmatch 'exited before acknowledging startup; child_exit_code=(73|unknown)' -or
+       (Test-Path -LiteralPath ($asar + '.bak')) -or (Get-FileHash -LiteralPath $asar).Hash -ne $originalHash) {
+     throw "Early helper exit was not reported correctly: $log"
+   }
+   Write-Output "Early WMI child exit detected. Original archive SHA256 retained."
+   return
  }
  if($state.phase -ne 'waiting_for_quit'){throw 'helper did not reach waiting_for_quit'}
  $helperId=[int]$state.pid
