@@ -120,3 +120,91 @@ test('an unreadable attempt does not start a second Windows handoff', t => {
   assert.equal(fs.readFileSync(state, 'utf8'), '{truncated');
   assert.equal(fs.existsSync(asar + '.rename-pending'), false);
 });
+
+// The broker is a PowerShell string built inside scheduleWindowsAsarHandoff and handed to
+// powershell.exe as -EncodedCommand base64; it is not exported. Capture it from the injected
+// spawn so these assertions read the script that actually runs, never a reimplementation.
+function capturedBroker() {
+  const f = fixture();
+  const child = new EventEmitter();
+  child.unref = () => {};
+  let brokerScript = '';
+  try {
+    scheduleWindowsAsarHandoff({ exe: 'test.exe', asar: f.asar }, {
+      spawn(command, args) {
+        const encoded = args[args.indexOf('-EncodedCommand') + 1];
+        brokerScript = Buffer.from(encoded, 'base64').toString('utf16le');
+        return child;
+      },
+    });
+  } finally {
+    fs.rmSync(f.root, { recursive: true, force: true });
+  }
+  return brokerScript;
+}
+
+test('broker separates acknowledged, gone and unknown instead of treating them alike', () => {
+  const s = capturedBroker();
+  assert.ok(s.length > 0, 'the broker must be encoded into the spawn args');
+
+  // 1. acknowledged: the state file gate is present and comes FIRST.
+  const ack = s.indexOf("$row.phase -ne 'starting'");
+  assert.ok(ack >= 0, 'the state file must still gate acknowledgement');
+
+  // 2. gone: only ObjectNotFound proves absence.
+  assert.ok(s.includes('NoProcessFoundForGivenId'), 'absence must be identified by its own error id');
+  assert.ok(s.includes('ObjectNotFound'), 'absence must be identified by category too');
+  assert.ok(s.includes('$gone'), 'the loop must track a distinct gone signal');
+
+  // 3. unknown: a bare catch that assumes death is the defect being fixed.
+  assert.ok(
+    !s.includes('no longer observable before acknowledging startup'),
+    'the handle-based abort must be gone',
+  );
+  assert.ok(
+    !/\} catch \{ \$alive=\$false \}/.test(s),
+    'a blanket catch that marks the helper dead would recreate the same misjudgement',
+  );
+
+  // Ordering: acknowledgement must be decided before liveness is even asked.
+  const gone = s.indexOf('$gone=$true');
+  assert.ok(ack < gone, 'acknowledgement must be checked before absence');
+});
+
+test('broker still bounds the wait and keeps a timeout verdict', () => {
+  const s = capturedBroker();
+  // Timeout case: the wait must be bounded and must end in its own verdict.
+  // Match the shape, not the literal number. Hard-coding 20s would break this test
+  // the day someone tunes the budget, which is a legitimate change.
+  assert.match(s, /\$deadline=\[DateTime\]::UtcNow\.AddSeconds\(\d+\)/, "the wait must stay bounded");
+  assert.match(
+    s,
+    /did not acknowledge startup within \d+ seconds/,
+    "a helper that never acknowledges must end in a timeout verdict",
+  );
+  // The timeout verdict must be the post-loop fallthrough, not a mid-loop throw:
+  // otherwise a slow-but-healthy helper would be failed instead of waited for.
+  const loopEnd = s.lastIndexOf("} while ([DateTime]::UtcNow -lt $deadline)");
+  const timeoutThrow = s.lastIndexOf("did not acknowledge startup within");
+  assert.ok(loopEnd >= 0 && timeoutThrow > loopEnd, "the timeout verdict must come after the loop");
+});
+
+test('broker ignores a state file left behind by a previous attempt', () => {
+  const s = capturedBroker();
+  // Stale state case: token mismatch means this file belongs to an older handoff.
+  assert.ok(
+    s.includes('$row.token -ne'),
+    'a foreign token must be recognised as stale rather than as acknowledgement',
+  );
+  const stale = s.indexOf('$row.token -ne');
+  const ack = s.indexOf("$row.phase -ne 'starting'");
+  assert.ok(stale < ack, 'the token check must run before the phase check');
+});
+
+test('broker reports a real early exit with the helper exit code when readable', () => {
+  const s = capturedBroker();
+  // Early exit case: gone + readable handle must surface the real exit code.
+  assert.ok(s.includes('exited before acknowledging startup'), 'an early exit must be reported as such');
+  assert.ok(s.includes('$observed.HasExited'), 'the real exit code must be read when the handle allows it');
+  assert.ok(s.includes("$childCode='unknown'"), 'an unreadable handle must be reported as unknown, not invented');
+});
