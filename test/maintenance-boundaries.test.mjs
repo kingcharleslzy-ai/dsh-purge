@@ -1,3 +1,4 @@
+import {createHash} from "node:crypto";
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {diskFs} from '../lib/extract-asar.js';
@@ -150,4 +151,18 @@ test('retry leaves recorded recovery tree in place and reads fresh archive data'
   assert.notEqual(original.next, retry.next);
   verifyStagedAsar(asar, retry.next);
   assert.equal(fs.readFileSync(path.join(original.next, 'evidence'), 'utf8'), 'retained');
+}));
+
+test('unpacked integrity rejects a substituted file and unrecognized signed-size exceptions', owned(root => {
+  const integrity = { algorithm: 'SHA256', hash: createHash('sha256').update('ABC').digest('hex') };
+  const asar = archive(root, { 'signed.exe': { size: 3, unpacked: true, integrity } });
+  const stage = path.join(root, 'stage');
+  fs.mkdirSync(stage);
+  const binary = path.join(stage, 'signed.exe');
+  fs.writeFileSync(binary, 'ABC');
+  verifyStagedAsar(asar, stage);
+  fs.writeFileSync(binary, 'ABD');
+  assert.throws(() => verifyStagedAsar(asar, stage), /SHA256 mismatch/);
+  fs.writeFileSync(binary, 'ABC-certificate');
+  assert.throws(() => verifyStagedAsar(asar, stage), /unexpected entry/);
 }));
