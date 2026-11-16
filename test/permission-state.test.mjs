@@ -45,3 +45,13 @@ test("YAML comments, other plugins, malformed YAML and JS tags cannot fabricate 
   delete globalThis.purgeYamlExecuted;
   assert.equal(permissionState(config(), {get(){throw Error("disposed service")}}).state, "unknown");
 });
+
+test("permission default patches require explicit selection", async () => {
+  const { ALL_PATCHES, patchEnabled } = await import("../lib/core.js");
+  for (const id of [7, 8, 10, 51]) {
+    const patch = ALL_PATCHES.find(item => item.id === id);
+    assert.equal(patchEnabled(patch, []), false);
+    assert.equal(patchEnabled(patch, [18, 19]), false);
+    assert.equal(patchEnabled(patch, [id]), true);
+  }
+});
