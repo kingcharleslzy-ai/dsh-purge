@@ -10439,11 +10439,7 @@ function PatchHealth({ state }) {
         "b",
         { className: "dshpp-health-big" },
         String(counts.applied),
-        h(
-          "small",
-          null,
-          " / " + counts.denom + " " + t("health.denomUnit")
-        )
+        h("small", null, " / " + counts.denom + " " + t("health.denomUnit"))
       ),
       h("span", { className: "dshpp-health-verdict" }, verdict)
     ),
@@ -10639,11 +10635,7 @@ function PatchGroups({ state }) {
   const [open, setOpen] = useState({ code: true });
   const [filter, setFilter] = useState("all");
   if (state?.ok === false)
-    return h(
-      "p",
-      { role: "status" },
-      t("groups.unreadable")
-    );
+    return h("p", { role: "status" }, t("groups.unreadable"));
   if (!state || !state.patch_status)
     return h("div", { className: "dshpp-skel", style: { height: 120 } });
   const located = !!state.ai_base;
@@ -10657,7 +10649,8 @@ function PatchGroups({ state }) {
     na: counts.na
   };
   const kept = allRows.filter((row) => {
-    if (filter === "pending") return !isNaRow(row) && row.st !== "disabled" && row.st !== "applied" && row.st !== "already";
+    if (filter === "pending")
+      return !isNaRow(row) && row.st !== "disabled" && row.st !== "applied" && row.st !== "already";
     if (filter === "off") return row.st === "disabled";
     if (filter === "na") return isNaRow(row);
     return true;
@@ -10714,9 +10707,7 @@ function PatchGroups({ state }) {
             type: "button",
             className: "dshpp-group-h",
             "aria-expanded": expanded ? "true" : "false",
-            onClick: () => setOpen(
-              (prev) => Object.assign({}, prev, { [key]: !prev[key] })
-            )
+            onClick: () => setOpen((prev) => Object.assign({}, prev, { [key]: !prev[key] }))
           },
           h("span", { className: "dshpp-caret" }, expanded ? "\u25BE" : "\u25B8"),
           h("strong", null, t("group." + key)),
@@ -10728,10 +10719,26 @@ function PatchGroups({ state }) {
           h(
             "span",
             { className: "dshpp-group-chips" },
-            groupCounts.applied ? h("span", { className: "dshpp-pill is-ok" }, String(groupCounts.applied)) : null,
-            groupCounts.pending ? h("span", { className: "dshpp-pill is-wait" }, String(groupCounts.pending)) : null,
-            groupCounts.off ? h("span", { className: "dshpp-pill is-muted" }, String(groupCounts.off)) : null,
-            groupCounts.na ? h("span", { className: "dshpp-pill is-miss" }, String(groupCounts.na)) : null
+            groupCounts.applied ? h(
+              "span",
+              { className: "dshpp-pill is-ok" },
+              String(groupCounts.applied)
+            ) : null,
+            groupCounts.pending ? h(
+              "span",
+              { className: "dshpp-pill is-wait" },
+              String(groupCounts.pending)
+            ) : null,
+            groupCounts.off ? h(
+              "span",
+              { className: "dshpp-pill is-muted" },
+              String(groupCounts.off)
+            ) : null,
+            groupCounts.na ? h(
+              "span",
+              { className: "dshpp-pill is-miss" },
+              String(groupCounts.na)
+            ) : null
           )
         ),
         notes.length ? h("p", { className: "dshpp-group-notes" }, notes.join(" \xB7 ")) : null,
@@ -10800,12 +10807,7 @@ function PatchApplySteps() {
     "div",
     { className: "dshpp-step" },
     h("span", { className: "dshpp-step-no" }, String(n)),
-    h(
-      "div",
-      null,
-      h("b", null, title),
-      h("span", null, desc)
-    )
+    h("div", null, h("b", null, title), h("span", null, desc))
   );
   return h(
     "div",
@@ -11796,7 +11798,16 @@ function PurgifySection({ page = "status", onStatus } = {}) {
   const sealedReady = !located && desktopLikely && !!(s && (s.asar_still_sealed || s.desktop_exe || s.desktop_install));
   const patchesLost = !located && !!(s && s.patches_lost);
   const allRows = located ? patchRowsAll(s) : [];
-  const tally = located ? tallyPatches(allRows) : { applied: 0, pending: 0, unmatched: 0, partial: 0, drifted: 0, disabled: 0, skipped: 0, total: 0 };
+  const tally = located ? tallyPatches(allRows) : {
+    applied: 0,
+    pending: 0,
+    unmatched: 0,
+    partial: 0,
+    drifted: 0,
+    disabled: 0,
+    skipped: 0,
+    total: 0
+  };
   const counts = located ? patchGroupCounts(allRows) : { applied: 0, pending: 0, off: 0, na: 0, total: 0, denom: 0 };
   const total = counts.denom;
   const applied = counts.applied;

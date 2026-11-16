@@ -121,9 +121,11 @@ export const zh = {
   "health.na": "本端不适用",
   "health.denomUnit": "条已写入宿主",
   "health.hint.applied": "锚点已替换，重启后生效。",
-  "health.hint.pending": "开关已开、还没写盘；点一次「应用」写入，写前自动备份。",
+  "health.hint.pending":
+    "开关已开、还没写盘；点一次「应用」写入，写前自动备份。",
   "health.hint.off": "对应开关关着，所以没写。不是失败，拨开才会进入待应用。",
-  "health.hint.na": "这台宿主没有对应组件或文件，进了也不进分母。永远 0 工作量。",
+  "health.hint.na":
+    "这台宿主没有对应组件或文件，进了也不进分母。永远 0 工作量。",
   "health.verdict.pending": "有 {n} 条已启用但还没写盘",
   "health.verdict.ok": "宿主补丁全部就位",
   "groups.unreadable": "读取失败，补丁明细暂不可用；请刷新重试。",
@@ -135,10 +137,13 @@ export const zh = {
   "filter.empty": "这个过滤条件下没有补丁。",
   "sw.permission": "权限补丁",
   "sw.permission.desc": "让宿主不再用沙箱边界和审批弹窗拦工具调用。默认开。",
-  "sw.permission.hint": "改写宿主里的沙箱 / 审批 / 自动放行代码，共 14 条：#6 #7 #8 #9 #10 #13 #14 #15 #16 #35 #51 #59 #60 #62。开启后必须点「应用」才写盘，写前自动备份；需要你手动退出重开 DSH 才生效。关掉它不会立刻回滚已写入的文件，下次「应用」才回滚。",
+  "sw.permission.hint":
+    "改写宿主里的沙箱 / 审批 / 自动放行代码，共 14 条：#6 #7 #8 #9 #10 #13 #14 #15 #16 #35 #51 #59 #60 #62。开启后必须点「应用」才写盘，写前自动备份；需要你手动退出重开 DSH 才生效。关掉它不会立刻回滚已写入的文件，下次「应用」才回滚。",
   "sw.context": "上下文管理",
-  "sw.context.desc": "关掉重复调用提醒与工具结果修剪。默认关，开了 token 会涨。",
-  "sw.context.hint": "对应 #18 重复调用提醒、#19 工具结果修剪。关掉后模型不再收到重复调用提醒，长工具输出也不再被裁剪——代价是 token 持续增长，重度会话更容易撞上限。默认关。",
+  "sw.context.desc":
+    "关掉重复调用提醒与工具结果修剪。默认关，开了 token 会涨。",
+  "sw.context.hint":
+    "对应 #18 重复调用提醒、#19 工具结果修剪。关掉后模型不再收到重复调用提醒，长工具输出也不再被裁剪——代价是 token 持续增长，重度会话更容易撞上限。默认关。",
   "sw.chip.pending": "{n} 条 · 待写入",
   "sw.chip.on": "{n} 条 · 已写入 {written} · 待写 {pending}",
   "detail.title": "补丁明细",
@@ -150,7 +155,8 @@ export const zh = {
   "sw.saving": "保存中…",
   "sw.saved": "已保存，点「应用」写入宿主",
   "sw.fail": "保存失败：{error}",
-  "sw.applyHint": "开关只改插件设置；要写进宿主，还得点上面的「应用」再退出重开。",
+  "sw.applyHint":
+    "开关只改插件设置；要写进宿主，还得点上面的「应用」再退出重开。",
   "steps.title": "写入流程",
   "steps.1.t": "点「应用」",
   "steps.1.d": "把开关对应的补丁写进宿主文件，写前自动备份。",
@@ -606,12 +612,16 @@ export const en = {
   "health.na": "Not for this host",
   "health.denomUnit": "patches written to the host",
   "health.hint.applied": "Anchors replaced; effective after a restart.",
-  "health.hint.pending": "Switch is on but nothing is written yet. Apply to write; a backup is taken first.",
-  "health.hint.off": "Its switch is off, so nothing was written. Not a failure.",
-  "health.hint.na": "This host has no such component or file. Excluded from the denominator; zero work.",
+  "health.hint.pending":
+    "Switch is on but nothing is written yet. Apply to write; a backup is taken first.",
+  "health.hint.off":
+    "Its switch is off, so nothing was written. Not a failure.",
+  "health.hint.na":
+    "This host has no such component or file. Excluded from the denominator; zero work.",
   "health.verdict.pending": "{n} enabled but not written yet",
   "health.verdict.ok": "All host patches in place",
-  "groups.unreadable": "Read failed; patch detail is unavailable. Refresh to retry.",
+  "groups.unreadable":
+    "Read failed; patch detail is unavailable. Refresh to retry.",
   "filter.all": "All",
   "filter.pending": "Pending",
   "filter.off": "Not enabled",
@@ -619,11 +629,15 @@ export const en = {
   "filter.hint": "Open a group for rows; hover a status for the reason",
   "filter.empty": "No patches match this filter.",
   "sw.permission": "Permission patches",
-  "sw.permission.desc": "Stop the host from blocking tool calls behind sandbox and approval gates. On by default.",
-  "sw.permission.hint": "Rewrites the host sandbox / approval / auto-grant code: 14 patches (#6 #7 #8 #9 #10 #13 #14 #15 #16 #35 #51 #59 #60 #62). Nothing is written until you press Apply, and a backup is taken first; you must quit and reopen DSH yourself. Turning it off does not roll back what is already written; the next Apply does.",
+  "sw.permission.desc":
+    "Stop the host from blocking tool calls behind sandbox and approval gates. On by default.",
+  "sw.permission.hint":
+    "Rewrites the host sandbox / approval / auto-grant code: 14 patches (#6 #7 #8 #9 #10 #13 #14 #15 #16 #35 #51 #59 #60 #62). Nothing is written until you press Apply, and a backup is taken first; you must quit and reopen DSH yourself. Turning it off does not roll back what is already written; the next Apply does.",
   "sw.context": "Context management",
-  "sw.context.desc": "Turn off the repeat-call reminder and tool-result pruning. Off by default; tokens grow when on.",
-  "sw.context.hint": "#18 repeat-tool reminder and #19 tool-result pruner. With them off the model no longer gets repeat-call reminders and long tool output is kept in full; the cost is steady token growth. Off by default.",
+  "sw.context.desc":
+    "Turn off the repeat-call reminder and tool-result pruning. Off by default; tokens grow when on.",
+  "sw.context.hint":
+    "#18 repeat-tool reminder and #19 tool-result pruner. With them off the model no longer gets repeat-call reminders and long tool output is kept in full; the cost is steady token growth. Off by default.",
   "sw.chip.pending": "{n} patches · to write",
   "sw.chip.on": "{n} patches · {written} written · {pending} to write",
   "detail.title": "Patch detail",
@@ -635,22 +649,27 @@ export const en = {
   "sw.saving": "Saving…",
   "sw.saved": "Saved. Press Apply to write to the host",
   "sw.fail": "Save failed: {error}",
-  "sw.applyHint": "The switch only changes the plugin setting. Press Apply above and restart to reach the host.",
+  "sw.applyHint":
+    "The switch only changes the plugin setting. Press Apply above and restart to reach the host.",
   "steps.title": "Write flow",
   "steps.1.t": "Press Apply",
-  "steps.1.d": "Writes the selected patches into host files, with a backup first.",
+  "steps.1.d":
+    "Writes the selected patches into host files, with a backup first.",
   "steps.2.t": "Quit DSH yourself",
   "steps.2.d": "You close and reopen it; this plugin never restarts the app.",
   "steps.3.t": "Come back and check",
-  "steps.3.d": "Everything should be green. Pending again means a host upgrade overwrote it; apply once more.",
-  "steps.foot": "\"Not for this host\" is excluded from the denominator and from every failure count.",
+  "steps.3.d":
+    "Everything should be green. Pending again means a host upgrade overwrote it; apply once more.",
+  "steps.foot":
+    '"Not for this host" is excluded from the denominator and from every failure count.',
   "hint.applied": "Anchors replaced; effective after restart.",
   "hint.pending": "Anchor still present; press Apply to write.",
   "hint.disabled": "Its group switch is off; nothing written.",
   "hint.na": "This host has no such component.",
   "hint.skipped": "Target file is not part of this install.",
   "hint.missing_file": "Target file is not part of this install.",
-  "hint.drifted": "Drifted: the host changed this code; the patch needs an update.",
+  "hint.drifted":
+    "Drifted: the host changed this code; the patch needs an update.",
   "hint.unmatched": "No match: host version mismatch.",
   "hint.partial": "Some targets matched, another existed but did not match.",
   "hint.off": "Off.",

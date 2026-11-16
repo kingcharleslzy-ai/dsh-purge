@@ -702,7 +702,18 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
   const patchesLost = !located && !!(s && s.patches_lost);
   // 状态页所有数字同源：逐补丁真值。旧口径按“显示分组”计，会少数几十条。
   const allRows = located ? patchRowsAll(s) : [];
-  const tally = located ? tallyPatches(allRows) : { applied: 0, pending: 0, unmatched: 0, partial: 0, drifted: 0, disabled: 0, skipped: 0, total: 0 };
+  const tally = located
+    ? tallyPatches(allRows)
+    : {
+        applied: 0,
+        pending: 0,
+        unmatched: 0,
+        partial: 0,
+        drifted: 0,
+        disabled: 0,
+        skipped: 0,
+        total: 0,
+      };
   const counts = located
     ? patchGroupCounts(allRows)
     : { applied: 0, pending: 0, off: 0, na: 0, total: 0, denom: 0 };
@@ -889,9 +900,7 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
         ? h(
             "p",
             { className: "dshpp-status-note" },
-            sealedReady
-              ? "宿主还没解开：点「应用」"
-              : t("metric.unlocated"),
+            sealedReady ? "宿主还没解开：点「应用」" : t("metric.unlocated"),
           )
         : null,
       noticeNode(notice),

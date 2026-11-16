@@ -122,9 +122,7 @@ export function patchRowsAll(state) {
 }
 
 function isNaRow(row) {
-  return (
-    row.st === "na" || row.st === "skipped" || row.st === "missing_file"
-  );
+  return row.st === "na" || row.st === "skipped" || row.st === "missing_file";
 }
 
 /** 四态计数：已应用 / 待应用 / 未启用 / 本端不适用，后两者互斥且不计入分母。 */
@@ -199,11 +197,7 @@ export function PatchHealth({ state }) {
         "b",
         { className: "dshpp-health-big" },
         String(counts.applied),
-        h(
-          "small",
-          null,
-          " / " + counts.denom + " " + t("health.denomUnit"),
-        ),
+        h("small", null, " / " + counts.denom + " " + t("health.denomUnit")),
       ),
       h("span", { className: "dshpp-health-verdict" }, verdict),
     ),
@@ -419,11 +413,7 @@ export function PatchGroups({ state }) {
   const [open, setOpen] = useState({ code: true });
   const [filter, setFilter] = useState("all");
   if (state?.ok === false)
-    return h(
-      "p",
-      { role: "status" },
-      t("groups.unreadable"),
-    );
+    return h("p", { role: "status" }, t("groups.unreadable"));
   if (!state || !state.patch_status)
     return h("div", { className: "dshpp-skel", style: { height: 120 } });
   const located = !!state.ai_base;
@@ -438,7 +428,13 @@ export function PatchGroups({ state }) {
     na: counts.na,
   };
   const kept = allRows.filter((row) => {
-    if (filter === "pending") return !isNaRow(row) && row.st !== "disabled" && row.st !== "applied" && row.st !== "already";
+    if (filter === "pending")
+      return (
+        !isNaRow(row) &&
+        row.st !== "disabled" &&
+        row.st !== "applied" &&
+        row.st !== "already"
+      );
     if (filter === "off") return row.st === "disabled";
     if (filter === "na") return isNaRow(row);
     return true;
@@ -502,9 +498,7 @@ export function PatchGroups({ state }) {
             className: "dshpp-group-h",
             "aria-expanded": expanded ? "true" : "false",
             onClick: () =>
-              setOpen((prev) =>
-                Object.assign({}, prev, { [key]: !prev[key] }),
-              ),
+              setOpen((prev) => Object.assign({}, prev, { [key]: !prev[key] })),
           },
           h("span", { className: "dshpp-caret" }, expanded ? "▾" : "▸"),
           h("strong", null, t("group." + key)),
@@ -517,16 +511,32 @@ export function PatchGroups({ state }) {
             "span",
             { className: "dshpp-group-chips" },
             groupCounts.applied
-              ? h("span", { className: "dshpp-pill is-ok" }, String(groupCounts.applied))
+              ? h(
+                  "span",
+                  { className: "dshpp-pill is-ok" },
+                  String(groupCounts.applied),
+                )
               : null,
             groupCounts.pending
-              ? h("span", { className: "dshpp-pill is-wait" }, String(groupCounts.pending))
+              ? h(
+                  "span",
+                  { className: "dshpp-pill is-wait" },
+                  String(groupCounts.pending),
+                )
               : null,
             groupCounts.off
-              ? h("span", { className: "dshpp-pill is-muted" }, String(groupCounts.off))
+              ? h(
+                  "span",
+                  { className: "dshpp-pill is-muted" },
+                  String(groupCounts.off),
+                )
               : null,
             groupCounts.na
-              ? h("span", { className: "dshpp-pill is-miss" }, String(groupCounts.na))
+              ? h(
+                  "span",
+                  { className: "dshpp-pill is-miss" },
+                  String(groupCounts.na),
+                )
               : null,
           ),
         ),
@@ -599,7 +609,9 @@ export function PatchGroups({ state }) {
           : null,
       );
     }),
-    !grouped.size ? h("p", { className: "dshpp-filter-hint" }, t("filter.empty")) : null,
+    !grouped.size
+      ? h("p", { className: "dshpp-filter-hint" }, t("filter.empty"))
+      : null,
   );
 }
 
@@ -611,12 +623,7 @@ export function PatchApplySteps() {
       "div",
       { className: "dshpp-step" },
       h("span", { className: "dshpp-step-no" }, String(n)),
-      h(
-        "div",
-        null,
-        h("b", null, title),
-        h("span", null, desc),
-      ),
+      h("div", null, h("b", null, title), h("span", null, desc)),
     );
   return h(
     "div",
