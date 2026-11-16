@@ -290,7 +290,7 @@ export function PurgePage() {
         h(StatusStrip, { info }),
         h(PurgifySection, { page: "status", onStatus: mergeInfo }),
         h(StatusExtras),
-        h(CommunityMaintenance),
+        h(CommunityMaintenance, { localVersion: info?.plugin_version || "" }),
       ),
       h(
         "div",

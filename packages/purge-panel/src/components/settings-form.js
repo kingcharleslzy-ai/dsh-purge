@@ -23,8 +23,13 @@ import {
 import {
   shimKind,
   patchRowsOf,
+  patchRowsAll,
+  patchGroupCounts,
   tallyPatches,
   PatchGroups,
+  PatchHealth,
+  PatchGroupSwitches,
+  PatchApplySteps,
 } from "./patch-status.js";
 import { noticeNode, Btn } from "./primitives.js";
 import { HooksDenySection } from "./advanced.js";
@@ -41,6 +46,7 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
   const tRef = useRef(t);
   tRef.current = t;
   const [state, setState] = useState(null);
+  const [scannedAt, setScannedAt] = useState(null);
   useEffect(() => {
     if (onStatus) onStatus(state);
   }, [state, onStatus]);
@@ -292,6 +298,15 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
       .then((d) => {
         if (d && d.ok) {
           setState(d);
+          try {
+            setScannedAt(
+              new Date().toLocaleTimeString("zh-CN", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+              }),
+            );
+          } catch {}
           setNotice((previous) =>
             previous?.source === "status"
               ? { kind: "idle", text: "" }
@@ -685,11 +700,14 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
     desktopLikely &&
     !!(s && (s.asar_still_sealed || s.desktop_exe || s.desktop_install));
   const patchesLost = !located && !!(s && s.patches_lost);
-  const tally = located
-    ? tallyPatches(patchRowsOf(s))
-    : { applied: 0, pending: 0, unmatched: 0, skipped: 0, total: 0 };
-  const total = tally.total;
-  const applied = tally.applied;
+  // 状态页所有数字同源：逐补丁真值。旧口径按“显示分组”计，会少数几十条。
+  const allRows = located ? patchRowsAll(s) : [];
+  const tally = located ? tallyPatches(allRows) : { applied: 0, pending: 0, unmatched: 0, partial: 0, drifted: 0, disabled: 0, skipped: 0, total: 0 };
+  const counts = located
+    ? patchGroupCounts(allRows)
+    : { applied: 0, pending: 0, off: 0, na: 0, total: 0, denom: 0 };
+  const total = counts.denom;
+  const applied = counts.applied;
   const pct = located && total ? Math.round((applied / total) * 100) : 0;
   const metricNotes = [];
   if (tally.pending)
@@ -703,7 +721,7 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
   if (tally.disabled)
     metricNotes.push(t("metric.disabledShort", { n: tally.disabled }));
   if (tally.skipped)
-    metricNotes.push(t("metric.skipShort", { n: tally.skipped }));
+    metricNotes.push(t("metric.naShort", { n: tally.skipped }));
 
   const versions = (updateInfo && updateInfo.versions) || [];
   const channelNow = (updateInfo && updateInfo.channel) || channel || "stable";
@@ -816,58 +834,25 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
     h(
       "div",
       { hidden: page !== "status" },
+      // 标题行：左侧页面名，右侧操作组 + 扫描时间（对齐样稿，不再用 hero 卡包一层）
       h(
         "div",
-        { className: "dshpp-hero" },
+        { className: "dshpp-status-head" },
+        h("h3", { className: "dshpp-status-title" }, t("status.title")),
         h(
           "div",
-          { className: "dshpp-hero-state" },
-          h("i", {
-            className:
-              "dshpp-dot " +
-              (!located
-                ? "is-warn"
-                : patchBusy
-                  ? ""
-                  : s?.asar_still_sealed || tally.pending
-                    ? "is-warn"
-                    : "is-ok"),
-          }),
-          h(
-            "b",
-            null,
-            !s
-              ? "正在读取宿主状态…"
-              : s.ok === false
-                ? "状态读取失败，宿主与补丁状态未知"
-                : !located
-                  ? sealedReady
-                    ? "宿主还没解开：点「应用」"
-                    : "未定位到宿主：点「应用」重试"
-                  : s?.asar_still_sealed
-                    ? `${applied}/${total} 条磁盘补丁（退出重开后加载）`
-                    : tally.pending
-                      ? `还有 ${tally.pending} 条待应用`
-                      : `${applied}/${total} 条补丁已生效`,
-          ),
-          h(
-            "span",
-            { className: "dshpp-hero-sub" },
-            t("surface." + hostSurface),
-          ),
-        ),
-        h(
-          "div",
-          { className: "dshpp-hero-actions" },
+          { className: "dshpp-status-ops" },
           h(
             Btn,
             {
               kind: "primary",
-              className: "dshpp-btn-lead",
+              className: "dshpp-btn-apply",
               disabled: patchBusy || uninstallBusy || !overrideLoaded,
               onClick: () => doAction("apply", "action.apply"),
             },
-            patchBusy ? t("btn.apply.busy") : t("btn.apply"),
+            patchBusy
+              ? t("btn.apply.busy")
+              : t("btn.apply") + (counts.pending ? " " + counts.pending : ""),
           ),
           h(
             Btn,
@@ -888,66 +873,52 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
             uninstallBusy ? t("btn.uninstall.busy") : t("btn.uninstall"),
           ),
           h(
-            Btn,
+            "button",
             {
-              tiny: true,
+              type: "button",
+              className: "dshpp-scan",
               onClick: loadAll,
               disabled: patchBusy || uninstallBusy,
+              title: t("scan.hint"),
             },
-            "刷新",
+            scannedAt ? t("scan.recent", { time: scannedAt }) : t("scan.hint"),
           ),
         ),
-        h(
-          "p",
-          { className: "dshpp-hero-hint" },
-          "装好插件、更新过 DSH、或发现模型又开始推脱时：点一次「应用」，然后退出并重开 DSH，就会恢复。",
-        ),
-        noticeNode(notice),
       ),
+      !located
+        ? h(
+            "p",
+            { className: "dshpp-status-note" },
+            sealedReady
+              ? "宿主还没解开：点「应用」"
+              : t("metric.unlocated"),
+          )
+        : null,
+      noticeNode(notice),
+      h(PatchHealth, { state: s }),
+      h(PatchGroupSwitches, { state: s, onSaved: loadAll }),
       h(
-        "div",
-        { className: "dshpp-rel" },
+        "section",
+        { className: "dshpp-fold is-open" },
         h(
-          "div",
-          { className: "dshpp-now" },
-          h("span", { className: "dshpp-now-label" }, t("channel.local")),
+          "h4",
+          { className: "dshpp-fold-t" },
+          t("detail.title"),
           h(
-            "b",
-            { className: "dshpp-now-ver" },
-            localVer ? "v" + localVer : "—",
-          ),
-          h("em", { className: "dshpp-now-mark" }, t("update.current")),
-        ),
-        h(
-          "details",
-          { className: "dshpp-editions" },
-          h("summary", null, "版本管理"),
-          renderEdition("stable"),
-          renderEdition("beta"),
-        ),
-        noticeNode(updateNotice),
-      ),
-      h(
-        "details",
-        { className: "dshpp-fold" },
-        h(
-          "summary",
-          null,
-          "补丁明细 ",
-          h(
-            "b",
-            null,
+            "span",
+            { className: "dshpp-fold-n" },
             !s
-              ? "读取中"
+              ? t("detail.reading")
               : s.ok === false
-                ? "状态未知"
+                ? t("detail.unknown")
                 : s.ai_base
-                  ? `${applied}/${total} 已应用`
-                  : "未定位宿主",
+                  ? `${applied} / ${total}`
+                  : t("detail.unlocated"),
           ),
         ),
         h(PatchGroups, { state: s }),
       ),
+      h(PatchApplySteps, null),
       h(
         "details",
         null,

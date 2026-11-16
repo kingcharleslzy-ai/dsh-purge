@@ -699,3 +699,612 @@
   overflow: visible;
   padding-inline: 0;
 }
+
+/* ── 状态页重排（1.7.18）：健康度 / 补丁组开关 / 过滤 / 写入流程 ───────── */
+
+.dshpp-scan {
+  border: 0;
+  background: transparent;
+  color: var(--dshpp-mute);
+  font: inherit;
+  font-size: 12px;
+  padding: 6px 2px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+.dshpp-scan:hover {
+  color: var(--dshpp-fg);
+}
+.dshpp-scan:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.dshpp-health {
+  border: 1px solid var(--dshpp-line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-top: 12px;
+  background: var(--dshpp-bg);
+  min-width: 0;
+}
+.dshpp-health-top {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.dshpp-health-big {
+  font-size: 26px;
+  font-weight: 660;
+  letter-spacing: -0.3px;
+  font-variant-numeric: tabular-nums;
+}
+.dshpp-health-big small {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--dshpp-mute);
+  letter-spacing: 0;
+}
+.dshpp-health-verdict {
+  font-size: 12.5px;
+  color: var(--dshpp-mute);
+  min-width: 0;
+}
+.dshpp-bar {
+  display: flex;
+  height: 7px;
+  border-radius: 99px;
+  overflow: hidden;
+  background: var(--dshpp-bg-2);
+  margin: 10px 0 12px;
+}
+.dshpp-bar i {
+  display: block;
+  height: 100%;
+}
+.dshpp-bar .is-ok {
+  background: var(--dshpp-ok);
+}
+.dshpp-bar .is-wait {
+  background: var(--dshpp-warn);
+}
+.dshpp-bar .is-off {
+  background: var(--dshpp-mute);
+  opacity: 0.45;
+}
+.dshpp-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.dshpp-tile {
+  border: 1px solid var(--dshpp-line);
+  border-radius: 10px;
+  padding: 8px 11px;
+  background: var(--dshpp-bg-2);
+  min-width: 0;
+}
+.dshpp-tile.is-na {
+  border-style: dashed;
+}
+.dshpp-tile-k {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  color: var(--dshpp-mute);
+  white-space: nowrap;
+}
+.dshpp-tile-v {
+  margin-top: 2px;
+  font-size: 18px;
+  font-weight: 640;
+  font-variant-numeric: tabular-nums;
+}
+.dshpp-tile.is-ok .dshpp-tile-v {
+  color: var(--dshpp-ok);
+}
+.dshpp-tile.is-wait .dshpp-tile-v {
+  color: var(--dshpp-warn);
+}
+.dshpp-tile.is-off .dshpp-tile-v,
+.dshpp-tile.is-na .dshpp-tile-v {
+  color: var(--dshpp-mute);
+}
+
+.dshpp-switches {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.dshpp-sw {
+  border: 1px solid var(--dshpp-line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: var(--dshpp-bg);
+  min-width: 0;
+}
+.dshpp-sw.is-on {
+  box-shadow: inset 3px 0 0 var(--dshpp-accent);
+}
+.dshpp-sw-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.dshpp-sw-t {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  min-width: 0;
+}
+.dshpp-sw-d {
+  margin: 6px 0 8px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--dshpp-mute);
+}
+.dshpp-sw-f {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.dshpp-chip {
+  border: 1px solid var(--dshpp-line);
+  border-radius: 99px;
+  padding: 2px 8px;
+  font-size: 11.5px;
+  color: var(--dshpp-mute);
+}
+.dshpp-chip.is-on {
+  color: var(--dshpp-accent);
+  border-color: currentColor;
+}
+.dshpp-track {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--dshpp-line);
+  border-radius: 99px;
+  background: var(--dshpp-bg-2);
+  cursor: pointer;
+}
+.dshpp-track.is-on {
+  background: var(--dshpp-accent);
+  border-color: var(--dshpp-accent);
+}
+.dshpp-track:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+.dshpp-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 99px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.15s ease;
+}
+.dshpp-track.is-on .dshpp-knob {
+  transform: translateX(18px);
+}
+.dshpp-sw-note {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  color: var(--dshpp-ok);
+}
+.dshpp-sw-note.is-bad {
+  color: var(--dshpp-bad);
+}
+.dshpp-sw-hint {
+  margin: 6px 2px 0;
+  font-size: 11.5px;
+  color: var(--dshpp-mute);
+}
+
+.dshpp-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 10px 0 8px;
+}
+.dshpp-fbtn {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--dshpp-mute);
+  border-radius: 99px;
+  padding: 4px 10px;
+  min-height: 32px;
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.dshpp-fbtn:hover {
+  background: var(--dshpp-bg-2);
+}
+.dshpp-fbtn.is-cur {
+  color: var(--dshpp-accent);
+  border-color: currentColor;
+  background: color-mix(in srgb, var(--dshpp-accent) 10%, transparent);
+}
+.dshpp-fbtn-n {
+  margin-left: 5px;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+.dshpp-filter-hint {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--dshpp-mute);
+}
+
+.dshpp-caret {
+  width: 12px;
+  flex: none;
+  color: var(--dshpp-mute);
+  font-size: 10px;
+}
+.dshpp-group-chips {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.dshpp-group-notes {
+  margin: 0;
+  padding: 0 12px 8px 30px;
+  font-size: 11.5px;
+  color: var(--dshpp-mute);
+}
+.dshpp-row-note {
+  display: block;
+  margin-top: 1px;
+  font-size: 11px;
+  color: var(--dshpp-mute);
+}
+
+.dshpp-flow {
+  border: 1px solid var(--dshpp-line);
+  border-radius: 12px;
+  padding: 13px 15px;
+  margin-top: 12px;
+  background: var(--dshpp-bg);
+}
+.dshpp-flow h4 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.dshpp-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.dshpp-step {
+  display: flex;
+  gap: 9px;
+  min-width: 0;
+}
+.dshpp-step-no {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  border: 1px solid var(--dshpp-line);
+  border-radius: 99px;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  color: var(--dshpp-mute);
+}
+.dshpp-step b {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.dshpp-step span {
+  font-size: 11.5px;
+  color: var(--dshpp-mute);
+}
+.dshpp-flow-foot {
+  margin: 10px 0 0;
+  font-size: 11px;
+  color: var(--dshpp-mute);
+}
+
+/* 窄屏：两列 → 单列，四格 → 2×2，开关加大触摸目标 */
+@container purge-page (max-width: 640px) {
+  .dshpp-health-big {
+    font-size: 22px;
+  }
+  .dshpp-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .dshpp-switches {
+    grid-template-columns: 1fr;
+  }
+  .dshpp-steps {
+    grid-template-columns: 1fr;
+  }
+  .dshpp-filter-hint {
+    display: none;
+  }
+  .dshpp-track {
+    width: 46px;
+    height: 26px;
+  }
+  .dshpp-knob {
+    width: 20px;
+    height: 20px;
+  }
+  .dshpp-track.is-on .dshpp-knob {
+    transform: translateX(20px);
+  }
+  .dshpp-group-notes {
+    padding-left: 12px;
+  }
+  /* 窄屏：组头允许换行，状态胶囊独占一行，否则只会露出第一个 */
+  .dshpp-group-h {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+  .dshpp-group-chips {
+    flex: 1 0 100%;
+    margin-left: 0;
+    justify-content: flex-start;
+  }
+  .dshpp-group-h {
+    justify-content: flex-start;
+    column-gap: 8px;
+  }
+  .dshpp-group-h .dshpp-count {
+    margin-left: auto;
+  }
+  /* 三列表格在 360px 会顶破容器：固定列宽 + 允许状态词换行 */
+  .dshpp-page .dshpp-table {
+    width: 100%;
+    table-layout: fixed;
+  }
+  .dshpp-page .dshpp-table :is(th, td):first-child {
+    width: 44px;
+  }
+  .dshpp-page .dshpp-table :is(th, td):last-child {
+    width: 88px;
+  }
+  .dshpp-page .dshpp-table .dshpp-pill {
+    white-space: normal;
+    text-align: center;
+  }
+  .dshpp-sw-d,
+  .dshpp-sw-hint,
+  .dshpp-group-notes {
+    overflow-wrap: anywhere;
+  }
+}
+
+@container purge-page (max-width: 400px) {
+  .dshpp-tile-k {
+    white-space: normal;
+  }
+  .dshpp-fbtn {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+  .dshpp-sw {
+    padding: 11px 12px;
+  }
+  .dshpp-health {
+    padding: 12px;
+  }
+}
+
+/* 补丁明细改成常显区块（不再是折叠壳） */
+.dshpp-fold.is-open {
+  display: block;
+}
+.dshpp-fold-t {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 18px 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.dshpp-fold-n {
+  color: var(--dshpp-mute);
+  font-weight: 500;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 视觉对齐样稿（1.7.18）：数字、间距、圆角、颜色统一到同一套刻度 ──────
+   DSH 自身的 brand 色是单色黑白，样稿用的是品牌蓝/绿；这里只在本页范围内
+   覆盖，避免影响面板其它区块。 */
+.dshpp-page {
+  --pg-accent: #2563eb;
+  --pg-ok: #15803d;
+  --pg-warn: #b45309;
+}
+
+/* 标题行：页面名 + 操作组 + 扫描时间 */
+.dshpp-status-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 2px 0 16px;
+}
+.dshpp-status-title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: -0.2px;
+}
+.dshpp-status-ops {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.dshpp-status-note {
+  margin: -8px 0 12px;
+  font-size: 12.5px;
+  color: var(--dshpp-mute);
+}
+
+/* 按钮：样稿的 9px 圆角 / 13px 字 / 主按钮反色 */
+.dshpp-page .dshpp-btn {
+  font-size: 13px;
+  padding: 7px 13px;
+  border-radius: 9px;
+  line-height: 1.2;
+}
+.dshpp-page .dshpp-btn.dshpp-btn-apply {
+  background: var(--dshpp-fg);
+  border-color: var(--dshpp-fg);
+  color: var(--dshpp-bg, #fff);
+  font-weight: 560;
+}
+.dshpp-page .dshpp-btn.dshpp-btn-apply:not(:disabled):hover {
+  opacity: 0.88;
+}
+
+/* 健康度：主数字与四格 */
+.dshpp-health {
+  padding: 18px 20px;
+  border-radius: 12px;
+}
+.dshpp-health-big {
+  font-size: 30px;
+  font-weight: 680;
+}
+.dshpp-health-big small {
+  font-size: 15px;
+}
+.dshpp-tile {
+  padding: 10px 12px;
+}
+.dshpp-tile-k {
+  font-size: 11.5px;
+}
+.dshpp-tile-v {
+  font-size: 19px;
+  font-weight: 640;
+}
+
+/* 开关：品牌蓝而不是单色黑 */
+.dshpp-sw {
+  padding: 15px 17px;
+  border-radius: 12px;
+}
+.dshpp-sw-t {
+  font-size: 14px;
+}
+.dshpp-sw-d {
+  font-size: 12.5px;
+}
+.dshpp-chip {
+  font-size: 11.5px;
+  padding: 2px 8px;
+}
+.dshpp-track.is-on {
+  background: var(--pg-accent);
+  border-color: var(--pg-accent);
+}
+
+/* 过滤条：选中态用样稿的蓝色描边 + 浅底 */
+.dshpp-fbtn {
+  font-size: 12.5px;
+}
+.dshpp-fbtn.is-cur {
+  color: var(--pg-accent);
+  border-color: var(--pg-accent);
+  background: color-mix(in srgb, var(--pg-accent) 10%, transparent);
+}
+
+/* 明细表：13px 正文、11.5px 状态胶囊 */
+.dshpp-page .dshpp-table {
+  font-size: 13px;
+}
+.dshpp-page .dshpp-table th {
+  font-size: 11.5px;
+  letter-spacing: 0.03em;
+  padding: 7px 15px;
+}
+.dshpp-page .dshpp-table td {
+  padding: 7px 15px;
+}
+.dshpp-page .dshpp-pill {
+  font-size: 11.5px;
+  padding: 2px 8px;
+}
+.dshpp-caret {
+  font-size: 10px;
+}
+.dshpp-group-notes {
+  font-size: 11.5px;
+}
+
+/* 写入流程 */
+.dshpp-flow {
+  padding: 16px 18px;
+  border-radius: 12px;
+}
+.dshpp-flow h4 {
+  font-size: 13.5px;
+}
+.dshpp-step b {
+  font-size: 13px;
+}
+.dshpp-step span {
+  font-size: 12.5px;
+}
+
+/* 维护区头部的版本号 */
+.dshpp-maint-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.dshpp-maint-head h3 {
+  margin: 0;
+}
+.dshpp-maint-ver {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--dshpp-mute);
+}
+.dshpp-maint-ver b {
+  font-weight: 600;
+  color: var(--pg-ok);
+  border: 1px solid color-mix(in srgb, var(--pg-ok) 40%, transparent);
+  border-radius: 99px;
+  padding: 0 6px;
+  font-size: 11px;
+}
+
+/* 明细表第二行：英文标识符（对齐样稿的两行结构） */
+.dshpp-row-en {
+  display: block;
+  margin-top: 1px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: var(--dshpp-mute);
+  letter-spacing: 0.01em;
+}

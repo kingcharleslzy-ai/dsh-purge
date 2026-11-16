@@ -582,7 +582,7 @@ function publishPreferences(next) {
   for (const receive of preferenceListeners) receive(next);
 }
 
-export function CommunityMaintenance() {
+export function CommunityMaintenance({ localVersion = "" } = {}) {
   const [value, setValue] = useState(null),
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false),
@@ -699,7 +699,19 @@ export function CommunityMaintenance() {
   return h(
     "section",
     { className: "dshpp-panel", "aria-label": "社区版维护" },
-    h("h3", null, "维护：更新与本机备份"),
+    h(
+      "div",
+      { className: "dshpp-maint-head" },
+      h("h3", null, "维护：更新与本机备份"),
+      localVersion
+        ? h(
+            "span",
+            { className: "dshpp-maint-ver" },
+            "本机 v" + localVersion,
+            h("b", null, "当前"),
+          )
+        : null,
+    ),
     // 通道现状摘要：代理是否直连、密钥是否已配置（密钥明文永不回显）。
     // 入口按钮不在这里，它跟「自动检查更新」放在同一行。
     value

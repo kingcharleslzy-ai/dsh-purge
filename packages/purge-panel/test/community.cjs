@@ -243,7 +243,12 @@ win.confirm = () => true;
     JSON.stringify(tree.toJSON()).includes("0.2.1-rc.1"),
     "the status strip reports the host version from the backend",
   );
-  assert(button("刷新"), "original status page renders in the community build");
+  assert(
+    root
+      .findAllByType("button")
+      .some((x) => String(x.props.className || "").includes("dshpp-scan")),
+    "original status page renders in the community build",
+  );
   assert(
     JSON.stringify(tree.toJSON()).includes("Hooks 拦截"),
     "original hooks deny section renders in the community build",

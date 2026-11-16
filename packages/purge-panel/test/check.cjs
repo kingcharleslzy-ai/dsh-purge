@@ -170,6 +170,11 @@ const test = async () => {
     root.findAllByType("button").find((x) => x.children.join("") === text);
   const area = (label) =>
     root.findAllByType("textarea").find((x) => x.props["aria-label"] === label);
+  // 1.7.18 起状态页没有「刷新」按钮，改成右上角“上次扫描 · 点击刷新”的文字开关。
+  const scan = () =>
+    root
+      .findAllByType("button")
+      .find((x) => String(x.props.className || "").includes("dshpp-scan"));
   assert.equal(area("提示词内容").props.value, "Existing test prompt");
   await act(async () => btn("提示词").props.onClick());
   await act(async () =>
@@ -183,14 +188,14 @@ const test = async () => {
   );
   await act(async () => btn("状态").props.onClick());
   await act(async () => {
-    btn("刷新").props.onClick();
+    scan().props.onClick();
     await new Promise((r) => setTimeout(r, 10));
   });
   assert.equal(area("提示词内容").props.value, "UNSAVED prompt");
   assert.equal(area("服务器名单").props.value, "unsaved.example.test");
   responses["/dsh-purge/status"].plugin_version = "2.0.0";
   await act(async () => {
-    btn("刷新").props.onClick();
+    scan().props.onClick();
     await new Promise((r) => setTimeout(r, 10));
   });
   assert(

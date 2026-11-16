@@ -62,6 +62,30 @@ test("mixed diagnostic states retain exact finite counts without counting drift 
   for (const value of Object.values(h.tallyPatches([]))) assert.equal(value, 0);
   for (const value of Object.values(tally)) assert(Number.isFinite(value));
 });
+test("status counts come from per-patch rows, never from display groups", async () => {
+  const h = harness();
+  // 真实载荷：patch_rows 是 88 条逐补丁真值；patches 只有 3 个显示分组。
+  const rows = [
+    ...Array.from({ length: 73 }, (_, i) => ({ id: i + 1, layer: "代码", name: "a", status: "applied" })),
+    ...Array.from({ length: 2 }, (_, i) => ({ id: 80 + i, layer: "代码", name: "b", status: "disabled" })),
+    ...Array.from({ length: 13 }, (_, i) => ({ id: 90 + i, layer: "工具", name: "c", status: "skipped" })),
+  ];
+  const state = {
+    ok: true,
+    ai_base: "/fixture",
+    patch_status: {},
+    patch_rows: rows,
+    patches: [
+      { id: 1, ids: [1, 2, 3], layer: "代码", status: "applied" },
+      { id: 80, ids: [80, 81], layer: "代码", status: "disabled" },
+      { id: 90, ids: [90, 91, 92], layer: "工具", status: "skipped" },
+    ],
+  };
+  const markup = renderToStaticMarkup(React.createElement(h.PatchGroups, { state }));
+  assert.match(markup, /73 \/ 75/, "分组表不能把 88 条压成 3 条");
+  assert.doesNotMatch(markup, /3 \/ 3/, "不能按分组数当分母");
+});
+
 test("summary and group headings explain drift, partial results and opt-in choices", async () => {
   const patches = [
     "applied",
@@ -184,7 +208,7 @@ test("failed status can retry and does not fabricate zero patch counts or a miss
   fail = false;
   const refresh = view.root
     .findAllByType("button")
-    .find((b) => b.children.includes("刷新"));
+    .find((b) => String(b.props.className || "").includes("dshpp-scan"));
   await act(async () => {
     refresh.props.onClick();
   });
