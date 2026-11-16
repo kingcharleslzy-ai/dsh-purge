@@ -12,7 +12,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const repoRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const toolsModule = path.join(repoRoot, "lib", "redteam", "tools.js");
-const source = fs.readFileSync(toolsModule, "utf8");
+
 
 /** 复刻 DSH Desktop 解包布局：<app>/out/main/host.js + <app>/node_modules/@deepseek-ai/{dsh,dsh-tools}。 */
 function buildDesktopHostTree(root, withPackages) {
@@ -54,30 +54,6 @@ function restoreCandidateInputs(envBackup) {
   }
 }
 
-test("source wires the host-entry walk into loadDefineTool", () => {
-  assert.match(source, /function considerHostTree\(/, "必须有从宿主入口向上探测的函数");
-  assert.match(
-    source,
-    /considerHostTree\(candidates, process\.argv\[1\]\)/,
-    "argv[1]（CLI bin 或桌面 host.js）必须参与探测",
-  );
-  assert.match(
-    source,
-    /considerHostTree\(candidates, process\.argv\[2\]\)/,
-    "argv[2]（桌面宿主的应用根目录）必须参与探测",
-  );
-  assert.match(
-    source,
-    /considerHostTree\(candidates, process\.env\.PURGE_DSH_CLI\)/,
-    "PURGE_DSH_CLI 也必须走同样的向上探测",
-  );
-  assert.match(
-    source,
-    /'@deepseek-ai', 'dsh', 'package\.json'/,
-    "探测目标必须是宿主包的 package.json",
-  );
-});
-
 test("desktop host entry (out/main/host.js) resolves dsh-tools from the app tree", async () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "purge-redteam-host-"));
   const envBackup = {};
@@ -117,4 +93,31 @@ test("without the app tree the module still fails with the diagnostic error", as
     restoreCandidateInputs(envBackup);
     fs.rmSync(root, { recursive: true, force: true });
   }
+});
+
+test("a desktop host never imports framework code from ancestors, argv[2], or escaping links", async t => {
+  const { execFileSync } = await import("node:child_process");
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "purge-desktop-boundary-"));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const decoy = buildDesktopHostTree(root, true);
+  const ancestor = path.resolve(path.dirname(decoy), "../..");
+  const entry = buildDesktopHostTree(path.join(ancestor, "target"), true);
+  const app = path.resolve(path.dirname(entry), "../..");
+  const local = path.join(app, "node_modules/@deepseek-ai/dsh-tools");
+  const external = path.join(ancestor, "node_modules/@deepseek-ai/dsh-tools");
+  const sentinel = path.join(root, "external-code-executed");
+  fs.writeFileSync(path.join(external, "index.js"), `require("node:fs").writeFileSync(${JSON.stringify(sentinel)},"yes"); exports.defineTool = () => {};`);
+  fs.rmSync(local, { recursive: true });
+  function denied() {
+    const code = `process.argv[1]=${JSON.stringify(entry)};process.argv[2]=${JSON.stringify(ancestor)};await import(${JSON.stringify(pathToFileURL(toolsModule).href)});`;
+    assert.throws(() => execFileSync(process.execPath, ["--input-type=module","-e",code], { cwd: ancestor, stdio:"pipe" }), /cannot resolve @deepseek-ai\/dsh-tools from host/);
+    assert.equal(fs.existsSync(sentinel), false);
+  }
+  denied();
+  fs.symlinkSync(external, local, process.platform === "win32" ? "junction" : "dir");
+  denied();
+  fs.unlinkSync(local);
+  fs.mkdirSync(local);
+  fs.writeFileSync(path.join(local, "package.json"), JSON.stringify({ main: path.join(external,"index.js") }));
+  denied();
 });
