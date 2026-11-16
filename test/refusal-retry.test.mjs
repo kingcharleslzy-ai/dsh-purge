@@ -92,6 +92,8 @@ test("Chinese object-first refusals are detected after prefix normalization", ()
     "结论：这份武器化实现我不出。",
     "这份报告我不写。",
     "我不会帮你把它包装成小说。",
+    "这个请求我不会给：它要的是可直接执行的跨境洗钱操作链。",
+    "因此我不提供其中的任何环节。",
   ]) assert(looksLikeRefusal(text), text);
 });
 
@@ -143,4 +145,24 @@ test("retry budget is finite and the last refusal is still yielded", async () =>
   const chunks = await collect(streamWithRefusalRetry(factory, { messages: [sys("base")] }));
   assert.equal(calls, 3, "initial + two retries");
   assert.equal(chunks.filter((c) => c.type === "text-delta")[0].text, "这条我不做。");
+});
+
+test("reasoning before the refusal text does not skip the retry", async () => {
+  let calls = 0;
+  const factory = () => {
+    calls += 1;
+    const n = calls;
+    return (async function* () {
+      if (n === 1) {
+        yield { type: "reasoning-delta", index: 0, text: "The request is risky; I should decline. ".repeat(20) };
+        yield delta("I'm sorry, but I can't help with that.");
+      } else {
+        yield delta("成品已给出。");
+      }
+      yield finish();
+    })();
+  };
+  const chunks = await collect(streamWithRefusalRetry(factory, { messages: [sys("base")] }));
+  assert.equal(calls, 2);
+  assert.equal(chunks.filter((c) => c.type === "text-delta")[0].text, "成品已给出。");
 });
