@@ -1,6 +1,6 @@
 # 安装、升级与故障排查
 
-当前版本 **1.7.14**。面向用户与协助安装的 Agent。支持的安装器环境：Linux CLI/Web；macOS Desktop；Windows 11 的 PowerShell 5.1/7。完整 Windows 宿主补丁及界面验收与安装器测试分开，不能因安装通过就宣称全部功能正常。
+当前版本 **1.7.15**。面向用户与协助安装的 Agent。支持的安装器环境：Linux CLI/Web；macOS Desktop；Windows 11 的 PowerShell 5.1/7。完整 Windows 宿主补丁及界面验收与安装器测试分开，不能因安装通过就宣称全部功能正常。
 
 ## 安装前
 
@@ -237,3 +237,11 @@ macOS 不复制顶层 `Info.plist`，不创建 `.app` 路径，不通过 Finder�
 从 DSH 确认安装官方桌面更新后，社区版会在 desktop 和 web profile 中查找交接助手，兼容两个包名 `dsh-purge-community` 和 `dsh-purge`。普通单文件更新会先比对官方更新器提供的 SHA512、目标版本和 DeepSeek 的 Authenticode 发布者，等待桌面正常退出，再运行安装器。整个过程不自动重写更新后的宿主。
 
 如果更新后版本未变，可查看 `<DSH_HOME>/logs/official-installer/update-*/result.jsonl` 的最后一条记录。`waiting-for-exit` 表示助手仍在等原桌面进程退出，`failed` 会记录失败原因，`installed` 表示安装器返回成功，目标 EXE 的 FileVersion 也符合预期。分包和需要提权的安装由 DSH 官方更新器直接处理，请查看官方安装器日志。
+
+### 工作区与会话权限
+
+新会话沿用宿主和用户选择的权限。默认保留 DSH 的文件围栏、子进程沙箱以及与扩大权限有关的审批检查。此前显式选择的权限覆盖补丁仍由 `tuning.extraPatches` 决定。
+
+升级后点「应用」，再正常退出并手动打开 DSH。迁移以宿主文件旁的 `.dshpurge.bak` 为基线，重演旧补丁并比对当前内容，只撤回能证明属于插件的权限改动。保留其它已验证的补丁和用户 profile；不会重写历史会话中已保存的权限选择。遇到残缺备份、链接或无法归属的改动，查看补丁明细中的路径及错误，保留文件和备份进行比对。
+
+权限验收需同时检查文件工具和命令子进程。DSH 的「工作区写入」还允许宿主明确指定的额外可写目录以及平台临时目录，验证越界时请使用这些目录之外的位置。
