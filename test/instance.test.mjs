@@ -182,12 +182,12 @@ test("ambiguous, missing or conflicting profiles fail explicitly instead of choo
     f.profile("desktop");
     assert.throws(
       () => defaultProfile(f.home, { env: {}, argv: [] }),
-      /无法唯一确定/,
+      /cannot uniquely determine the current/,
     );
     assert.throws(
       () =>
         defaultProfile(f.home, { env: { DSH_PROFILE: "missing" }, argv: [] }),
-      /未找到/,
+      /no profile found/,
     );
     assert.throws(
       () =>
@@ -195,7 +195,7 @@ test("ambiguous, missing or conflicting profiles fail explicitly instead of choo
           env: {},
           argv: ["--profile", "web", "--profile=desktop"],
         }),
-      /多个 --profile/,
+      /multiple --profile flags/,
     );
     const r = await selfCheck(f.npm, f.home, {
       env: {},
@@ -205,7 +205,7 @@ test("ambiguous, missing or conflicting profiles fail explicitly instead of choo
     assert(
       r.layers
         .find((l) => l.kind === "config")
-        .detail.error.includes("无法唯一确定"),
+        .detail.error.includes("cannot uniquely determine"),
     );
   } finally {
     f.close();
@@ -214,7 +214,7 @@ test("ambiguous, missing or conflicting profiles fail explicitly instead of choo
 test("a nested single-package host root resolves to the component directory that actually holds the agent", () => {
   const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "purge-nested-host-")));
   try {
-    // 单包布局：@deepseek-ai/dsh/node_modules/@deepseek-ai/{dsh-agent-loop,…}
+    // Single-package layout: @deepseek-ai/dsh/node_modules/@deepseek-ai/{dsh-agent-loop,…}
     const outer = path.join(root, "@deepseek-ai");
     const nested = path.join(outer, "dsh", "node_modules", "@deepseek-ai");
     for (const pkg of ["dsh-agent-loop", "dsh-system-prompt", "dsh-agent-instructions"]) {
@@ -225,15 +225,15 @@ test("a nested single-package host root resolves to the component directory that
     fs.writeFileSync(path.join(outer, "dsh", "package.json"), JSON.stringify({ name: "@deepseek-ai/dsh", version: "0.2.1-rc.2", bin: { dsh: "lib/bin.mjs" } }));
     fs.writeFileSync(path.join(outer, "dsh", "lib", "bin.mjs"), "");
 
-    // 指到外层、指到 dsh 包、指到组件根，三种写法都要落到组件根。
+    // Pointing at the outer dir, the dsh package, or the component root must all land on the component root.
     for (const given of [outer, path.join(outer, "dsh"), nested]) {
       assert.equal(resolveHost(given, { env: {}, argv: [] }), nested, `aiBase=${given}`);
       assert.equal(resolveHost("", { env: { DSH_BASE: given }, argv: [] }), nested, `DSH_BASE=${given}`);
     }
-    // 从 dsh 自己的 CLI 启动（argv）时返回 dsh 包所在的 @deepseek-ai 外层：
-    // 这是 resolveDshCli 拼 dsh/<bin> 的基准，改成组件根会让 npmCli 找不到 bin。
+    // Launched from dsh's own CLI (argv), it returns the @deepseek-ai outer dir that holds the dsh package:
+    // that is the base resolveDshCli uses for dsh/<bin>; using the component root would leave npmCli without bin.
     assert.equal(currentHost({ env: {}, argv: ["node", path.join(outer, "dsh", "lib", "bin.mjs")] }), outer);
-    // 指到不相干目录时不许「顺手找到」别的安装。
+    // An unrelated directory must not "conveniently find" another install.
     assert.equal(currentHost({ env: { DSH_BASE: path.join(root, "elsewhere") }, argv: [] }), path.join(root, "elsewhere"));
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
@@ -251,7 +251,7 @@ test("Web CLI uses its own npm package metadata even when another Desktop is ins
       execPath: process.execPath,
     });
     assert.equal(cli.cli, f.cli);
-    assert.equal(cli.source, "当前 npm/Node 实例");
+    assert.equal(cli.source, "current npm/Node instance");
     assert.equal(cli.command, process.execPath);
   } finally {
     f.close();
@@ -271,7 +271,7 @@ test("explicit JS CLI override takes priority and a missing target is not replac
           argv: ["node", "unknown"],
           resourcesPath: undefined,
         }),
-      /无法定位当前 DSH 实例/,
+      /Cannot locate the CLI of the current DSH instance/,
     );
     assert.throws(
       () =>
@@ -279,7 +279,7 @@ test("explicit JS CLI override takes priority and a missing target is not replac
           env: { PURGE_DSH_CLI: path.join(f.root, "missing") },
           argv: [],
         }),
-      /文件不存在/,
+      /points at a missing file/,
     );
   } finally {
     f.close();
@@ -365,7 +365,7 @@ test("target-specific selfcheck does not mutate global surface or inspect anothe
     assert.equal(target.surface, "web");
     assert.equal(process.env.DSH_SURFACE, before);
     assert.equal(result.summary.layout.total, 0);
-    assert(!result.hints.some((h) => h.title === "宿主运行方式"));
+    assert(!result.hints.some((h) => h.title === "host run mode"));
   } finally {
     f.close();
   }
@@ -381,7 +381,7 @@ test("foreign host profile directories are rejected instead of silently changing
           env: {},
           argv: ["node", "host", path.join(f.root, "other/profiles/web")],
         }),
-      /不属于当前 DSH_HOME/,
+      /not under the current DSH_HOME/,
     );
   } finally {
     f.close();
@@ -481,12 +481,12 @@ test("apply restart distinguishes sealed / cross-surface / manual", async () => 
   });
   const manual = planApplyRestartAction({ foreign: { asar: "/x/app.asar" }, desktopPid: 0 });
   assert.equal(manual.action, "manual");
-  assert.match(manual.reason, /桌面宿主未运行/);
+  assert.match(manual.reason, /Desktop host is not running/);
   assert.deepEqual(planApplyRestartAction({}), { action: "plain" });
 });
 
 test("diskFs survives a read-only process.noDeprecation", async () => {
-  // PR #23：宿主用 --no-deprecation 启动时该属性只读，ESM 严格模式下赋值会抛
+  // PR #23: the host starts with --no-deprecation, making the property read-only; assigning it throws in strict ESM
   const { execFileSync } = await import("node:child_process");
   const script = `
     Object.defineProperty(process, "noDeprecation", { value: true, writable: false, configurable: true });
@@ -577,11 +577,11 @@ test("verified npm CLI shorthand selects its running profile when multiple profi
       const link = path.join(bin, "dsh"); fs.symlinkSync(f.cli, link);
       assert.equal(resolveProfile(f.home, { env: {}, argv: ["node", link, "web"] }).directory, web);
     }
-    assert.throws(() => resolveProfile(f.home, { env: {}, argv: ["node", path.join(f.root, "other.js"), "web"] }), /无法唯一确定/);
+    assert.throws(() => resolveProfile(f.home, { env: {}, argv: ["node", path.join(f.root, "other.js"), "web"] }), /cannot uniquely determine the current/);
     const nested = path.join(f.npm, "dsh/node_modules/other-plugin/bin.js");
     fs.mkdirSync(path.dirname(nested), { recursive: true }); fs.writeFileSync(nested, "");
-    assert.throws(() => resolveProfile(f.home, { env: {}, argv: ["node", nested, "web"] }), /无法唯一确定/);
-    assert.throws(() => resolveProfile(f.home, { env: {}, argv: ["node", f.cli, "plugin"] }), /无法唯一确定/);
+    assert.throws(() => resolveProfile(f.home, { env: {}, argv: ["node", nested, "web"] }), /cannot uniquely determine the current/);
+    assert.throws(() => resolveProfile(f.home, { env: {}, argv: ["node", f.cli, "plugin"] }), /cannot uniquely determine the current/);
   } finally { f.close(); }
 });
 
@@ -627,10 +627,10 @@ test("#93 a pnpm workspace junction selects only the CLI package that owns the r
     assert.equal(resolveDshCli({ aiBase: currentHost(launch), env: {} }).cli, bin);
     fs.cpSync(path.dirname(path.dirname(f.cli)), path.join(cliRoot, "dsh"), { recursive: true });
     fs.unlinkSync(bin);
-    assert.throws(() => resolveDshCli(launch), /无法定位/);
+    assert.throws(() => resolveDshCli(launch), /Cannot locate/);
     const outside = path.join(cliRoot, "linked-dir");
     fs.symlinkSync(path.dirname(f.cli), outside, "junction");
     fs.writeFileSync(path.join(cliRoot, "package.json"), JSON.stringify({ name: "@deepseek-ai/dsh", bin: "linked-dir/bin.mjs" }));
-    assert.throws(() => resolveDshCli(launch), /无法定位/);
+    assert.throws(() => resolveDshCli(launch), /Cannot locate/);
   } finally { f.close(); }
 });

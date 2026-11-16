@@ -45,7 +45,7 @@ export function RestartAsk(props) {
       return rd.createPortal(node, document.body);
     }
   } catch {
-    /* host 可能没暴露 react-dom */
+    /* The host may not expose react-dom. */
   }
   return node;
 }
@@ -56,7 +56,8 @@ export function reopenAfterRestart() {
 
 export function waitForRestart(setNotice, setBusy, t) {
   const started = Date.now();
-  // 必须先看到旧进程掉线，再等新进程就绪；否则同进程立刻 200 会被当成「重启成功」又弹重启。
+  // Wait for the old process to disconnect before accepting a ready response.
+  // Otherwise its immediate HTTP 200 could falsely confirm a restart.
   let sawDown = false;
   const ping = () => {
     fetch(apiUrl("/dsh-purge/status"), {

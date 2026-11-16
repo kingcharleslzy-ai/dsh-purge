@@ -25,7 +25,7 @@ function archive(body) {
 }
 
 export function checkWindowsLayouts(shim, electron) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'DSH CLI 空格 '));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'DSH CLI space '));
   try {
     fs.writeFileSync(path.join(root, 'dsh.cmd'), shim);
     const app = path.join(root, 'app', tail);

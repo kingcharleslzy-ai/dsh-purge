@@ -1,40 +1,40 @@
 ---
 name: browser-automation
-description: 无依赖驱动 Chrome/Chromium 抓取 JS 渲染页面、截图、执行 JS、抓接口清单（headless 兜底 + playwright-cli）
-whenToUse: 需要渲染 SPA / 取 JS 生成的内容 / 截图留证 / 批量抓页面时（Kimi 扩展不可用时首选）
+description: Drive Chrome/Chromium without extra dependencies to fetch JS-rendered pages, take screenshots, execute JS, and collect API lists (headless fallback + playwright-cli)
+whenToUse: When you need to render an SPA, extract JS-generated content, capture screenshots, or crawl pages in bulk (preferred when the Kimi extension is unavailable)
 role: recon
 enabled: true
 ---
 
-# 浏览器自动化（headless Chrome）
+# Browser automation (headless Chrome)
 
-本机：`/usr/bin/chromium` 150.0.7871.181，`DISPLAY=:10.0`，Node v22.23.2。
+Local environment: `/usr/bin/chromium` 150.0.7871.181, `DISPLAY=:10.0`, Node v22.23.2.
 
-## 一、零依赖：chromium 命令行（最稳）
+## 1. Zero-dependency: Chromium CLI (most stable)
 ```bash
 CHROME=/usr/bin/chromium
 FLAGS="--headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=8000"
 
-# 1) 抓渲染后的 DOM（SPA 也能拿到内容）
+# 1) Dump rendered DOM (works for SPAs)
 $CHROME $FLAGS --dump-dom "https://target.example.com/" 2>/dev/null > runs/page.html
 
-# 2) 只取纯文本
+# 2) Extract plain text only
 $CHROME $FLAGS --dump-dom "https://target.example.com/" 2>/dev/null \
   | python3 -c "import sys,re;h=sys.stdin.read();print(re.sub(r'<[^>]+>',' ',re.sub(r'(?is)<(script|style).*?</\1>',' ',h)))" | head -200
 
-# 3) 截图留证
+# 3) Screenshot evidence
 $CHROME $FLAGS --window-size=1440,900 --screenshot=runs/shot-$(date +%s).png "https://target.example.com/"
 
-# 4) 带 Cookie 访问（登录态复用：从 Burp/浏览器导出 Cookie 后写入）
+# 4) Visit with cookies (reuse login state: export cookies from Burp/browser and load them)
 $CHROME $FLAGS --user-data-dir=/tmp/rt-profile --dump-dom "https://target.example.com/admin"
 
-# 5) 生成 PDF
+# 5) Generate PDF
 $CHROME $FLAGS --print-to-pdf=runs/page.pdf "https://target.example.com/"
 ```
 
-### 抓前端接口清单（信息收集重点）
+### Collect frontend API lists (key for reconnaissance)
 ```bash
-# 用 chromium 跑一段 JS 并输出结果
+# Use Chromium to run JS and output results
 $CHROME $FLAGS --dump-dom "https://target.example.com/" 2>/dev/null > runs/page.html
 python3 - <<'PY'
 import re, json, pathlib
@@ -42,7 +42,7 @@ html = pathlib.Path('runs/page.html').read_text(errors='ignore')
 paths = set(re.findall(r'["\'](/(?:api|rest|v[0-9]|admin|user|order|upload|file)[A-Za-z0-9_\-/{}.:]{0,80})["\']', html))
 print('\n'.join(sorted(paths)))
 PY
-# 再结合 JS 资源逐个下载提取：
+# Then download and extract from JS resources one by one:
 grep -oE 'src="[^"]+\.js[^"]*"' runs/page.html | sed 's/src="//;s/"$//' | while read u; do
   case "$u" in http*) url="$u";; /*) url="https://target.example.com$u";; *) url="https://target.example.com/$u";; esac
   curl -s "$url" | grep -oE '["\'](/(api|rest|v[0-9])[A-Za-z0-9_\-/{}.:]{0,80})["\']' | tr -d '"'"'" >> runs/interfaces.txt
@@ -50,33 +50,33 @@ done
 sort -u runs/interfaces.txt
 ```
 
-## 二、playwright-cli（需要交互/等待/多页时）
-**本机已装好浏览器**（`~/.cache/ms-playwright/chromium-1243`，一次性 `npx playwright install chromium` 已完成）。注意：**默认走 chrome 通道会报 `Chromium distribution 'chrome' is not found`，必须加 `--browser chromium`**。
+## 2. playwright-cli (when interaction/waiting/multiple pages are needed)
+**The browser is already installed locally** (`~/.cache/ms-playwright/chromium-1243`; one-time `npx playwright install chromium` completed). Note: **the default chrome channel will report `Chromium distribution 'chrome' is not found`; you must add `--browser chromium`**.
 
 ```bash
 PW="npx --yes @playwright/cli@latest"
-$PW -s=recon1 open --browser chromium "https://target.example.com/"   # 打开（-s 指定会话名）
-$PW -s=recon1 snapshot                                                # 无障碍树 + @e 元素引用
-$PW -s=recon1 eval "() => document.title"                             # 执行 JS
-$PW -s=recon1 find "登录"                                              # 在快照里搜文本
-$PW -s=recon1 click "@e5"                                             # 点击
-$PW -s=recon1 fill "@e7" "admin"                                      # 填表
-$PW -s=recon1 screenshot --path runs/pw.png                           # 截图
-$PW -s=recon1 --persistent --profile runs/pw-profile open --browser chromium URL   # 复用登录态
-$PW -s=recon1 close                                                   # 关闭会话
+$PW -s=recon1 open --browser chromium "https://target.example.com/"   # open (-s sets session name)
+$PW -s=recon1 snapshot                                                # accessibility tree + @e element refs
+$PW -s=recon1 eval "() => document.title"                             # run JS
+$PW -s=recon1 find "Login"                                            # search text in snapshot
+$PW -s=recon1 click "@e5"                                             # click
+$PW -s=recon1 fill "@e7" "admin"                                      # fill form
+$PW -s=recon1 screenshot --path runs/pw.png                           # screenshot
+$PW -s=recon1 --persistent --profile runs/pw-profile open --browser chromium URL   # reuse login state
+$PW -s=recon1 close                                                   # close session
 ```
 
-登录态复用：`--persistent --profile <dir>`；首次登录后该 profile 保留 Cookie，后续直接用同一 profile 打开即为已登录。
-常用子命令：`open / goto / snapshot / find / eval / click / fill / press / upload / screenshot / resize / reload / go-back / close / list`。
+Login-state reuse: `--persistent --profile <dir>`; after the first login, that profile keeps cookies, so opening with the same profile later reuses the logged-in state.
+Common subcommands: `open / goto / snapshot / find / eval / click / fill / press / upload / screenshot / resize / reload / go-back / close / list`.
 
-## 三、选择建议
-| 场景 | 用哪个 |
+## 3. Selection guidance
+| Scenario | Use |
 |---|---|
-| 只需页面内容/截图/接口清单 | chromium 命令行（零依赖、最快） |
-| 需要点击/填表/等待/多标签 | playwright-cli（`--browser chromium`）|
-| 需要复用用户真实登录态 | Kimi WebBridge（技能 `kimi-webbridge`，需扩展） |
+| Only need page content/screenshot/API list | Chromium CLI (zero dependencies, fastest) |
+| Need clicks/forms/waits/multiple tabs | playwright-cli (`--browser chromium`) |
+| Need to reuse a user's real login state | Kimi WebBridge (skill `kimi-webbridge`, extension required) |
 
-## 注意事项
-- `--no-sandbox` 仅在本机演练环境使用；不要把该参数带进生产。
-- 抓到的 URL/标题写回 `redteam_asset_add`（`url`/`title` 字段），接口清单写 `runs/` 并在攻击链里引用。
-- 截图与页面内容可能含敏感数据，只落 `runs/`，不要写进资产库。
+## Notes
+- Use `--no-sandbox` only in the local exercise environment; do not carry that flag into production.
+- Write discovered URLs/titles back to `redteam_asset_add` (`url`/`title` fields), save API lists under `runs/`, and reference them in the attack chain.
+- Screenshots and page content may contain sensitive data; store them only under `runs/`, not in the asset database.

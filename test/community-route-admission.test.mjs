@@ -1,8 +1,8 @@
-// /dsh-purge/community 的准入必须与其他 /dsh-purge/* 路由同口径。
+// /dsh-purge/community admission must follow the same rule as the other /dsh-purge/* routes.
 //
-// 这条路由在 apply() 里单独注册，不走 installWebServer 的 registerPluginRoute 包装，
-// 曾经因此漏掉「监听器绑定地址也算本机」这一条：非回环绑定时只有它返回 403，
-// 其余路由正常。下面同时钉住三件事：绑定地址可访问、回环可访问、rebinding 被拒。
+// This route is registered separately in apply(), not through installWebServer's registerPluginRoute wrapper,
+// and once missed the "listener bind address counts as local" rule: under a non-loopback bind only it returned 403
+// while other routes worked. The tests pin three things at once: bind address reachable, loopback reachable, rebinding rejected.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Readable } from "node:stream";
@@ -15,10 +15,10 @@ import { allowPluginRequest } from "../lib/index.js";
 const BIND = "192.168.1.50";
 
 /**
- * 直接调用准入函数，验证「传绑定地址」与「不传」的差别。
+ * Calls the admission function directly to compare passing the bind address with omitting it.
  *
- * 这是回归的核心断言：不传第三个参数（= 旧代码的做法）时绑定地址被拒，
- * 传入后放行。两者必须在同一条测试里对照，否则修好一侧也看不出来。
+ * Core regression assertion: without the third argument (= the old code) the bind address is rejected,
+ * with it, it passes. Both must be compared in one test, or fixing one side stays invisible.
  */
 const decide = (headers, trusted) => {
   const res = { writeHead(code) { this.code = code; }, end() {} };
@@ -29,15 +29,15 @@ const decide = (headers, trusted) => {
   return allowed;
 };
 
-test("绑定地址在「传 trustedHostnames(bind)」时放行、在「不传」时被拒", () => {
+test("the bind address passes with trustedHostnames(bind) and is rejected without it", () => {
   const withBind = new Set([BIND]);
   const headers = { host: `${BIND}:43120` };
 
-  assert.equal(decide(headers), false, "不传绑定地址时必须拒绝（这是旧 community 路由的行为）");
-  assert.equal(decide(headers, withBind), true, "传了绑定地址才放行（其余路由的行为）");
+  assert.equal(decide(headers), false, "must reject when the bind address is omitted (the old community route behavior)");
+  assert.equal(decide(headers, withBind), true, "passes only when the bind address is passed (the other routes' behavior)");
 });
 
-test("回环与非回环绑定地址之外的 Host 一律拒绝", () => {
+test("Hosts other than loopback and bind addresses are always rejected", () => {
   const withBind = new Set([BIND]);
   for (const host of ["127.0.0.1:43120", "localhost:43120", "[::1]:43120"]) {
     assert.equal(decide({ host }, withBind), true, host);
@@ -48,10 +48,10 @@ test("回环与非回环绑定地址之外的 Host 一律拒绝", () => {
 });
 
 /**
- * 起一个最小宿主，让 apply() 注册出真实路由并逐个驱动。
+ * Starts a minimal host so apply() registers real routes and drives them one by one.
  *
- * apply() 还依赖若干宿主服务；这里只需要 web 部分能把路由挂上，
- * 其余服务缺失时 apply 会抛错，但路由往往已经注册完毕 —— 所以用 try 包住。
+ * apply() also depends on host services; here only the web part must attach routes,
+ * and a missing service makes apply throw after routes are usually registered — hence the try.
  */
 async function bootRoutes(t, hostEntries = []) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "purge-community-route-"));
@@ -84,7 +84,7 @@ async function bootRoutes(t, hostEntries = []) {
   }
   await ctx.plugin(Connection);
   await ctx.plugin(Web);
-  try { apply(ctx, { enabled: false }); } catch { /* 只关心 web 路由是否挂上 */ }
+  try { apply(ctx, { enabled: false }); } catch { /* only care whether the web routes attached */ }
   if (hostEntries.length) installWebServer(ctx, {});
   await new Promise((resolve) => setTimeout(resolve, 200));
 
@@ -118,21 +118,21 @@ async function bootRoutes(t, hostEntries = []) {
   return { ctx, call, home };
 }
 
-test("/dsh-purge/community 在非回环绑定下不再返回 403", async (t) => {
+test("/dsh-purge/community no longer returns 403 under a non-loopback bind", async (t) => {
   const { ctx, call } = await bootRoutes(t);
   const spec = ctx.webServer.routes.get("/dsh-purge/community");
-  if (!spec) return t.skip("该环境未注册 community 路由，跳过");
+  if (!spec) return t.skip("community route not registered in this environment, skipping");
 
   const result = await call("/dsh-purge/community", { host: `${BIND}:43120` });
-  // 401/403 是准入拒绝；任何别的状态码（含业务层 400/500）都说明放行到 handler 了。
-  assert.notEqual(result.code, 403, "绑定地址访问 community 路由不应被准入拒绝");
+  // 401/403 mean admission rejection; any other status (including business-layer 400/500) means it reached the handler.
+  assert.notEqual(result.code, 403, "bind-address access to the community route must not be admission-rejected");
   assert.notEqual(result.code, 401);
 });
 
-test("/dsh-purge/community 仍然拒绝 DNS rebinding", async (t) => {
+test("/dsh-purge/community still rejects DNS rebinding", async (t) => {
   const { ctx, call } = await bootRoutes(t);
   const spec = ctx.webServer.routes.get("/dsh-purge/community");
-  if (!spec) return t.skip("该环境未注册 community 路由，跳过");
+  if (!spec) return t.skip("community route not registered in this environment, skipping");
 
   const result = await call("/dsh-purge/community", {
     host: "rebind.evil.example:43120",

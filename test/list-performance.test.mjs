@@ -24,7 +24,7 @@ test('batched detail evidence preserves legacy JSON, clipping, order, empty list
    for(let j=0;j<2;j++)db.prepare('INSERT INTO http_evidence(vuln_id,label,request,response) VALUES(?,?,?,?)').run(i,`record-${j}`,'GET /fixture',i===1?long:'ordinary response');
   }db.exec('COMMIT');
   const result=store.listVulns('fixture',{limit:500});assert.equal(result.total,451);assert.equal(result.items.length,451);
-  const clipped=t=>t==null?null:String(t).length>60000?String(t).slice(0,60000)+'\n…（截断）':String(t);
+  const clipped=t=>t==null?null:String(t).length>60000?String(t).slice(0,60000)+'\n...(truncated)':String(t);
   for(const item of result.items){const expected=db.prepare('SELECT id,label,method,url,status,request,response,note,captured_by,captured_at FROM http_evidence WHERE vuln_id=? ORDER BY id').all(item.id).map(e=>({...e,request:clipped(e.request),response:clipped(e.response)}));assert.deepEqual(item.http_evidence,expected);}
   assert.equal(store.listVulns('fixture',{q:'absent'}).items.length,0);
   assert.equal(store.listVulns('fixture',{limit:1}).items.length,1);

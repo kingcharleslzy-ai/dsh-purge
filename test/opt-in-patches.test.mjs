@@ -35,7 +35,7 @@ function fixture() {
   const dir = path.join(host, "dsh-repeat-tool-reminder/lib");
   fs.mkdirSync(dir, { recursive: true });
   fs.mkdirSync(home, { recursive: true });
-  // 用真实锚点原文当测试夹具：补丁只认这一整段。
+  // Use the real anchor text as the fixture: the patch only accepts this exact block.
   fs.writeFileSync(path.join(dir, "index.js"), `${ALL_PATCHES.find((p) => p.id === 18).replacements[0].pattern}\n`);
   return { root, host, home, close: () => removeTreeNoFollowSync(root) };
 }
@@ -77,11 +77,11 @@ test("an opt-in patch left off is soft in the apply summary, not a failure", asy
     const report = await applyPatches(f.host, [patch18], opts);
     assert.equal(report[0].status, "disabled");
     const summary = summarizeApplyReport(report, [patch18]);
-    // 面板红字只看 failed：默认关闭的 #18/#19 不能把整次应用标成「N 项处理失败」。
+    // The panel only counts failed: the default-off #18/#19 must not mark the whole apply as "N items failed".
     assert.deepEqual(summary.failed.map((r) => r.patch_id), []);
     assert.deepEqual(summary.soft.map((r) => r.patch_id), [18]);
 
-    // 同口径检查：真失败不能被这一行顺手静音。
+    // Same-rule check: a genuine failure must not be silenced by that line.
     for (const status of ["write_failed", "EACCES: permission denied"]) {
       assert.deepEqual(
         summarizeApplyReport([{ patch_id: 18, status }], [patch18]).failed.map((r) => r.patch_id),

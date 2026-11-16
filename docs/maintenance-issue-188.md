@@ -1,11 +1,11 @@
-# #188 验收记录与相关修复
+# #188 Acceptance Record and Related Fixes
 
-验收基于主分支提交 `bd4ee2f7`，与已发布的 1.6.88 对照。
+Acceptance was based on main-branch commit `bd4ee2f7`, compared with released 1.6.88.
 
-- **#173 · Tauri 桌面实例识别**　诊断会核对当前进程使用的托管归档、归档内的 DSH 包声明和 CLI 入口。读取失败会保留具体错误。在 Windows Tauri Desktop 0.31.2 上，用两个版本号相同的核心构建完成了切换和回滚，三个阶段均核对了活动归档和 CLI，回滚后的完整 SHA256 与起点一致。换包由 Tauri 桌面执行。[实测记录](https://github.com/kingcharleslzy-ai/dsh-purge/issues/173#issuecomment-6773521953)
-- **#174 · 新会话预设选择**　有可用的当前子预设时，菜单折叠对应的历史兼容项。旧会话继续按已保存的 ID 查找预设。已验证鼠标点击、键盘方向键和最终选中的 ID。[验收记录](https://github.com/kingcharleslzy-ai/dsh-purge/issues/174#issuecomment-6773128702)
-- **#188 · 设置页重复卡片**　在官方 DSH 0.2.2-rc.1 的「设置 → Agent 预设」组件中，用一条当前记录和两条历史兼容记录复现了重复显示。1.6.88 显示三张卡，合入 #186 的版本显示一张。默认项、加载异常项和缺少对应当前项的记录仍然可见。主分支已包含这项修复。报告者截图未展示完整 ID，本次结论对应已复现的历史别名场景。[问题报告](https://github.com/kingcharleslzy-ai/dsh-purge/issues/188)
+- **#173 · Tauri desktop instance identification** — Diagnostics verify the managed archive used by the current process, the DSH package declaration inside the archive, and the CLI entry. Read failures preserve specific errors. On Windows Tauri Desktop 0.31.2, switching and rollback were completed with two core builds of the same version number; all three stages verified the active archive and CLI, and the full SHA256 after rollback matched the starting point. Package swaps are performed by Tauri desktop. [Measured record](https://github.com/kingcharleslzy-ai/dsh-purge/issues/173#issuecomment-6773521953)
+- **#174 · New-session preset selection** — When a current child preset is available, the menu collapses the corresponding historical compatibility item. Old sessions continue to look up presets by saved ID. Mouse clicks, keyboard arrow navigation, and the final selected ID were verified. [Acceptance record](https://github.com/kingcharleslzy-ai/dsh-purge/issues/174#issuecomment-6773128702)
+- **#188 · Duplicate cards on settings page** — In the official DSH 0.2.2-rc.1 "Settings → Agent presets" component, duplicate display was reproduced with one current record and two historical compatibility records. 1.6.88 showed three cards; the version including #186 showed one. Default items, items with load exceptions, and records without a corresponding current item remain visible. This fix is already included in the main branch. The reporter's screenshot did not show full IDs; this conclusion corresponds to the reproduced historical-alias scenario. [Issue report](https://github.com/kingcharleslzy-ai/dsh-purge/issues/188)
 
-## 官方桌面验收范围
+## Official Desktop Acceptance Scope
 
-Mac 与 Windows 4090 分别使用各自官方 0.2.2-rc.1 安装包中的设置组件，在独立浏览器环境中验证了卡片行为。两个平台的桌面可执行文件和宿主包均通过 #187 涉及的身份判定。此次测试覆盖身份检查，未执行宿主写入或换包。macOS 使用官方 headless CLI、独立 profile 和官方模型连接发送普通算术请求，返回 42。Windows 本次验证覆盖桌面包和预设组件。
+On Mac and Windows 4090, the settings components from each platform's official 0.2.2-rc.1 installation package were used to verify card behavior in isolated browser environments. Desktop executables and host packages on both platforms passed the identity determination involved in #187. This test covered identity checks and did not perform host writes or package swaps. On macOS, the official headless CLI, an isolated profile, and an official model connection were used to send an ordinary arithmetic request, returning 42. On Windows, this verification covered the desktop package and preset component.

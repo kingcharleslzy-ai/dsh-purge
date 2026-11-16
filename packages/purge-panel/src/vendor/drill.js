@@ -13,8 +13,8 @@ export const __dshPurgeDrill = (() => {
   const h = React.createElement;
 
   /*
-   * 演练台自己是一块浮动窗：position:fixed，用 left/top/width/height 放。
-   * 不给官方 frame 加 padding，不改官方输入框的宽度。嵌在清洗面板里时走 .rt-embedded。
+   * The floating console uses fixed positioning with left/top/width/height.
+   * Preserve host frame padding and input width; use .rt-embedded inside Purge.
    */
   const CSS = `
 .rt-dock{position:fixed;top:12px;right:12px;z-index:20;display:flex;flex-direction:column;box-sizing:border-box;
@@ -37,8 +37,8 @@ export const __dshPurgeDrill = (() => {
 .rt-btn{border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-2);color:inherit;
   border-radius:6px;padding:3px 9px;font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap}
 .rt-btn:hover{border-color:var(--dsw-alias-border-l2)}
-/* brand-primary 在深色主题下是近白色（#f9fafb），当底色配 #fff 会白底白字。
-   改用标签色/底色这对反转 token，两套主题都保持高对比。 */
+/* brand-primary is near-white in dark mode. Inverted label/background tokens
+   maintain contrast in both themes instead of producing white-on-white text. */
 .rt-btn-primary{background:var(--dsw-alias-label-primary,#111);border-color:var(--dsw-alias-label-primary,#111);color:var(--dsw-alias-bg-base,#fff)}
 .rt-btn-primary:hover{opacity:.9}
 .rt-btn:disabled{opacity:.5;cursor:default}
@@ -47,7 +47,7 @@ export const __dshPurgeDrill = (() => {
   display:inline-flex;align-items:center;gap:5px;border-bottom:2px solid transparent;margin-bottom:-1px;background:transparent}
 .rt-tab:hover{color:var(--dsw-alias-label-primary)}
 .rt-tab.on{color:var(--dsw-alias-label-primary);background:transparent;font-weight:600;border-bottom-color:var(--dsw-alias-brand-primary,#6dbf8c)}
-/* 未读红点：该页签有新内容（新资产/新漏洞/新得分/新步骤…），点开看过就消失 */
+/* Unread dots mark new assets, findings, scores, or steps until the tab opens. */
 .rt-tab-dot{width:7px;height:7px;border-radius:50%;background:#ef4444;flex:none;
   box-shadow:0 0 0 2px color-mix(in srgb, #ef4444 22%, transparent)}
 .rt-body{flex:1;min-height:0;display:flex;flex-direction:column}
@@ -79,7 +79,7 @@ export const __dshPurgeDrill = (() => {
 .rt-tag-active{color:#f59e0b;border-color:#f59e0b55;background:#f59e0b1a}
 .rt-tag-live{color:#10b981;border-color:#10b98155;background:#10b9811a}
 .rt-tag-warn{color:#ef4444;border-color:#ef444455;background:#ef44441a}
-/* 纪律提示条：不满足交付要求（非冰蝎/哥斯拉马、没有 suo5 隧道）时顶在区块最上方 */
+/* Show unmet delivery requirements (Behinder/Godzilla shell or suo5 tunnel) above the section. */
 .rt-hint{border-radius:6px;padding:7px 9px;margin-bottom:8px;font-size:11.5px;line-height:1.6;
   border:1px dashed #ef444488;background:#ef44440f;color:var(--dsw-alias-label-primary)}
 .rt-hint b{color:#ef4444}
@@ -87,7 +87,7 @@ export const __dshPurgeDrill = (() => {
 .rt-expand{grid-column:1/-1;padding:8px 4px 10px;font-size:12px;color:var(--dsw-alias-label-secondary)}
 .rt-kv{display:flex;gap:8px;margin-bottom:3px;align-items:baseline}
 .rt-kv b{color:var(--dsw-alias-label-primary);font-weight:600;min-width:64px;flex:none}
-/* 图谱视图已移除（见 AssetsTab：资产关系由「域名维度」与 redteam_attack_path 工具承担） */
+/* Asset relationships use the domain view and redteam_attack_path instead of the removed graph. */
 .rt-pane{flex:1;min-height:0;overflow:auto;padding:12px}
 .rt-card{border:1px solid color-mix(in srgb,var(--dsw-alias-border-l1,#444) 75%,transparent);border-radius:8px;padding:10px;margin-bottom:10px;
   background:color-mix(in srgb,var(--dsw-alias-bg-layer-2,#2a2a2a) 48%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
@@ -133,12 +133,12 @@ export const __dshPurgeDrill = (() => {
 .rt-score-row.head{cursor:default;color:var(--dsw-alias-label-secondary);font-size:11.5px;font-weight:600;
   position:sticky;top:0;background:var(--dsw-alias-bg-layer-1);z-index:1}
 .rt-score-detail{grid-column:1/-1;padding:8px 4px 10px;font-size:12px;color:var(--dsw-alias-label-secondary)}
-/* 得分目标按合并版的 8 个类别分组：类别头 + 组内按分值升序 */
+/* Group scoring objectives into eight categories, ordered by ascending points. */
 .rt-score-group{display:flex;align-items:center;gap:8px;padding:7px 10px 5px;margin-top:2px;
   font-size:12px;font-weight:600;border-top:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-2)}
 .rt-score-group:first-child{border-top:none}
 .rt-score-group .rt-sg-sub{font-weight:400;font-size:11px;color:var(--dsw-alias-label-secondary)}
-/* ── 会话与入口：每张卡片分「标题行 / 关键事实 / 可用命令 / 备注」四段，避免一行糊在一起 ── */
+/* Session cards separate headings, facts, available commands, and notes. */
 .rt-sess-facts{display:flex;flex-direction:column;gap:2px;margin-top:5px}
 .rt-sess-fact{display:flex;gap:6px;font-size:11.5px;line-height:1.5}
 .rt-sess-fact>b{flex:none;min-width:62px;font-weight:600;color:var(--dsw-alias-label-secondary)}
@@ -288,12 +288,11 @@ export const __dshPurgeDrill = (() => {
 .rt-subtab{padding:4px 10px;border-radius:6px 6px 0 0;cursor:pointer;font-size:12px;color:var(--dsw-alias-label-secondary)}
 .rt-subtab.on{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-layer-2);font-weight:600}
 .rt-sevbar{width:3px;border-radius:2px;align-self:stretch;flex:none;margin-right:2px}
-/* ── 折叠层次体系 ─────────────────────────────────────────────────────────────
-   L1 折叠头 .rt-sec   ：通栏、无圆角无边框、左色条、深底 —— 永远是"扁"的
-   L2 内容卡 .rt-atest/.rt-hit/.rt-cred/.rt-evi：内缩、有边框、圆角 —— 立起来
-   L3 详情/长文本 .rt-clip-body / .rt-evi-body ：无边框、最浅、等宽
-   L4 子项容器 .rt-sec-body：左缩进 + 竖引导线，表明"属于上面那个头"
-   ──────────────────────────────────────────────────────────────────────────── */
+/* Collapsible hierarchy:
+   L1 .rt-sec: flat full-width headings, colored left stripe, dark background.
+   L2 .rt-atest/.rt-hit/.rt-cred/.rt-evi: inset bordered cards with rounded corners.
+   L3 .rt-clip-body/.rt-evi-body: borderless monospace details on a lighter surface.
+   L4 .rt-sec-body: indentation and a vertical guide connect children to headings. */
 .rt-sec-wrap{margin:0}
 .rt-sec{display:flex;align-items:center;gap:8px;padding:7px 12px 7px 9px;cursor:pointer;
   background:var(--dsw-alias-bg-layer-2);border-left:3px solid var(--dsw-alias-border-l2);
@@ -315,7 +314,7 @@ export const __dshPurgeDrill = (() => {
 .rt-sec.t-past{border-left-color:#94a3b8}
 .rt-sec-body{margin-left:12px;border-left:1px solid var(--dsw-alias-border-l1);padding:7px 0 3px 10px}
 .rt-sec-body>.rt-atest:last-child,.rt-sec-body>.rt-hit:last-child{margin-bottom:2px}
-/* 长文本折叠（L3）：默认预览 2 行并渐隐，展开后限高滚动 */
+/* Long text previews two fading lines, then expands into bounded scrolling. */
 .rt-clip{margin-top:6px}
 .rt-clip-head{display:flex;align-items:center;gap:6px}
 .rt-clip-label{font-size:11px;color:var(--dsw-alias-label-secondary);font-weight:600}
@@ -382,7 +381,7 @@ export const __dshPurgeDrill = (() => {
 .rt-rep-req-head{display:flex;align-items:center;gap:7px;padding:4px 8px;font-size:11.5px;font-weight:600;
   background:var(--dsw-alias-bg-layer-1);border-bottom:1px solid var(--dsw-alias-border-l1)}
 .rt-rep-http{margin:0;padding:8px 10px;font-family:ui-monospace,Menlo,monospace;font-size:11.5px;line-height:1.6;white-space:pre-wrap;word-break:break-word;max-height:240px;overflow:auto;background:var(--dsw-alias-bg-base)}
-/* ── 报告里的「这一步怎么来的」：动作步骤 / 命令 / 凭据 / 隧道 ───────────── */
+/* Report provenance: actions, commands, credentials, and tunnels. */
 .rt-rep-trace{margin-top:8px;border:1px solid var(--dsw-alias-border-l1);border-radius:7px;padding:8px 10px;
   background:var(--dsw-alias-bg-base)}
 .rt-rep-trace-head{display:flex;align-items:center;gap:7px;margin-bottom:5px}
@@ -400,7 +399,7 @@ export const __dshPurgeDrill = (() => {
 .rt-rep-step-result{font-size:11.5px;margin-top:3px;word-break:break-word}
 .rt-rep-src{margin-top:6px;padding-top:6px;border-top:1px dashed var(--dsw-alias-border-l1)}
 .rt-rep-src-title{font-weight:600;font-size:12px;margin-bottom:3px}
-/* ── 全链路攻击路径图 ─────────────────────────────────────────────── */
+/* End-to-end attack path diagram. */
 .rt-ap{padding:10px 12px 18px;overflow:auto}
 .rt-ap-stage{margin-bottom:2px}
 .rt-ap-head{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--dsw-alias-bg-layer-2);
@@ -418,7 +417,7 @@ export const __dshPurgeDrill = (() => {
 .rt-ap-pts{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;font-weight:700;color:#065f46;background:#a7f3d0;
   border:1px solid #10b98155;border-radius:10px;padding:0 7px;white-space:nowrap}
 .rt-ap-pts.off{color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-layer-1);border-color:var(--dsw-alias-border-l1)}
-/* 按服务封顶/自建而不计分的命中：分值标灰（+0），避免看着像又加了分 */
+/* Muted +0 labels distinguish capped or self-created findings from new points. */
 .rt-ap-pts.uncounted{color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-layer-1);border-color:var(--dsw-alias-border-l1)}
 .rt-ap-nth{font-size:10.5px;color:var(--dsw-alias-label-secondary);white-space:nowrap}
 .rt-ap-hit{border:1px solid var(--dsw-alias-border-l1);border-left:3px solid #10b981;border-radius:6px;
@@ -435,7 +434,7 @@ export const __dshPurgeDrill = (() => {
 .rt-ap-none{font-size:11.5px;color:var(--dsw-alias-label-secondary);padding:2px 0 4px}
 .rt-ap-trans{display:flex;align-items:center;gap:7px;padding:2px 0 2px 14px}
 .rt-ap-trans-t{font-size:11px;color:var(--dsw-alias-label-secondary)}
-/* 横向路径图 */
+/* Horizontal path diagram. */
 .rt-ap-h{display:flex;align-items:stretch;padding:10px 12px 14px;overflow-x:auto;flex:1;min-height:0}
 .rt-ap-col{display:flex;align-items:stretch;flex:none}
 .rt-ap-col-arrow{align-self:center;color:var(--dsw-alias-border-l2);padding:0 6px;font-size:12px;flex:none}
@@ -468,16 +467,16 @@ export const __dshPurgeDrill = (() => {
 .rt-hcol-sub.off{opacity:.6}
 .rt-hit-row{display:flex;flex-wrap:wrap;align-items:center;gap:2px 7px;font-size:11.5px;padding:4px 7px;border-radius:5px;
   background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l1);margin-bottom:3px}
-/* 资产与内容都自适应换行：长域名/长口令/长结果一律换行显示，不截断成省略号 */
+/* Wrap long domains, passwords, and results rather than truncating them. */
 .rt-hit-asset{font-family:ui-monospace,Menlo,monospace;font-weight:600;flex:0 1 auto;max-width:100%;
   overflow-wrap:anywhere;word-break:break-word}
 .rt-hit-txt{flex:1 1 100%;color:var(--dsw-alias-label-primary);line-height:1.55;
   white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}
 .rt-hit-txt.none{color:var(--dsw-alias-state-error-primary)}
 .rt-hit-row .rt-hit-time{flex:none;margin-left:auto}
-/* 自己注册/自建的账号：留痕但不计分，整行压暗 */
+/* Self-created accounts remain recorded but muted and unscored. */
 .rt-hit-row.self-created{opacity:.72;border-left:3px solid #ef444488}
-/* 同一资产同一端口的重复账号/库权限：服务已拿满，不计分（只作留痕） */
+/* Repeated accounts/database access on a capped asset/port remain unscored records. */
 .rt-hit-row.service-capped{opacity:.72;border-left:3px solid #f59e0b88}
 .rt-hit-row.service-capped .rt-hit-idx{background:#f59e0b}
 .rt-rep-group{margin-bottom:14px}
@@ -490,24 +489,24 @@ export const __dshPurgeDrill = (() => {
   display:inline-flex;align-items:center;justify-content:center}
 .rt-rep-stage-name{font-weight:700;font-size:13px}
 .rt-rep-stage-n{font-size:11px;color:var(--dsw-alias-label-secondary)}
-/* 折叠后仍要能一眼看到"这一阶段拿了多少分"，所以分数留在头上 */
+/* Keep stage totals visible in collapsed headings. */
 .rt-rep-pts{font-size:11px;font-weight:600;padding:1px 6px;border-radius:5px;border:1px solid transparent;flex:none}
 .rt-rep-body{padding-left:6px}
-/* ── 知识库（POC/EXP） ──────────────────────────────────────────── */
+/* Knowledge base (POC/EXP). */
 .rt-kb-filter{display:flex;align-items:center;gap:7px;padding:8px 10px;border-bottom:1px solid var(--dsw-alias-border-l1)}
-/* 知识库归类总览：一行标签，点一下按该类筛选 */
+/* Click category tags to filter the knowledge base. */
 .rt-kb-cats{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px;border-bottom:1px solid var(--dsw-alias-border-l1)}
-/* 知识库分组标题（按归类分组时每组一条） */
+/* One sticky heading per knowledge-base category. */
 .rt-kb-cat{display:flex;align-items:center;gap:7px;padding:7px 10px;background:var(--dsw-alias-bg-layer-2);
   border-bottom:1px solid var(--dsw-alias-border-l1);position:sticky;top:0;z-index:1}
 .rt-kb-cat-name{font-weight:600;font-size:12.5px}
-/* 技能可用性徽章（技能库页签） */
+/* Skill availability badges. */
 .rt-avail{display:inline-block;padding:0 5px;border-radius:4px;font-size:10.5px;white-space:nowrap;
   border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-secondary)}
 .rt-avail-available{color:#10b981;border-color:#10b98155;background:#10b9811a}
 .rt-avail-broken{color:#ef4444;border-color:#ef444455;background:#ef44441a}
 .rt-avail-unknown{color:#94a3b8;border-color:#94a3b855;background:#94a3b81a}
-/* 版本 / 更新弹窗 */
+/* Version and update dialog. */
 .rt-modal{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center}
 .rt-modal-box{width:min(560px,92vw);max-height:80vh;overflow:auto;background:var(--dsw-alias-bg-layer-1);
   border:1px solid var(--dsw-alias-border-l1);border-radius:10px;padding:14px 16px;font-size:12.5px;line-height:1.7;
@@ -532,7 +531,7 @@ export const __dshPurgeDrill = (() => {
 .rt-kb-body{padding:0 9px 9px}
 .rt-kb-actions{display:flex;gap:6px;margin:7px 0}
 .rt-kb-body .rt-kv span{overflow-wrap:anywhere;word-break:break-word}
-/* 本机 nuclei 模板命中：路径要能完整看到（复制成命令直接跑） */
+/* Show complete local nuclei template paths for copying into commands. */
 .rt-kb-tpl{margin-top:12px;border-top:1px dashed var(--dsw-alias-border-l1);padding-top:8px}
 .rt-kb-tpl-row{display:flex;align-items:center;gap:7px;font-size:11.5px;padding:3px 7px;border-radius:5px;
   background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l1);margin-bottom:3px}
@@ -554,10 +553,10 @@ export const __dshPurgeDrill = (() => {
 .rt-shot-cap{display:flex;align-items:center;gap:5px;font-size:10.5px;overflow-wrap:anywhere}
 .rt-shot-label{color:var(--dsw-alias-label-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:170px}
 .rt-shot-zoom{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.82);display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:10px;cursor:zoom-out;padding:18px}
+   align-items:center;justify-content:center;gap:10px;cursor:zoom-out;padding:18px}
 .rt-shot-zoom img{max-width:96vw;max-height:86vh;border-radius:6px;box-shadow:0 18px 48px rgba(0,0,0,.5)}
-.rt-shot-zoom-cap{color:#e5e7eb;font-size:12px;text-align:center;max-width:90vw;overflow-wrap:anywhere}`; /* ---------------------------------------------------------- 桥接与状态 */
-  /** 是否在「全面浏览」独立窗口里（URL hash 标记，复用同一套界面代码）。 */
+.rt-shot-zoom-cap{color:#e5e7eb;font-size:12px;text-align:center;max-width:90vw;overflow-wrap:anywhere}`; /* Bridge and state. */
+  /** The URL hash identifies a full-view window sharing the same UI. */
   const isFullWindow = () => {
     try {
       return String(window.location.hash || "") === "#redteam-full";
@@ -606,7 +605,7 @@ export const __dshPurgeDrill = (() => {
       }
     }
   };
-  /* 保留导出。面板尺寸只写在自己的元素上，不再改官方 frame 的宽度。 */
+  /* Preserve the export; sizing affects only panel elements, not the host frame. */
   let dockWidthTag = null;
   const setDockWidth = () => {};
   const useUI = () => {
@@ -622,32 +621,32 @@ export const __dshPurgeDrill = (() => {
     return st;
   };
 
-  /* 知识库归类（与 core.js 的 POC_CATEGORIES 一致；面板按它分组） */
+  /* Knowledge-base categories match POC_CATEGORIES in core.js. */
   const POC_CAT_NAME = {
-    rce: "远程命令执行",
-    deserialization: "反序列化",
-    "file-upload": "文件上传 getshell",
-    sqli: "SQL 注入",
-    unauthorized: "未授权访问",
-    "auth-bypass": "认证绕过 / 越权",
-    "weak-password": "弱口令 / 爆破",
+    rce: "Remote command execution",
+    deserialization: "Deserialization",
+    "file-upload": "File upload / shell access",
+    sqli: "SQL injection",
+    unauthorized: "Unauthorized access",
+    "auth-bypass": "Authentication bypass / access control",
+    "weak-password": "Weak passwords / brute force",
     ssrf: "SSRF",
     xxe: "XXE",
-    "path-traversal": "目录穿越 / 任意文件读",
-    "info-leak": "信息泄露",
-    privesc: "提权 / 横向",
-    tunnel: "隧道 / 代理",
-    other: "其它",
+    "path-traversal": "Path traversal / arbitrary file read",
+    "info-leak": "Information disclosure",
+    privesc: "Privilege escalation / lateral movement",
+    tunnel: "Tunnels / proxies",
+    other: "Other",
   };
   const POC_CAT_ORDER = Object.keys(POC_CAT_NAME);
-  /* 角色 code → 中文（报告/知识库都要标"谁发现的"） */
+  /* Role labels identify discoverers in reports and the knowledge base. */
   const ROLE_LABEL = {
-    plan: "主会话（指挥）",
-    recon: "信息收集",
-    assess: "资产梳理",
-    "vuln-scan": "漏洞发现",
-    exploit: "漏洞利用",
-    internal: "内网渗透",
+    plan: "Main session (coordination)",
+    recon: "Reconnaissance",
+    assess: "Asset assessment",
+    "vuln-scan": "Vulnerability discovery",
+    exploit: "Exploitation",
+    internal: "Internal penetration testing",
   };
 
   const fmt = (s) => (s ? String(s).replace("T", " ").slice(0, 16) : "—");
@@ -680,7 +679,10 @@ export const __dshPurgeDrill = (() => {
       });
     shotLoading.set(key, p);
   };
-  const SHOT_KIND = { screenshot: "现场截图", card: "记录生成的证据摘录" };
+  const SHOT_KIND = {
+    screenshot: "Captured screenshot",
+    card: "Evidence excerpt generated from records",
+  };
   const ShotImage = ({ eng, shot, height }) => {
     const [zoom, setZoom] = React.useState(false);
     const src = shotSrc(eng, shot.id);
@@ -698,12 +700,12 @@ export const __dshPurgeDrill = (() => {
               className: "rt-shot-thumb rt-shot-loading",
               style: { height: (height || 96) + "px" },
             },
-            "载入中…",
+            "Loading…",
           )
         : h("img", {
             className: "rt-shot-thumb",
             src: src,
-            alt: shot.label || "证据 " + shot.id,
+            alt: shot.label || "Evidence " + shot.id,
             style: { height: (height || 96) + "px", cursor: "zoom-in" },
             onClick: () => setZoom(true),
           }),
@@ -715,10 +717,10 @@ export const __dshPurgeDrill = (() => {
           {
             className: "rt-tag " + (card ? "rt-tag-warn" : "rt-tag-live"),
             title: card
-              ? "由当日记录生成的证据摘录，不是现场截图 —— 报告里同样会标注"
-              : "现场截图",
+              ? "Evidence excerpt generated from that day's records, not a captured screenshot; the report also labels this distinction"
+              : "Captured screenshot",
           },
-          SHOT_KIND[shot.kind] || shot.kind || "证据",
+          SHOT_KIND[shot.kind] || shot.kind || "Evidence",
         ),
         h(
           "span",
@@ -735,9 +737,11 @@ export const __dshPurgeDrill = (() => {
               "div",
               { className: "rt-shot-zoom-cap" },
               (shot.label || shot.target || "") +
-                (card ? "　·　由当日记录生成（非现场截图）" : "") +
+                (card
+                  ? " · Generated from that day's records (not a captured screenshot)"
+                  : "") +
                 (shot.captured_at ? "　·　" + fmt(shot.captured_at) : "") +
-                "　·　点击任意处关闭",
+                " · Click anywhere to close",
             ),
           )
         : null,
@@ -752,15 +756,17 @@ export const __dshPurgeDrill = (() => {
       h(
         "div",
         { className: "rt-shots-head" },
-        h("b", null, title || "证据截图"),
+        h("b", null, title || "Evidence screenshots"),
         h(
           "span",
           { className: "rt-shots-n" },
-          "显示 " +
+          "Showing " +
             list.length +
-            " 张" +
+            " images" +
             (total && total > list.length
-              ? "（该得分点共 " + total + " 张，取代表图）"
+              ? " (representative images from " +
+                total +
+                " for this scoring item)"
               : ""),
         ),
       ),
@@ -773,26 +779,23 @@ export const __dshPurgeDrill = (() => {
       ),
     );
   };
-  /** 发现时间在列表里只留「月-日 时:分」：整行宽度紧张，完整时间进悬浮提示 */
+  /** Compact discovery timestamps; tooltips retain the full value. */
   const fmtShort = (s) => {
     const t = String(s || "").replace("T", " ");
     return t.length >= 16 ? t.slice(5, 16) : t || "—";
   };
   const provLabel = (p) =>
-    p === "passive" ? "被动" : p === "active" ? "主动" : "未知";
+    p === "passive" ? "Passive" : p === "active" ? "Active" : "Unknown";
 
   /**
-   * 给「可点击但不是 <button>」的元素补上键盘可达性，返回可直接展开进 props 的对象。
-   *
-   * 为什么需要：面板里大量用 div/span 当按钮（表格行、页签、结论条、C 段条目…），
-   * 它们鼠标能点、键盘完全够不着 —— 而这类元素此前有 16 处是各写各的，
-   * 写法还不一致（有的只有 role、有的漏了 Space 键）。
-   * 统一到一个工厂后，新增可点击元素只要 `...clickable(fn, { label })` 就有完整语义。
-   *
-   * 注意：**不要**用它包真正的 `<button>`（原生按钮自带全部语义）。
-   * @param onActivate - 激活回调（鼠标点击 / Enter / Space 都走它）。
-   * @param options - `{ label?, expanded? }`：label 进 aria-label，expanded 进 aria-expanded。
-   * @returns props 片段：role / tabIndex / onClick / onKeyDown / aria-*
+   * Add keyboard access to clickable elements that are not native buttons.
+   * Table rows, tabs, summary bars, and subnet entries previously had sixteen
+   * inconsistent implementations, some missing roles or Space-key support.
+   * Spread clickable(fn, { label }) into props for consistent semantics.
+   * Do not apply this to native buttons, which already provide these semantics.
+   * @param onActivate - Callback for mouse clicks, Enter, and Space.
+   * @param options - Optional label and expanded state for ARIA attributes.
+   * @returns Props containing role, tabIndex, handlers, and ARIA attributes.
    */
   const clickable = (onActivate, options = {}) => {
     const props = {
@@ -800,7 +803,7 @@ export const __dshPurgeDrill = (() => {
       tabIndex: 0,
       onClick: onActivate,
       onKeyDown: (e) => {
-        /* Enter 与 Space 是按钮的标准激活键；Space 还要阻止页面滚动 */
+        /* Enter and Space activate buttons; prevent Space from scrolling. */
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           onActivate(e);
@@ -815,12 +818,11 @@ export const __dshPurgeDrill = (() => {
   };
 
   /**
-   * 复制文本到剪贴板，**返回真实的成功与否**。
-   *
-   * clipboard API 在非安全上下文（http + 非 localhost）、页面失焦、权限被拒时都会
-   * 返回被拒绝的 Promise —— 同步 try/catch 抓不到，于是界面会显示"已复制"而剪贴板是空的。
-   * 这里 await 真实结果，并在不可用时退回 execCommand('copy')（老浏览器/非安全上下文仍可用）。
-   * @param text - 要复制的文本。
+   * Copy text and report actual success.
+   * Clipboard promises can reject in insecure contexts, without focus, or when
+   * permission is denied. Await completion before reporting success, falling
+   * back to execCommand for older browsers and insecure contexts.
+   * @param text - Text to copy.
    * @returns Promise<boolean>
    */
   const copyText = async (text) => {
@@ -835,9 +837,9 @@ export const __dshPurgeDrill = (() => {
         return true;
       }
     } catch (e) {
-      /* 落到下面的兜底方案 */
+      /* Try the fallback below. */
     }
-    /* 兜底：临时 textarea + execCommand —— 非安全上下文里唯一还能用的办法 */
+    /* A temporary textarea supports legacy copying in insecure contexts. */
     try {
       const ta = document.createElement("textarea");
       ta.value = value;
@@ -855,22 +857,22 @@ export const __dshPurgeDrill = (() => {
   };
 
   /**
-   * 复制并给出**如实**的界面反馈（成功/失败文案统一）。
-   * @param text - 要复制的文本。
-   * @param label - 成功时提示里显示的名字。
-   * @param onResult - 可选回调：`(ok, message) => void`；不传时返回 Promise<boolean>。
+   * Copy with consistent feedback reflecting actual success or failure.
+   * @param text - Text to copy.
+   * @param label - Name included in the success message.
+   * @param onResult - Optional (ok, message) callback; returns Promise<boolean>.
    */
   const copyWithFeedback = async (text, label, onResult) => {
     const okFlag = await copyText(text);
     const message = okFlag
-      ? "已复制：" + label
-      : "复制失败（浏览器未授权剪贴板）—— 请手动选中文本复制";
+      ? "Copied: " + label
+      : "Copy failed (clipboard permission unavailable). Select and copy the text manually.";
     if (typeof onResult === "function") onResult(okFlag, message);
     return okFlag;
   };
 
   function ProvTag(props) {
-    if (!props.p) return h("span", { className: "rt-tag" }, "未知");
+    if (!props.p) return h("span", { className: "rt-tag" }, "Unknown");
     return h(
       "span",
       { className: "rt-tag rt-tag-" + props.p },
@@ -879,18 +881,18 @@ export const __dshPurgeDrill = (() => {
   }
 
   const TEST_LABEL = {
-    untested: "未测试",
-    testing: "测试中",
-    tested: "已测试",
-    blocked: "被封禁",
-    abandoned: "已放弃",
-    no_surface: "无攻击面",
+    untested: "Untested",
+    testing: "Testing",
+    tested: "Tested",
+    blocked: "Blocked",
+    abandoned: "Abandoned",
+    no_surface: "No attack surface",
   };
-  const PRI_LABEL = { high: "高", medium: "中", low: "低" };
+  const PRI_LABEL = { high: "High", medium: "Medium", low: "Low" };
 
-  /** 资产易打性徽章。 */
+  /** Asset exploitability badge. */
   function PriTag(props) {
-    if (!props.p) return h("span", { className: "rt-tag" }, "未评");
+    if (!props.p) return h("span", { className: "rt-tag" }, "Unassessed");
     return h(
       "span",
       { className: "rt-pri rt-pri-" + props.p, title: props.title || "" },
@@ -898,7 +900,7 @@ export const __dshPurgeDrill = (() => {
     );
   }
 
-  /** 资产测试状态徽章。 */
+  /** Asset test status badge. */
   function TestTag(props) {
     const st = props.s || "untested";
     return h(
@@ -908,7 +910,7 @@ export const __dshPurgeDrill = (() => {
     );
   }
 
-  /* ---------------------------------------------------------- 资产测绘 */
+  /* ---------------------------------------------------------- Asset mapping */
   function AssetsTab(props) {
     const eng = props.engagement;
     const snapshot = props.snapshot;
@@ -937,7 +939,7 @@ export const __dshPurgeDrill = (() => {
     const [web, setWeb] = React.useState(null);
     const [openId, setOpenId] = React.useState(null);
     const [detail, setDetail] = React.useState(null);
-    /* 左侧「外网 C 段 / 内网 C 段」两组各自折叠，状态按靶标记住 */
+    /* Persist external/internal subnet collapse state per engagement. */
     const sideCollapse = useCollapse("assets-side:" + eng);
     const seq = React.useRef(0);
     const onData = props.onData;
@@ -966,7 +968,7 @@ export const __dshPurgeDrill = (() => {
           if (!r || r.ok === false) {
             setState({
               loading: false,
-              error: (r && r.error) || "查询失败",
+              error: (r && r.error) || "Query failed",
               total: 0,
               items: [],
             });
@@ -978,7 +980,7 @@ export const __dshPurgeDrill = (() => {
             total: r.total,
             items: r.items || [],
           });
-          /* C 段/统计可能因本轮采集新增：让外层重新拉一次快照，左侧分类立即更新 */
+          /* Refresh the snapshot so newly discovered subnets update the sidebar. */
           if (onData) onData();
         },
         (e) => {
@@ -1058,13 +1060,13 @@ export const __dshPurgeDrill = (() => {
               setCidr(null);
             },
             {
-              label: "全部 C 段",
+              label: "All subnets",
               expanded: cidr === null && view !== "testing",
             },
           ),
         ),
-        h("div", { className: "rt-seg-cidr" }, "全部 C 段"),
-        h("div", { className: "rt-seg-meta" }, segs.length + " 个网段"),
+        h("div", { className: "rt-seg-cidr" }, "All subnets"),
+        h("div", { className: "rt-seg-meta" }, segs.length + " subnets"),
       ),
     );
     sideChildren.push(
@@ -1074,14 +1076,14 @@ export const __dshPurgeDrill = (() => {
           {
             key: "testing",
             className: "rt-seg" + (view === "testing" ? " on" : ""),
-            title: "正在跑的扫描 / 探测与进度（5 秒自动刷新）",
+            title: "Running scans, probes, and progress (refreshes every 5 seconds)",
           },
           clickable(
             () => {
               setView("testing");
               setCidr(null);
             },
-            { label: "当前测试", expanded: view === "testing" },
+            { label: "Current tests", expanded: view === "testing" },
           ),
         ),
         h(
@@ -1094,18 +1096,18 @@ export const __dshPurgeDrill = (() => {
             "span",
             {
               className: "rt-scope rt-scope-testing",
-              title: "当前测试（既非内网也非外网）",
+              title: "Current tests (neither internal nor external)",
             },
-            "测",
+            "Test",
           ),
-          h("span", { style: { flex: 1 } }, "当前测试"),
+          h("span", { style: { flex: 1 } }, "Current tests"),
         ),
-        h("div", { className: "rt-seg-meta" }, "正在跑的扫描与探测"),
+        h("div", { className: "rt-seg-meta" }, "Running scans and probes"),
       ),
     );
-    /* C 段按内外网分组：先外网（互联网可达，通常是入口）再内网（打进去之后才看得到） */
+    /* Show externally reachable subnets before internal subnets. */
     const segBlock = (title, list, kind) => {
-      /* 外网 / 内网两组各自可折叠（状态按靶标记住），默认展开 */
+      /* Groups default to expanded and retain state per engagement. */
       const open = sideCollapse.isOpen("scope:" + kind, true);
       const toggle = sideCollapse.toggle("scope:" + kind, true);
       const out = [
@@ -1117,7 +1119,7 @@ export const __dshPurgeDrill = (() => {
             role: "button",
             tabIndex: 0,
             "aria-expanded": open ? "true" : "false",
-            title: (open ? "收起本组" : "展开本组") + "（并切回资产列表）",
+            title: (open ? "Collapse group" : "Expand group") + " and return to assets",
             onClick: () => {
               setView("list");
               toggle();
@@ -1134,20 +1136,20 @@ export const __dshPurgeDrill = (() => {
           h(
             "span",
             { className: "rt-scope rt-scope-" + kind },
-            kind === "internal" ? "内网" : "外网",
+            kind === "internal" ? "Internal" : "External",
           ),
-          h("span", null, title + " · " + list.length + " 个 C 段"),
+          h("span", null, title + " · " + list.length + " subnets"),
           h("span", { className: "rt-spacer" }),
           h(
             "span",
             { style: { fontWeight: 400 } },
-            list.reduce((n, x) => n + (x.assets || 0), 0) + " 资产",
+            list.reduce((n, x) => n + (x.assets || 0), 0) + " assets",
           ),
         ),
       ];
       if (!open) return out;
       for (const s of list) {
-        /* 一段一行：只给 C 段 + 资产数（端口数不再占位，归属与存活放进悬浮提示） */
+        /* Rows show subnet and asset counts; ownership and liveness use tooltips. */
         out.push(
           h(
             "div",
@@ -1156,12 +1158,12 @@ export const __dshPurgeDrill = (() => {
                 key: s.cidr,
                 className: "rt-seg" + (cidr === s.cidr ? " on" : ""),
                 title:
-                  (s.org || "未知归属") +
-                  " · 存活 " +
+                  (s.org || "Unknown owner") +
+                  " · Live " +
                   (s.live || 0) +
                   "/" +
                   (s.assets || 0) +
-                  " 台",
+                  " hosts",
               },
               clickable(
                 () => {
@@ -1169,7 +1171,7 @@ export const __dshPurgeDrill = (() => {
                   setCidr(s.cidr);
                 },
                 {
-                  label: "筛选 C 段 " + s.cidr,
+                  label: "Filter subnet " + s.cidr,
                   expanded: cidr === s.cidr && view !== "testing",
                 },
               ),
@@ -1183,7 +1185,7 @@ export const __dshPurgeDrill = (() => {
               h(
                 "span",
                 { className: "rt-scope rt-scope-" + kind },
-                kind === "internal" ? "内" : "外",
+                kind === "internal" ? "Int" : "Ext",
               ),
               h("span", { style: { flex: 1 } }, s.cidr),
               h(
@@ -1192,7 +1194,7 @@ export const __dshPurgeDrill = (() => {
                   className: "rt-seg-meta",
                   style: { margin: 0, whiteSpace: "nowrap" },
                 },
-                s.assets + " 台",
+                s.assets + " hosts",
               ),
             ),
           ),
@@ -1203,9 +1205,9 @@ export const __dshPurgeDrill = (() => {
     const segExternal = segs.filter((x) => x.scope !== "internal");
     const segInternal = segs.filter((x) => x.scope === "internal");
     if (segExternal.length)
-      sideChildren.push(...segBlock("外网资产", segExternal, "external"));
+      sideChildren.push(...segBlock("External assets", segExternal, "external"));
     if (segInternal.length)
-      sideChildren.push(...segBlock("内网资产", segInternal, "internal"));
+      sideChildren.push(...segBlock("Internal assets", segInternal, "internal"));
     const side = h("div", { className: "rt-side" }, sideChildren);
 
     const toolbar = h(
@@ -1214,7 +1216,7 @@ export const __dshPurgeDrill = (() => {
       h("input", {
         className: "rt-input",
         style: { flex: "1 1 150px" },
-        placeholder: "搜索 IP / 域名 / 指纹（回车）",
+        placeholder: "Search IP / domain / fingerprint (Enter)",
         value: q,
         onChange: (e) => setQ(e.target.value),
         onKeyDown: (e) => {
@@ -1224,19 +1226,19 @@ export const __dshPurgeDrill = (() => {
       h(
         "button",
         { className: "rt-btn", onClick: () => setQApplied(q) },
-        "搜索",
+        "Search",
       ),
       h("input", {
         className: "rt-input",
         style: { width: "78px" },
-        placeholder: "服务",
+        placeholder: "Service",
         value: service,
         onChange: (e) => setService(e.target.value),
       }),
       h("input", {
         className: "rt-input",
         style: { width: "60px" },
-        placeholder: "端口",
+        placeholder: "Port",
         value: port,
         onChange: (e) => setPort(e.target.value),
       }),
@@ -1247,9 +1249,9 @@ export const __dshPurgeDrill = (() => {
           value: scope,
           onChange: (e) => setScope(e.target.value),
         },
-        h("option", { value: "" }, "内外网不限"),
-        h("option", { value: "external" }, "仅外网资产"),
-        h("option", { value: "internal" }, "仅内网资产"),
+        h("option", { value: "" }, "All network scopes"),
+        h("option", { value: "external" }, "External assets only"),
+        h("option", { value: "internal" }, "Internal assets only"),
       ),
       h(
         "select",
@@ -1257,11 +1259,11 @@ export const __dshPurgeDrill = (() => {
           className: "rt-input",
           value: prov,
           onChange: (e) => setProv(e.target.value),
-          title: "按端口来源过滤（列表已不再单列显示，详情里可见）",
+          title: "Filter by port discovery source (shown in details)",
         },
-        h("option", { value: "" }, "来源不限"),
-        h("option", { value: "passive" }, "仅被动"),
-        h("option", { value: "active" }, "仅主动"),
+        h("option", { value: "" }, "All sources"),
+        h("option", { value: "passive" }, "Passive only"),
+        h("option", { value: "active" }, "Active only"),
       ),
       h(
         "select",
@@ -1270,10 +1272,10 @@ export const __dshPurgeDrill = (() => {
           value: priority,
           onChange: (e) => setPriority(e.target.value),
         },
-        h("option", { value: "" }, "易打性不限"),
-        h("option", { value: "high" }, "易打（高）"),
-        h("option", { value: "medium" }, "一般（中）"),
-        h("option", { value: "low" }, "难打（低）"),
+        h("option", { value: "" }, "All exploitability levels"),
+        h("option", { value: "high" }, "Easy (high)"),
+        h("option", { value: "medium" }, "Moderate (medium)"),
+        h("option", { value: "low" }, "Difficult (low)"),
       ),
       h(
         "select",
@@ -1282,25 +1284,25 @@ export const __dshPurgeDrill = (() => {
           value: testStatus,
           onChange: (e) => setTestStatus(e.target.value),
         },
-        h("option", { value: "" }, "测试状态不限"),
-        h("option", { value: "untested" }, "未测试"),
-        h("option", { value: "testing" }, "测试中"),
-        h("option", { value: "tested" }, "已测试"),
-        h("option", { value: "blocked" }, "被封禁"),
-        h("option", { value: "abandoned" }, "已放弃"),
-        h("option", { value: "no_surface" }, "无攻击面"),
+        h("option", { value: "" }, "All test states"),
+        h("option", { value: "untested" }, "Untested"),
+        h("option", { value: "testing" }, "Testing"),
+        h("option", { value: "tested" }, "Tested"),
+        h("option", { value: "blocked" }, "Blocked"),
+        h("option", { value: "abandoned" }, "Abandoned"),
+        h("option", { value: "no_surface" }, "No attack surface"),
       ),
       h("div", { className: "rt-spacer" }),
       h(
         "button",
         {
           className: "rt-btn",
-          title: "重新拉取快照与当前视图数据",
+          title: "Reload the snapshot and current view",
           onClick: () => {
             if (onRefresh) onRefresh();
           },
         },
-        "刷新",
+        "Refresh",
       ),
       h(
         "button",
@@ -1308,16 +1310,16 @@ export const __dshPurgeDrill = (() => {
           className: "rt-btn" + (view === "list" ? " rt-btn-primary" : ""),
           onClick: () => setView("list"),
         },
-        "列表",
+        "List",
       ),
       h(
         "button",
         {
           className: "rt-btn" + (view === "timeline" ? " rt-btn-primary" : ""),
-          title: "按发现时间看资产（什么时候发现、哪天收了多少）",
+          title: "View assets by discovery time and daily totals",
           onClick: () => setView("timeline"),
         },
-        "发现时间",
+        "Discovery time",
       ),
       h(
         "button",
@@ -1325,7 +1327,7 @@ export const __dshPurgeDrill = (() => {
           className: "rt-btn" + (view === "domain" ? " rt-btn-primary" : ""),
           onClick: () => setView("domain"),
         },
-        "域名",
+        "Domains",
       ),
       h(
         "button",
@@ -1337,7 +1339,7 @@ export const __dshPurgeDrill = (() => {
       ),
     );
 
-    /* ── 结论行：一屏看清家底，数字点一下就是筛选 ───────────────────── */
+    /* Click summary counts to filter the inventory. */
     const tests = (snapshot && snapshot.tests) || {};
     const snapStats = (snapshot && snapshot.stats) || {};
     const noFilter =
@@ -1349,10 +1351,10 @@ export const __dshPurgeDrill = (() => {
           {
             key: key,
             className: "rt-concl-i" + (active ? " on" : ""),
-            title: "点击筛选 / 再点取消",
+            title: "Click to filter; click again to clear",
           },
           clickable(onClick, {
-            label: "按「" + label + "」筛选（" + (value || 0) + "）",
+            label: "Filter by " + label + " (" + (value || 0) + ")",
             expanded: active,
           }),
         ),
@@ -1366,7 +1368,7 @@ export const __dshPurgeDrill = (() => {
     const conclusion = h(
       "div",
       { className: "rt-concl" },
-      conclItem("all", "台资产", snapStats.assets, noFilter, () => {
+      conclItem("all", "assets", snapStats.assets, noFilter, () => {
         setTestStatus("");
         setPriority("");
         setScope("");
@@ -1376,7 +1378,7 @@ export const __dshPurgeDrill = (() => {
       }),
       conclItem(
         "live",
-        "存活",
+        "Live",
         snapStats.liveAssets,
         assetState === "live",
         () => {
@@ -1386,24 +1388,24 @@ export const __dshPurgeDrill = (() => {
       ),
       conclItem(
         "untested",
-        "待测",
+        "Untested",
         tests.untested,
         testStatus === "untested",
         () => toggleTest("untested"),
       ),
       conclItem(
         "testing",
-        "测试中",
+        "Testing",
         tests.testing,
         testStatus === "testing",
         () => toggleTest("testing"),
       ),
-      conclItem("tested", "已测", tests.tested, testStatus === "tested", () =>
+      conclItem("tested", "Tested", tests.tested, testStatus === "tested", () =>
         toggleTest("tested"),
       ),
       conclItem(
         "giveup",
-        "放弃",
+        "Abandoned / blocked",
         (tests.abandoned || 0) + (tests.blocked || 0),
         testStatus === "abandoned,blocked",
         () => toggleTest("abandoned,blocked"),
@@ -1415,13 +1417,13 @@ export const __dshPurgeDrill = (() => {
           className: "rt-input",
           value: sort,
           onChange: (e) => setSort(e.target.value),
-          title: "列表排序方式",
+          title: "List sort order",
         },
-        h("option", { value: "priority" }, "排序：易打性优先"),
-        h("option", { value: "todo" }, "排序：待测优先"),
-        h("option", { value: "discovered" }, "排序：最近发现优先"),
-        h("option", { value: "ports" }, "排序：端口多优先"),
-        h("option", { value: "ip" }, "排序：按 IP"),
+        h("option", { value: "priority" }, "Sort: exploitability"),
+        h("option", { value: "todo" }, "Sort: untested first"),
+        h("option", { value: "discovered" }, "Sort: newest discoveries"),
+        h("option", { value: "ports" }, "Sort: most ports"),
+        h("option", { value: "ip" }, "Sort: IP address"),
       ),
     );
 
@@ -1429,10 +1431,10 @@ export const __dshPurgeDrill = (() => {
       "div",
       { className: "rt-row head" },
       h("span", null, "IP"),
-      h("span", null, "易打"),
-      h("span", null, "测试状态"),
-      h("span", null, "开放端口 / 服务"),
-      h("span", null, "指纹"),
+      h("span", null, "Priority"),
+      h("span", null, "Test status"),
+      h("span", null, "Open ports / services"),
+      h("span", null, "Fingerprints"),
     );
 
     const rowNodes = [];
@@ -1448,7 +1450,7 @@ export const __dshPurgeDrill = (() => {
             [f.vendor, f.product, f.version].filter(Boolean).join(" "),
           )
           .join(" / ") || "—";
-      /* 端口最多列 3 个，其余用 +N；主被动来源不再占列，进详情 */
+      /* Show three ports plus a remainder count; discovery sources use details. */
       const shownPorts = openPorts
         .slice(0, 3)
         .map((p) => p.port + (p.service ? "/" + p.service : ""))
@@ -1464,7 +1466,7 @@ export const __dshPurgeDrill = (() => {
               className: "rt-row",
             },
             clickable(() => toggleRow(it.id), {
-              label: "展开资产 " + it.ip,
+              label: "Expand asset " + it.ip,
               expanded: openId === it.id,
             }),
           ),
@@ -1486,10 +1488,10 @@ export const __dshPurgeDrill = (() => {
                   "rt-scope rt-scope-" +
                   (it.scope === "internal" ? "internal" : "external"),
               },
-              it.scope === "internal" ? "内" : "外",
+              it.scope === "internal" ? "Int" : "Ext",
             ),
             h("span", {
-              title: it.state === "live" ? "存活" : String(it.state),
+              title: it.state === "live" ? "Live" : String(it.state),
               style: {
                 width: 7,
                 height: 7,
@@ -1504,7 +1506,7 @@ export const __dshPurgeDrill = (() => {
               { style: { overflow: "hidden", textOverflow: "ellipsis" } },
               it.ip,
             ),
-            /* 发现时间挂在 IP 下面一行：IP 列宽度有限，不另开列（列宽一改整表要跟着调） */
+            /* Place discovery time below the IP to preserve existing columns. */
             h(
               "span",
               {
@@ -1514,11 +1516,11 @@ export const __dshPurgeDrill = (() => {
                   whiteSpace: "nowrap",
                 },
                 title:
-                  "发现时间：" +
-                  (it.discovered_at ? fmt(it.discovered_at) : "未记录") +
-                  (it.last_seen ? "\n最近采集：" + fmt(it.last_seen) : ""),
+                  "Discovered: " +
+                  (it.discovered_at ? fmt(it.discovered_at) : "Not recorded") +
+                  (it.last_seen ? "\nLast collected: " + fmt(it.last_seen) : ""),
               },
-              it.discovered_at ? fmtShort(it.discovered_at) : "发现时间未知",
+              it.discovered_at ? fmtShort(it.discovered_at) : "Discovery time unknown",
             ),
           ),
           h(
@@ -1541,7 +1543,7 @@ export const __dshPurgeDrill = (() => {
                       marginLeft: 4,
                     },
                   },
-                  "封" + it.blocked_count,
+                  "Blocked " + it.blocked_count,
                 )
               : null,
           ),
@@ -1571,7 +1573,7 @@ export const __dshPurgeDrill = (() => {
                 "span",
                 null,
                 [p.service, p.product, p.version].filter(Boolean).join(" ") ||
-                  "未知服务",
+                  "Unknown service",
               ),
               p.url
                 ? h(
@@ -1607,7 +1609,7 @@ export const __dshPurgeDrill = (() => {
                 "span",
                 null,
                 [f.vendor, f.product, f.version].filter(Boolean).join(" ") +
-                  (f.evidence ? "（" + f.evidence + "）" : ""),
+                  (f.evidence ? " (" + f.evidence + ")" : ""),
               ),
               h(ProvTag, { p: f.provenance }),
             ),
@@ -1631,7 +1633,7 @@ export const __dshPurgeDrill = (() => {
                 null,
                 (o.value || "") +
                   " · " +
-                  (o.tool || "未知工具") +
+                  (o.tool || "Unknown tool") +
                   " · " +
                   fmt(o.collected_at),
               ),
@@ -1640,7 +1642,7 @@ export const __dshPurgeDrill = (() => {
           );
         }
       }
-      /* 详情分三层：3 行必读 → 「展开全部」后才是溯源、原始记录与备注全文 */
+      /* Keep three key rows visible; expand provenance, raw records, and notes. */
       const all = showAll === it.id;
       const noteLines =
         d && d.test_notes ? d.test_notes.split("\n").filter(Boolean) : [];
@@ -1648,11 +1650,11 @@ export const __dshPurgeDrill = (() => {
         ? h(
             "div",
             null,
-            /* 必读三行 */
+            /* Three essential rows. */
             h(
               "div",
               { className: "rt-kv" },
-              h("b", null, "测试"),
+              h("b", null, "Tests"),
               h(
                 "span",
                 null,
@@ -1668,7 +1670,7 @@ export const __dshPurgeDrill = (() => {
                           borderColor: "#ef444455",
                         },
                       },
-                      "被封 " + d.blocked_count + " 次",
+                      "Blocked " + d.blocked_count + " times",
                     )
                   : null,
                 h(
@@ -1679,7 +1681,7 @@ export const __dshPurgeDrill = (() => {
                       color: "var(--dsw-alias-label-secondary)",
                     },
                   },
-                  (d.test_updated_at ? fmt(d.test_updated_at) : "未测过") +
+                  (d.test_updated_at ? fmt(d.test_updated_at) : "Never tested") +
                     (d.test_updated_by ? " · " + d.test_updated_by : ""),
                 ),
               ),
@@ -1687,7 +1689,7 @@ export const __dshPurgeDrill = (() => {
             h(
               "div",
               { className: "rt-kv" },
-              h("b", null, "易打性"),
+              h("b", null, "Exploitability"),
               h(
                 "span",
                 null,
@@ -1695,7 +1697,7 @@ export const __dshPurgeDrill = (() => {
                 h(
                   "span",
                   { style: { marginLeft: 8 } },
-                  d.potential || "未评估",
+                  d.potential || "Unassessed",
                 ),
                 d.assess_reason
                   ? h(
@@ -1714,12 +1716,12 @@ export const __dshPurgeDrill = (() => {
             h(
               "div",
               { className: "rt-kv" },
-              h("b", null, "攻击面"),
+              h("b", null, "Attack surface"),
               h(
                 "span",
                 null,
                 d.test_surface ||
-                  (portRows.length ? "未记录（开放端口见下）" : "无开放端口"),
+                  (portRows.length ? "Not recorded (open ports below)" : "No open ports"),
                 d.scope
                   ? h(
                       "span",
@@ -1729,7 +1731,7 @@ export const __dshPurgeDrill = (() => {
                           (d.scope === "internal" ? "internal" : "external"),
                         style: { marginLeft: 8 },
                       },
-                      d.scope === "internal" ? "内网资产" : "外网资产",
+                      d.scope === "internal" ? "Internal asset" : "External asset",
                     )
                   : null,
               ),
@@ -1739,13 +1741,13 @@ export const __dshPurgeDrill = (() => {
               Object.assign(
                 { className: "rt-more" },
                 clickable(() => setShowAll(all ? null : it.id), {
-                  label: all ? "收起资产详情" : "展开资产详情",
+                  label: all ? "Collapse asset details" : "Expand asset details",
                   expanded: all,
                 }),
               ),
               all
-                ? "收起全部 ▲"
-                : "展开全部（端口 · 指纹 · 采集溯源 · 测试记录）▼",
+                ? "Collapse all ▲"
+                : "Expand all (ports · fingerprints · provenance · test records) ▼",
             ),
             all
               ? h(
@@ -1754,7 +1756,7 @@ export const __dshPurgeDrill = (() => {
                   h(
                     "div",
                     { className: "rt-kv" },
-                    h("b", null, "主机名"),
+                    h("b", null, "Hostnames"),
                     h(
                       "span",
                       null,
@@ -1764,89 +1766,89 @@ export const __dshPurgeDrill = (() => {
                   h(
                     "div",
                     { className: "rt-kv" },
-                    h("b", null, "发现时间"),
+                    h("b", null, "Discovered"),
                     h(
                       "span",
                       {
                         title:
-                          '本条资产第一次进入资产库的时刻（重复采集只刷新"最近采集"）',
+                          "When this asset first entered the inventory; repeated collection updates only Last collected",
                       },
                       fmt(d.discovered_at),
                     ),
                     h(
                       "b",
                       { style: { minWidth: 0, marginLeft: 8 } },
-                      "最近采集",
+                      "Last collected",
                     ),
                     h("span", null, fmt(d.last_seen)),
                     h(
                       "b",
                       { style: { minWidth: 0, marginLeft: 8 } },
-                      "数据源首见",
+                      "First seen in source",
                     ),
                     h("span", null, fmt(d.first_seen)),
                   ),
                   h(
                     "div",
                     { className: "rt-kv" },
-                    h("b", null, "C 段"),
+                    h("b", null, "C segment"),
                     h("span", null, d.segment_cidr),
                   ),
                   h(
                     "div",
                     { className: "rt-kv" },
-                    h("b", null, "易打性"),
+                    h("b", null, "Exploitability"),
                     h(
                       "span",
                       null,
-                      (d.priority || "未评估") +
-                        (d.potential ? " · 预期：" + d.potential : "") +
-                        (d.assess_reason ? " · 依据：" + d.assess_reason : "") +
+                      (d.priority || "Not assessed") +
+                        (d.potential ? " · Expected: " + d.potential : "") +
+                        (d.assess_reason ? " · Basis: " + d.assess_reason : "") +
                         (d.assessed_at ? "（" + fmt(d.assessed_at) + "）" : ""),
                     ),
                   ),
                   h(
                     "div",
                     { className: "rt-kv" },
-                    h("b", null, "来源"),
+                    h("b", null, "Source"),
                     h(
                       "span",
                       null,
-                      "被动端口 " +
+                      "Passive ports " +
                         (d.passive || 0) +
-                        " · 主动端口 " +
+                        " · Active ports " +
                         (d.active || 0),
                     ),
                   ),
                   h(
                     "div",
                     { style: { margin: "6px 0 3px", fontWeight: 600 } },
-                    "开放端口 / 服务",
+                    "Open ports / services",
                   ),
                   h("div", null, portRows.length ? portRows : "—"),
                   h(
                     "div",
                     { style: { margin: "6px 0 3px", fontWeight: 600 } },
-                    "指纹",
+                    "Fingerprints",
                   ),
                   h("div", null, fpRows.length ? fpRows : "—"),
                   noteLines.length
                     ? h(Clip, {
                         key: "notes",
-                        label: "测试记录（" + noteLines.length + " 条）",
+                        label: "Test notes (" + noteLines.length + " entries)",
                         text: noteLines.join("\n"),
                       })
                     : null,
                   h(
                     "div",
                     { style: { margin: "6px 0 3px", fontWeight: 600 } },
-                    "采集溯源（最近 8 条）",
+                    "Collection trace (latest 8 entries)",
                   ),
                   h("div", null, obsRows.length ? obsRows : "—"),
                 )
               : null,
           )
-        : h("div", null, "加载中…");
+        : h("div", null, "Loading…");
       rowNodes.push(
         h(
           "div",
@@ -1866,16 +1868,16 @@ export const __dshPurgeDrill = (() => {
       head,
       rowNodes,
       !state.loading && !state.items.length
-        ? h("div", { className: "rt-empty" }, "没有匹配的资产")
+        ? h("div", { className: "rt-empty" }, "No matching assets")
         : null,
     );
 
-    /* 域名维度：域名 → 关联资产 */
+    /* Domain view: domain → associated assets */
     const domainPane = h(
       "div",
       { className: "rt-table" },
       domains === null
-        ? h("div", { className: "rt-empty" }, "加载中…")
+        ? h("div", { className: "rt-empty" }, "Loading…")
         : domains.length
           ? domains.map((g) =>
               h(
@@ -1900,7 +1902,7 @@ export const __dshPurgeDrill = (() => {
                   h(
                     "span",
                     { className: "rt-tag", style: { marginLeft: 8 } },
-                    g.count + " 个资产",
+                    g.count + " assets",
                   ),
                 ),
                 g.assets.map((a) =>
@@ -1931,7 +1933,7 @@ export const __dshPurgeDrill = (() => {
                             "rt-tag rt-tag-" +
                             (a.state === "live" ? "live" : "dead"),
                         },
-                        a.state === "live" ? "存活" : a.state,
+                        a.state === "live" ? "Live" : a.state,
                       ),
                     ),
                     h(
@@ -1952,12 +1954,12 @@ export const __dshPurgeDrill = (() => {
               "div",
               { className: "rt-empty" },
               cidr
-                ? "该 C 段下暂无域名（切换到「全部 C 段」看全量）"
-                : "暂无域名数据（信息收集阶段会写入域名）",
+                ? "No domains in this C segment (switch to \"All C segments\" to see all)"
+                : "No domain data yet (domains are written during reconnaissance)",
             ),
     );
 
-    /* Web 资产：标题 + 可直接点击的 URL */
+    /* Web assets: title + clickable URL */
     const webPane = h(
       "div",
       { className: "rt-table" },
@@ -1967,10 +1969,10 @@ export const __dshPurgeDrill = (() => {
           className: "rt-row head",
           style: { gridTemplateColumns: "1.6fr 1.2fr 130px 110px" },
         },
-        h("span", null, "URL（可点击）"),
-        h("span", null, "标题"),
-        h("span", null, "资产"),
-        h("span", null, "服务"),
+        h("span", null, "URL (clickable)"),
+        h("span", null, "Title"),
+        h("span", null, "Asset"),
+        h("span", null, "Service"),
       ),
       (web || []).map((w) => {
         const url =
@@ -2011,14 +2013,14 @@ export const __dshPurgeDrill = (() => {
         );
       }),
       web === null
-        ? h("div", { className: "rt-empty" }, "加载中…")
+        ? h("div", { className: "rt-empty" }, "Loading…")
         : !web.length
           ? h(
               "div",
               { className: "rt-empty" },
               cidr
-                ? "该 C 段下暂无 Web 资产"
-                : "暂无 Web 资产（HTTP 探测后会写入 URL 与标题）",
+                ? "No web assets in this C segment"
+                : "No web assets yet (URLs and titles are written after HTTP probing)",
             )
           : null,
     );
@@ -2028,7 +2030,7 @@ export const __dshPurgeDrill = (() => {
       pane = h(TestingTab, { engagement: eng, refreshKey: refreshKey });
     else if (view === "domain") pane = domainPane;
     else if (view === "web") pane = webPane;
-    /* 发现时间视图自带滚动容器，直接放进 rt-main 的 flex 里 */
+    /* The discovery timeline view has its own scroll container; place it directly in the rt-main flex area */
     else if (view === "timeline")
       pane = h(DiscoveryView, { engagement: eng, refreshKey: refreshKey });
 
@@ -2047,12 +2049,12 @@ export const __dshPurgeDrill = (() => {
     );
   }
 
-  /* ---------------------------------------------------------- 资产发现时间线 */
+  /* ---------------------------------------------------------- Asset discovery timeline */
   /**
-   * 资产发现时间线：什么时候发现了什么、哪天收了多少。
-   * ⚠️ 这个组件曾在"移除图谱视图"时被连带删掉 —— 删除区间的结束标记选得太宽
-   *    （图谱画布的收尾与它挨着），bundle 自检的 "client.js 有资产「发现时间」视图"
-   *    因此变红。恢复时把插入点固定成"资产测绘注释块之前"，避免再被别的删除波及。
+   * Asset discovery timeline: when things were found and how many were collected each day.
+   * ⚠️ This component was accidentally removed when the "remove graph view" change was made — the deletion range end marker was too broad
+   *    (it was adjacent to the end of the graph canvas), causing the bundle self-check for "client.js has asset \"discovery timeline\" view"
+   *    to fail. When restoring it, pin the insertion point to "before the asset mapping comment block" to avoid similar collateral deletions.
    */
   function DiscoveryView(props) {
     const eng = props.engagement;
@@ -2065,7 +2067,7 @@ export const __dshPurgeDrill = (() => {
       setData(null);
       api({ op: "discoveryTimeline", engagement: eng, limit: 200 }).then(
         (r) => {
-          if (!r || r.ok === false) setErr((r && r.error) || "加载失败");
+          if (!r || r.ok === false) setErr((r && r.error) || "Load failed");
           else {
             setErr(null);
             setData(r);
@@ -2080,7 +2082,7 @@ export const __dshPurgeDrill = (() => {
         { className: "rt-pane" },
         h("div", { className: "rt-err" }, err),
       );
-    if (!data) return h("div", { className: "rt-empty" }, "加载中…");
+    if (!data) return h("div", { className: "rt-empty" }, "Loading…");
     const recent = (data.recent || []).filter(
       (a) => day === "" || String(a.discovered_at || "").slice(0, 10) === day,
     );
@@ -2090,23 +2092,23 @@ export const __dshPurgeDrill = (() => {
       h(
         "div",
         { className: "rt-card" },
-        h("h4", null, "资产发现时间线"),
+        h("h4", null, "Asset discovery timeline"),
         h(
           "div",
           {
             style: { fontSize: 12, color: "var(--dsw-alias-label-secondary)" },
           },
-          "共 " +
+          "Total " +
             ((data.span && data.span.total) || 0) +
-            " 台 · 最早 " +
+            " hosts · Earliest " +
             (data.span && data.span.first ? fmt(data.span.first) : "—") +
-            " · 最近 " +
+            " · Latest " +
             (data.span && data.span.last ? fmt(data.span.last) : "—") +
-            '（发现时间 = 第一次进入资产库的时刻；重复采集只刷新"最近采集"）',
+            '(Discovery time = when the asset first entered the inventory; repeated collection only updates "Last collected")',
         ),
       ),
       (data.days || []).length === 0
-        ? h("div", { className: "rt-empty" }, "还没有资产。")
+        ? h("div", { className: "rt-empty" }, "No assets yet.")
         : null,
       h(
         "div",
@@ -2114,7 +2116,7 @@ export const __dshPurgeDrill = (() => {
         h(
           "h4",
           null,
-          "按天统计",
+          "Daily statistics",
           day
             ? h(
                 "span",
@@ -2124,10 +2126,10 @@ export const __dshPurgeDrill = (() => {
                     style: { marginLeft: 6, cursor: "pointer" },
                   },
                   clickable(() => setDay(""), {
-                    label: "清除按天筛选：" + day,
+                    label: "Clear daily filter: " + day,
                   }),
                 ),
-                "清除筛选：" + day,
+                "Clear filter: " + day,
               )
             : null,
         ),
@@ -2144,16 +2146,16 @@ export const __dshPurgeDrill = (() => {
                   style: { marginBottom: 0, cursor: "pointer" },
                   title:
                     d.day +
-                    "：新增 " +
+                    ": Added " +
                     d.assets +
-                    " 台（内网 " +
+                    " hosts (internal " +
                     d.internal +
-                    " / 外网 " +
+                    " / external " +
                     d.external +
                     "）",
                 },
                 clickable(() => setDay(day === d.day ? "" : d.day), {
-                  label: "筛选 " + d.day + " 发现的资产",
+                  label: "Filter assets discovered on " + d.day,
                   expanded: day === d.day,
                 }),
               ),
@@ -2161,7 +2163,7 @@ export const __dshPurgeDrill = (() => {
               h(
                 "div",
                 { className: "rt-seg-meta" },
-                d.assets + " 台 · 内 " + d.internal + " / 外 " + d.external,
+                d.assets + " hosts · internal " + d.internal + " / external " + d.external,
               ),
             ),
           ),
@@ -2174,11 +2176,11 @@ export const __dshPurgeDrill = (() => {
           "h4",
           null,
           day
-            ? day + " 发现的资产（" + recent.length + "）"
-            : "最近发现的资产（" + recent.length + "）",
+            ? "Assets discovered on " + day + " (" + recent.length + ")"
+            : "Recently discovered assets (" + recent.length + ")",
         ),
         recent.length === 0
-          ? h("div", { className: "rt-empty" }, "这一天没有新增资产。")
+          ? h("div", { className: "rt-empty" }, "No new assets on this day.")
           : null,
         recent.map((a) =>
           h(
@@ -2195,7 +2197,7 @@ export const __dshPurgeDrill = (() => {
                     (a.scope === "internal" ? "internal" : "external"),
                   style: { marginRight: 4 },
                 },
-                a.scope === "internal" ? "内" : "外",
+                a.scope === "internal" ? "Internal" : "External",
               ),
               a.ip,
             ),
@@ -2208,13 +2210,13 @@ export const __dshPurgeDrill = (() => {
                   color: "var(--dsw-alias-label-secondary)",
                 },
               },
-              a.discovered_at ? fmt(a.discovered_at) : "时间未知",
+              a.discovered_at ? fmt(a.discovered_at) : "Time unknown",
             ),
             h(
               "span",
               { style: { flex: 1 } },
               (a.primary_name || "—") +
-                (a.open_ports ? " · " + a.open_ports + " 端口" : ""),
+                (a.open_ports ? " · " + a.open_ports + " ports" : ""),
             ),
             h(PriTag, { p: a.priority }),
           ),
@@ -2223,7 +2225,7 @@ export const __dshPurgeDrill = (() => {
     );
   }
 
-  /* ---------------------------------------------------------- 智能体提示词 */
+  /* ---------------------------------------------------------- Agent prompts */
   function PromptsTab(props) {
     const eng = props.engagement;
     const refreshKey = props.refreshKey || 0;
@@ -2234,11 +2236,11 @@ export const __dshPurgeDrill = (() => {
     const [busy, setBusy] = React.useState(false);
 
     React.useEffect(() => {
-      /* 无靶标也允许：服务端回内置默认，不再报 engagement required */
+      /* Allowed without an engagement: the server returns built-in defaults instead of reporting engagement required */
       api(eng ? { op: "prompts", engagement: eng } : { op: "prompts" }).then(
         (r) => {
           if (!r || r.ok === false) {
-            setMsg({ err: (r && r.error) || "读取失败" });
+            setMsg({ err: (r && r.error) || "Read failed" });
             return;
           }
           setRoles(r.roles || []);
@@ -2246,7 +2248,7 @@ export const __dshPurgeDrill = (() => {
             setActive((cur) => cur || r.roles[0].role);
           if (r.builtin)
             setMsg({
-              ok: "当前为内置默认提示词（创建靶标后可按靶标保存修改）",
+              ok: "Currently using built-in default prompts (after creating an engagement you can save per-engagement changes)",
             });
         },
         (e) => setMsg({ err: String((e && e.message) || e) }),
@@ -2260,7 +2262,7 @@ export const __dshPurgeDrill = (() => {
 
     const save = () => {
       if (!eng) {
-        setMsg({ err: "请先创建靶标，再保存提示词" });
+        setMsg({ err: "Create an engagement before saving prompts" });
         return;
       }
       setBusy(true);
@@ -2274,7 +2276,7 @@ export const __dshPurgeDrill = (() => {
         (r) => {
           setBusy(false);
           if (!r || r.ok === false) {
-            setMsg({ err: (r && r.error) || "保存失败" });
+            setMsg({ err: (r && r.error) || "Save failed" });
             return;
           }
           setRoles((list) =>
@@ -2287,7 +2289,7 @@ export const __dshPurgeDrill = (() => {
                 : x,
             ),
           );
-          setMsg({ ok: "已保存" });
+          setMsg({ ok: "Saved" });
         },
         (e) => {
           setBusy(false);
@@ -2296,10 +2298,10 @@ export const __dshPurgeDrill = (() => {
       );
     };
 
-    /* 老靶标的提示词是旧版模板；这里可以把当前角色（或全部）恢复成内置最新版 */
+    /* Prompts for older engagements may use outdated templates; restore the current role (or all) to the latest built-in version here */
     const reset = (all) => {
       if (!eng) {
-        setMsg({ err: "请先创建靶标，再恢复默认提示词" });
+        setMsg({ err: "Create an engagement before restoring default prompts" });
         return;
       }
       setBusy(true);
@@ -2312,10 +2314,10 @@ export const __dshPurgeDrill = (() => {
         (r) => {
           setBusy(false);
           if (!r || r.ok === false) {
-            setMsg({ err: (r && r.error) || "恢复失败" });
+            setMsg({ err: (r && r.error) || "Restore failed" });
             return;
           }
-          setMsg({ ok: "已恢复内置默认：" + (r.reset || []).join("、") });
+          setMsg({ ok: "Restored built-in defaults: " + (r.reset || []).join(", ") });
           api({ op: "prompts", engagement: eng }).then(
             (rr) => {
               if (rr && rr.ok) {
@@ -2349,7 +2351,7 @@ export const __dshPurgeDrill = (() => {
               setMsg(null);
             },
             {
-              label: "查看「" + r.title + "」提示词",
+              label: "View prompt for \"" + r.title + "\"",
               expanded: active === r.role,
             },
           ),
@@ -2358,7 +2360,7 @@ export const __dshPurgeDrill = (() => {
         h(
           "div",
           { className: "rt-item-desc" },
-          (r.content || "").replace(/[#*`]/g, "").slice(0, 60) || "（空）",
+          (r.content || "").replace(/[#*`]/g, "").slice(0, 60) || "(empty)",
         ),
       ),
     );
@@ -2373,11 +2375,11 @@ export const __dshPurgeDrill = (() => {
         h(
           "div",
           { className: "rt-toolbar" },
-          h("span", { style: { fontWeight: 600 } }, cur ? cur.title : "提示词"),
+          h("span", { style: { fontWeight: 600 } }, cur ? cur.title : "Prompt"),
           h(
             "span",
             { className: "rt-tag" },
-            "更新 " + fmt(cur && cur.updated_at),
+            "Updated " + fmt(cur && cur.updated_at),
           ),
           h("div", { className: "rt-spacer" }),
           h(
@@ -2385,20 +2387,20 @@ export const __dshPurgeDrill = (() => {
             {
               className: "rt-btn",
               disabled: busy || !active,
-              title: "把当前角色恢复成内置最新版提示词",
+              title: "Restore this role to the latest built-in prompt",
               onClick: () => reset(false),
             },
-            "恢复默认为当前",
+            "Restore default for current",
           ),
           h(
             "button",
             {
               className: "rt-btn",
               disabled: busy,
-              title: "四个角色全部恢复成内置最新版提示词",
+              title: "Restore all four roles to the latest built-in prompts",
               onClick: () => reset(true),
             },
-            "全部恢复默认",
+            "Restore all defaults",
           ),
           h(
             "button",
@@ -2407,7 +2409,7 @@ export const __dshPurgeDrill = (() => {
               disabled: busy || !active,
               onClick: save,
             },
-            busy ? "保存中…" : "保存",
+            busy ? "Saving…" : "Save",
           ),
         ),
         msg
@@ -2425,7 +2427,7 @@ export const __dshPurgeDrill = (() => {
             value: draft,
             spellCheck: false,
             onChange: (e) => setDraft(e.target.value),
-            placeholder: "该角色的系统提示词（Markdown）",
+            placeholder: "System prompt for this role (Markdown)",
           }),
           h(
             "div",
@@ -2436,16 +2438,16 @@ export const __dshPurgeDrill = (() => {
                 marginTop: 6,
               },
             },
-            "保存后写入 agents/" +
+            "Saved to agents/" +
               (active || "role") +
-              ".md。子会话任务第一行写 redteamRole: recon、assess、vuln-scan、exploit 或 internal 后，对应文件进入系统提示词。",
+              ".md. When a sub-session task starts with redteamRole: recon, assess, vuln-scan, exploit, or internal, the corresponding file is included in the system prompt.",
           ),
         ),
       ),
     );
   }
 
-  /* ---------------------------------------------------------- 技能库（DSH 原生） */
+  /* ---------------------------------------------------------- Skill library (DSH native) */
   function SkillsTab(props) {
     const refreshKey = props.refreshKey || 0;
     const [items, setItems] = React.useState([]);
@@ -2458,14 +2460,14 @@ export const __dshPurgeDrill = (() => {
     const [busy, setBusy] = React.useState(false);
     const [brokenOnly, setBrokenOnly] = React.useState(false);
 
-    /* refresh=true 跳过后端 30 秒可用性缓存（技能正文/环境变量可能刚改过） */
+    /* refresh=true skips the backend 30s availability cache (skill content/env vars may have just changed) */
     const load = (force) => {
       setBusy(true);
       api({ op: "skillCatalog", refresh: force === true }).then(
         (r) => {
           setBusy(false);
           if (!r || r.ok === false) {
-            setErr((r && r.error) || "读取失败");
+            setErr((r && r.error) || "Read failed");
             return;
           }
           setErr(null);
@@ -2498,7 +2500,7 @@ export const __dshPurgeDrill = (() => {
       }).then(
         (r) => {
           if (r && r.ok) setDetail(r);
-          else setErr((r && r.error) || "读取失败");
+          else setErr((r && r.error) || "Read failed");
         },
         (e) => setErr(String((e && e.message) || e)),
       );
@@ -2523,7 +2525,7 @@ export const __dshPurgeDrill = (() => {
           s.library !== "official" &&
           (s.availability === "broken" || s.availability === "unknown"),
       );
-    /* 目录聚合：一眼看出"这么多技能是哪来的"（本项目/别的插件/自带根…） */
+    /* Directory aggregation: see at a glance where these skills come from (this project / other plugins / built-in roots…) */
     const dirs = (meta.byDir || []).filter((d) => d.n > 0).slice(0, 6);
     const availSummary = meta.availability ? meta.availability.summary : null;
     const needRestart = err !== null && String(err).indexOf("unknown op") >= 0;
@@ -2539,7 +2541,7 @@ export const __dshPurgeDrill = (() => {
               (active === (s.library || "redteam") + ":" + s.name ? " on" : ""),
           },
           clickable(() => open(s), {
-            label: "查看技能 " + s.name,
+            label: "View skill " + s.name,
             expanded: active === (s.library || "redteam") + ":" + s.name,
           }),
         ),
@@ -2551,7 +2553,7 @@ export const __dshPurgeDrill = (() => {
             ? h(
                 "span",
                 { className: "rt-tag", style: { marginLeft: 6 } },
-                "仅人工",
+                "Manual only",
               )
             : null,
           s.library === "official"
@@ -2560,9 +2562,9 @@ export const __dshPurgeDrill = (() => {
                 {
                   className: "rt-tag",
                   style: { marginLeft: 6 },
-                  title: "官方技能目录，不按红队工具路径检查",
+                  title: "Official skill directory; not checked against red-team tool paths",
                 },
-                "官方",
+                "Official",
               )
             : h(
                 "span",
@@ -2572,26 +2574,26 @@ export const __dshPurgeDrill = (() => {
                   style: { marginLeft: 6 },
                   title:
                     s.availability === "available"
-                      ? "可用：技能正文可以加载。缺的外部工具或密钥记在详情里，不阻止调用。"
-                      : (s.problems || []).join("\n") || "未知",
+                      ? "Available: skill content can be loaded. Missing external tools or keys are noted in details and do not block invocation."
+                      : (s.problems || []).join("\n") || "Unknown",
                 },
                 s.availability === "available"
-                  ? "可用"
+                  ? "Available"
                   : s.availability === "broken"
-                    ? "不可用"
-                    : "未知",
+                    ? "Unavailable"
+                    : "Unknown",
               ),
           h(
             "div",
             { className: "rt-item-desc" },
-            s.description || "（无描述）",
+            s.description || "(no description)",
           ),
           h(
             "div",
             { className: "rt-kb-sub" },
             [
-              s.source ? "来源 " + s.source : null,
-              s.fromPlugin ? "本插件自带" : null,
+              s.source ? "Source " + s.source : null,
+              s.fromPlugin ? "Bundled with this plugin" : null,
               s.provider ? s.provider : null,
               s.dir ? s.dir : null,
             ]
@@ -2630,7 +2632,7 @@ export const __dshPurgeDrill = (() => {
             className: "rt-kb-sub",
             style: { margin: "8px 0 4px", fontWeight: 600 },
           },
-          "红队技能",
+          "Red Team skills",
         ),
       );
       listItems.push.apply(listItems, redteamRows);
@@ -2644,7 +2646,7 @@ export const __dshPurgeDrill = (() => {
             className: "rt-kb-sub",
             style: { margin: "8px 0 4px", fontWeight: 600 },
           },
-          "官方技能",
+          "Official skills",
         ),
       );
       listItems.push.apply(listItems, officialRows);
@@ -2659,7 +2661,7 @@ export const __dshPurgeDrill = (() => {
         h("input", {
           className: "rt-input",
           style: { width: "100%", marginBottom: 8, boxSizing: "border-box" },
-          placeholder: "过滤技能",
+          placeholder: "Filter skills",
           value: q,
           onChange: (e) => setQ(e.target.value),
         }),
@@ -2674,7 +2676,7 @@ export const __dshPurgeDrill = (() => {
             checked: srcOnly,
             onChange: (e) => setSrcOnly(e.target.checked),
           }),
-          "只看本插件自带（" + (meta.fromPlugin || 0) + " 个）",
+          "Show only bundled with this plugin (" + (meta.fromPlugin || 0) + ")",
         ),
         availSummary && (availSummary.broken > 0 || availSummary.unknown > 0)
           ? h(
@@ -2683,16 +2685,16 @@ export const __dshPurgeDrill = (() => {
                 className: "rt-kb-check",
                 style: { display: "flex", margin: "0 0 8px" },
                 title:
-                  "只看有明确缺口（缺 key / 缺本机路径 / 基础设施还是占位符）或判不了可用性的技能",
+                  "Show only skills with clear gaps (missing key / local path / placeholder infrastructure) or unknown availability",
               },
               h("input", {
                 type: "checkbox",
                 checked: brokenOnly,
                 onChange: (e) => setBrokenOnly(e.target.checked),
               }),
-              "只看不可用/未知（" +
+              "Show only unavailable/unknown (" +
                 ((availSummary.broken || 0) + (availSummary.unknown || 0)) +
-                " 个）",
+                 ")",
             )
           : null,
         availSummary
@@ -2709,20 +2711,20 @@ export const __dshPurgeDrill = (() => {
               h(
                 "span",
                 { className: "rt-avail rt-avail-available" },
-                "可用 " + (availSummary.available || 0),
+                "Available " + (availSummary.available || 0),
               ),
               availSummary.broken > 0
                 ? h(
                     "span",
                     { className: "rt-avail rt-avail-broken" },
-                    "不可用 " + availSummary.broken,
+                    "Unavailable " + availSummary.broken,
                   )
                 : null,
               availSummary.unknown > 0
                 ? h(
                     "span",
                     { className: "rt-avail rt-avail-unknown" },
-                    "未知 " + availSummary.unknown,
+                    "Unknown " + availSummary.unknown,
                   )
                 : null,
               h(
@@ -2731,11 +2733,11 @@ export const __dshPurgeDrill = (() => {
                   {
                     className: "rt-tag",
                     style: { cursor: "pointer" },
-                    title: "技能正文或环境变量刚改过？点这里跳过 30 秒缓存重查",
+                    title: "Skill content or environment variables changed? Click to skip the 30s cache and recheck",
                   },
-                  clickable(() => load(true), { label: "重新检查技能可用性" }),
+                  clickable(() => load(true), { label: "Recheck skill availability" }),
                 ),
-                "重查可用性",
+                "Recheck availability",
               ),
             )
           : null,
@@ -2748,17 +2750,17 @@ export const __dshPurgeDrill = (() => {
               marginBottom: 6,
             },
           },
-          "红队 " +
+          "Red Team " +
             ((meta.libraries && meta.libraries.redteam) || 0) +
-            " · 官方 " +
+            " · Official " +
             ((meta.libraries && meta.libraries.official) || 0),
           items.length > 100
             ? h(
                 "div",
                 { style: { marginTop: 3 } },
-                "（技能多来自其它插件注册的根或你自己的技能目录；本插件只自带 " +
+                "(Most skills come from roots registered by other plugins or your own skill directories; this plugin bundles only " +
                   (meta.fromPlugin || 0) +
-                  " 个）",
+                   ")",
               )
             : null,
         ),
@@ -2773,13 +2775,13 @@ export const __dshPurgeDrill = (() => {
           h(
             "span",
             { style: { fontWeight: 600 } },
-            detail ? detail.name : "技能目录（DSH 原生）",
+            detail ? detail.name : "Skill directory (DSH native)",
           ),
           h("div", { className: "rt-spacer" }),
           h(
             "button",
             { className: "rt-btn", disabled: busy, onClick: () => load(true) },
-            busy ? "刷新中…" : "刷新",
+            busy ? "Refreshing…" : "Refresh",
           ),
         ),
         err
@@ -2787,7 +2789,7 @@ export const __dshPurgeDrill = (() => {
             ? h(
                 "div",
                 { className: "rt-empty" },
-                "该模块的宿主代码已更新，需重启一次当前宿主（官方 exe / 社区版 / dsh web）后生效",
+                "Host code for this module has been updated; restart the current host (official exe / community edition / dsh web) once for changes to take effect",
               )
             : h("div", { className: "rt-err" }, err)
           : null,
@@ -2798,19 +2800,19 @@ export const __dshPurgeDrill = (() => {
               h(
                 "div",
                 { className: "rt-kv" },
-                h("b", null, "描述"),
+                h("b", null, "Description"),
                 h("span", null, detail.description || "—"),
               ),
               h(
                 "div",
                 { className: "rt-kv" },
-                h("b", null, "何时使用"),
+                h("b", null, "When to use"),
                 h("span", null, detail.whenToUse || "—"),
               ),
               h(
                 "div",
                 { className: "rt-kv" },
-                h("b", null, "来源"),
+                h("b", null, "Source"),
                 h(
                   "span",
                   null,
@@ -2826,11 +2828,11 @@ export const __dshPurgeDrill = (() => {
                   return h(
                     "div",
                     { className: "rt-kv" },
-                    h("b", null, "类型"),
+                    h("b", null, "Type"),
                     h(
                       "span",
                       null,
-                      "官方技能。由宿主按任务调用，不按红队工具路径检查。",
+                      "Official skill. Invoked by the host per task; not checked against red-team tool paths.",
                     ),
                   );
                 }
@@ -2841,15 +2843,15 @@ export const __dshPurgeDrill = (() => {
                   h(
                     "div",
                     { className: "rt-kv" },
-                    h("b", null, "可用性"),
+                    h("b", null, "Availability"),
                     h(
                       "span",
                       { className: "rt-avail rt-avail-" + avail },
                       avail === "available"
-                        ? "可用"
+                        ? "Available"
                         : avail === "broken"
-                          ? "不可用（有明确缺口）"
-                          : "未知（正文读不到）",
+                          ? "Unavailable (clear gaps)"
+                          : "Unknown (content unreadable)",
                     ),
                   ),
                   (s2.problems || []).length > 0
@@ -2859,7 +2861,7 @@ export const __dshPurgeDrill = (() => {
                         h(
                           "b",
                           null,
-                          avail === "available" ? "未装上的外部工具" : "缺口",
+                          avail === "available" ? "Missing external tools" : "Gaps",
                         ),
                         h(
                           "span",
@@ -2874,7 +2876,7 @@ export const __dshPurgeDrill = (() => {
                     ? h(
                         "div",
                         { className: "rt-kv" },
-                        h("b", null, "需要你提供"),
+                        h("b", null, "You need to provide"),
                         h(
                           "span",
                           {
@@ -2895,7 +2897,7 @@ export const __dshPurgeDrill = (() => {
                 ? h(
                     "div",
                     { className: "rt-kv" },
-                    h("b", null, "文件"),
+                    h("b", null, "File"),
                     h(
                       "span",
                       {
@@ -2916,7 +2918,7 @@ export const __dshPurgeDrill = (() => {
                     maxHeight: "52vh",
                   },
                 },
-                detail.content || "（空）",
+                detail.content || "(empty)",
               ),
             )
           : h(
@@ -2932,7 +2934,7 @@ export const __dshPurgeDrill = (() => {
                   },
                 },
                 meta.note ||
-                  "技能由 DSH 原生 skill 体系管理，红队智能体通过 skill 工具调用。",
+                  "Skills are managed by the DSH native skill system; Red Team agents invoke them through the skill tool.",
               ),
               availSummary
                 ? h(
@@ -2950,20 +2952,20 @@ export const __dshPurgeDrill = (() => {
                     h(
                       "span",
                       { className: "rt-avail rt-avail-available" },
-                      "可用 " + (availSummary.available || 0),
+                      "Available " + (availSummary.available || 0),
                     ),
                     availSummary.broken > 0
                       ? h(
                           "span",
                           { className: "rt-avail rt-avail-broken" },
-                          "不可用 " + availSummary.broken,
+                          "Unavailable " + availSummary.broken,
                         )
                       : null,
                     availSummary.unknown > 0
                       ? h(
                           "span",
                           { className: "rt-avail rt-avail-unknown" },
-                          "未知 " + availSummary.unknown,
+                          "Unknown " + availSummary.unknown,
                         )
                       : null,
                     h(
@@ -2971,8 +2973,8 @@ export const __dshPurgeDrill = (() => {
                       { style: { color: "var(--dsw-alias-label-secondary)" } },
                       "（" +
                         (meta.availability && meta.availability.cached
-                          ? "缓存于 "
-                          : "检查于 ") +
+                          ? "Cached at "
+                          : "Checked at ") +
                         (meta.availability && meta.availability.checked_at
                           ? fmt(meta.availability.checked_at)
                           : "—") +
@@ -2987,7 +2989,7 @@ export const __dshPurgeDrill = (() => {
                     h(
                       "div",
                       { style: { fontWeight: 600, marginBottom: 4 } },
-                      "现在跑不起来的技能：",
+                      "Skills that cannot run right now:",
                     ),
                     meta.availability.broken
                       .slice(0, 12)
@@ -3016,7 +3018,7 @@ export const __dshPurgeDrill = (() => {
                       overflowWrap: "anywhere",
                     },
                   },
-                  d.n + " 个 · " + d.key,
+                  d.n + " · " + d.key,
                 ),
               ),
               (meta.byDir || []).length > 6
@@ -3028,37 +3030,37 @@ export const __dshPurgeDrill = (() => {
                         color: "var(--dsw-alias-label-secondary)",
                       },
                     },
-                    "…另有 " +
+                    "…and " +
                       ((meta.byDir || []).length - 6) +
-                      " 个目录（共 " +
+                      " more directories (" +
                       items.length +
-                      " 个技能）",
+                      " skills total)",
                   )
                 : null,
-              h("div", { className: "rt-empty" }, "左侧选择技能查看内容"),
+              h("div", { className: "rt-empty" }, "Select a skill on the left to view its content"),
             ),
       ),
     );
   }
 
-  /* ---------------------------------------------------------- 漏洞战果 */
+  /* ---------------------------------------------------------- Vulnerability findings */
   const SEV_LABEL = {
-    critical: "严重",
-    high: "高危",
-    medium: "中危",
-    low: "低危",
-    info: "信息",
+    critical: "Critical",
+    high: "High",
+    medium: "Medium",
+    low: "Low",
+    info: "Info",
   };
   const STATUS_LABEL = {
-    candidate: "待验证",
-    confirmed: "已确认",
-    "false-positive": "误报",
-    exploited: "已利用",
-    fixed: "已修复",
+    candidate: "To verify",
+    confirmed: "Confirmed",
+    "false-positive": "False positive",
+    exploited: "Exploited",
+    fixed: "Fixed",
   };
   const sevClass = (s) => "rt-sev rt-sev-" + (SEV_LABEL[s] ? s : "info");
 
-  /** 目标归并：按「scheme://host:port」聚合，避免带路径的 URL 把分组打散。 */
+  /** Target grouping: aggregate by "scheme://host:port" to avoid splitting groups by URL paths. */
   function targetKeyOf(v) {
     const t = String(v.target || "").trim();
     if (t !== "") {
@@ -3068,11 +3070,11 @@ export const __dshPurgeDrill = (() => {
       if (head) return head[1];
       return t;
     }
-    return v.asset_ip || "(未指定目标)";
+    return v.asset_ip || "(No target specified)";
   }
 
-  /* ---------------------------------------------------------- 证据渲染 */
-  /** 把一段原始 HTTP 报文按「请求行/状态行 + 头 + 体」着色，便于人眼扫读。 */
+  /* ---------------------------------------------------------- Evidence rendering */
+  /** Colorize a raw HTTP message into request/status line + headers + body for easier reading. */
   function HttpBlock(props) {
     const text = String(props.text || "");
     if (!text) return null;
@@ -3108,7 +3110,7 @@ export const __dshPurgeDrill = (() => {
     );
   }
 
-  /** 漏洞详情里的证据区：结构化证据文本 + 该漏洞的原始 HTTP 请求/响应记录。 */
+  /** Evidence section in vulnerability details: structured evidence text + raw HTTP request/response records for this vulnerability. */
   function detailEvidence(v) {
     const evi = String(v.evidence || "").trim();
     const looksHttp =
@@ -3123,8 +3125,8 @@ export const __dshPurgeDrill = (() => {
           h(
             "div",
             { className: "rt-evi-head" },
-            "证据摘要",
-            h("span", { className: "rt-tag" }, looksHttp ? "原始报文" : "文本"),
+            "Evidence summary",
+            h("span", { className: "rt-tag" }, looksHttp ? "Raw message" : "Text"),
             h("div", { className: "rt-spacer" }),
             h(
               "button",
@@ -3136,7 +3138,7 @@ export const __dshPurgeDrill = (() => {
                   copyText(evi);
                 },
               },
-              "复制",
+              "Copy",
             ),
           ),
           looksHttp
@@ -3154,7 +3156,7 @@ export const __dshPurgeDrill = (() => {
           h(
             "div",
             { className: "rt-evi-head" },
-            e.label || "HTTP 证据",
+            e.label || "HTTP evidence",
             h(
               "span",
               { className: "rt-tag" },
@@ -3181,7 +3183,7 @@ export const __dshPurgeDrill = (() => {
                 h(
                   "div",
                   { className: "rt-evi-head", style: { borderTop: "none" } },
-                  "▸ 请求（可直接粘进 Burp Repeater）",
+                  "▸ Request (paste directly into Burp Repeater)",
                 ),
                 h(HttpBlock, { text: e.request, compact: true }),
               )
@@ -3190,7 +3192,7 @@ export const __dshPurgeDrill = (() => {
             ? h(
                 "div",
                 null,
-                h("div", { className: "rt-evi-head" }, "▸ 响应"),
+                h("div", { className: "rt-evi-head" }, "▸ Response"),
                 h(HttpBlock, { text: e.response }),
               )
             : null,
@@ -3209,11 +3211,11 @@ export const __dshPurgeDrill = (() => {
         h(
           "div",
           { key: "none", className: "rt-kv" },
-          h("b", null, "证据"),
+          h("b", null, "Evidence"),
           h(
             "span",
             { style: { color: "var(--dsw-alias-state-error-primary)" } },
-            "缺失 —— 未验证/无证据的漏洞不计入报告，请补 redteam_http_evidence_add",
+            "Missing — unverified/vulnerabilities without evidence are excluded from reports; add with redteam_http_evidence_add",
           ),
         ),
       );
@@ -3240,9 +3242,9 @@ export const __dshPurgeDrill = (() => {
     const [files, setFiles] = React.useState([]);
     const [openId, setOpenId] = React.useState(null);
     const [msg, setMsg] = React.useState(null);
-    /* 子页签：漏洞 / 凭据 / 访问会话（凭据不再铺在漏洞页底部） */
+    /* Sub-tabs: Vulnerabilities / Credentials / Access sessions (credentials no longer listed at the bottom of the vulnerabilities page) */
     const [subTab, setSubTab] = React.useState("vulns");
-    /* 默认按目标聚合：322 条平铺没法读，先看"哪台被打下什么" */
+    /* Group by target by default: a flat list of 322 is unreadable; first see "what was compromised on which host" */
     const [grouped, setGrouped] = React.useState(true);
     const collapse = useCollapse("findings:" + eng);
 
@@ -3260,7 +3262,7 @@ export const __dshPurgeDrill = (() => {
           if (!r || r.ok === false) {
             setState({
               loading: false,
-              error: (r && r.error) || "查询失败",
+              error: (r && r.error) || "Query failed",
               total: 0,
               items: [],
               stats: null,
@@ -3309,10 +3311,10 @@ export const __dshPurgeDrill = (() => {
       }).then(
         (r) => {
           if (!r || r.ok === false) {
-            setMsg({ err: (r && r.error) || "更新失败" });
+            setMsg({ err: (r && r.error) || "Update failed" });
             return;
           }
-          setMsg({ ok: "已更新为「" + (STATUS_LABEL[next] || next) + "」" });
+          setMsg({ ok: "Updated to \"" + (STATUS_LABEL[next] || next) + "\"" });
           load();
         },
         (e) => setMsg({ err: String((e && e.message) || e) }),
@@ -3344,7 +3346,7 @@ export const __dshPurgeDrill = (() => {
       filesByVuln.get(vid).push(f);
     }
 
-    /* ── 结论行：只给结论，数字点一下就是筛选 ─────────────────────── */
+    /* ── Conclusion row: conclusions only; click a number to filter ─────────────────────── */
     const concl = (key, label, value, active, onClick) =>
       h(
         "span",
@@ -3352,10 +3354,10 @@ export const __dshPurgeDrill = (() => {
           {
             key: key,
             className: "rt-concl-i" + (active ? " on" : ""),
-            title: "点击筛选 / 再点取消",
+            title: "Click to filter / click again to clear",
           },
           clickable(onClick, {
-            label: "按「" + label + "」筛选（" + (value || 0) + "）",
+            label: "Filter by \"" + label + "\" (" + (value || 0) + ")",
             expanded: active,
           }),
         ),
@@ -3367,52 +3369,52 @@ export const __dshPurgeDrill = (() => {
       { className: "rt-concl" },
       concl(
         "conf",
-        "已确认",
+        "Confirmed",
         stats.byStatus.confirmed || 0,
         status === "confirmed",
         () => setStatus((v) => (v === "confirmed" ? "" : "confirmed")),
       ),
       concl(
         "exp",
-        "已利用",
+        "Exploited",
         stats.byStatus.exploited || 0,
         status === "exploited",
         () => setStatus((v) => (v === "exploited" ? "" : "exploited")),
       ),
       concl(
         "crit",
-        "严重",
+        "Critical",
         stats.bySeverity.critical || 0,
         sev === "critical",
         () => setSev((v) => (v === "critical" ? "" : "critical")),
       ),
-      concl("high", "高危", stats.bySeverity.high || 0, sev === "high", () =>
+      concl("high", "High", stats.bySeverity.high || 0, sev === "high", () =>
         setSev((v) => (v === "high" ? "" : "high")),
       ),
-      concl("med", "中危", stats.bySeverity.medium || 0, sev === "medium", () =>
+      concl("med", "Medium", stats.bySeverity.medium || 0, sev === "medium", () =>
         setSev((v) => (v === "medium" ? "" : "medium")),
       ),
-      concl("gain", "拿到权限", stats.withGained || 0, false, () => {}),
+      concl("gain", "Access gained", stats.withGained || 0, false, () => {}),
       h("div", { className: "rt-spacer" }),
       h(
         "span",
         { style: { fontSize: 11, color: "var(--dsw-alias-label-secondary)" } },
-        "默认按目标聚合 · 共 " + (stats.targetGroups || 0) + " 个目标",
+        "Grouped by target by default · " + (stats.targetGroups || 0) + " targets total",
       ),
     );
 
     const head = h(
       "div",
       { className: "rt-vrow head" },
-      h("span", null, "等级"),
-      h("span", null, "漏洞 / 编号"),
-      h("span", null, "目标"),
-      h("span", null, "拿到什么"),
-      h("span", null, "状态"),
-      h("span", null, "置信"),
+      h("span", null, "Severity"),
+      h("span", null, "Vulnerability / ID"),
+      h("span", null, "Target"),
+      h("span", null, "What was gained"),
+      h("span", null, "Status"),
+      h("span", null, "Confidence"),
     );
 
-    /* 单条漏洞（行 + 展开详情），聚合视图与平铺视图共用 */
+    /* Single vulnerability (row + expandable details), shared by grouped and flat views */
     const vulnRows = (v, compact) => {
       const out = [];
       const gainedList = String(v.gained || "")
@@ -3526,7 +3528,7 @@ export const __dshPurgeDrill = (() => {
             h(
               "div",
               { className: "rt-kv" },
-              h("b", null, "拿到什么"),
+              h("b", null, "What was gained"),
               gainedList.length
                 ? h(
                     "span",
@@ -3546,13 +3548,13 @@ export const __dshPurgeDrill = (() => {
                 : h(
                     "span",
                     { style: { color: "var(--dsw-alias-label-secondary)" } },
-                    "未记录 —— 拿到权限/成果后请用 redteam_vuln_update 补 gained（例：服务器权限、内网隧道、后台管理员账号）",
+                    "Not recorded — after gaining access/results, update gained via redteam_vuln_update (e.g. server access, internal tunnel, admin account)",
                   ),
             ),
             h(
               "div",
               { className: "rt-kv" },
-              h("b", null, "目标"),
+              h("b", null, "Target"),
               h(
                 "span",
                 { className: "rt-mono", style: { wordBreak: "break-all" } },
@@ -3562,7 +3564,7 @@ export const __dshPurgeDrill = (() => {
             h(
               "div",
               { className: "rt-kv" },
-              h("b", null, "资产"),
+              h("b", null, "Asset"),
               h(
                 "span",
                 null,
@@ -3572,7 +3574,7 @@ export const __dshPurgeDrill = (() => {
             h(
               "div",
               { className: "rt-kv" },
-              h("b", null, "来源"),
+              h("b", null, "Source"),
               h(
                 "span",
                 null,
@@ -3589,7 +3591,7 @@ export const __dshPurgeDrill = (() => {
               return h(
                 "div",
                 { className: "rt-kv" },
-                h("b", null, "攻击文件"),
+                h("b", null, "Attack files"),
                 mine.length
                   ? h(
                       "span",
@@ -3600,7 +3602,7 @@ export const __dshPurgeDrill = (() => {
                           { key: "af" + fi, style: { marginBottom: 3 } },
                           "· " +
                             (f.kind ? "[" + f.kind + "] " : "") +
-                            (f.name || "(未命名)") +
+                            (f.name || "(unnamed)") +
                             (f.description ? " — " + f.description : ""),
                           h(
                             "div",
@@ -3621,7 +3623,7 @@ export const __dshPurgeDrill = (() => {
                   : h(
                       "span",
                       { style: { color: "var(--dsw-alias-label-secondary)" } },
-                      "（无）用 redteam_attack_file_add 把这条漏洞打通的脚本/马/EXP 归档，并带上 vuln_id",
+                      "(None) Use redteam_attack_file_add to archive scripts/webshells/exploits used for this vulnerability and include vuln_id",
                     ),
               );
             })(),
@@ -3637,7 +3639,7 @@ export const __dshPurgeDrill = (() => {
                     setVulnStatus(v.id, "confirmed");
                   },
                 },
-                "确认",
+                "Confirm",
               ),
               h(
                 "button",
@@ -3648,7 +3650,7 @@ export const __dshPurgeDrill = (() => {
                     setVulnStatus(v.id, "exploited");
                   },
                 },
-                "已利用",
+                "Exploited",
               ),
               h(
                 "button",
@@ -3659,7 +3661,7 @@ export const __dshPurgeDrill = (() => {
                     setVulnStatus(v.id, "false-positive");
                   },
                 },
-                "误报",
+                "False positive",
               ),
               h(
                 "button",
@@ -3670,7 +3672,7 @@ export const __dshPurgeDrill = (() => {
                     setVulnStatus(v.id, "fixed");
                   },
                 },
-                "已修复",
+                "Fixed",
               ),
             ),
           ),
@@ -3681,7 +3683,7 @@ export const __dshPurgeDrill = (() => {
 
     const rows = [];
     if (grouped) {
-      /* 按目标聚合成组：先看"哪台被打下什么"，再点进去看具体漏洞 */
+      /* Group by target: first see "what was compromised on which host", then drill into specific vulnerabilities */
       const groups = new Map();
       for (const v of state.items) {
         const key = targetKeyOf(v);
@@ -3726,12 +3728,12 @@ export const __dshPurgeDrill = (() => {
               key: "sec:" + g.key,
               tone: "target",
               title: g.key,
-              count: g.vulns.length + " 个漏洞",
+              count: g.vulns.length + " vulnerabilities",
               sub: [
                 SEV_LABEL[g.top.severity] || g.top.severity,
-                g.exploited ? "已利用 " + g.exploited : null,
+                g.exploited ? "Exploited " + g.exploited : null,
                 g.top.asset_ip && g.top.asset_ip !== g.key
-                  ? "资产 " + g.top.asset_ip
+                  ? "Asset " + g.top.asset_ip
                   : null,
               ]
                 .filter(Boolean)
@@ -3739,7 +3741,7 @@ export const __dshPurgeDrill = (() => {
               right: g.gained.length
                 ? g.gained.slice(0, 2).join(" / ") +
                   (g.gained.length > 2 ? " +" + (g.gained.length - 2) : "")
-                : "未记录权限",
+                : "Access not recorded",
               open: collapse.isOpen(key, defOpen),
               onToggle: collapse.toggle(key, defOpen),
             },
@@ -3749,7 +3751,7 @@ export const __dshPurgeDrill = (() => {
       }
       if (!list.length && !state.loading && !state.error) {
         rows.push(
-          h("div", { key: "none", className: "rt-empty" }, "暂无漏洞记录"),
+          h("div", { key: "none", className: "rt-empty" }, "No vulnerability records"),
         );
       }
     } else {
@@ -3762,7 +3764,7 @@ export const __dshPurgeDrill = (() => {
       h("input", {
         className: "rt-input",
         style: { flex: "1 1 140px" },
-        placeholder: "搜索标题 / CVE / 目标（回车）",
+        placeholder: "Search title / CVE / target (Enter)",
         value: q,
         onChange: (e) => setQ(e.target.value),
         onKeyDown: (e) => {
@@ -3772,7 +3774,7 @@ export const __dshPurgeDrill = (() => {
       h(
         "button",
         { className: "rt-btn", onClick: () => setQApplied(q) },
-        "搜索",
+        "Search",
       ),
       h(
         "select",
@@ -3781,12 +3783,12 @@ export const __dshPurgeDrill = (() => {
           value: sev,
           onChange: (e) => setSev(e.target.value),
         },
-        h("option", { value: "" }, "全部等级"),
-        h("option", { value: "critical" }, "严重"),
-        h("option", { value: "high" }, "高危"),
-        h("option", { value: "medium" }, "中危"),
-        h("option", { value: "low" }, "低危"),
-        h("option", { value: "info" }, "信息"),
+        h("option", { value: "" }, "All severities"),
+        h("option", { value: "critical" }, "Critical"),
+        h("option", { value: "high" }, "High"),
+        h("option", { value: "medium" }, "Medium"),
+        h("option", { value: "low" }, "Low"),
+        h("option", { value: "info" }, "Info"),
       ),
       h(
         "select",
@@ -3795,12 +3797,12 @@ export const __dshPurgeDrill = (() => {
           value: status,
           onChange: (e) => setStatus(e.target.value),
         },
-        h("option", { value: "" }, "全部状态"),
-        h("option", { value: "candidate" }, "待验证"),
-        h("option", { value: "confirmed" }, "已确认"),
-        h("option", { value: "exploited" }, "已利用"),
-        h("option", { value: "false-positive" }, "误报"),
-        h("option", { value: "fixed" }, "已修复"),
+        h("option", { value: "" }, "All statuses"),
+        h("option", { value: "candidate" }, "To verify"),
+        h("option", { value: "confirmed" }, "Confirmed"),
+        h("option", { value: "exploited" }, "Exploited"),
+        h("option", { value: "false-positive" }, "False positive"),
+        h("option", { value: "fixed" }, "Fixed"),
       ),
     );
 
@@ -3810,9 +3812,9 @@ export const __dshPurgeDrill = (() => {
       h(
         "div",
         { className: "rt-section" },
-        "凭据 · " +
+        "Credentials · " +
           creds.length +
-          (creds.length ? "（明文直显，注意屏幕分享/录屏）" : ""),
+          (creds.length ? " (shown in plaintext; be careful with screen sharing/recording)" : ""),
       ),
       creds.length
         ? h(
@@ -3852,27 +3854,27 @@ export const __dshPurgeDrill = (() => {
                         copyText(String(c.secret_value || ""));
                       },
                     },
-                    "复制",
+                    "Copy",
                   ),
                 ),
                 c.secret_value
                   ? h(
                       "div",
-                      { className: "rt-secret", title: "点击可全选" },
+                      { className: "rt-secret", title: "Click to select all" },
                       c.secret_value,
                     )
                   : h(
                       "div",
                       { className: "rt-secret-none" },
-                      "未记明文 —— 请用 redteam_credential_add 的 secret_value 补上，面板才能直显",
+                      "Plaintext not recorded — add secret_value via redteam_credential_add so the panel can display it",
                     ),
                 h(
                   "div",
                   { className: "rt-cred-meta" },
                   [
-                    c.source ? "来源 " + c.source : null,
-                    c.tool ? "工具 " + c.tool : null,
-                    c.secret_ref ? "证据 " + c.secret_ref : null,
+                    c.source ? "Source " + c.source : null,
+                    c.tool ? "Tool " + c.tool : null,
+                    c.secret_ref ? "Evidence " + c.secret_ref : null,
                     c.found_by_agent ? "by " + c.found_by_agent : null,
                     c.found_at ? fmt(c.found_at) : null,
                   ]
@@ -3880,7 +3882,7 @@ export const __dshPurgeDrill = (() => {
                     .join(" · "),
                 ),
                 c.note
-                  ? h("div", { className: "rt-cred-meta" }, "备注：" + c.note)
+                  ? h("div", { className: "rt-cred-meta" }, "Notes: " + c.note)
                   : null,
               ),
             ),
@@ -3888,7 +3890,7 @@ export const __dshPurgeDrill = (() => {
         : h(
             "div",
             { className: "rt-empty" },
-            "暂无凭据（拿到口令/密钥/Hash 后用 redteam_credential_add 落库，秒级可复用）",
+            "No credentials yet (after obtaining passwords/keys/hashes, store them with redteam_credential_add for instant reuse)",
           ),
     );
 
@@ -3898,7 +3900,7 @@ export const __dshPurgeDrill = (() => {
       h(
         "div",
         { className: "rt-section" },
-        "已获得访问会话 · " + accesses.length,
+        "Access sessions obtained · " + accesses.length,
       ),
       accesses.length
         ? accesses.map((a) =>
@@ -3931,7 +3933,7 @@ export const __dshPurgeDrill = (() => {
               ),
             ),
           )
-        : h("div", { className: "rt-empty" }, "暂无"),
+        : h("div", { className: "rt-empty" }, "None"),
     );
 
     const subTabBtn = (key, label, n) =>
@@ -3957,24 +3959,24 @@ export const __dshPurgeDrill = (() => {
       h(
         "div",
         { className: "rt-subtabs" },
-        subTabBtn("vulns", "漏洞", state.total || 0),
-        subTabBtn("files", "攻击文件", allFiles.length),
-        subTabBtn("creds", "凭据", creds.length),
-        subTabBtn("access", "访问会话", accesses.length),
+        subTabBtn("vulns", "Vulnerabilities", state.total || 0),
+        subTabBtn("files", "Attack files", allFiles.length),
+        subTabBtn("creds", "Credentials", creds.length),
+        subTabBtn("access", "Access sessions", accesses.length),
         h("div", { className: "rt-spacer" }),
         grouped
           ? h(
               "button",
               {
                 className: "rt-btn",
-                title: "展开所有目标",
+                title: "Expand all targets",
                 onClick: () =>
                   collapse.setAll(
                     (state.items || []).map((v) => "target:" + targetKeyOf(v)),
                     true,
                   ),
               },
-              "全部展开",
+              "Expand all",
             )
           : null,
         grouped
@@ -3982,14 +3984,14 @@ export const __dshPurgeDrill = (() => {
               "button",
               {
                 className: "rt-btn",
-                title: "收起所有目标",
+                title: "Collapse all targets",
                 onClick: () =>
                   collapse.setAll(
                     (state.items || []).map((v) => "target:" + targetKeyOf(v)),
                     false,
                   ),
               },
-              "全部收起",
+              "Collapse all",
             )
           : null,
         h(
@@ -3997,11 +3999,11 @@ export const __dshPurgeDrill = (() => {
           {
             className: "rt-btn" + (grouped ? " rt-btn-primary" : ""),
             title: grouped
-              ? "当前：按目标聚合（先看哪台被打下什么）"
-              : "当前：平铺每条漏洞",
+              ? "Current: grouped by target (see what was compromised on each host first)"
+              : "Current: flat list of vulnerabilities",
             onClick: () => setGrouped((g) => !g),
           },
-          grouped ? "按目标聚合" : "平铺列表",
+          grouped ? "Group by target" : "Flat list",
         ),
       ),
       msg
@@ -4015,7 +4017,7 @@ export const __dshPurgeDrill = (() => {
         ? h(
             "div",
             { className: "rt-empty" },
-            "该模块的宿主代码已更新，需重启一次当前宿主（官方 exe / 社区版 / dsh web）后生效",
+            "Host code for this module has been updated; restart the current host (official exe / community edition / dsh web) once for changes to take effect",
           )
         : null,
       state.error && !needRestart
@@ -4028,11 +4030,11 @@ export const __dshPurgeDrill = (() => {
             h(
               "div",
               { className: "rt-hint", style: { marginBottom: 8 } },
-              "攻击文件按靶标目录组织（原「攻击文件」页签）；每条漏洞的关联文件也能在该漏洞详情里直接看到。" +
+              "Attack files are organized by engagement directory (formerly the \"Attack files\" tab); related files for each vulnerability can also be viewed in its details." +
                 (orphanFiles.length
-                  ? " 目前有 " +
+                  ? " Currently " +
                     orphanFiles.length +
-                    " 个文件没挂 vuln_id，建议补上以便与漏洞对应。"
+                    " files are missing vuln_id; add it to associate them with vulnerabilities."
                   : ""),
             ),
             h(AttackFilesTab, { engagement: eng, refreshKey: refreshKey }),
@@ -4055,29 +4057,29 @@ export const __dshPurgeDrill = (() => {
                 grouped ? null : head,
                 rows,
                 !state.loading && !state.items.length && !state.error
-                  ? h("div", { className: "rt-empty" }, "暂无漏洞记录")
+                  ? h("div", { className: "rt-empty" }, "No vulnerability records")
                   : null,
               ),
     );
   }
 
-  /* ---------------------------------------------------------- 攻击链 */
+  /* ---------------------------------------------------------- Attack chain */
   const STAGE_LABEL = {
-    recon: "信息收集",
-    vuln: "漏洞发现",
-    exploit: "漏洞利用",
-    access: "获得权限",
-    pivot: "内网突破",
-    data: "敏感数据",
-    other: "其他",
+    recon: "Reconnaissance",
+    vuln: "Vulnerability discovery",
+    exploit: "Exploitation",
+    access: "Access gained",
+    pivot: "Internal network pivot",
+    data: "Sensitive data",
+    other: "Other",
   };
 
-  /* ---------------------------------------------------------- 攻击链（五阶段） */
+  /* ---------------------------------------------------------- Attack chain (five stages) */
   /**
-   * 按攻击面位置串成一条链：
-   * ① 信息收集 → ② 互联网资产权限 → ③ 边界突破 → ④ 内网资产权限 → ⑤ 靶标权限。
-   * 每阶段只讲两件事：这一步拿到多少分（累计多少）、涉及的资产/隧道是哪些。
-   * A = 竖向链（详细）；B = 横向链（一屏看完）。
+   * Chain by attack-surface position:
+   * 1. Reconnaissance -> 2. Internet asset access -> 3. Boundary breach -> 4. Internal asset access -> 5. Target access.
+   * Each stage shows only two things: points gained (and cumulative) and which assets/tunnels were involved.
+   * A = vertical chain (detailed); B = horizontal chain (at a glance).
    */
   function ChainTab(props) {
     const eng = props.engagement;
@@ -4095,7 +4097,7 @@ export const __dshPurgeDrill = (() => {
         (r) => {
           setLoading(false);
           if (!r || r.ok === false) {
-            setErr((r && r.error) || "读取失败");
+            setErr((r && r.error) || "Read failed");
             return;
           }
           setErr(null);
@@ -4114,7 +4116,7 @@ export const __dshPurgeDrill = (() => {
     const toggle = (id) => setOpenId((cur) => (cur === id ? null : id));
     const CIRCLED = ["①", "②", "③", "④", "⑤", "⑥"];
 
-    /* 单次得分的详情 */
+    /* Details for a single score entry */
     const hitDetail = (x) =>
       h(
         "div",
@@ -4122,7 +4124,7 @@ export const __dshPurgeDrill = (() => {
         h(
           "div",
           { className: "rt-kv" },
-          h("b", null, "目标"),
+          h("b", null, "Target"),
           h(
             "span",
             { className: "rt-mono", style: { wordBreak: "break-all" } },
@@ -4133,7 +4135,7 @@ export const __dshPurgeDrill = (() => {
           ? h(
               "div",
               { className: "rt-kv" },
-              h("b", null, "资产"),
+              h("b", null, "Asset"),
               h("span", { className: "rt-mono" }, x.asset_ip),
             )
           : null,
@@ -4141,7 +4143,7 @@ export const __dshPurgeDrill = (() => {
           ? h(
               "div",
               { className: "rt-kv" },
-              h("b", null, "利用漏洞"),
+              h("b", null, "Exploited vulnerability"),
               h(
                 "span",
                 null,
@@ -4152,24 +4154,24 @@ export const __dshPurgeDrill = (() => {
         h(
           "div",
           { className: "rt-kv" },
-          h("b", null, "次数"),
+          h("b", null, "Count"),
           h(
             "span",
             null,
-            "同类第 " + x.nth_of_point + " 次 · +" + (x.points || 0) + " 分",
+            "Occurrence #" + x.nth_of_point + " · +" + (x.points || 0) + " pts",
           ),
         ),
         h(
           "div",
           { className: "rt-kv" },
-          h("b", null, "记录"),
+          h("b", null, "Record"),
           h(
             "span",
             null,
             fmt(x.recorded_at) + (x.recorded_by ? " · " + x.recorded_by : ""),
           ),
         ),
-        x.evidence ? h(Clip, { label: "结果与证据", text: x.evidence }) : null,
+        x.evidence ? h(Clip, { label: "Result and evidence", text: x.evidence }) : null,
       );
 
     const hitRow = (x) =>
@@ -4206,16 +4208,16 @@ export const __dshPurgeDrill = (() => {
                 {
                   className: "rt-tag rt-tag-warn",
                   title:
-                    x.capped_reason || "同一资产同一端口只算分值最高的一条",
+                    x.capped_reason || "Only the highest-scoring entry counts for the same asset and port",
                 },
-                "服务已拿满 · 不计分",
+                "Service cap reached · not counted",
               )
             : null,
           x.nth_of_point > 1
             ? h(
                 "span",
                 { className: "rt-ap-nth" },
-                "第 " + x.nth_of_point + " 次",
+                "#" + x.nth_of_point,
               )
             : null,
           h(
@@ -4230,15 +4232,15 @@ export const __dshPurgeDrill = (() => {
               {
                 className: "rt-ap-act" + (x.action_inferred ? " inferred" : ""),
               },
-              "动作：" +
-                (x.action.title || "（未命名步骤）") +
-                (x.action_inferred ? "（推断）" : ""),
+              "Action: " +
+                (x.action.title || "(Unnamed step)") +
+                (x.action_inferred ? " (inferred)" : ""),
             )
           : null,
         openId === x.id ? hitDetail(x) : null,
       );
 
-    /* 资产行（信息收集阶段 / 各阶段涉及资产） */
+    /* Asset rows (reconnaissance stage / assets involved in each stage) */
     const assetRow = (a) =>
       h(
         "div",
@@ -4250,28 +4252,28 @@ export const __dshPurgeDrill = (() => {
               "rt-scope rt-scope-" +
               (a.scope === "internal" ? "internal" : "external"),
           },
-          a.scope === "internal" ? "内" : "外",
+          a.scope === "internal" ? "Internal" : "External",
         ),
         h("span", { className: "rt-mono", style: { fontWeight: 600 } }, a.ip),
         a.segment_cidr
           ? h("span", { className: "rt-ap-nth" }, a.segment_cidr)
           : null,
-        h("span", { className: "rt-ap-nth" }, "端口 " + (a.open_ports || 0)),
+        h("span", { className: "rt-ap-nth" }, "Ports " + (a.open_ports || 0)),
         a.vulns
-          ? h("span", { className: "rt-ap-nth" }, "漏洞 " + a.vulns)
+          ? h("span", { className: "rt-ap-nth" }, "Vulns " + a.vulns)
           : null,
         a.priority
-          ? h("span", { className: "rt-tag" }, "易打 " + a.priority)
+          ? h("span", { className: "rt-tag" }, "Ease " + a.priority)
           : null,
         h("div", { className: "rt-spacer" }),
-        h("span", { className: "rt-ap-pts" }, "+" + (a.points || 0) + " 分"),
-        h("span", { className: "rt-ap-nth" }, (a.hits || 0) + " 次"),
+        h("span", { className: "rt-ap-pts" }, "+" + (a.points || 0) + " pts"),
+        h("span", { className: "rt-ap-nth" }, (a.hits || 0) + " hits"),
       );
 
-    /* 攻击链只讲"打到哪了、拿了多少分"：不展示打法要点与工具清单，
-         那些是执行细节，混在链路里会淹没得分与资产信息。 */
+    /* The attack chain shows only progress and points earned; it omits tactics and tool lists,
+         which are execution details that would obscure score and asset information. */
 
-    /* ── A：竖向攻击链 ─────────────────────────────────────────── */
+    /* -- A: Vertical attack chain ------------------------------------------- */
     const stageA = (st, i) => {
       const isRecon = st.code === "recon";
       const body = [];
@@ -4280,7 +4282,7 @@ export const __dshPurgeDrill = (() => {
           h(
             "div",
             { key: "at", className: "rt-ap-sub" },
-            "拿到分数的资产 · " + st.assetCount + " 台",
+            "Assets with points · " + st.assetCount + " hosts",
           ),
         );
         body.push(
@@ -4289,7 +4291,7 @@ export const __dshPurgeDrill = (() => {
             { key: "al", className: "rt-ap-assets" },
             st.assets.length
               ? st.assets.map(assetRow)
-              : h("div", { className: "rt-ap-none" }, "还没有产生得分的资产"),
+              : h("div", { className: "rt-ap-none" }, "No assets with points yet"),
           ),
         );
       } else {
@@ -4297,10 +4299,10 @@ export const __dshPurgeDrill = (() => {
           h(
             "div",
             { key: "ht", className: "rt-ap-sub" },
-            "本阶段命中 " +
+            "Hits in this stage " +
               st.hits +
-              " 次" +
-              (st.points ? " · +" + st.points + " 分" : ""),
+              " times" +
+              (st.points ? " · +" + st.points + " pts" : ""),
           ),
         );
         body.push(
@@ -4309,7 +4311,7 @@ export const __dshPurgeDrill = (() => {
             { key: "hl", className: "rt-ap-hits" },
             st.items.length
               ? st.items.map(hitRow)
-              : h("div", { className: "rt-ap-none" }, "本阶段还没有得分"),
+              : h("div", { className: "rt-ap-none" }, "No points in this stage yet"),
           ),
         );
         if (st.code === "boundary") {
@@ -4318,13 +4320,13 @@ export const __dshPurgeDrill = (() => {
             h(
               "div",
               { key: "tt", className: "rt-ap-sub" },
-              "跨越靶标边界的通道 · " +
+              "Boundary-crossing channels · " +
                 st.tunnels.length +
-                " 条" +
+                " items" +
                 (selfOnly
-                  ? "（另有 " +
+                  ? " (another " +
                     selfOnly +
-                    " 条只在自己 VPS/自建服务器上，不算突破）"
+                    " channels only on your own VPS/self-hosted server, not a breach)"
                   : ""),
             ),
           );
@@ -4333,7 +4335,7 @@ export const __dshPurgeDrill = (() => {
               h(
                 "div",
                 { key: "tw", className: "rt-ap-none" },
-                "⚠️ 现有的通道都在自己的服务器上，没有碰到目标 —— 不计边界突破。需要目标侧发起的通道（反弹 shell 到我这 / 目标上跑 frp 客户端 / 经目标 WebShell 的 suo5）。",
+                "Warning: Existing channels are all on your own servers and do not reach the target — not counted as a boundary breach. Target-side initiated channels are required (reverse shell to us / frp client on target / suo5 via target WebShell).",
               ),
             );
           }
@@ -4364,7 +4366,7 @@ export const __dshPurgeDrill = (() => {
                             (t.status === "active" ? "rt-tag-live" : ""),
                           style: t.status === "active" ? {} : { opacity: 0.7 },
                         },
-                        t.status === "active" ? "可用" : t.status || "未知",
+                        t.status === "active" ? "Available" : t.status || "Unknown",
                       ),
                       h(
                         "span",
@@ -4376,14 +4378,14 @@ export const __dshPurgeDrill = (() => {
                             textOverflow: "ellipsis",
                           },
                         },
-                        "可达 " + (t.reach || "—"),
+                        "Reachable " + (t.reach || "-"),
                       ),
                     ),
                   )
                 : h(
                     "div",
                     { className: "rt-ap-none" },
-                    "还没有建立隧道（建好后用 redteam_tunnel_add 登记）",
+                    "No tunnel established yet (register with redteam_tunnel_add after creating one)",
                   ),
             ),
           );
@@ -4393,7 +4395,7 @@ export const __dshPurgeDrill = (() => {
             h(
               "div",
               { key: "at", className: "rt-ap-sub" },
-              "涉及资产 · " + st.assetCount + " 台",
+              "Assets involved · " + st.assetCount + " hosts",
             ),
           );
           body.push(
@@ -4439,7 +4441,7 @@ export const __dshPurgeDrill = (() => {
           h(
             "span",
             { className: "rt-ap-cum" },
-            "累计 " + st.cumulative + " 分",
+            "Cumulative " + st.cumulative + " pts",
           ),
         ),
         h(
@@ -4451,7 +4453,7 @@ export const __dshPurgeDrill = (() => {
               className: "rt-ap-goal-tag",
               style: { color: st.color, borderColor: st.color + "66" },
             },
-            "阶段目标",
+            "Stage goal",
           ),
           h("span", null, st.goal),
         ),
@@ -4471,7 +4473,7 @@ export const __dshPurgeDrill = (() => {
               h(
                 "span",
                 { className: "rt-ap-trans-t", style: { marginLeft: "auto" } },
-                "累计 " + st.cumulative + " 分",
+                "Cumulative " + st.cumulative + " pts",
               ),
             )
           : h(
@@ -4481,13 +4483,13 @@ export const __dshPurgeDrill = (() => {
               h(
                 "span",
                 { className: "rt-ap-trans-t" },
-                "合计 " + ((summary && summary.points) || 0) + " 分",
+                "Total " + ((summary && summary.points) || 0) + " pts",
               ),
             ),
       );
     };
 
-    /* ── B：横向攻击链（一屏看完） ─────────────────────────────── */
+    /* -- B: Horizontal attack chain (at a glance) --------------------------- */
     const stageB = (st, i) =>
       h(
         "div",
@@ -4542,7 +4544,7 @@ export const __dshPurgeDrill = (() => {
                     h(
                       "span",
                       { className: "rt-hcol-name" },
-                      "隧道 " + st.tunnels.length + " 条",
+                      "Tunnels " + st.tunnels.length,
                     ),
                   ),
                   st.tunnels
@@ -4563,7 +4565,7 @@ export const __dshPurgeDrill = (() => {
                       "div",
                       { className: "rt-hcol-hit" },
                       h("span", { className: "rt-hcol-pts" }, st.assetCount),
-                      h("span", { className: "rt-hcol-name" }, "台资产拿到分"),
+                      h("span", { className: "rt-hcol-name" }, "Assets with points"),
                     ),
                     st.assets.slice(0, 6).map((a) =>
                       h(
@@ -4571,9 +4573,9 @@ export const __dshPurgeDrill = (() => {
                         {
                           key: "a" + a.id,
                           className: "rt-hcol-sub",
-                          title: a.ip + "  +" + a.points + " 分",
+                          title: a.ip + "  +" + a.points + " pts",
                         },
-                        (a.scope === "internal" ? "内 " : "外 ") +
+                        (a.scope === "internal" ? "Internal " : "External ") +
                           a.ip +
                           "  +" +
                           a.points,
@@ -4590,7 +4592,7 @@ export const __dshPurgeDrill = (() => {
                       h(
                         "span",
                         { className: "rt-hcol-name" },
-                        st.hits + " 次命中",
+                        st.hits + " hits",
                       ),
                     ),
                     st.items.slice(0, 6).map((x) =>
@@ -4609,14 +4611,14 @@ export const __dshPurgeDrill = (() => {
                       ? h(
                           "div",
                           { className: "rt-hcol-none" },
-                          "…另有 " + (st.items.length - 6) + " 次",
+                          "...and " + (st.items.length - 6) + " more",
                         )
                       : null,
                     st.assetCount
                       ? h(
                           "div",
                           { className: "rt-hcol-none" },
-                          "涉及 " + st.assetCount + " 台资产",
+                          "Involves " + st.assetCount + " assets",
                         )
                       : null,
                   ),
@@ -4630,17 +4632,17 @@ export const __dshPurgeDrill = (() => {
       h(
         "div",
         { className: "rt-toolbar" },
-        h("span", { style: { fontWeight: 600 } }, "攻击链"),
+        h("span", { style: { fontWeight: 600 } }, "Attack chain"),
         h(
           "span",
           { className: "rt-tag", style: { fontSize: 10.5 } },
-          "信息收集 → 互联网资产权限 → 边界突破 → 内网资产权限 → 靶标权限",
+          "Reconnaissance -> Internet asset access -> Boundary breach -> Internal asset access -> Target access",
         ),
         summary
           ? h(
               "span",
               { className: "rt-tag rt-tag-live" },
-              "总分 " + summary.points + " 分",
+              "Total score " + summary.points + " pts",
             )
           : null,
         h("div", { className: "rt-spacer" }),
@@ -4648,24 +4650,24 @@ export const __dshPurgeDrill = (() => {
           "button",
           {
             className: "rt-btn" + (view === "A" ? " rt-btn-primary" : ""),
-            title: "竖向攻击链：逐阶段向下看细节",
+            title: "Vertical attack chain: view stage details top to bottom",
             onClick: () => setView("A"),
           },
-          "链路 A",
+          "Chain A",
         ),
         h(
           "button",
           {
             className: "rt-btn" + (view === "B" ? " rt-btn-primary" : ""),
-            title: "横向攻击链：一屏看完五个阶段",
+            title: "Horizontal attack chain: view all five stages at a glance",
             onClick: () => setView("B"),
           },
-          "链路 B",
+          "Chain B",
         ),
         h(
           "button",
           { className: "rt-btn", disabled: loading, onClick: load },
-          loading ? "加载中…" : "刷新",
+          loading ? "Loading…" : "Refresh",
         ),
       ),
       err ? h("div", { className: "rt-err" }, err) : null,
@@ -4673,7 +4675,7 @@ export const __dshPurgeDrill = (() => {
         ? h(
             "div",
             { className: "rt-empty" },
-            "还没有得分记录。拿到成果后用 redteam_score_hit 记分，这条链才会长出来。",
+            "No score records yet. After achieving results, record them with redteam_score_hit to grow this chain.",
           )
         : view === "A"
           ? h("div", { className: "rt-ap" }, stages.map(stageA))
@@ -4681,12 +4683,12 @@ export const __dshPurgeDrill = (() => {
     );
   }
 
-  /* ---------------------------------------------------------- 得分复现报告 */
+  /* ---------------------------------------------------------- Score reproduction report */
   /**
-   * 报告分组兜底：host 只给平铺条目时，用 scoreChain 的阶段信息把条目按攻击链顺序分组。
-   * 依据是两边共同的 score_hit id —— scoreChain 的每条 item 都带 stage_code，
-   * scoreReport 的每条 item 带同样的 id。这样即使 host 侧版本较旧或阶段行缺失，
-   * 报告页也能正常显示，而不是误报"还没有可交付的成果"。
+   * Report grouping fallback: when the host only provides flat items, use scoreChain stage info to group items in attack-chain order.
+   * Based on the shared score_hit id — each scoreChain item has stage_code,
+   * and each scoreReport item has the same id. Even if the host is older or stage rows are missing,
+   * the report page still displays correctly instead of incorrectly reporting "no deliverable results yet".
    */
   function groupByStage(reportItems, chain) {
     const byId = new Map((reportItems || []).map((x) => [x.id, x]));
@@ -4705,7 +4707,7 @@ export const __dshPurgeDrill = (() => {
         items,
       });
     });
-    /* scoreChain 完全没有阶段信息时，至少把得分归到「其他」，不要让条目凭空消失 */
+    /* When scoreChain has no stage info at all, at least assign scores to "Other" so items do not disappear */
     const grouped = new Set(
       groups.reduce((acc, g) => acc.concat(g.items.map((x) => x.id)), []),
     );
@@ -4713,7 +4715,7 @@ export const __dshPurgeDrill = (() => {
     if (rest.length > 0) {
       groups.push({
         code: "other",
-        name: "其他得分",
+        name: "Other scores",
         color: "#64748b",
         ordinal: groups.length + 1,
         points: rest.reduce((n, x) => n + (x.counted ? x.points : 0), 0),
@@ -4731,7 +4733,7 @@ export const __dshPurgeDrill = (() => {
     const [err, setErr] = React.useState(null);
     const [busy, setBusy] = React.useState(false);
     const [msg, setMsg] = React.useState(null);
-    /* 报告按阶段折叠：默认全开，折叠状态按靶标记住（阶段多时便于逐段交付） */
+    /* Report collapsed by stage: open by default, collapse state remembered per engagement */
     const collapse = useCollapse("report:" + eng);
 
     const load = () => {
@@ -4742,11 +4744,11 @@ export const __dshPurgeDrill = (() => {
         (r) => {
           if (!r || r.ok === false) {
             setBusy(false);
-            setErr((r && r.error) || "生成失败");
+            setErr((r && r.error) || "Generation failed");
             return;
           }
-          /* 老 host 只给平铺条目、不给阶段分组（或阶段行缺失）：自己按攻击链分组，
-             否则报告页会误报"还没有可交付的成果"。分组数据取自 scoreChain。 */
+          /* Older host provides only flat items without stage grouping (or missing stage rows): group by attack chain ourselves,
+             otherwise the report page incorrectly reports "no deliverable results yet". Grouping data comes from scoreChain. */
           if (
             (!r.stages || r.stages.length === 0) &&
             (r.items || []).length > 0
@@ -4779,8 +4781,8 @@ export const __dshPurgeDrill = (() => {
     };
     React.useEffect(load, [eng, refreshKey]);
 
-    /* 复制结果必须是真实的：clipboard API 失败时（非安全上下文/失焦/被拒）要如实提示，
-         否则用户以为复制成功、粘到 Yakit 里是空的。 */
+    /* Copy results must be truthful: if the clipboard API fails (insecure context/focus loss/denied), report it accurately,
+         otherwise users may think the copy succeeded but paste empty content into Yakit. */
     const copy = (text, label) =>
       copyWithFeedback(text, label, (okFlag, message) => {
         setMsg(okFlag ? { ok: message } : { err: message });
@@ -4796,7 +4798,7 @@ export const __dshPurgeDrill = (() => {
           String(label || "score").replace(/[^\w.\-]/g, "_") +
           ".md";
         a.click();
-        /* 立刻 revoke 会在部分浏览器里让 click 启动的下载断流,延后一拍 */
+        /* Revoking immediately can break click-initiated downloads in some browsers; delay slightly */
         setTimeout(() => {
           try {
             URL.revokeObjectURL(url);
@@ -4804,9 +4806,9 @@ export const __dshPurgeDrill = (() => {
             /* ignore */
           }
         }, 1000);
-        setMsg({ ok: "已下载：" + label });
+        setMsg({ ok: "Downloaded: " + label });
       } catch (e) {
-        setMsg({ err: "下载失败：" + ((e && e.message) || e) });
+        setMsg({ err: "Download failed: " + ((e && e.message) || e) });
       }
     };
 
@@ -4837,7 +4839,7 @@ export const __dshPurgeDrill = (() => {
       "⑳",
     ];
 
-    /* 每项一条，平铺不折叠：目标 → 拿到什么 → 复现请求（可直接粘进 Yakit）→ 响应 */
+    /* One entry per item, flat: Target -> Gained -> Reproduction request (paste into Yakit) -> Response */
     const card = (x) =>
       h(
         "div",
@@ -4847,12 +4849,12 @@ export const __dshPurgeDrill = (() => {
           { className: "rt-rep-head" },
           h("span", { className: "rt-rep-idx" }, String(x.seq)),
           h("span", { className: "rt-rep-name" }, x.point_name),
-          h("span", { className: "rt-flow-pts" }, "+" + x.points + " 分"),
+          h("span", { className: "rt-flow-pts" }, "+" + x.points + " pts"),
           x.nth_of_point > 1
             ? h(
                 "span",
                 { className: "rt-tag" },
-                "同类第 " + x.nth_of_point + " 次",
+                "Occurrence #" + x.nth_of_point,
               )
             : null,
           h("div", { className: "rt-spacer" }),
@@ -4867,23 +4869,23 @@ export const __dshPurgeDrill = (() => {
                     .map((v) => v.request || "")
                     .filter(Boolean)
                     .join("\n\n"),
-                  "第 " + x.seq + " 项请求",
+                  "Request #" + x.seq,
                 ),
             },
-            "复制请求",
+            "Copy request",
           ),
         ),
         h(
           "div",
           { className: "rt-rep-meta" },
-          h("span", null, h("b", null, "目标 ")),
+          h("span", null, h("b", null, "Target ")),
           h("span", { className: "rt-mono" }, x.target || x.asset_ip || "—"),
         ),
         x.gained
           ? h(
               "div",
               { className: "rt-rep-meta" },
-              h("b", null, "拿到 "),
+              h("b", null, "Gained "),
               h("span", null, x.gained),
             )
           : null,
@@ -4891,7 +4893,7 @@ export const __dshPurgeDrill = (() => {
           ? h(
               "div",
               { className: "rt-rep-meta" },
-              h("b", null, "利用漏洞 "),
+              h("b", null, "Exploited vulnerability "),
               h(
                 "span",
                 null,
@@ -4903,7 +4905,7 @@ export const __dshPurgeDrill = (() => {
           ? h(
               "div",
               { className: "rt-rep-meta" },
-              h("b", null, "结果 "),
+              h("b", null, "Result "),
               h("span", null, String(x.evidence).replace(/\n+/g, " ")),
             )
           : null,
@@ -4911,7 +4913,7 @@ export const __dshPurgeDrill = (() => {
           ? h(
               "div",
               { className: "rt-rep-meta" },
-              h("b", null, "取得时间 "),
+              h("b", null, "Obtained at "),
               h(
                 "span",
                 null,
@@ -4926,10 +4928,10 @@ export const __dshPurgeDrill = (() => {
           eng: eng,
           shots: x.shots,
           total: x.shot_total,
-          title: "证据截图",
+          title: "Evidence screenshots",
         }),
-        /* ── 复现步骤：动作记录（含实际命令与回显）+ 凭据 + 隧道 + WebShell ─────
-           报告的交付价值全在这块：账号密码怎么来的、隧道怎么搭的，用户照着就能复现。 */
+        /* -- Reproduction steps: action records (with actual commands and output) + credentials + tunnels + WebShell -----
+           This is where the report delivers value: how credentials were obtained and how tunnels were set up, so users can reproduce it. */
         h(
           "details",
           {
@@ -4942,32 +4944,32 @@ export const __dshPurgeDrill = (() => {
             h(
               "span",
               { className: "rt-rep-trace-title" },
-              "复现步骤（点击展开）",
+              "Reproduction steps (click to expand)",
             ),
             (x.steps || []).length
               ? h(
                   "span",
                   { className: "rt-tag" },
-                  (x.steps || []).length + " 个动作",
+                  (x.steps || []).length + " actions",
                 )
               : null,
             (x.credentials || []).length
               ? h(
                   "span",
                   { className: "rt-tag" },
-                  (x.credentials || []).length + " 条凭据",
+                  (x.credentials || []).length + " credentials",
                 )
               : null,
             (x.tunnels || []).length
               ? h(
                   "span",
                   { className: "rt-tag" },
-                  (x.tunnels || []).length + " 条隧道",
+                  (x.tunnels || []).length + " tunnels",
                 )
               : null,
             x.incomplete
-              ? h("span", { className: "rt-tag rt-tag-warn" }, "复现材料待补")
-              : h("span", { className: "rt-tag rt-tag-live" }, "可复现"),
+              ? h("span", { className: "rt-tag rt-tag-warn" }, "Reproduction materials pending")
+              : h("span", { className: "rt-tag rt-tag-live" }, "Reproducible"),
           ),
           h(
             "div",
@@ -4977,7 +4979,7 @@ export const __dshPurgeDrill = (() => {
               ? h(
                   "div",
                   { className: "rt-rep-missing" },
-                  "⚠️ 没有关联的攻击步骤：说不清这一步是怎么做的。请用 redteam_chain_add 补上动作（title / detail / tool / result），记分时也可以带 point_code + evidence 一次完成。",
+                  "Warning: No associated attack steps: cannot explain how this step was performed. Add actions with redteam_chain_add (title / detail / tool / result), or include point_code + evidence when scoring.",
                 )
               : (x.steps || []).map((s, si) =>
                   h(
@@ -4994,7 +4996,7 @@ export const __dshPurgeDrill = (() => {
                       h(
                         "span",
                         { className: "rt-rep-step-title" },
-                        s.title || "(未命名动作)",
+                        s.title || "(Unnamed action)",
                       ),
                       s.agent
                         ? h(
@@ -5007,7 +5009,7 @@ export const __dshPurgeDrill = (() => {
                         ? h("span", { className: "rt-tag" }, s.stage_code)
                         : null,
                       s.inferred
-                        ? h("span", { className: "rt-tag" }, "按同资产推断")
+                        ? h("span", { className: "rt-tag" }, "Inferred from same asset")
                         : null,
                       h("div", { className: "rt-spacer" }),
                       s.recorded_at
@@ -5029,7 +5031,7 @@ export const __dshPurgeDrill = (() => {
                     h(
                       "div",
                       { className: "rt-rep-step-cmd" },
-                      h("b", null, "执行 "),
+                      h("b", null, "Execution "),
                       s.tool
                         ? h("span", { className: "rt-mono" }, s.tool)
                         : h(
@@ -5040,7 +5042,7 @@ export const __dshPurgeDrill = (() => {
                                   "var(--dsw-alias-state-warn-primary, #f59e0b)",
                               },
                             },
-                            "未记录实际命令（redteam_chain_add 的 tool）",
+                            "Actual command not recorded (tool in redteam_chain_add)",
                           ),
                     ),
                     s.tool
@@ -5055,10 +5057,10 @@ export const __dshPurgeDrill = (() => {
                               onClick: () =>
                                 copy(
                                   String(s.tool),
-                                  "第 " + (si + 1) + " 步命令",
+                                  "Step " + (si + 1) + " command",
                                 ),
                             },
-                            "复制命令",
+                            "Copy command",
                           ),
                         )
                       : null,
@@ -5066,7 +5068,7 @@ export const __dshPurgeDrill = (() => {
                       ? h(
                           "div",
                           { className: "rt-rep-step-result" },
-                          h("b", null, "结果 "),
+                          h("b", null, "Result "),
                           String(s.result).replace(/\n+/g, " "),
                         )
                       : null,
@@ -5074,13 +5076,13 @@ export const __dshPurgeDrill = (() => {
                       ? h(
                           "div",
                           { className: "rt-rep-step-result" },
-                          h("b", null, "证据 "),
+                          h("b", null, "Evidence "),
                           h("span", { className: "rt-mono" }, s.evidence_ref),
                         )
                       : null,
                   ),
                 ),
-            /* 账号密码怎么来的：凭据的来源 + 取得方式 */
+            /* How credentials were obtained: source and acquisition method */
             (x.credentials || []).length
               ? h(
                   "div",
@@ -5088,7 +5090,7 @@ export const __dshPurgeDrill = (() => {
                   h(
                     "div",
                     { className: "rt-rep-src-title" },
-                    "拿到的凭据（来源可追溯）",
+                    "Obtained credentials (traceable source)",
                   ),
                   (x.credentials || []).map((c) =>
                     h(
@@ -5102,14 +5104,14 @@ export const __dshPurgeDrill = (() => {
                       h(
                         "span",
                         null,
-                        (c.username || "(无用户名)") +
+                        (c.username || "(No username)") +
                           " / " +
                           (c.secret_type || "password") +
-                          (c.privilege ? " · 权限 " + c.privilege : "") +
-                          " · 来源 " +
-                          (c.source || "未标注") +
+                          (c.privilege ? " · Privilege " + c.privilege : "") +
+                          " · Source " +
+                          (c.source || "Unspecified") +
                           (c.tool
-                            ? " · 取得方式 " +
+                            ? " · Acquisition method " +
                               String(c.tool).replace(/\n+/g, " ").slice(0, 160)
                             : ""),
                       ),
@@ -5117,7 +5119,7 @@ export const __dshPurgeDrill = (() => {
                   ),
                 )
               : null,
-            /* 隧道怎么搭的 */
+            /* How tunnels were set up */
             (x.tunnels || []).length
               ? h(
                   "div",
@@ -5125,7 +5127,7 @@ export const __dshPurgeDrill = (() => {
                   h(
                     "div",
                     { className: "rt-rep-src-title" },
-                    "用到的隧道 / 通道",
+                    "Tunnels / channels used",
                   ),
                   (x.tunnels || []).map((t) =>
                     h(
@@ -5139,15 +5141,15 @@ export const __dshPurgeDrill = (() => {
                       h(
                         "span",
                         null,
-                        "入口 " +
-                          (t.entry || "未登记") +
-                          (t.reach ? " · 可达 " + t.reach : "") +
-                          " · 目标侧 " +
-                          (t.entry_kind || "未声明") +
-                          (t.legit === false ? " · ⚠️ 不算跨越靶标边界" : "") +
+                        "Entry " +
+                          (t.entry || "Not registered") +
+                          (t.reach ? " · Reachable " + t.reach : "") +
+                          " · Target side " +
+                          (t.entry_kind || "Not declared") +
+                          (t.legit === false ? " · Warning: does not cross engagement boundary" : "") +
                           (t.status ? " · " + t.status : "") +
                           (t.command
-                            ? " · 命令 " +
+                            ? " · Command " +
                               String(t.command)
                                 .replace(/\n+/g, " ")
                                 .slice(0, 160)
@@ -5164,7 +5166,7 @@ export const __dshPurgeDrill = (() => {
                   h(
                     "div",
                     { className: "rt-rep-src-title" },
-                    "用到的 WebShell",
+                    "WebShells used",
                   ),
                   (x.webshells || []).map((w) =>
                     h(
@@ -5179,8 +5181,8 @@ export const __dshPurgeDrill = (() => {
                         "span",
                         null,
                         (w.url || "") +
-                          (w.pass_key ? " · 口令/密钥 " + w.pass_key : "") +
-                          (w.privilege ? " · 权限 " + w.privilege : "") +
+                          (w.pass_key ? " · Password/key " + w.pass_key : "") +
+                          (w.privilege ? " · Privilege " + w.privilege : "") +
                           (w.status ? " · " + w.status : ""),
                       ),
                     ),
@@ -5191,7 +5193,7 @@ export const __dshPurgeDrill = (() => {
               ? h(
                   "div",
                   { className: "rt-rep-missing" },
-                  "⚠️ 复现缺口：" + x.gaps.join("；"),
+                  "Warning: Reproduction gaps: " + x.gaps.join("; "),
                 )
               : null,
           ),
@@ -5199,7 +5201,7 @@ export const __dshPurgeDrill = (() => {
             ? h(
                 "div",
                 { className: "rt-rep-missing" },
-                "⚠️ 这一项没有原始请求记录，无法直接复现 —— 请用 redteam_http_evidence_add 补上",
+                "Warning: No raw request record for this item; cannot reproduce directly — add it with redteam_http_evidence_add",
               )
             : (x.requests || []).map((r, ri) =>
                 h(
@@ -5211,10 +5213,10 @@ export const __dshPurgeDrill = (() => {
                     h(
                       "span",
                       null,
-                      "复现请求 " +
+                      "Reproduction request " +
                         (ri + 1) +
                         (r.source === "auto"
-                          ? "（按目标路径自动匹配，请核对）"
+                          ? " (auto-matched by target path; please verify)"
                           : ""),
                     ),
                     h(
@@ -5233,9 +5235,9 @@ export const __dshPurgeDrill = (() => {
                         className: "rt-btn",
                         style: { padding: "0 6px", fontSize: 11 },
                         onClick: () =>
-                          copy(String(r.request || ""), "请求 " + (ri + 1)),
+                          copy(String(r.request || ""), "Request " + (ri + 1)),
                       },
-                      "复制到 Yakit",
+                      "Copy to Yakit",
                     ),
                   ),
                   h(
@@ -5251,7 +5253,7 @@ export const __dshPurgeDrill = (() => {
                         h(
                           "div",
                           { className: "rt-rep-req-head" },
-                          h("span", null, "响应摘要"),
+                          h("span", null, "Response summary"),
                         ),
                         h(
                           "pre",
@@ -5269,7 +5271,7 @@ export const __dshPurgeDrill = (() => {
             ? h(
                 "div",
                 { className: "rt-rep-meta" },
-                h("b", null, "备注 "),
+                h("b", null, "Notes "),
                 h("span", null, x.note),
               )
             : null,
@@ -5282,16 +5284,16 @@ export const __dshPurgeDrill = (() => {
       h(
         "div",
         { className: "rt-toolbar" },
-        h("span", { style: { fontWeight: 600 } }, "攻击得分链路复现报告"),
+        h("span", { style: { fontWeight: 600 } }, "Attack score chain reproduction report"),
         summary
           ? h(
               "span",
               { className: "rt-tag rt-tag-live" },
-              "合计 " + summary.points + " 分",
+              "Total " + summary.points + " pts",
             )
           : null,
         summary
-          ? h("span", { className: "rt-tag" }, summary.count + " 项得分")
+          ? h("span", { className: "rt-tag" }, summary.count + " scored items")
           : null,
         summary
           ? h(
@@ -5300,7 +5302,7 @@ export const __dshPurgeDrill = (() => {
                 className:
                   "rt-tag" + (summary.missingRequests ? "" : " rt-tag-live"),
               },
-              summary.withRequests + "/" + summary.count + " 项带原始请求",
+              summary.withRequests + "/" + summary.count + " items with raw requests",
             )
           : null,
         summary
@@ -5311,9 +5313,9 @@ export const __dshPurgeDrill = (() => {
                   "rt-tag" +
                   (summary.incomplete ? " rt-tag-warn" : " rt-tag-live"),
                 title:
-                  "复现链是否完整：有攻击步骤、写了实际命令、关联了漏洞/凭据/隧道",
+                  "Whether reproduction chain is complete: has attack steps, actual commands, and linked vulnerabilities/credentials/tunnels",
               },
-              "可复现 " +
+              "Reproducible " +
                 (summary.count - (summary.incomplete || 0)) +
                 "/" +
                 summary.count,
@@ -5328,9 +5330,9 @@ export const __dshPurgeDrill = (() => {
                   (summary.serviceCapped || [])
                     .map((x) => (x.service || "") + "｜" + (x.point_name || ""))
                     .join("\n") ||
-                  "同一资产同一端口的重复账号/数据库权限命中：服务已拿满，不计分、不进报告",
+                  "Duplicate account/database privilege hits on the same asset and port: service cap reached, not counted and excluded from report",
               },
-              "同服务已拿满不计分 " + summary.serviceCappedExcluded,
+              "Service cap reached (not counted) " + summary.serviceCappedExcluded,
             )
           : null,
         h("div", { className: "rt-spacer" }),
@@ -5339,9 +5341,9 @@ export const __dshPurgeDrill = (() => {
           {
             className: "rt-btn",
             disabled: busy || !mdText,
-            onClick: () => copy(mdText, "整份报告"),
+            onClick: () => copy(mdText, "Full report"),
           },
-          "复制全文",
+          "Copy full text",
         ),
         h(
           "button",
@@ -5350,12 +5352,12 @@ export const __dshPurgeDrill = (() => {
             disabled: busy || !mdText,
             onClick: () => download(mdText, (data && data.target) || eng),
           },
-          "下载 .md",
+          "Download .md",
         ),
         h(
           "button",
           { className: "rt-btn", disabled: busy, onClick: load },
-          busy ? "生成中…" : "重新生成",
+          busy ? "Generating…" : "Regenerate",
         ),
       ),
       msg
@@ -5386,7 +5388,7 @@ export const __dshPurgeDrill = (() => {
                         true,
                       ),
                   },
-                  "全部展开",
+                  "Expand all",
                 ),
                 h(
                   "button",
@@ -5398,7 +5400,7 @@ export const __dshPurgeDrill = (() => {
                         false,
                       ),
                   },
-                  "全部折叠",
+                  "Collapse all",
                 ),
               ),
               stages.map((st) => {
@@ -5436,7 +5438,7 @@ export const __dshPurgeDrill = (() => {
                     h(
                       "span",
                       { className: "rt-rep-stage-n" },
-                      st.items.length + " 项",
+                      st.items.length + " items",
                     ),
                     h("div", { className: "rt-spacer" }),
                     h(
@@ -5449,12 +5451,12 @@ export const __dshPurgeDrill = (() => {
                           borderColor: st.color + "66",
                         },
                       },
-                      "+" + st.points + " 分",
+                      "+" + st.points + " pts",
                     ),
                     h(
                       "span",
                       { className: "rt-ap-cum" },
-                      "累计 " + st.cumulative + " 分",
+                      "Cumulative " + st.cumulative + " pts",
                     ),
                   ),
                   open
@@ -5464,15 +5466,15 @@ export const __dshPurgeDrill = (() => {
               }),
             )
           : data === null
-            ? h("div", { className: "rt-empty" }, "加载中…")
+            ? h("div", { className: "rt-empty" }, "Loading…")
             : h(
                 "div",
                 { className: "rt-empty" },
-                h("div", null, "还没有可交付的成果。"),
+                h("div", null, "No deliverable results yet."),
                 h(
                   "div",
                   { style: { marginTop: 6, fontSize: 12 } },
-                  '本报告只收录"拿到了分"的成果；没有得分的漏洞不进报告。拿到成果后用 redteam_score_hit 记分（目标资产 + 拿到的东西），并补 redteam_http_evidence_add 以便复现。',
+                  'This report only includes results that earned points; vulnerabilities without points are excluded. After achieving results, record them with redteam_score_hit (target asset + what was gained) and add redteam_http_evidence_add for reproduction.',
                 ),
               ),
       ),
@@ -5482,19 +5484,19 @@ export const __dshPurgeDrill = (() => {
         h(
           "span",
           null,
-          "口径：只收录得分成果，每条附带可粘进 Yakit Repeater 的原始请求",
+          "Scope: only scored results are included, each with a raw request that can be pasted into Yakit Repeater",
         ),
       ),
     );
   }
 
-  /* ---------------------------------------------------------- 攻击文件 */
+  /* ---------------------------------------------------------- Attack files */
   const FILE_KIND = {
     poc: "POC",
     exp: "EXP",
-    script: "脚本",
-    wordlist: "字典",
-    other: "其他",
+    script: "Script",
+    wordlist: "Wordlist",
+    other: "Other",
   };
 
   function AttackFilesTab(props) {
@@ -5513,7 +5515,7 @@ export const __dshPurgeDrill = (() => {
         (r) => {
           setBusy(false);
           if (!r || r.ok === false) {
-            setErr((r && r.error) || "读取失败");
+            setErr((r && r.error) || "Read failed");
             return;
           }
           setErr(null);
@@ -5536,7 +5538,7 @@ export const __dshPurgeDrill = (() => {
       api({ op: "readAttackFile", engagement: eng, id: f.id }).then(
         (r) => {
           if (r && r.ok) setDetail(r);
-          else setErr((r && r.error) || "读取失败");
+          else setErr((r && r.error) || "Read failed");
         },
         (e) => setErr(String((e && e.message) || e)),
       );
@@ -5610,13 +5612,13 @@ export const __dshPurgeDrill = (() => {
               h(
                 "div",
                 { className: "rt-kv" },
-                h("b", null, "效果"),
+                h("b", null, "Effect"),
                 h("span", null, detail.evidence || "—"),
               ),
               h(
                 "div",
                 { className: "rt-kv" },
-                h("b", null, "路径"),
+                h("b", null, "Path"),
                 h(
                   "span",
                   { className: "rt-mono", style: { wordBreak: "break-all" } },
@@ -5626,7 +5628,7 @@ export const __dshPurgeDrill = (() => {
               h(
                 "div",
                 { className: "rt-kv" },
-                h("b", null, "记录"),
+                h("b", null, "Record"),
                 h(
                   "span",
                   null,
@@ -5645,7 +5647,7 @@ export const __dshPurgeDrill = (() => {
                     padding: "10px 12px",
                   },
                 },
-                detail.content || "（空）",
+                detail.content || "(empty)",
               ),
             ),
           ),
@@ -5658,13 +5660,13 @@ export const __dshPurgeDrill = (() => {
             key: "sec:" + folder.folder,
             tone: "folder",
             title: folder.folder + "/",
-            count: folder.count + " 个文件",
+            count: folder.count + " files",
             open: collapse.isOpen(fKey, true),
             onToggle: collapse.toggle(fKey, true),
           },
           fileNodes.length
             ? fileNodes
-            : h("div", { className: "rt-atest-meta" }, "（空）"),
+            : h("div", { className: "rt-atest-meta" }, "(empty)"),
         ),
       );
     }
@@ -5676,17 +5678,17 @@ export const __dshPurgeDrill = (() => {
       h(
         "div",
         { className: "rt-toolbar" },
-        h("span", { style: { fontWeight: 600 } }, "攻击文件"),
+        h("span", { style: { fontWeight: 600 } }, "Attack files"),
         h(
           "span",
           { className: "rt-tag" },
-          folders.length + " 个目标 / " + total + " 个文件",
+          folders.length + " targets / " + total + " files",
         ),
         h("div", { className: "rt-spacer" }),
         h(
           "button",
           { className: "rt-btn", disabled: busy, onClick: load },
-          busy ? "刷新中…" : "刷新",
+          busy ? "Refreshing…" : "Refresh",
         ),
       ),
       err ? h("div", { className: "rt-err" }, err) : null,
@@ -5698,7 +5700,7 @@ export const __dshPurgeDrill = (() => {
           ? h(
               "div",
               { className: "rt-empty" },
-              "暂无攻击文件（打通的脚本/POC/EXP 会按目标文件夹出现在这里）",
+              "No attack files yet (scripts/POCs/EXPs that worked will appear here organized by target folder)",
             )
           : null,
       ),
@@ -5708,31 +5710,31 @@ export const __dshPurgeDrill = (() => {
         h(
           "span",
           null,
-          "目录：attack-files/<IP|URL主机|C段>/ ｜ 只收录实际生效的文件",
+          "Directory: attack-files/<IP|URL host|C segment>/ | only files that actually worked are included",
         ),
       ),
     );
   }
 
-  /* ---------------------------------------------------------- 知识库（POC/EXP，全局共享） */
+  /* ---------------------------------------------------------- Knowledge base (POC/EXP, globally shared) */
   /**
-   * 知识库页：打 Nday/1day 之前先在这里搜。检索框支持 CVE / 组件 / 关键字 / 正文关键词；
-   * 命中就展开拿全文（可直接复制去用），没有就说明要去互联网找或自己搓，验证后回填。
-   * 这里是**全局**的：不随靶标切换，一个靶标沉淀的通用 POC 后面所有靶标都能用。
+   * Knowledge base page: search here before working on Nday/1day. The search box supports CVE / component / keyword / body text;
+   * expand matches to get full content (copy and use directly); if none, find online or craft your own, then add back after verification.
+   * This is **global**: not scoped to an engagement; generic POCs saved from one engagement can be reused in future engagements.
    */
   const POC_KIND_LABEL = {
     poc: "POC",
     exp: "EXP",
-    script: "脚本",
-    template: "模板",
-    payload: "载荷",
+    script: "Script",
+    template: "Template",
+    payload: "Payload",
   };
   const POC_SOURCE_LABEL = {
-    web: "互联网",
-    self: "手搓",
-    manual: "人工",
-    "nuclei-template": "nuclei 模板",
-    kb: "知识库",
+    web: "Internet",
+    self: "Hand-crafted",
+    manual: "Manual",
+    "nuclei-template": "nuclei template",
+    kb: "Knowledge base",
   };
 
   function KnowledgeTab(props) {
@@ -5782,7 +5784,7 @@ export const __dshPurgeDrill = (() => {
         (r) => {
           setBusy(false);
           if (!r || r.ok === false) {
-            setErr((r && r.error) || "读取失败");
+            setErr((r && r.error) || "Read failed");
             return;
           }
           setErr(null);
@@ -5794,7 +5796,7 @@ export const __dshPurgeDrill = (() => {
         },
       );
     };
-    /* 首次进入与刷新键变化时拉全量（检索是显式动作，避免边打字边打接口） */
+    /* Load full data on first entry and when refresh key changes (search is explicit to avoid calling API while typing) */
     React.useEffect(() => {
       query({
         q: undefined,
@@ -5819,7 +5821,7 @@ export const __dshPurgeDrill = (() => {
         (r) => {
           setDetailBusy(false);
           if (!r || r.ok === false) {
-            setMsg({ err: (r && r.error) || "读取失败" });
+            setMsg({ err: (r && r.error) || "Read failed" });
             return;
           }
           setDetail(r);
@@ -5831,15 +5833,15 @@ export const __dshPurgeDrill = (() => {
       );
     };
 
-    /* 同报告页：await 真实结果再提示 */
+    /* Same as report page: await the real result before showing feedback */
     const copy = (text, label) =>
       copyWithFeedback(text, label, (okFlag, message) => {
         setMsg(okFlag ? { ok: message } : { err: message });
       });
     const useIt = (row) => {
-      api({ op: "pocUse", id: row.id, used_on: "控制台手动标记" }).then(
+      api({ op: "pocUse", id: row.id, used_on: "Manually marked in console" }).then(
         () => {
-          setMsg({ ok: "已记一次复用：" + row.title });
+          setMsg({ ok: "Recorded one reuse: " + row.title });
           query();
         },
         (e) => setMsg({ err: String((e && e.message) || e) }),
@@ -5908,8 +5910,8 @@ export const __dshPurgeDrill = (() => {
             : null,
           x.component ? h("span", { className: "rt-tag" }, x.component) : null,
           x.verified === 1
-            ? h("span", { className: "rt-tag rt-tag-live" }, "已验证")
-            : h("span", { className: "rt-tag rt-tag-warn" }, "未验证"),
+            ? h("span", { className: "rt-tag rt-tag-live" }, "Verified")
+            : h("span", { className: "rt-tag rt-tag-warn" }, "Unverified"),
           h("div", { className: "rt-spacer" }),
           h(
             "span",
@@ -5917,30 +5919,30 @@ export const __dshPurgeDrill = (() => {
             POC_SOURCE_LABEL[x.source] || x.source || "—",
           ),
           x.hit_count
-            ? h("span", { className: "rt-tag" }, "复用 " + x.hit_count)
+            ? h("span", { className: "rt-tag" }, "Reused " + x.hit_count)
             : null,
         ),
-        /* 来源行：归类 · 影响版本 · 建立时间 · 来源靶标 · 发现资产 —— 一条知识"什么时候、
-             在哪个单位的哪台资产上发现的"一眼可见 */
+        /* Source row: category · affected versions · created · source engagement · discovered asset */
+/* showing when and on which asset this knowledge was found */
         h(
           "div",
           { className: "rt-kb-sub" },
           [
             x.category
-              ? "归类 " + (POC_CAT_NAME[x.category] || x.category)
+              ? "Category " + (POC_CAT_NAME[x.category] || x.category)
               : null,
-            x.versions ? "影响版本 " + x.versions : null,
+            x.versions ? "Affected versions " + x.versions : null,
             x.language || null,
             x.tags || null,
-            "建立时间 " + fmt(x.created_at),
+            "Created " + fmt(x.created_at),
             x.engagement_name || x.engagement_id
-              ? "来源靶标 " + (x.engagement_name || x.engagement_id)
+              ? "Source engagement " + (x.engagement_name || x.engagement_id)
               : null,
-            x.asset_target ? "发现资产 " + x.asset_target : null,
+            x.asset_target ? "Discovered asset " + x.asset_target : null,
             x.found_by_agent
-              ? "发现角色 " + (ROLE_LABEL[x.found_by_agent] || x.found_by_agent)
+              ? "Found by role " + (ROLE_LABEL[x.found_by_agent] || x.found_by_agent)
               : null,
-            x.source_url ? "来源 " + x.source_url : null,
+            x.source_url ? "Source " + x.source_url : null,
           ]
             .filter(Boolean)
             .join(" · "),
@@ -5950,7 +5952,7 @@ export const __dshPurgeDrill = (() => {
               "div",
               { className: "rt-kb-body" },
               detailBusy && !d
-                ? h("div", { className: "rt-empty" }, "读取中…")
+                ? h("div", { className: "rt-empty" }, "Reading…")
                 : null,
               d
                 ? h(
@@ -5960,7 +5962,7 @@ export const __dshPurgeDrill = (() => {
                       ? h(
                           "div",
                           { className: "rt-kv" },
-                          h("b", null, "用法"),
+                          h("b", null, "Usage"),
                           h("span", { className: "rt-mono" }, d.usage),
                         )
                       : null,
@@ -5968,7 +5970,7 @@ export const __dshPurgeDrill = (() => {
                       ? h(
                           "div",
                           { className: "rt-kv" },
-                          h("b", null, "说明"),
+                          h("b", null, "Description"),
                           h("span", null, d.description),
                         )
                       : null,
@@ -5976,7 +5978,7 @@ export const __dshPurgeDrill = (() => {
                       ? h(
                           "div",
                           { className: "rt-kv" },
-                          h("b", null, "验证证据"),
+                          h("b", null, "Verification evidence"),
                           h("span", null, d.verified_note),
                         )
                       : null,
@@ -5984,7 +5986,7 @@ export const __dshPurgeDrill = (() => {
                       ? h(
                           "div",
                           { className: "rt-kv" },
-                          h("b", null, "最近使用"),
+                          h("b", null, "Last used"),
                           h("span", null, d.used_on),
                         )
                       : null,
@@ -5992,7 +5994,7 @@ export const __dshPurgeDrill = (() => {
                       ? h(
                           "div",
                           { className: "rt-kv" },
-                          h("b", null, "落盘"),
+                          h("b", null, "Stored at"),
                           h("span", { className: "rt-mono" }, d.path),
                         )
                       : null,
@@ -6004,23 +6006,23 @@ export const __dshPurgeDrill = (() => {
                         {
                           className: "rt-btn",
                           disabled: !d.content,
-                          onClick: () => copy(d.content || "", "POC 正文"),
+                          onClick: () => copy(d.content || "", "POC content"),
                         },
-                        "复制正文",
+                        "Copy content",
                       ),
                       h(
                         "button",
                         { className: "rt-btn", onClick: () => useIt(x) },
-                        "记一次复用",
+                        "Record one reuse",
                       ),
                       d.source_url
                         ? h(
                             "button",
                             {
                               className: "rt-btn",
-                              onClick: () => copy(d.source_url, "来源链接"),
+                              onClick: () => copy(d.source_url, "Source link"),
                             },
-                            "复制来源",
+                            "Copy source",
                           )
                         : null,
                     ),
@@ -6030,13 +6032,13 @@ export const __dshPurgeDrill = (() => {
                           { className: "rt-rep-http" },
                           d.content.length > 12000
                             ? d.content.slice(0, 12000) +
-                                "\n…（已截断，完整内容见落盘文件）"
+                                "\n...(truncated; see stored file for full content)"
                             : d.content,
                         )
                       : h(
                           "div",
                           { className: "rt-empty" },
-                          "这条只有元数据，没有正文 —— 拿到正文后用 redteam_poc_update 补上",
+                          "This entry has metadata only, no content — add content with redteam_poc_update when available",
                         ),
                   )
                 : null,
@@ -6051,14 +6053,14 @@ export const __dshPurgeDrill = (() => {
       h(
         "div",
         { className: "rt-toolbar" },
-        h("span", { style: { fontWeight: 600 } }, "知识库 · POC / EXP"),
-        h("span", { className: "rt-tag" }, stats.total + " 条"),
+        h("span", { style: { fontWeight: 600 } }, "Knowledge base · POC / EXP"),
+        h("span", { className: "rt-tag" }, stats.total + " entries"),
         h(
           "span",
           { className: "rt-tag rt-tag-live" },
-          "已验证 " + stats.verified,
+          "Verified " + stats.verified,
         ),
-        h("span", { className: "rt-tag" }, "累计复用 " + (stats.reused || 0)),
+        h("span", { className: "rt-tag" }, "Total reused " + (stats.reused || 0)),
         (stats.uncategorized || 0) > 0 &&
           (stats.uncategorized || 0) !== stats.total
           ? h(
@@ -6066,16 +6068,16 @@ export const __dshPurgeDrill = (() => {
               {
                 className: "rt-tag rt-tag-warn",
                 title:
-                  "这些条目还没归类：智能体回填时用 redteam_poc_add 的 category 参数标一下",
+                  "These entries are uncategorized: set the category parameter in redteam_poc_add when adding them back",
               },
-              "未归类 " + stats.uncategorized,
+              "Uncategorized " + stats.uncategorized,
             )
           : null,
         tpl.total
           ? h(
               "span",
               { className: "rt-tag rt-tag-passive" },
-              "本机模板 " + tpl.total,
+              "Local templates " + tpl.total,
             )
           : null,
         h("div", { className: "rt-spacer" }),
@@ -6083,18 +6085,18 @@ export const __dshPurgeDrill = (() => {
           "button",
           {
             className: "rt-btn" + (grouped ? " rt-btn-primary" : ""),
-            title: "按归类分组显示 / 平铺显示",
+            title: "Group by category / flat view",
             onClick: () => setGrouped(!grouped),
           },
-          grouped ? "按归类分组" : "平铺显示",
+          grouped ? "Group by category" : "Flat view",
         ),
         h(
           "button",
           { className: "rt-btn", disabled: busy, onClick: () => query() },
-          busy ? "检索中…" : "刷新",
+          busy ? "Searching…" : "Refresh",
         ),
       ),
-      /* 归类总览：点一下就是按该类筛选，一眼看清"哪类武器攒了多少、哪类还是空的" */
+      /* Category overview: click to filter by category and see at a glance how many items each category has */
       h(
         "div",
         { className: "rt-kb-cats" },
@@ -6108,11 +6110,11 @@ export const __dshPurgeDrill = (() => {
                 className: "rt-concl-i" + (category === c.code ? " on" : ""),
                 title:
                   (c.hint || POC_CAT_NAME[c.code] || c.code) +
-                  " · 本机模板 " +
+                  " · Local templates " +
                   (tplByCat.get(c.code) || 0) +
-                  " · 知识库 " +
+                  " · Knowledge base " +
                   (c.n || 0) +
-                  (c.verified ? "（已验证 " + c.verified + "）" : ""),
+                  (c.verified ? " (verified " + c.verified + ")" : ""),
                 onClick: () => {
                   const next = category === c.code ? "" : c.code;
                   setCategory(next);
@@ -6124,7 +6126,7 @@ export const __dshPurgeDrill = (() => {
                 "span",
                 null,
                 (POC_CAT_NAME[c.code] || c.code) +
-                  (c.verified ? "（已验证 " + c.verified + "）" : ""),
+                  (c.verified ? " (verified " + c.verified + ")" : ""),
               ),
             ),
           ),
@@ -6135,7 +6137,7 @@ export const __dshPurgeDrill = (() => {
         h("input", {
           className: "rt-input",
           style: { flex: 1, minWidth: 140 },
-          placeholder: "搜 CVE / 组件 / 关键字（正文也会搜）",
+          placeholder: "Search CVE / component / keyword (body text included)",
           value: q,
           onChange: (e) => setQ(e.target.value),
           onKeyDown: (e) => {
@@ -6153,7 +6155,7 @@ export const __dshPurgeDrill = (() => {
               query({ category: e.target.value || undefined });
             },
           },
-          h("option", { value: "" }, "全部归类"),
+          h("option", { value: "" }, "All categories"),
           POC_CAT_ORDER.map((k) =>
             h("option", { key: k, value: k }, POC_CAT_NAME[k]),
           ),
@@ -6169,7 +6171,7 @@ export const __dshPurgeDrill = (() => {
               query({ engagement: e.target.value || undefined });
             },
           },
-          h("option", { value: "" }, "全部来源靶标"),
+          h("option", { value: "" }, "All source engagements"),
           (stats.byEngagement || []).map((e) =>
             h(
               "option",
@@ -6181,7 +6183,7 @@ export const __dshPurgeDrill = (() => {
         h("input", {
           className: "rt-input",
           style: { width: 120 },
-          placeholder: "发现资产筛选",
+          placeholder: "Filter by discovered asset",
           value: assetTarget,
           onChange: (e) => setAssetTarget(e.target.value),
           onKeyDown: (e) => {
@@ -6199,7 +6201,7 @@ export const __dshPurgeDrill = (() => {
               query({ kind: e.target.value || undefined });
             },
           },
-          h("option", { value: "" }, "全部类型"),
+          h("option", { value: "" }, "All types"),
           Object.keys(POC_KIND_LABEL).map((k) =>
             h("option", { key: k, value: k }, POC_KIND_LABEL[k]),
           ),
@@ -6215,12 +6217,12 @@ export const __dshPurgeDrill = (() => {
               query({ verified: e.target.checked || undefined });
             },
           }),
-          "只看已验证",
+          "Verified only",
         ),
         h(
           "button",
           { className: "rt-btn rt-btn-primary", onClick: () => query() },
-          "检索",
+          "Search",
         ),
       ),
       msg
@@ -6235,8 +6237,8 @@ export const __dshPurgeDrill = (() => {
             "div",
             { className: "rt-err" },
             /engagement required|unknown op/i.test(err)
-              ? /* 老 host 还没有知识库接口：讲清怎么恢复，别让人对着 "engagement required" 发懵 */
-                "知识库接口由 host 侧提供，当前宿主还是旧进程 —— 请完全退出后重新打开（官方 exe / 社区版 / dsh web 任一），再刷新页面。"
+              ? /* Older host does not have the knowledge base API yet: explain how to recover */
+                "The knowledge base API is provided by the host; the current host is still an old process — fully exit and reopen (official exe / community edition / dsh web), then refresh the page."
               : err,
           )
         : null,
@@ -6244,9 +6246,9 @@ export const __dshPurgeDrill = (() => {
         ? h(
             "div",
             { className: "rt-foot", style: { marginBottom: 6, fontSize: 11 } },
-            "知识库：" +
+            "Knowledge base: " +
               data.dbPath +
-              (data.root ? "（根目录 " + data.root + "）" : ""),
+              (data.root ? " (root " + data.root + ")" : ""),
           )
         : null,
       h(
@@ -6254,7 +6256,7 @@ export const __dshPurgeDrill = (() => {
         { className: "rt-table" },
         (() => {
           if (!grouped) return items.map(card);
-          /* 分组渲染：按内置归类顺序，未知归类挂到末尾的「其它」 */
+          /* Grouped rendering: by built-in category order; unknown categories go to "Other" at the end */
           const buckets = new Map();
           for (const x of items) {
             const code = POC_CAT_NAME[x.category] ? x.category : "other";
@@ -6276,11 +6278,11 @@ export const __dshPurgeDrill = (() => {
                   { className: "rt-kb-cat-name" },
                   POC_CAT_NAME[code] || code,
                 ),
-                h("span", { className: "rt-tag" }, list.length + " 条"),
+                h("span", { className: "rt-tag" }, list.length + " entries"),
                 h(
                   "span",
                   { className: "rt-tag rt-tag-live" },
-                  "已验证 " + list.filter((x) => x.verified === 1).length,
+                  "Verified " + list.filter((x) => x.verified === 1).length,
                 ),
                 h("span", { className: "rt-spacer" }),
                 h(
@@ -6291,7 +6293,7 @@ export const __dshPurgeDrill = (() => {
                       color: "var(--dsw-alias-label-secondary)",
                     },
                   },
-                  "最近建立 " +
+                  "Recently created " +
                     fmt(
                       list
                         .map((x) => x.created_at)
@@ -6313,13 +6315,13 @@ export const __dshPurgeDrill = (() => {
               h(
                 "div",
                 { className: "rt-ap-sub" },
-                "本机 nuclei 模板 · " +
+                "Local nuclei templates · " +
                   (tplStart + 1) +
                   "–" +
                   (tplStart + tplItems.length) +
                   " / " +
                   tplMatched +
-                  "（直接 `nuclei -t <模板路径>`）",
+                  "(run directly with `nuclei -t <template path>`)",
               ),
               tplItems.map((t, i) =>
                 h(
@@ -6349,9 +6351,9 @@ export const __dshPurgeDrill = (() => {
                       className: "rt-btn",
                       style: { padding: "0 6px", fontSize: 10.5 },
                       onClick: () =>
-                        copy("nuclei -t " + t.path + " -u <目标>", "模板命令"),
+                        copy("nuclei -t " + t.path + " -u <target>", "Template command"),
                     },
-                    "复制命令",
+                    "Copy command",
                   ),
                 ),
               ),
@@ -6365,7 +6367,7 @@ export const __dshPurgeDrill = (() => {
                     disabled: busy || tplStart <= 0,
                     onClick: () => turnTpl(tplStart - tplPageSize),
                   },
-                  "上一页",
+                  "Previous page",
                 ),
                 h(
                   "button",
@@ -6374,19 +6376,19 @@ export const __dshPurgeDrill = (() => {
                     disabled: busy || tplStart + tplItems.length >= tplMatched,
                     onClick: () => turnTpl(tplStart + tplPageSize),
                   },
-                  "下一页",
+                  "Next page",
                 ),
               ),
               tpl.dir
                 ? h(
                     "div",
                     { className: "rt-foot" },
-                    h("span", null, "模板目录：" + tpl.dir),
+                    h("span", null, "Template directory: " + tpl.dir),
                   )
                 : null,
             )
           : null,
-        data === null ? h("div", { className: "rt-empty" }, "加载中…") : null,
+        data === null ? h("div", { className: "rt-empty" }, "Loading…") : null,
         data !== null && !items.length && !tplItems.length
           ? h(
               "div",
@@ -6395,19 +6397,19 @@ export const __dshPurgeDrill = (() => {
                 "div",
                 null,
                 q || kind || verifiedOnly
-                  ? "没有命中：换个关键字再试，或去互联网找 / 自己手搓后回填。"
+                  ? "No matches: try different keywords, or search online / craft your own and add it back."
                   : tpl.total
-                    ? "POC/EXP 库还是空的；本机已有 " +
+                    ? "The POC/EXP library is still empty; this machine already has " +
                       tpl.total +
-                      " 个 nuclei 模板，但这一页没有列出来。请完全退出后重新打开客户端。"
+                      " nuclei templates, but they are not listed on this page. Fully exit and reopen the client."
                     : tpl.dir
-                      ? "知识库还是空的（本机模板目录存在但没有 yaml，请跑 nuclei -update-templates）。"
-                      : "知识库还是空的。本机也还没有 nuclei 模板库 —— 在演练机上跑 setup.sh 或 `nuclei -update-templates`，装好后这里会出现「本机模板 N」。",
+                      ? "The knowledge base is still empty (local template directory exists but has no YAML files; run nuclei -update-templates)."
+                      : "The knowledge base is still empty. No local nuclei template library found — run setup.sh or `nuclei -update-templates` on the exercise machine; after installation, \"Local templates N\" will appear here.",
               ),
               h(
                 "div",
                 { style: { marginTop: 6, fontSize: 12 } },
-                "打 Nday/1day 的标准顺序：① redteam_poc_search 先查这里（顺带搜本机 nuclei 模板库）→ ② 都没有就互联网搜索（web_search / GitHub / ExploitDB / 厂商公告）或自己手搓 → ③ 在真实目标上验证有效后 redteam_poc_add 回填，后面的靶标直接就能用。",
+                "Standard workflow for Nday/1day: 1) search here with redteam_poc_search (also searches local nuclei templates) -> 2) if none, search online (web_search / GitHub / ExploitDB / vendor advisories) or craft your own -> 3) after verifying on a real target, add back with redteam_poc_add for reuse in future engagements.",
               ),
               data.dbPath
                 ? h(
@@ -6416,7 +6418,7 @@ export const __dshPurgeDrill = (() => {
                       style: { marginTop: 6, fontSize: 11 },
                       className: "rt-mono",
                     },
-                    "知识库文件：" + data.dbPath,
+                    "Knowledge base file: " + data.dbPath,
                   )
                 : null,
               tpl.dir
@@ -6426,7 +6428,7 @@ export const __dshPurgeDrill = (() => {
                       style: { marginTop: 6, fontSize: 11 },
                       className: "rt-mono",
                     },
-                    "模板目录：" + tpl.dir,
+                    "Template directory: " + tpl.dir,
                   )
                 : null,
             )
@@ -6438,16 +6440,16 @@ export const __dshPurgeDrill = (() => {
         h(
           "span",
           null,
-          "全局共享（跨靶标）｜ 落盘：pocs/<code>/ ｜ 只收录通用可复用的 POC/EXP，靶标专用脚本走「攻击文件」",
+          "Globally shared (cross-engagement) | Stored at: pocs/<code>/ | Only generic reusable POCs/EXPs; engagement-specific scripts go to \"Attack files\"",
         ),
       ),
     );
   }
 
-  /* ---------------------------------------------------------- 环境适配（Windows / 非 Kali） */
+  /* ---------------------------------------------------------- Environment adaptation (Windows / non-Kali) */
   /**
-   * 借鉴 Z3r0 的「系统配置」思路：路径与密钥进集中配置，不靠 bash/ps1。
-   * 落盘 $DSH_HOME/redteam/config.json —— 用户填工具绝对路径或整包搜索目录。
+   * Inspired by Z3r0\'s "System configuration" approach: paths and keys go into centralized config instead of bash/ps1.
+   * Stored at $DSH_HOME/redteam/config.json — users can provide absolute tool paths or a toolkit search directory.
    */
   function EnvTab(props) {
     const refreshKey = props.refreshKey || 0;
@@ -6482,7 +6484,7 @@ export const __dshPurgeDrill = (() => {
         (r) => {
           setBusy(false);
           if (!r || r.ok === false) {
-            setErr((r && r.error) || "读取失败");
+            setErr((r && r.error) || "Read failed");
             return;
           }
           setErr(null);
@@ -6519,13 +6521,13 @@ export const __dshPurgeDrill = (() => {
         (r) => {
           setBusy(false);
           if (!r || r.ok === false) {
-            setMsg({ err: (r && r.error) || "保存失败" });
+            setMsg({ err: (r && r.error) || "Save failed" });
             return;
           }
           setData(r);
           setMsg({
             ok:
-              "已保存到 " +
+              "Saved to " +
               ((r.config && r.config.path) || "$DSH_HOME/redteam/config.json"),
           });
           applyDraftFrom(r);
@@ -6542,7 +6544,7 @@ export const __dshPurgeDrill = (() => {
         folderPath || (draft && draft.toolkitDir) || "",
       ).trim();
       if (!dir) {
-        setMsg({ err: "请先填写工具所在文件夹路径" });
+        setMsg({ err: "Please enter the folder path containing the tools first" });
         return;
       }
       setBusy(true);
@@ -6551,17 +6553,17 @@ export const __dshPurgeDrill = (() => {
         (r) => {
           setBusy(false);
           if (!r || r.ok === false) {
-            setMsg({ err: (r && r.error) || "自动分配失败" });
+            setMsg({ err: (r && r.error) || "Auto-assign failed" });
             return;
           }
           setData(r);
           applyDraftFrom(r);
           setMsg({
             ok:
-              "已从文件夹分配 " +
+              "Assigned from folder " +
               (r.assignedCount || 0) +
-              " 个工具" +
-              (r.nucleiTemplatesDir ? "，并识别 nuclei-templates" : ""),
+              " tools" +
+              (r.nucleiTemplatesDir ? ", and detected nuclei-templates" : ""),
           });
         },
         (e) => {
@@ -6603,7 +6605,7 @@ export const __dshPurgeDrill = (() => {
       h(
         "div",
         { className: "rt-toolbar" },
-        h("span", { style: { fontWeight: 600 } }, "环境适配"),
+        h("span", { style: { fontWeight: 600 } }, "Environment adaptation"),
         h(
           "span",
           { className: "rt-tag" },
@@ -6618,18 +6620,18 @@ export const __dshPurgeDrill = (() => {
             className:
               "rt-tag" + (adapt.ready ? " rt-tag-live" : " rt-tag-warn"),
           },
-          adapt.ready ? "就绪 · " + (adapt.reason || "") : "待配置",
+          adapt.ready ? "Ready · " + (adapt.reason || "") : "Needs configuration",
         ),
         h(
           "span",
           { className: "rt-tag" + (found ? " rt-tag-live" : " rt-tag-warn") },
-          "工具 " + found + "/" + tools.length,
+          "Tools " + found + "/" + tools.length,
         ),
         h("div", { className: "rt-spacer" }),
         h(
           "button",
           { className: "rt-btn", disabled: busy, onClick: load },
-          busy ? "读取中…" : "刷新",
+          busy ? "Reading…" : "Refresh",
         ),
         h(
           "button",
@@ -6638,7 +6640,7 @@ export const __dshPurgeDrill = (() => {
             disabled: busy || !draft,
             onClick: save,
           },
-          "保存",
+          "Save",
         ),
       ),
       h(
@@ -6659,7 +6661,7 @@ export const __dshPurgeDrill = (() => {
             style: { margin: "0 0 8px", fontSize: 12, lineHeight: 1.6 },
           },
           adapt.message ||
-            "均可选填：留空则用默认路径/自动查找。填了的覆盖默认。密钥类只在需要测绘/反弹时才填。",
+            "All optional: leave blank for default paths/auto-detection. Filled values override defaults. Keys are only needed for mapping/reverse connections.",
         ),
         h(
           "div",
@@ -6670,12 +6672,12 @@ export const __dshPurgeDrill = (() => {
           h(
             "div",
             { style: { fontWeight: 600, marginBottom: 6 } },
-            "整包文件夹 → 自动分配工具",
+            "Toolkit folder -> auto-assign tools",
           ),
           h(
             "div",
             { style: { marginBottom: 8, opacity: 0.9 } },
-            "工具都在同一个文件夹（含子目录）时，填路径后点「自动分配」：会写入 toolkitDir，并按文件名匹配 nmap / nuclei / fscan 等填到下方。",
+            "When all tools are in the same folder (including subdirectories), enter the path and click \"Auto-assign\": it sets toolkitDir and matches nmap / nuclei / fscan etc. by filename below.",
           ),
           h(
             "div",
@@ -6683,7 +6685,7 @@ export const __dshPurgeDrill = (() => {
             h("input", {
               className: "rt-input",
               style: { flex: 1 },
-              placeholder: "例如 D:\\pentest-tools 或 /opt/toolkit",
+              placeholder: "e.g. D:\\pentest-tools or /opt/toolkit",
               value: folderPath,
               onChange: (e) => setFolderPath(e.target.value),
               onKeyDown: (e) => {
@@ -6697,7 +6699,7 @@ export const __dshPurgeDrill = (() => {
                 disabled: busy,
                 onClick: assignFolder,
               },
-              busy ? "扫描中…" : "自动分配",
+              busy ? "Scanning…" : "Auto-assign",
             ),
           ),
         ),
@@ -6721,27 +6723,27 @@ export const __dshPurgeDrill = (() => {
               h(
                 "div",
                 { style: { fontWeight: 600, marginBottom: 6 } },
-                "出网状态（借鉴 Z3r0 egress，只读）",
+                "Egress status (inspired by Z3r0 egress, read-only)",
               ),
               h(
                 "div",
                 { className: "rt-mono", style: { fontSize: 11 } },
-                "HTTP_PROXY=" + (data.egress.http_proxy || "(空)"),
+                "HTTP_PROXY=" + (data.egress.http_proxy || "(empty)"),
               ),
               h(
                 "div",
                 { className: "rt-mono", style: { fontSize: 11 } },
-                "HTTPS_PROXY=" + (data.egress.https_proxy || "(空)"),
+                "HTTPS_PROXY=" + (data.egress.https_proxy || "(empty)"),
               ),
               h(
                 "div",
                 { className: "rt-mono", style: { fontSize: 11 } },
-                "ALL_PROXY=" + (data.egress.all_proxy || "(空)"),
+                "ALL_PROXY=" + (data.egress.all_proxy || "(empty)"),
               ),
               h(
                 "div",
                 { className: "rt-mono", style: { fontSize: 11 } },
-                "NO_PROXY=" + (data.egress.no_proxy || "(空)"),
+                "NO_PROXY=" + (data.egress.no_proxy || "(empty)"),
               ),
               h(
                 "div",
@@ -6751,21 +6753,21 @@ export const __dshPurgeDrill = (() => {
             )
           : null,
         !draft
-          ? h("div", { className: "rt-empty" }, "加载中…")
+          ? h("div", { className: "rt-empty" }, "Loading…")
           : h(
               "div",
               null,
               h(
                 "div",
                 { className: "rt-card" },
-                h("h4", null, "平台与目录"),
+                h("h4", null, "Platform and directories"),
                 h(
                   "div",
                   { style: { display: "grid", gap: 8 } },
                   h(
                     "label",
                     { style: { fontSize: 12 } },
-                    "平台模式",
+                    "Platform mode",
                     h(
                       "select",
                       {
@@ -6783,7 +6785,7 @@ export const __dshPurgeDrill = (() => {
                             }),
                           ),
                       },
-                      h("option", { value: "auto" }, "auto（跟随本机，默认）"),
+                      h("option", { value: "auto" }, "auto (follow local machine, default)"),
                       h("option", { value: "windows" }, "windows"),
                       h("option", { value: "linux" }, "linux"),
                     ),
@@ -6791,11 +6793,11 @@ export const __dshPurgeDrill = (() => {
                   h(
                     "label",
                     { style: { fontSize: 12 } },
-                    "工具箱目录 toolkitDir（留空＝默认）",
+                    "Toolkit directory toolkitDir (blank = default)",
                     h("input", {
                       className: "rt-input",
                       style: { display: "block", width: "100%", marginTop: 4 },
-                      placeholder: "默认：" + defaultToolkit,
+                      placeholder: "Default: " + defaultToolkit,
                       value: draft.toolkitDir,
                       onChange: (e) =>
                         setDraft(
@@ -6808,11 +6810,11 @@ export const __dshPurgeDrill = (() => {
                   h(
                     "label",
                     { style: { fontSize: 12 } },
-                    "nuclei 模板目录（留空＝自动：toolkit/nuclei-templates）",
+                    "nuclei templates directory (blank = auto: toolkit/nuclei-templates)",
                     h("input", {
                       className: "rt-input",
                       style: { display: "block", width: "100%", marginTop: 4 },
-                      placeholder: "默认：" + defaultNuclei,
+                      placeholder: "Default: " + defaultNuclei,
                       value: draft.nucleiTemplatesDir,
                       onChange: (e) =>
                         setDraft(
@@ -6825,7 +6827,7 @@ export const __dshPurgeDrill = (() => {
                   h(
                     "label",
                     { style: { fontSize: 12 } },
-                    "工具搜索目录 binDirs（留空＝只搜 toolkit + PATH；每行一个）",
+                    "Tool search directories binDirs (blank = toolkit + PATH only; one per line)",
                     h("textarea", {
                       className: "rt-input",
                       rows: 4,
@@ -6836,7 +6838,7 @@ export const __dshPurgeDrill = (() => {
                         fontFamily: "var(--dsw-font-mono, monospace)",
                       },
                       placeholder:
-                        "可选。例如：" +
+                        "Optional. e.g. " +
                         String.fromCharCode(10) +
                         "D:\\tools" +
                         String.fromCharCode(10) +
@@ -6855,7 +6857,7 @@ export const __dshPurgeDrill = (() => {
               h(
                 "div",
                 { className: "rt-card" },
-                h("h4", null, "密钥与 VPS（留空＝不覆盖；进程环境变量优先）"),
+                h("h4", null, "Keys and VPS (blank = no override; process env vars take precedence)"),
                 h(
                   "div",
                   { style: { display: "grid", gap: 8 } },
@@ -6863,7 +6865,7 @@ export const __dshPurgeDrill = (() => {
                     h(
                       "label",
                       { key: k, style: { fontSize: 12 } },
-                      k + "（可选）",
+                      k + " (optional)",
                       h("input", {
                         className: "rt-input",
                         style: {
@@ -6874,10 +6876,10 @@ export const __dshPurgeDrill = (() => {
                         type: k === "FOFA_KEY" ? "password" : "text",
                         placeholder:
                           k === "REDTEAM_VPS_KEY"
-                            ? "留空；需要时填私钥绝对路径"
+                            ? "Leave blank; enter absolute private key path when needed"
                             : k === "REDTEAM_VPS_HOST"
-                              ? "留空；需要时填 user@host"
-                              : "留空；测绘时再填",
+                              ? "Leave blank; enter user@host when needed"
+                               : "Leave blank; fill in when mapping",
                         value: (draft.env && draft.env[k]) || "",
                         onChange: (e) => setEnv(k, e.target.value),
                       }),
@@ -6888,7 +6890,7 @@ export const __dshPurgeDrill = (() => {
               h(
                 "div",
                 { className: "rt-card" },
-                h("h4", null, "工具可执行文件（留空＝自动查找）"),
+                h("h4", null, "Tool executables (blank = auto-detect)"),
                 h(
                   "div",
                   {
@@ -6898,7 +6900,7 @@ export const __dshPurgeDrill = (() => {
                       marginBottom: 8,
                     },
                   },
-                  "解析顺序：本表绝对路径 → toolkitDir → binDirs → PATH。留空即走默认查找。",
+                  "Resolution order: absolute paths in this table -> toolkitDir -> binDirs -> PATH. Leave blank for default lookup.",
                 ),
                 tools.map((t) =>
                   h(
@@ -6923,19 +6925,19 @@ export const __dshPurgeDrill = (() => {
                         ? h(
                             "span",
                             { className: "rt-tag rt-tag-live", title: t.path },
-                            t.source + " · 已找到",
+                            t.source + " · Found",
                           )
                         : h(
                             "span",
                             { className: "rt-tag rt-tag-warn" },
-                            "未找到（可留空等装好）",
+                            "Not found (leave blank until installed)",
                           ),
                     ),
                     h("input", {
                       className: "rt-input",
                       style: { width: "100%" },
                       placeholder:
-                        "留空自动找：" +
+                        "Leave blank to auto-detect: " +
                         (t.names || []).slice(0, 3).join(" / "),
                       value: (draft.tools && draft.tools[t.id]) || "",
                       onChange: (e) => setTool(t.id, e.target.value),
@@ -6960,12 +6962,12 @@ export const __dshPurgeDrill = (() => {
               h(
                 "div",
                 { className: "rt-card" },
-                h("h4", null, "备注"),
+                h("h4", null, "Notes"),
                 h("textarea", {
                   className: "rt-input",
                   rows: 3,
                   style: { width: "100%" },
-                  placeholder: "可选。例如：工具来自某某绿色包",
+                  placeholder: "Optional. e.g. tools from a portable package",
                   value: draft.notes,
                   onChange: (e) =>
                     setDraft(
@@ -6979,10 +6981,10 @@ export const __dshPurgeDrill = (() => {
                 h(
                   "span",
                   null,
-                  "配置文件：" +
+                  "Config file: " +
                     ((data && data.config && data.config.path) ||
                       "$DSH_HOME/redteam/config.json") +
-                    " | 留空字段全部走默认",
+                    " | blank fields use defaults",
                 ),
               ),
             ),
@@ -6990,7 +6992,7 @@ export const __dshPurgeDrill = (() => {
     );
   }
 
-  /* ---------------------------------------------------------- 得分目标 */
+  /* ---------------------------------------------------------- Score goals */
   function ScoreTab(props) {
     const eng = props.engagement;
     const refreshKey = props.refreshKey || 0;
@@ -7008,7 +7010,7 @@ export const __dshPurgeDrill = (() => {
         (r) => {
           setBusy(false);
           if (!r || r.ok === false) {
-            setErr((r && r.error) || "读取失败");
+            setErr((r && r.error) || "Read failed");
             return;
           }
           setErr(null);
@@ -7022,9 +7024,9 @@ export const __dshPurgeDrill = (() => {
     };
     React.useEffect(load, [eng, refreshKey]);
 
-    /* builtin 要一路带到表单：内置得分点的分值/名称/口径由《得分规则》锁定，
-         界面必须把输入框置灰并说明原因 —— 以前是「能改、提示已保存、刷新后变回去」，
-         用户以为是 bug。 */
+    /* builtin must flow through to the form: scores/names/criteria for built-in score points are locked by "Scoring Rules",
+         the UI must disable inputs and explain why — previously it looked editable, said "saved", then reverted on refresh,
+         which users thought was a bug. */
     const startEdit = (p) =>
       setForm({
         id: p.id,
@@ -7053,7 +7055,7 @@ export const __dshPurgeDrill = (() => {
 
     const save = () => {
       if (!form || !form.name) {
-        setMsg({ err: "名称不能为空" });
+        setMsg({ err: "Name cannot be empty" });
         return;
       }
       setBusy(true);
@@ -7062,20 +7064,20 @@ export const __dshPurgeDrill = (() => {
         (r) => {
           setBusy(false);
           if (!r || r.ok === false) {
-            setMsg({ err: (r && r.error) || "保存失败" });
+            setMsg({ err: (r && r.error) || "Save failed" });
             return;
           }
-          /* overridden === false 表示后端**没有采纳**提交的分值（内置点由规则锁定）。
-             这时不能笼统说「已保存」 —— 那句话会让用户以为分值改成功了。 */
+          /* overridden === false means the backend did **not** accept the submitted score (built-in points are locked by rules).
+             Do not say "Saved" generically — that would imply the score change succeeded. */
           if (r.overridden === false) {
             setMsg({
               err:
-                "已保存「启用/停用」。分值未改动：这是随《得分规则》分发的内置得分点，" +
-                "分值 / 上限 / 计分口径由规则锁定（同一条规则的上限按组内所有得分点累计，" +
-                "单独改分值会让一条命中吃掉整组上限）。要自定义分值时请「+ 新增得分点」。",
+                "Saved enable/disable state. Score unchanged: this is a built-in score point distributed with \"Scoring Rules\", " +
+                "scores / caps / criteria are locked by rules (a rule's cap is cumulative across all score points in the group, " +
+                "changing one score alone would let a single hit consume the group cap). To customize scores, use \"+ Add score point\".",
             });
           } else {
-            setMsg({ ok: r.note || "已保存" });
+            setMsg({ ok: r.note || "Saved" });
           }
           setForm(null);
           load();
@@ -7097,10 +7099,10 @@ export const __dshPurgeDrill = (() => {
         (r) => {
           setBusy(false);
           if (!r || r.ok === false) {
-            setMsg({ err: (r && r.error) || "删除失败" });
+            setMsg({ err: (r && r.error) || "Delete failed" });
             return;
           }
-          setMsg({ ok: "已删除" });
+          setMsg({ ok: "Deleted" });
           setForm(null);
           setOpenId(null);
           load();
@@ -7122,8 +7124,8 @@ export const __dshPurgeDrill = (() => {
     };
     const items = (data && data.items) || [];
 
-    /* 按合并版的 8 个类别分组渲染（后端 ruleGroups 已排好序、组内按分值升序）。
-         兼容：后端没给 ruleGroups（老 host）时退回平铺。 */
+    /* Render grouped by 8 merged categories (backend ruleGroups are pre-sorted, ascending by score within groups).
+         Compatibility: fall back to flat list when backend does not provide ruleGroups (older host). */
     const groups =
       data && data.ruleGroups && data.ruleGroups.length
         ? data.ruleGroups
@@ -7149,11 +7151,11 @@ export const __dshPurgeDrill = (() => {
               "span",
               { className: "rt-sg-sub" },
               g.tiers.length +
-                " 项" +
+                " items" +
                 (g.capSum > 0
-                  ? " · 各项上限合计 " +
+                  ? " · Combined cap " +
                     g.capSum +
-                    " 分（各项独立，不跨项累加）"
+                    " pts (each item independent, not cumulative across items)"
                   : ""),
             ),
             h("div", { className: "rt-spacer" }),
@@ -7161,7 +7163,7 @@ export const __dshPurgeDrill = (() => {
               ? h(
                   "span",
                   { className: "rt-tag rt-tag-active" },
-                  "+" + g.points + " 分",
+                  "+" + g.points + " pts",
                 )
               : null,
           ),
@@ -7203,7 +7205,7 @@ export const __dshPurgeDrill = (() => {
                         color: "var(--dsw-alias-label-secondary)",
                       },
                 },
-                p.points + "分",
+                p.points + " pts",
               ),
             ),
             h(
@@ -7214,31 +7216,31 @@ export const __dshPurgeDrill = (() => {
                 ? h("span", { className: "rt-scope" }, "　" + p.tier)
                 : null,
             ),
-            /* 命中与上限：这一条计入几次、上限用了多少（G3 各项上限独立，到顶就不再累计） */
+            /* Hits and caps: how many times counted and cap usage (G3 caps are independent per item; stops counting at cap) */
             h(
               "span",
               {
                 title:
                   p.capped > 0
-                    ? "已计入 " +
+                    ? "Counted " +
                       p.counted +
-                      " 次，另有 " +
+                      " times, plus " +
                       p.capped +
-                      " 条因「" +
-                      (p.scope_label || "计分口径") +
-                      "」或已达上限不计分"
+                      ' entries not counted due to "' +
+                      (p.scope_label || "scoring criteria") +
+                      '" or cap reached'
                     : p.scope_label || "",
               },
               h(
                 "span",
                 { className: "rt-sec-count" },
-                p.hits.length > 0 ? p.counted + " 次命中" : "未命中",
+                p.hits.length > 0 ? p.counted + " hits" : "No hits",
               ),
               p.cap > 0
                 ? h(
                     "span",
                     { className: "rt-scope" },
-                    "　上限 " +
+                    "  cap " +
                       (p.cap_used === null ? 0 : p.cap_used) +
                       "/" +
                       p.cap,
@@ -7252,7 +7254,7 @@ export const __dshPurgeDrill = (() => {
                 ? h(
                     "span",
                     { className: "rt-tag rt-tag-active" },
-                    "+" + p.earned + " 分",
+                    "+" + p.earned + " pts",
                   )
                 : h(
                     "span",
@@ -7263,7 +7265,7 @@ export const __dshPurgeDrill = (() => {
           ),
         );
         if (!open) continue;
-        /* 命中记录：一行一条 —— 第一行给"序号 + 资产 + 时间 + 复制"，内容另起一行自适应换行 */
+        /* Hit records: one per line — first line shows "index + asset + time + copy", content wraps on the next line */
         const hitNodes = p.hits.map((hh, hi) =>
           h(
             "div",
@@ -7281,16 +7283,16 @@ export const __dshPurgeDrill = (() => {
                 className: "rt-hit-asset",
                 title: hh.target || hh.asset_ip || "",
               },
-              hh.asset_ip || hh.target || "未指定资产",
+              hh.asset_ip || hh.target || "No asset specified",
             ),
             hh.self_created
               ? h(
                   "span",
                   {
                     className: "rt-tag rt-tag-warn",
-                    title: "自己注册/自建的账号不算得分权限，只作过程记录",
+                    title: "Self-registered/self-created accounts do not count as scored access; recorded for process only",
                   },
-                  "自建 · 不计分",
+                  "Self-created · not counted",
                 )
               : null,
             hh.capped
@@ -7300,9 +7302,9 @@ export const __dshPurgeDrill = (() => {
                     className: "rt-tag rt-tag-warn",
                     title:
                       hh.capped_reason ||
-                      "同一资产同一端口只算分值最高的一条，这条不计分",
+                      "Only the highest-scoring entry counts for the same asset and port; this one is not counted",
                   },
-                  "服务已拿满 · 不计分" +
+                  "Service cap reached · not counted" +
                     (hh.service ? "（" + hh.service + "）" : ""),
                 )
               : null,
@@ -7311,9 +7313,9 @@ export const __dshPurgeDrill = (() => {
                   "span",
                   {
                     className: "rt-tag",
-                    title: "这条命中有证据截图（展开得分点即可看到代表图）",
+                    title: "This hit has evidence screenshots (expand the score point to see representative images)",
                   },
-                  "图 " + hh.shot_count,
+                  "Img " + hh.shot_count,
                 )
               : null,
             h("span", { className: "rt-hit-time" }, fmt(hh.recorded_at)),
@@ -7322,7 +7324,7 @@ export const __dshPurgeDrill = (() => {
               {
                 className: "rt-btn",
                 style: { padding: "0 5px", fontSize: 10.5 },
-                title: "复制这一条",
+                title: "Copy this entry",
                 onClick: (e) => {
                   e.stopPropagation();
                   copyText(
@@ -7332,7 +7334,7 @@ export const __dshPurgeDrill = (() => {
                   );
                 },
               },
-              "复制",
+              "Copy",
             ),
             hh.evidence
               ? h(
@@ -7343,7 +7345,7 @@ export const __dshPurgeDrill = (() => {
               : h(
                   "span",
                   { className: "rt-hit-txt none" },
-                  "未填账号密码/结果",
+                  "Account/password/result not provided",
                 ),
           ),
         );
@@ -7362,30 +7364,30 @@ export const __dshPurgeDrill = (() => {
                 ? h(
                     "div",
                     { className: "rt-kv" },
-                    h("b", null, "得分条件"),
+                    h("b", null, "Scoring criteria"),
                     h("span", null, p.description),
                   )
                 : null,
               h(
                 "div",
                 { className: "rt-kv" },
-                h("b", null, "状态"),
+                h("b", null, "Status"),
                 h(
                   "span",
                   null,
-                  (p.enabled ? "启用" : "停用") +
+                  (p.enabled ? "Enabled" : "Disabled") +
                     " · " +
                     p.points +
-                    " 分/次 · 命中 " +
+                    " pts/hit · Hits " +
                     p.hits.length +
-                    " 次 = " +
+                    " times = " +
                     p.earned +
-                    " 分" +
+                    " pts" +
                     (p.self_created
-                      ? "（另有 " + p.self_created + " 次自建不计分）"
+                      ? " (plus " + p.self_created + " self-created not counted)"
                       : "") +
                     (p.capped
-                      ? "（另有 " + p.capped + " 次同服务重复命中不计分）"
+                      ? " (plus " + p.capped + " duplicate service hits not counted)"
                       : ""),
                 ),
               ),
@@ -7393,12 +7395,12 @@ export const __dshPurgeDrill = (() => {
                 ? h(
                     "div",
                     { className: "rt-kv" },
-                    h("b", null, "服务封顶"),
+                    h("b", null, "Service cap"),
                     h(
                       "span",
                       null,
                       p.service_summary +
-                        "；账号权限与数据库权限按「同资产同端口」只算一次，拿到最高权限账号即该服务拿满",
+                        "; account and database privileges count only once per same asset and port; obtaining the highest-privilege account fills that service cap",
                     ),
                   )
                 : null,
@@ -7411,9 +7413,9 @@ export const __dshPurgeDrill = (() => {
                       shots: p.shots,
                       total: p.shot_total,
                       title:
-                        "证据截图 · " +
+                        "Evidence screenshots · " +
                         (p.shot_total || (p.shots || []).length) +
-                        " 张",
+                        " images",
                     }),
                     h(
                       "div",
@@ -7421,20 +7423,20 @@ export const __dshPurgeDrill = (() => {
                         className: "rt-section",
                         style: { padding: "6px 0 0" },
                       },
-                      "命中记录 · " +
+                      "Hit records · " +
                         p.hits.length +
-                        "（只记资产与账号密码，详细复现见报告）",
+                        "(records asset and credentials only; see report for detailed reproduction)",
                     ),
                     h("div", { className: "rt-hits" }, hitNodes),
                   )
                 : h(
                     "div",
                     { className: "rt-kv" },
-                    h("b", null, "命中记录"),
+                    h("b", null, "Hit records"),
                     h(
                       "span",
                       { style: { color: "var(--dsw-alias-label-secondary)" } },
-                      "还没有 —— 拿下成果后用 redteam_score_hit 记分：写明目标资产 + 拿到的账号密码/权限",
+                      "None yet — after achieving results, score with redteam_score_hit: specify target asset + obtained credentials/privileges",
                     ),
                   ),
               h(
@@ -7449,7 +7451,7 @@ export const __dshPurgeDrill = (() => {
                       startEdit(p);
                     },
                   },
-                  "编辑",
+                  "Edit",
                 ),
               ),
             ),
@@ -7464,8 +7466,8 @@ export const __dshPurgeDrill = (() => {
       h(
         "div",
         { className: "rt-toolbar" },
-        h("span", { style: { fontWeight: 600 } }, "得分目标"),
-        /* 只显示已拿下的总分，不显示目标分数、不显示进度条 */
+        h("span", { style: { fontWeight: 600 } }, "Score goals"),
+        /* Show only total points earned; do not show target score or progress bar */
         h(
           "span",
           {
@@ -7475,7 +7477,7 @@ export const __dshPurgeDrill = (() => {
               marginLeft: 4,
             },
           },
-          "总分",
+          "Total score",
         ),
         h("span", { className: "rt-total" }, String(summary.achievedPoints)),
         h(
@@ -7483,13 +7485,13 @@ export const __dshPurgeDrill = (() => {
           {
             style: { fontSize: 13, color: "var(--dsw-alias-label-secondary)" },
           },
-          "分",
+          "pts",
         ),
-        h("span", { className: "rt-tag" }, summary.pointCount + " 个得分点"),
+        h("span", { className: "rt-tag" }, summary.pointCount + " score points"),
         h(
           "span",
           { className: "rt-tag" },
-          "命中 " + summary.countedHits + " 次",
+          "Hits " + summary.countedHits + " times",
         ),
         summary.selfCreatedHits
           ? h(
@@ -7497,9 +7499,9 @@ export const __dshPurgeDrill = (() => {
               {
                 className: "rt-tag rt-tag-warn",
                 title:
-                  "自己注册/自己创建的账号不算得分权限，只作过程记录（不计分、不占上限、不进报告）",
+                  "Self-registered/self-created accounts do not count as scored access; recorded for process only (not scored, no cap usage, excluded from reports)",
               },
-              "自建不计分 " + summary.selfCreatedHits,
+              "Self-created not counted " + summary.selfCreatedHits,
             )
           : null,
         summary.serviceCappedHits
@@ -7508,17 +7510,17 @@ export const __dshPurgeDrill = (() => {
               {
                 className: "rt-tag rt-tag-warn",
                 title:
-                  "账号权限与数据库权限按「同资产同端口」只算一次：该服务已拿满，这些重复命中不计分（只作留痕）",
+                  "Account and database privileges count only once per same asset and port: service cap reached, these duplicate hits are not counted (recorded only)",
               },
-              "服务已拿满不计分 " + summary.serviceCappedHits,
+              "Service cap reached not counted " + summary.serviceCappedHits,
             )
           : null,
         h("div", { className: "rt-spacer" }),
-        h("button", { className: "rt-btn", onClick: startNew }, "+ 新增得分点"),
+        h("button", { className: "rt-btn", onClick: startNew }, "+ Add score point"),
         h(
           "button",
           { className: "rt-btn", disabled: busy, onClick: load },
-          busy ? "刷新中…" : "刷新",
+          busy ? "Refreshing…" : "Refresh",
         ),
       ),
       msg
@@ -7539,8 +7541,8 @@ export const __dshPurgeDrill = (() => {
                 borderBottom: "1px solid var(--dsw-alias-border-l1)",
               },
             },
-            /* 内置得分点（builtin）：分值 / 名称 / 分类由《得分规则》锁定，输入框置灰。
-             可改的只有「启用 / 停用」。这样界面上就不会再出现「改完提示已保存、刷新变回去」的困惑。 */
+            /* Built-in score points (builtin): score / name / category are locked by "Scoring Rules"; inputs are disabled.
+             Only "Enable / Disable" can be changed. */
             form.builtin
               ? h(
                   "div",
@@ -7548,14 +7550,14 @@ export const __dshPurgeDrill = (() => {
                   h(
                     "b",
                     null,
-                    "内置得分点（来自《突破入侵类得分规则（合并版）》）",
+                    "Built-in score point (from \"Intrusion Scoring Rules (Merged)\")",
                   ),
                   h(
                     "div",
                     { style: { marginTop: 3 } },
-                    "分值、上限、计分口径与名称由规则锁定 —— 同一条规则的上限按组内所有得分点累计，" +
-                      "单独改分值会让一条命中吃掉整组上限。这里可以改「启用 / 停用」；" +
-                      "要自定义分值时请返回上一屏点「+ 新增得分点」。",
+                    "Score, cap, criteria, and name are locked by rules — a rule's cap is cumulative across all score points in the group, " +
+                      "changing one score alone would let a single hit consume the group cap. You can change \"Enable / Disable\" here; " +
+                      "to customize scores, go back and click \"+ Add score point\".",
                   ),
                   form.src !== null && form.src !== undefined
                     ? h(
@@ -7566,12 +7568,12 @@ export const __dshPurgeDrill = (() => {
                             color: "var(--dsw-alias-label-secondary)",
                           },
                         },
-                        "规则原文序号 " +
+                        "Rule number " +
                           form.src +
-                          (form.rule ? "　·　上限分组 rule=" + form.rule : "") +
+                          (form.rule ? " · Cap group rule=" + form.rule : "") +
                           (form.cap > 0
-                            ? "　·　上限 " + form.cap + " 分"
-                            : "　·　不设上限"),
+                            ? " · Cap " + form.cap + " pts"
+                            : " · No cap"),
                       )
                     : null,
                 )
@@ -7581,30 +7583,30 @@ export const __dshPurgeDrill = (() => {
               { className: "rt-score-form" },
               h("input", {
                 className: "rt-input",
-                placeholder: "名称（必填）",
+                placeholder: "Name (required)",
                 value: form.name,
                 readOnly: form.builtin === true,
-                title: form.builtin ? "内置得分点的名称由规则锁定" : "",
+                title: form.builtin ? "Name is locked by rules for built-in score points" : "",
                 onChange: (e) => setField("name", e.target.value),
               }),
               h("input", {
                 className: "rt-input",
-                placeholder: "分类，如 账号权限",
+                placeholder: "Category, e.g. Account privilege",
                 value: form.category,
                 readOnly: form.builtin === true,
                 title: form.builtin
-                  ? "内置得分点的分类由规则锁定（决定它属于面板哪一组）"
+                  ? "Category is locked by rules for built-in score points (determines which panel group it belongs to)"
                   : "",
                 onChange: (e) => setField("category", e.target.value),
               }),
               h("input", {
                 className: "rt-input",
                 type: "number",
-                placeholder: "单次分值",
+                placeholder: "Points per hit",
                 readOnly: form.builtin === true,
                 title: form.builtin
-                  ? "内置得分点的分值由《得分规则》锁定，不能在这里改"
-                  : "这一类的单次分值；每命中一次就按这个分值累加（受该条规则上限约束）",
+                  ? "Score is locked by \"Scoring Rules\" for built-in score points and cannot be changed here"
+                   : "Points per hit for this type; each hit adds this score (subject to the rule cap)",
                 value: form.points,
                 onChange: (e) => setField("points", Number(e.target.value)),
               }),
@@ -7615,8 +7617,8 @@ export const __dshPurgeDrill = (() => {
                   value: form.enabled ? "1" : "0",
                   onChange: (e) => setField("enabled", e.target.value === "1"),
                 },
-                h("option", { value: "1" }, "启用"),
-                h("option", { value: "0" }, "停用"),
+                h("option", { value: "1" }, "Enabled"),
+                h("option", { value: "0" }, "Disabled"),
               ),
             ),
             h("input", {
@@ -7626,10 +7628,10 @@ export const __dshPurgeDrill = (() => {
                 marginBottom: 6,
                 boxSizing: "border-box",
               },
-              placeholder: "得分条件说明",
+              placeholder: "Scoring criteria description",
               value: form.description,
               readOnly: form.builtin === true,
-              title: form.builtin ? "内置得分点的条款正文由规则锁定" : "",
+              title: form.builtin ? "Criteria text is locked by rules for built-in score points" : "",
               onChange: (e) => setField("description", e.target.value),
             }),
             h(
@@ -7642,7 +7644,7 @@ export const __dshPurgeDrill = (() => {
                   disabled: busy,
                   onClick: save,
                 },
-                "保存",
+                "Save",
               ),
               form.id
                 ? form.builtin
@@ -7652,20 +7654,20 @@ export const __dshPurgeDrill = (() => {
                         className: "rt-btn",
                         disabled: true,
                         title:
-                          "内置得分点不能删除：删掉会让面板缺一条规则、报告少一类成果（下次启动还会自动补回来）。要让它不参与计分请改用「停用」。",
+                          "Built-in score points cannot be deleted: removing one would leave a missing rule and omit a result category from reports (it will be restored on next startup). To exclude it from scoring, use \"Disable\" instead.",
                       },
-                      "删除（内置项不可删）",
+                      "Delete (built-in items cannot be deleted)",
                     )
                   : h(
                       "button",
                       { className: "rt-btn", disabled: busy, onClick: remove },
-                      "删除",
+                      "Delete",
                     )
                 : null,
               h(
                 "button",
                 { className: "rt-btn", onClick: () => setForm(null) },
-                "取消",
+                "Cancel",
               ),
             ),
           )
@@ -7677,27 +7679,27 @@ export const __dshPurgeDrill = (() => {
           "div",
           { className: "rt-score-row head" },
           h("span", null, ""),
-          h("span", null, "分值"),
-          h("span", null, "得分点（按分值从低到高）"),
-          h("span", null, "命中 / 上限"),
-          h("span", { style: { textAlign: "right" } }, "已得分"),
+          h("span", null, "Points"),
+          h("span", null, "Score points (low to high)"),
+          h("span", null, "Hits / Cap"),
+          h("span", { style: { textAlign: "right" } }, "Points earned"),
         ),
         rows,
         !items.length
           ? h(
               "div",
               { className: "rt-empty" },
-              "暂无得分点，点右上角「新增得分点」",
+              "No score points yet; click \"+ Add score point\" in the top right",
             )
           : null,
       ),
     );
   }
 
-  /* ---------------------------------------------------------- 折叠底座 */
+  /* ---------------------------------------------------------- Collapse base */
   /**
-   * 折叠状态按「页签 + 靶标」持久化到 localStorage，切页签/刷新后保持不变。
-   * 只记录用户显式点过的键；没点过的用调用方给的默认值。
+   * Collapse state is persisted to localStorage by "tab + engagement" and remains unchanged after switching tabs/refreshing.
+   * Only keys explicitly toggled by the user are recorded; untouched keys use the caller's default.
    */
   const COLLAPSE_KEY = "rt-collapse:";
   const collapseLoad = (prefix) => {
@@ -7713,11 +7715,11 @@ export const __dshPurgeDrill = (() => {
     try {
       window.localStorage.setItem(COLLAPSE_KEY + prefix, JSON.stringify(value));
     } catch (e) {
-      /* 隐私模式等 */
+      /* Privacy mode, etc. */
     }
   };
 
-  /** 一个页签一个 hook：isOpen(key, defaultOpen) / toggle(key, defaultOpen) / setAll(keys, open) */
+  /** One hook per tab: isOpen(key, defaultOpen) / toggle(key, defaultOpen) / setAll(keys, open) */
   function useCollapse(prefix) {
     const [state, setState] = React.useState(() => collapseLoad(prefix));
     React.useEffect(() => {
@@ -7744,8 +7746,8 @@ export const __dshPurgeDrill = (() => {
   }
 
   /**
-   * 统一折叠头（L1）：▾ 固定在最左、标题加粗、计数紧跟、右侧放时间或操作，
-   * 内容缩进 12px 并带一条竖引导线。always=true 表示"常显"（不可折叠）。
+   * Unified collapse header (L1): chevron fixed on the left, bold title, count follows, time or actions on the right,
+   * content indented 12px with a vertical guide line. always=true means "always visible" (not collapsible).
    */
   function Section(props) {
     const always = props.always === true;
@@ -7790,7 +7792,7 @@ export const __dshPurgeDrill = (() => {
     );
   }
 
-  /** 长文本折叠（L3）：固定预览高度 + 渐隐 + 展开/复制。 */
+  /** Long text collapse (L3): fixed preview height + fade + expand/copy. */
   function Clip(props) {
     const [open, setOpen] = React.useState(false);
     const text = String(
@@ -7817,7 +7819,7 @@ export const __dshPurgeDrill = (() => {
               copyText(text);
             },
           },
-          "复制",
+          "Copy",
         ),
         h(
           "button",
@@ -7829,26 +7831,26 @@ export const __dshPurgeDrill = (() => {
               setOpen((v) => !v);
             },
           },
-          open ? "收起" : "展开",
+          open ? "Collapse" : "Expand",
         ),
       ),
       h("div", { className: "rt-clip-body" }, text),
     );
   }
 
-  /* ---------------------------------------------------------- 当前测试（实时） */
+  /* ---------------------------------------------------------- Current testing (live) */
   const TEST_STATUS_LABEL = {
-    untested: "未测试",
-    testing: "测试中",
-    tested: "已测试",
-    blocked: "被封禁",
-    abandoned: "已放弃",
-    no_surface: "无攻击面",
+    untested: "Untested",
+    testing: "Testing",
+    tested: "Tested",
+    blocked: "Blocked",
+    abandoned: "Abandoned",
+    no_surface: "No attack surface",
   };
 
   /**
-   * 当前测试页：agent 正在打哪台、打到哪一步、还有什么在排队。
-   * 5 秒轮询自动刷新；三个区块可折叠，其中「正在测」始终完整展开。
+   * Current testing page: which assets the agent is attacking, what step it is on, and what is queued.
+   * Auto-refreshes every 5 seconds; three sections are collapsible, with "Testing" always fully expanded.
    */
   function TestingTab(props) {
     const eng = props.engagement;
@@ -7857,11 +7859,11 @@ export const __dshPurgeDrill = (() => {
     const [err, setErr] = React.useState(null);
     const [at, setAt] = React.useState(null);
     const [auto, setAuto] = React.useState(true);
-    /* 折叠状态按「页签 + 靶标」记忆；正在测永远常显，不参与折叠 */
+    /* Collapse state is remembered by "tab + engagement"; Testing is always visible and not collapsible */
     const collapse = useCollapse("testing:" + eng);
 
-    /* 5 秒轮询要有在途守卫：网络慢或后端卡住时，请求会越堆越多、
-         而且旧响应回来会覆盖新状态（界面上表现为数字来回跳）。 */
+    /* 5-second polling needs an in-flight guard: when the network is slow or backend stalls, requests pile up,
+         and old responses can overwrite new state (appearing as numbers jumping back and forth). */
     const inflight = React.useRef(false);
     const seq = React.useRef(0);
     const load = () => {
@@ -7871,9 +7873,9 @@ export const __dshPurgeDrill = (() => {
       api({ op: "activeTests", engagement: eng, limit: 20 })
         .then(
           (r) => {
-            if (my !== seq.current) return; /* 切了靶标：这条已经过期，丢掉 */
+            if (my !== seq.current) return; /* Engagement switched: this response is stale, discard it */
             if (!r || r.ok === false) {
-              setErr((r && r.error) || "读取失败");
+              setErr((r && r.error) || "Read failed");
               return;
             }
             setErr(null);
@@ -7903,7 +7905,7 @@ export const __dshPurgeDrill = (() => {
     const queue = (data && data.queue) || [];
     const stats = (data && data.stats) || {};
 
-    /* 一台资产一张卡：一眼看清"打的是谁、打到哪、拿到什么" */
+    /* One card per asset: see at a glance who is being attacked, progress, and what was gained */
     const card = (a, past) => {
       const chips = [];
       chips.push(
@@ -7915,7 +7917,7 @@ export const __dshPurgeDrill = (() => {
               "rt-scope rt-scope-" +
               (a.scope === "internal" ? "internal" : "external"),
           },
-          a.scope === "internal" ? "内网" : "外网",
+          a.scope === "internal" ? "Internal network" : "External network",
         ),
       );
       if (a.segment_cidr)
@@ -7927,7 +7929,7 @@ export const __dshPurgeDrill = (() => {
           h(
             "span",
             { key: "p", className: "rt-tag rt-tag-active" },
-            "开放 " + a.open_ports + " 端口",
+            "Open " + a.open_ports + " ports",
           ),
         );
       if (a.vulns)
@@ -7935,7 +7937,7 @@ export const __dshPurgeDrill = (() => {
           h(
             "span",
             { key: "v", className: "rt-tag rt-tag-live" },
-            "已确认漏洞 " + a.vulns,
+            "Confirmed vulns " + a.vulns,
           ),
         );
       if (a.webshells)
@@ -7951,12 +7953,12 @@ export const __dshPurgeDrill = (() => {
           h(
             "span",
             { key: "t", className: "rt-tag rt-tag-passive" },
-            "隧道 " + a.tunnels,
+            "Tunnels " + a.tunnels,
           ),
         );
       if (a.priority)
         chips.push(
-          h("span", { key: "pr", className: "rt-tag" }, "易打 " + a.priority),
+          h("span", { key: "pr", className: "rt-tag" }, "Ease " + a.priority),
         );
       if (a.blocked_count)
         chips.push(
@@ -7967,7 +7969,7 @@ export const __dshPurgeDrill = (() => {
               className: "rt-tag",
               style: { color: "#ef4444", borderColor: "#ef444455" },
             },
-            "被封 " + a.blocked_count + " 次",
+            "Blocked " + a.blocked_count + " times",
           ),
         );
       const noteLines = a.test_notes
@@ -8010,14 +8012,14 @@ export const __dshPurgeDrill = (() => {
           ? h(
               "div",
               { className: "rt-atest-meta" },
-              "测试面：" + a.test_surface,
+              "Test surface: " + a.test_surface,
             )
           : null,
         a.potential
-          ? h("div", { className: "rt-atest-meta" }, "预期得分：" + a.potential)
+          ? h("div", { className: "rt-atest-meta" }, "Expected score: " + a.potential)
           : null,
         noteLines.length
-          ? h(Clip, { label: "测试记录", text: noteLines.join("\n") })
+          ? h(Clip, { label: "Test notes", text: noteLines.join("\n") })
           : null,
       );
     };
@@ -8032,11 +8034,11 @@ export const __dshPurgeDrill = (() => {
     const conclusion = h(
       "div",
       { className: "rt-concl" },
-      concl("测试中", stats.testing, "live"),
-      concl("待测", stats.untested, ""),
-      concl("已测", stats.tested, ""),
-      concl("放弃", (stats.abandoned || 0) + (stats.blocked || 0), ""),
-      concl("无攻击面", stats.no_surface, ""),
+      concl("Testing", stats.testing, "live"),
+      concl("Pending", stats.untested, ""),
+      concl("Tested", stats.tested, ""),
+      concl("Abandoned", (stats.abandoned || 0) + (stats.blocked || 0), ""),
+      concl("No attack surface", stats.no_surface, ""),
       h("div", { className: "rt-spacer" }),
       at
         ? h(
@@ -8047,7 +8049,7 @@ export const __dshPurgeDrill = (() => {
                 color: "var(--dsw-alias-label-secondary)",
               },
             },
-            "更新于 " + at.toLocaleTimeString("zh-CN", { hour12: false }),
+            "Updated at " + at.toLocaleTimeString("en-US", { hour12: false }),
           )
         : null,
       h(
@@ -8055,38 +8057,38 @@ export const __dshPurgeDrill = (() => {
         {
           className: "rt-btn",
           style: { padding: "0 7px", fontSize: 11 },
-          title: "展开最近动过与待测队列",
+          title: "Expand recently active and pending queue",
           onClick: () =>
             collapse.setAll(
               ["testing:" + eng, "recent:" + eng, "queue:" + eng],
               true,
             ),
         },
-        "全部展开",
+        "Expand all",
       ),
       h(
         "button",
         {
           className: "rt-btn",
           style: { padding: "0 7px", fontSize: 11 },
-          title: "只留正在测",
+          title: "Show only testing",
           onClick: () =>
             collapse.setAll(
               ["testing:" + eng, "recent:" + eng, "queue:" + eng],
               false,
             ),
         },
-        "全部收起",
+        "Collapse all",
       ),
       h(
         "button",
         {
           className: "rt-btn" + (auto ? " rt-btn-primary" : ""),
           style: { padding: "0 7px", fontSize: 11 },
-          title: "每 5 秒自动刷新",
+          title: "Auto-refresh every 5 seconds",
           onClick: () => setAuto((x) => !x),
         },
-        auto ? "实时 · 5s" : "已暂停",
+        auto ? "Live · 5s" : "Paused",
       ),
       h(
         "button",
@@ -8095,23 +8097,23 @@ export const __dshPurgeDrill = (() => {
           style: { padding: "0 7px", fontSize: 11 },
           onClick: load,
         },
-        "刷新",
+        "Refresh",
       ),
     );
 
     const body = [];
-    /* 正在测：常显，完整展开（不可折叠） */
+    /* Testing: always visible, fully expanded (not collapsible) */
     body.push(
       h(
         Section,
         {
           key: "testing",
           tone: "test",
-          title: "正在测",
-          count: testing.length + " 台",
+          title: "Testing",
+          count: testing.length + " hosts",
           sub: testing.length
-            ? "agent 正在打这些资产"
-            : "agent 开始测某台资产后会实时出现在这里",
+            ? "Agent is attacking these assets"
+             : "Assets will appear here in real time when the agent starts testing them",
           open: collapse.isOpen("testing:" + eng, true),
           onToggle: collapse.toggle("testing:" + eng, true),
         },
@@ -8120,40 +8122,40 @@ export const __dshPurgeDrill = (() => {
           : h(
               "div",
               { className: "rt-atest-meta", style: { paddingBottom: 4 } },
-              "当前没有资产处于「测试中」",
+              "No assets are currently in \"Testing\"",
             ),
       ),
     );
 
-    /* 最近动过（默认折叠，可记忆） */
+    /* Recently active (collapsed by default, remembered) */
     body.push(
       h(
         Section,
         {
           key: "recent",
           tone: "past",
-          title: "最近动过",
-          count: recent.length + " 台",
-          sub: "已测过的资产",
+          title: "Recently active",
+          count: recent.length + " hosts",
+          sub: "Assets that have been tested",
           open: collapse.isOpen("recent:" + eng, false),
           onToggle: collapse.toggle("recent:" + eng, false),
         },
         recent.length
           ? recent.map((a) => card(a, true))
-          : h("div", { className: "rt-atest-meta" }, "暂无"),
+          : h("div", { className: "rt-atest-meta" }, "None"),
       ),
     );
 
-    /* 待测队列（默认折叠，可记忆） */
+    /* Pending queue (collapsed by default, remembered) */
     body.push(
       h(
         Section,
         {
           key: "queue",
           tone: "queue",
-          title: "待测队列",
-          count: (data ? data.untested || 0 : 0) + " 台",
-          sub: "按易打性与端口数排出先打哪几台",
+          title: "Pending queue",
+          count: (data ? data.untested || 0 : 0) + " hosts",
+          sub: "Prioritized by exploitability and port count",
           open: collapse.isOpen("queue:" + eng, false),
           onToggle: collapse.toggle("queue:" + eng, false),
         },
@@ -8168,10 +8170,10 @@ export const __dshPurgeDrill = (() => {
                     className: "rt-atest-meta",
                     style: { paddingTop: 4 },
                   },
-                  "完整清单（含筛选与排序）见「资产测绘」页",
+                  "See the \"Asset mapping\" page for the full list (with filtering and sorting)",
                 ),
               ])
-          : h("div", { className: "rt-atest-meta" }, "没有待测资产"),
+          : h("div", { className: "rt-atest-meta" }, "No pending assets"),
       ),
     );
 
@@ -8181,7 +8183,7 @@ export const __dshPurgeDrill = (() => {
       conclusion,
       err ? h("div", { className: "rt-err" }, err) : null,
       data === null && !err
-        ? h("div", { className: "rt-empty" }, "加载中…")
+        ? h("div", { className: "rt-empty" }, "Loading…")
         : null,
       h(
         "div",
@@ -8191,10 +8193,10 @@ export const __dshPurgeDrill = (() => {
     );
   }
 
-  /* ---------------------------------------------------------- 会话与入口（WebShell / 隧道） */
+  /* ---------------------------------------------------------- Sessions and entry points (WebShell / Tunnel) */
   /**
-   * 打内网最容易出的问题：拿到 WebShell 或隧道之后忘了登记，过一会儿就"忘了还有入口可用"。
-   * 这个页签把事实库里的 WebShell 与隧道集中展示，带连通状态，并可一键让 host 侧实测。
+   * A common problem in internal network operations: forgetting to register WebShells or tunnels, then later "forgetting there are available entry points".
+   * This tab centralizes WebShells and tunnels from the fact store, shows connectivity status, and allows one-click host-side checks.
    */
   function SessionTab(props) {
     const eng = props.engagement;
@@ -8210,7 +8212,7 @@ export const __dshPurgeDrill = (() => {
       api({ op: "sessions", engagement: eng }).then(
         (r) => {
           if (!r || r.ok === false) {
-            setErr((r && r.error) || "读取失败");
+            setErr((r && r.error) || "Read failed");
             return;
           }
           setErr(null);
@@ -8228,7 +8230,7 @@ export const __dshPurgeDrill = (() => {
         (r) => {
           setBusy(false);
           if (!r || r.ok === false) {
-            setMsg({ err: (r && r.error) || "检测失败" });
+            setMsg({ err: (r && r.error) || "Check failed" });
             load();
             return;
           }
@@ -8240,11 +8242,11 @@ export const __dshPurgeDrill = (() => {
           ).length;
           setMsg({
             ok:
-              "检测完成：WebShell 在线 " +
+              "Check complete: WebShells online " +
               on +
               "/" +
               (r.webshells || []).length +
-              "，隧道可用 " +
+              ", tunnels available " +
               act +
               "/" +
               (r.tunnels || []).length,
@@ -8258,7 +8260,7 @@ export const __dshPurgeDrill = (() => {
       );
     };
 
-    /* 只有真的写进剪贴板才把按钮点亮成「已复制」；失败时如实报错 */
+    /* Only show "Copied" when actually written to clipboard; report errors truthfully on failure */
     const copy = (key, text) =>
       copyWithFeedback(text, text, (okFlag, message) => {
         if (!okFlag) {
@@ -8275,7 +8277,7 @@ export const __dshPurgeDrill = (() => {
         op: "updateTunnel",
         engagement: eng,
         id: t.id,
-        patch: { status: status, check_note: "界面手动标记" },
+        patch: { status: status, check_note: "Manually marked in UI" },
       }).then(
         () => load(),
         (e) => setMsg({ err: String((e && e.message) || e) }),
@@ -8287,7 +8289,7 @@ export const __dshPurgeDrill = (() => {
         op: "updateWebshell",
         engagement: eng,
         id: w.id,
-        patch: { status: status, check_note: "界面手动标记" },
+        patch: { status: status, check_note: "Manually marked in UI" },
       }).then(
         () => load(),
         (e) => setMsg({ err: String((e && e.message) || e) }),
@@ -8307,7 +8309,7 @@ export const __dshPurgeDrill = (() => {
               ? "rt-dot-unk"
               : "rt-dot-off",
       });
-    /* 卡片里统一用「标签 + 值」两列，长文本自动换行 —— 比一行点分隔好扫读 */
+    /* Cards use unified "label + value" two-column layout with wrapping for long text — easier to scan than dot-separated single lines */
     const fact = (label, value) =>
       h(
         "div",
@@ -8315,11 +8317,11 @@ export const __dshPurgeDrill = (() => {
         h("b", null, label),
         h("span", null, value),
       );
-    /* 交付要求：马必须是冰蝎/哥斯拉加密马（用户才连得上），内网必须走 suo5 隧道 */
+    /* Delivery requirement: webshell must be Behinder/Godzilla encrypted (so users can connect); internal network must use suo5 tunnel */
     const isEncryptedShell = (t) =>
-      /behinder|godzilla|冰蝎|哥斯拉/i.test(String(t || ""));
+      /behinder|godzilla/i.test(String(t || ""));
     const isSuo5 = (t) => /suo5/i.test(String(t || ""));
-    /* 提示条：只留一句结论 + 可展开的做法（原来是把三段长解释平铺，正文全被淹掉） */
+    /* Tip bar: one conclusion + expandable instructions (previously three long explanations were flattened and overwhelmed the content) */
     const hint = (key, title, detail) =>
       h(
         "div",
@@ -8328,7 +8330,7 @@ export const __dshPurgeDrill = (() => {
         h(
           "details",
           { className: "rt-sess-fold", style: { marginTop: 3 } },
-          h("summary", null, "怎么做（点击展开）"),
+          h("summary", null, "How to do it (click to expand)"),
           h("div", { style: { marginTop: 4 } }, detail),
         ),
       );
@@ -8339,11 +8341,11 @@ export const __dshPurgeDrill = (() => {
       hints.push(
         hint(
           "h1",
-          "有 " +
+          "There are " +
             badShells.length +
-            " 个入口不是冰蝎马/哥斯拉马（用户连不上，不算可交付入口）",
-          "用技能 webshell-toolkit 重新上传冰蝎马（behinder）或哥斯拉马（godzilla），" +
-            "并把 shell_type + pass_key 写进 redteam_webshell_add。只作临时中转的可在备注里写明。",
+            " entries that are not Behinder/Godzilla webshells (users cannot connect; not deliverable entry points)",
+          "Use the webshell-toolkit skill to re-upload a Behinder or Godzilla webshell, " +
+            "and record shell_type + pass_key via redteam_webshell_add. If used only as a temporary relay, note it in remarks.",
         ),
       );
     }
@@ -8351,11 +8353,11 @@ export const __dshPurgeDrill = (() => {
       hints.push(
         hint(
           "h3",
-          "现有 " +
+          "Existing " +
             tunnels.length +
-            ' 条通道都不算"跨越靶标边界"（不算边界/内网突破）',
-          "自己的 VPS / 自建服务器上开的 socks5、frp、代理不算隧道。必须是目标侧发起的通道：" +
-            "目标反弹 shell 到我方、目标上跑 frp/Stowaway 客户端、或经目标 WebShell 建的 suo5/HTTP 隧道；登记时用 entry_kind 说明。",
+            ' channels do not count as "crossing the engagement boundary" (not a boundary/internal breach)',
+          "socks5, frp, or proxies opened on your own VPS/self-hosted server do not count as tunnels. Channels must be initiated from the target side: " +
+            "target reverse shell to us, frp/Stowaway client running on target, or suo5/HTTP tunnel via target WebShell; specify with entry_kind when registering.",
         ),
       );
     }
@@ -8366,10 +8368,10 @@ export const __dshPurgeDrill = (() => {
       hints.push(
         hint(
           "h2",
-          "还没有可用的 suo5 隧道（打进内网的标准通道）",
-          "用技能 suo5-tunnel 通过上面的 WebShell 建 socks5 隧道，再 redteam_tunnel_add" +
-            "（kind=suo5、listen=127.0.0.1:1080、entry=WebShell URL、reach=可达网段）登记，" +
-            "最后点「检测连通性」确认 status=active。",
+          "No available suo5 tunnel yet (standard channel for internal network access)",
+          "Use the suo5-tunnel skill to create a socks5 tunnel through the WebShell above, then register with redteam_tunnel_add" +
+            "(kind=suo5, listen=127.0.0.1:1080, entry=WebShell URL, reach=reachable subnets), " +
+            "then click \"Check connectivity\" to confirm status=active.",
         ),
       );
     }
@@ -8390,14 +8392,14 @@ export const __dshPurgeDrill = (() => {
           ),
           isEncryptedShell(w.shell_type)
             ? null
-            : h("span", { className: "rt-tag rt-tag-warn" }, "用户连不上"),
+            : h("span", { className: "rt-tag rt-tag-warn" }, "User cannot connect"),
           w.privilege ? h("span", { className: "rt-tag" }, w.privilege) : null,
           h("div", { className: "rt-spacer" }),
           copied === "cmd" + w.id
             ? h(
                 "span",
                 { className: "rt-tag", style: { color: "#10b981" } },
-                "已复制",
+                "Copied",
               )
             : h(
                 "button",
@@ -8406,7 +8408,7 @@ export const __dshPurgeDrill = (() => {
                   style: { padding: "0 6px", fontSize: 11 },
                   onClick: () => copy("cmd" + w.id, 'curl -s "' + w.url + '"'),
                 },
-                "复制 URL",
+                "Copy URL",
               ),
           h(
             "button",
@@ -8415,38 +8417,38 @@ export const __dshPurgeDrill = (() => {
               style: { padding: "0 6px", fontSize: 11 },
               onClick: () => markShell(w, "offline"),
             },
-            "标记失效",
+            "Mark invalid",
           ),
         ),
         h(
           "div",
           { className: "rt-sess-facts" },
           fact(
-            "类型",
+            "Type",
             isEncryptedShell(w.shell_type)
-              ? "加密马（冰蝎/哥斯拉，用户可直连）"
-              : "非加密马 —— 用户连不上，仅可作临时中转",
+              ? "Encrypted webshell (Behinder/Godzilla, user can connect directly)"
+              : "Non-encrypted webshell — user cannot connect, temporary relay only",
           ),
           w.pass_key
-            ? fact("连接口令", h("span", { className: "rt-mono" }, w.pass_key))
+            ? fact("Connection password", h("span", { className: "rt-mono" }, w.pass_key))
             : null,
-          w.asset_ip ? fact("所在资产", w.asset_ip) : null,
-          w.privilege ? fact("权限", w.privilege) : null,
+          w.asset_ip ? fact("Asset", w.asset_ip) : null,
+          w.privilege ? fact("Privilege", w.privilege) : null,
           w.secret_ref
             ? fact(
-                "凭据引用",
+                "Credential reference",
                 h("span", { className: "rt-mono" }, w.secret_ref),
               )
             : null,
           fact(
-            "最后检测",
-            (w.last_check ? fmt(w.last_check) : "未检测") +
+            "Last check",
+            (w.last_check ? fmt(w.last_check) : "Not checked") +
               (w.latency_ms !== null && w.latency_ms !== undefined
                 ? "（" + w.latency_ms + "ms）"
                 : ""),
           ),
-          w.check_note ? fact("检测说明", w.check_note) : null,
-          w.note ? fact("备注", w.note) : null,
+          w.check_note ? fact("Check note", w.check_note) : null,
+          w.note ? fact("Notes", w.note) : null,
         ),
       ),
     );
@@ -8454,10 +8456,10 @@ export const __dshPurgeDrill = (() => {
     const tunnelCards = tunnels.map((t) => {
       const proxy = t.listen ? "socks5://" + t.listen : "";
       const gogoCmd = t.listen
-        ? "./gogo -i <内网CIDR> -m ss --ping -p top2,win,db --proxy " + proxy
+        ? "./gogo -i <internal-CIDR> -m ss --ping -p top2,win,db --proxy " + proxy
         : "";
       const fscanCmd = t.listen
-        ? "./fscan -h <内网CIDR> -np -nobr -nopoc -socks5 " +
+        ? "./fscan -h <internal-CIDR> -np -nobr -nopoc -socks5 " +
           t.listen +
           " -o intranet.txt"
         : "";
@@ -8471,7 +8473,7 @@ export const __dshPurgeDrill = (() => {
           h(
             "span",
             { className: "rt-sess-title" },
-            t.listen || "(未填监听地址)",
+            t.listen || "(No listen address)",
           ),
           h("span", { className: "rt-tag rt-tag-passive" }, t.kind || "tunnel"),
           isSuo5(t.kind)
@@ -8479,9 +8481,9 @@ export const __dshPurgeDrill = (() => {
             : h(
                 "span",
                 { className: "rt-tag rt-tag-warn" },
-                "非 suo5 标准通道",
+                "Non-standard suo5 channel",
               ),
-          /* 只有跨越靶标边界的通道才算突破凭证（自己 VPS/自建服务器上开的不算） */
+          /* Only channels crossing the engagement boundary count as breach evidence (channels opened on your own VPS/self-hosted server do not count) */
           t.legit === true
             ? h(
                 "span",
@@ -8489,7 +8491,7 @@ export const __dshPurgeDrill = (() => {
                   className: "rt-tag rt-tag-live",
                   title: t.entry_kind_label || "",
                 },
-                "目标侧通道",
+                "Target-side channel",
               )
             : t.legit === false
               ? h(
@@ -8497,21 +8499,21 @@ export const __dshPurgeDrill = (() => {
                   {
                     className: "rt-tag rt-tag-warn",
                     title:
-                      "只在自己 VPS/自建服务器上开的通道，没有碰到目标 —— 不算边界突破/内网突破",
+                      "Channel opened only on your own VPS/self-hosted server, does not reach target — not a boundary/internal breach",
                   },
-                  "不算突破",
+                  "Not a breach",
                 )
               : h(
                   "span",
                   {
                     className: "rt-tag",
                     title:
-                      "未声明 entry_kind：请说明目标侧的那一端是什么（target-outbound / target-http / target-agent）",
+                      "entry_kind not declared: specify what the target-side endpoint is (target-outbound / target-http / target-agent)",
                   },
-                  "待确认",
+                  "Pending confirmation",
                 ),
           t.reach
-            ? h("span", { className: "rt-tag" }, "可达 " + t.reach)
+            ? h("span", { className: "rt-tag" }, "Reachable " + t.reach)
             : null,
           h("div", { className: "rt-spacer" }),
           h(
@@ -8521,7 +8523,7 @@ export const __dshPurgeDrill = (() => {
               style: { padding: "0 6px", fontSize: 11 },
               onClick: () => copy("sock" + t.id, t.listen || ""),
             },
-            copied === "sock" + t.id ? "已复制" : "复制地址",
+            copied === "sock" + t.id ? "Copied" : "Copy address",
           ),
           t.status === "active"
             ? h(
@@ -8531,7 +8533,7 @@ export const __dshPurgeDrill = (() => {
                   style: { padding: "0 6px", fontSize: 11 },
                   onClick: () => markTunnel(t, "down"),
                 },
-                "标记失效",
+                "Mark invalid",
               )
             : h(
                 "button",
@@ -8540,60 +8542,60 @@ export const __dshPurgeDrill = (() => {
                   style: { padding: "0 6px", fontSize: 11 },
                   onClick: () => markTunnel(t, "active"),
                 },
-                "标记可用",
+                "Mark active",
               ),
         ),
         h(
           "div",
           { className: "rt-sess-facts" },
-          fact("目标侧入口", t.entry || "未登记"),
+          fact("Target-side entry", t.entry || "Not registered"),
           fact(
-            "跨越边界",
+            "Crosses boundary",
             t.legit === true
               ? h(
                   "span",
                   { className: "rt-tag rt-tag-live" },
-                  t.entry_kind_label || t.entry_kind || "已确认目标侧",
+                  t.entry_kind_label || t.entry_kind || "Target side confirmed",
                 )
               : t.legit === false
                 ? h(
                     "span",
                     { className: "rt-tag rt-tag-warn" },
-                    "不算突破（只在自己 VPS 上开代理）",
+                    "Not a breach (proxy only on your own VPS)",
                   )
                 : h(
                     "span",
                     { className: "rt-tag" },
-                    "未声明 entry_kind，待确认",
+                    "entry_kind not declared, pending confirmation",
                   ),
           ),
-          t.reach ? fact("可达网段", t.reach) : null,
-          t.asset_ip ? fact("所在资产", t.asset_ip) : null,
+          t.reach ? fact("Reachable subnets", t.reach) : null,
+          t.asset_ip ? fact("Asset", t.asset_ip) : null,
           fact(
-            "最后检测",
-            (t.last_check ? fmt(t.last_check) : "未检测") +
+            "Last check",
+            (t.last_check ? fmt(t.last_check) : "Not checked") +
               (t.latency_ms !== null && t.latency_ms !== undefined
                 ? "（" + t.latency_ms + "ms）"
                 : ""),
           ),
-          t.check_note ? fact("检测说明", t.check_note) : null,
-          t.note ? fact("备注", t.note) : null,
+          t.check_note ? fact("Check note", t.check_note) : null,
+          t.note ? fact("Notes", t.note) : null,
         ),
-        /* 命令默认折叠：卡片首要信息是"这条通道能不能用、通向哪"，命令按需展开 */
+        /* Commands collapsed by default: primary info is whether the channel works and where it leads; expand commands on demand */
         t.command
           ? h(
               "details",
               { className: "rt-sess-fold" },
-              h("summary", null, "建立命令（点击展开 / 复制）"),
+              h("summary", null, "Setup command (click to expand / copy)"),
               h(
                 "div",
                 Object.assign(
-                  { className: "rt-code", title: "点击复制" },
+                  { className: "rt-code", title: "Click to copy" },
                   clickable(() => copy("c" + t.id, t.command), {
-                    label: "复制命令",
+                    label: "Copy command",
                   }),
                 ),
-                copied === "c" + t.id ? "已复制" : t.command,
+                copied === "c" + t.id ? "Copied" : t.command,
               ),
             )
           : null,
@@ -8601,19 +8603,19 @@ export const __dshPurgeDrill = (() => {
           ? h(
               "details",
               { className: "rt-sess-fold" },
-              h("summary", null, "走这条隧道扫描（gogo / fscan 命令）"),
+              h("summary", null, "Scan through this tunnel (gogo / fscan commands)"),
               h(
                 "div",
                 { className: "rt-sess-cmd" },
                 h(
                   "div",
                   Object.assign(
-                    { className: "rt-code", title: "点击复制" },
+                    { className: "rt-code", title: "Click to copy" },
                     clickable(() => copy("g" + t.id, gogoCmd), {
-                      label: "复制 gogo 命令",
+                      label: "Copy gogo command",
                     }),
                   ),
-                  copied === "g" + t.id ? "已复制" : gogoCmd,
+                  copied === "g" + t.id ? "Copied" : gogoCmd,
                 ),
                 h(
                   "div",
@@ -8621,13 +8623,13 @@ export const __dshPurgeDrill = (() => {
                     {
                       className: "rt-code",
                       style: { display: "block", marginTop: 3 },
-                      title: "点击复制",
+                      title: "Click to copy",
                     },
                     clickable(() => copy("f" + t.id, fscanCmd), {
-                      label: "复制 fscan 命令",
+                      label: "Copy fscan command",
                     }),
                   ),
-                  copied === "f" + t.id ? "已复制" : fscanCmd,
+                  copied === "f" + t.id ? "Copied" : fscanCmd,
                 ),
               ),
             )
@@ -8641,7 +8643,7 @@ export const __dshPurgeDrill = (() => {
       h(
         "div",
         { className: "rt-toolbar" },
-        h("span", { style: { fontWeight: 600 } }, "会话与入口"),
+        h("span", { style: { fontWeight: 600 } }, "Sessions and entry points"),
         h(
           "span",
           { className: "rt-tag" },
@@ -8649,19 +8651,19 @@ export const __dshPurgeDrill = (() => {
             (totals.webshellsOnline || 0) +
             "/" +
             (totals.webshells || 0) +
-            " 在线",
+            " online",
         ),
         h(
           "span",
           { className: "rt-tag" },
-          "隧道 " +
+          "Tunnels " +
             (totals.tunnelsActive || 0) +
             "/" +
             (totals.tunnels || 0) +
-            " 可用",
+            " available",
         ),
-        h("span", { className: "rt-tag" }, "凭据 " + (totals.credentials || 0)),
-        h("span", { className: "rt-tag" }, "访问会话 " + (totals.access || 0)),
+        h("span", { className: "rt-tag" }, "Credentials " + (totals.credentials || 0)),
+        h("span", { className: "rt-tag" }, "Access sessions " + (totals.access || 0)),
         h("div", { className: "rt-spacer" }),
         h(
           "button",
@@ -8670,9 +8672,9 @@ export const __dshPurgeDrill = (() => {
             disabled: busy,
             onClick: probe,
           },
-          busy ? "检测中…" : "检测连通性",
+          busy ? "Checking…" : "Check connectivity",
         ),
-        h("button", { className: "rt-btn", onClick: load }, "刷新"),
+        h("button", { className: "rt-btn", onClick: load }, "Refresh"),
       ),
       msg
         ? h(
@@ -8689,11 +8691,11 @@ export const __dshPurgeDrill = (() => {
           ? h(
               "div",
               { className: "rt-empty" },
-              h("div", null, "还没有登记任何 WebShell 或隧道。"),
+              h("div", null, "No WebShells or tunnels registered yet."),
               h(
                 "div",
                 { style: { marginTop: 6, fontSize: 12 } },
-                "拿到 WebShell 用 redteam_webshell_add；建好隧道用 redteam_tunnel_add（suo5 / socks5 / ssh -R）；之后智能体用 redteam_sessions 就能看到。",
+                "Register WebShells with redteam_webshell_add; register tunnels with redteam_tunnel_add (suo5 / socks5 / ssh -R); agents can then see them via redteam_sessions.",
               ),
             )
           : null,
@@ -8710,8 +8712,8 @@ export const __dshPurgeDrill = (() => {
               (totals.webshellsOnline || 0) +
               "/" +
               (totals.webshells || 0) +
-              " 在线",
-            sub: "已上线的可控入口",
+              " online",
+            sub: "Online controllable entry points",
             open: sessCollapse.isOpen("shells", true),
             onToggle: sessCollapse.toggle("shells", true),
           },
@@ -8724,7 +8726,7 @@ export const __dshPurgeDrill = (() => {
             : h(
                 "div",
                 { className: "rt-atest-meta" },
-                "暂无（拿到 WebShell 后用 redteam_webshell_add 登记）",
+                "None (register with redteam_webshell_add after obtaining a WebShell)",
               ),
         ),
         h(
@@ -8732,13 +8734,13 @@ export const __dshPurgeDrill = (() => {
           {
             key: "tunnels",
             tone: "test",
-            title: "内网隧道",
+            title: "Internal network tunnels",
             count:
               (totals.tunnelsActive || 0) +
               "/" +
               (totals.tunnels || 0) +
-              " 可用",
-            sub: "可直接给扫描器当代理用",
+              " available",
+            sub: "Can be used directly as scanner proxies",
             open: sessCollapse.isOpen("tunnels", true),
             onToggle: sessCollapse.toggle("tunnels", true),
           },
@@ -8751,17 +8753,17 @@ export const __dshPurgeDrill = (() => {
             : h(
                 "div",
                 { className: "rt-atest-meta" },
-                "暂无（建好隧道后用 redteam_tunnel_add 登记）",
+                "None (register with redteam_tunnel_add after creating a tunnel)",
               ),
         ),
       ),
     );
   }
 
-  /* ---------------------------------------------------------- 错误边界 */
+  /* ---------------------------------------------------------- Error boundary */
   /**
-   * 单个页签渲染出错时只降级该页签，不拖垮整个面板：面板与侧栏按钮保持可用，
-   * 用户可一键回到资产测绘。（此前面板整块消失、按钮点不开就是缺了这层保护。）
+   * When a single tab fails to render, only degrade that tab without breaking the entire panel: panel and sidebar buttons remain usable,
+   * and users can return to asset mapping with one click. (Previously the whole panel disappeared and buttons became unclickable without this protection.)
    */
   class RtBoundary extends React.Component {
     constructor(props) {
@@ -8773,7 +8775,7 @@ export const __dshPurgeDrill = (() => {
     }
     componentDidCatch(error) {
       try {
-        console.error("[redteam-ui] 页面渲染出错:", error);
+        console.error("[redteam-ui] Page render error:", error);
       } catch (e) {
         /* ignore */
       }
@@ -8787,7 +8789,7 @@ export const __dshPurgeDrill = (() => {
         return h(
           "div",
           { className: "rt-pane" },
-          h("div", { className: "rt-err" }, "该页面渲染出错：" + msg),
+          h("div", { className: "rt-err" }, "This page failed to render: " + msg),
           h(
             "button",
             {
@@ -8797,7 +8799,7 @@ export const __dshPurgeDrill = (() => {
                 setUI({ tab: "assets" });
               },
             },
-            "回到资产测绘",
+            "Back to asset mapping",
           ),
         );
       }
@@ -8806,8 +8808,8 @@ export const __dshPurgeDrill = (() => {
   }
 
   /**
-   * 智能体页签：并发名额（最多 3 个）+ 六个角色与它们的提示词。
-   * 主会话派活前先看这里的名额，用户也能一眼看到"现在还能拉起几个智能体"。
+   * Agents tab: concurrency slots (max 3) + six roles and their prompts.
+   * The main session checks slots here before dispatching work; users can also see at a glance how many agents can still be launched.
    */
   function AgentsTab(props) {
     const eng = props.engagement;
@@ -8826,7 +8828,7 @@ export const __dshPurgeDrill = (() => {
         (r) => {
           setBusy(false);
           if (!r || r.ok === false) {
-            setErr((r && r.error) || "读取失败");
+            setErr((r && r.error) || "Read failed");
             return;
           }
           setErr(null);
@@ -8837,7 +8839,7 @@ export const __dshPurgeDrill = (() => {
           setErr(String((e && e.message) || e));
         },
       );
-      /* 并发名额按"当前跑着的子智能体"算；host 侧读 subagents 注册表 */
+      /* Concurrency slots are based on currently running sub-agents; the host reads the subagents registry */
       api({ op: "agentsStatus" }).then(
         (r) => {
           if (r && r.ok !== false) setConcurrency(r);
@@ -8855,23 +8857,23 @@ export const __dshPurgeDrill = (() => {
       h(
         "div",
         { className: "rt-toolbar" },
-        h("span", { style: { fontWeight: 600 } }, "作战智能体"),
-        h("span", { className: "rt-tag rt-tag-passive" }, "并发上限 " + max),
+        h("span", { style: { fontWeight: 600 } }, "Operations agent"),
+        h("span", { className: "rt-tag rt-tag-passive" }, "Concurrency limit " + max),
         used === null
-          ? h("span", { className: "rt-tag" }, "占用未知")
+          ? h("span", { className: "rt-tag" }, "Usage unknown")
           : h(
               "span",
               {
                 className:
                   "rt-tag" + (used >= max ? " rt-tag-warn" : " rt-tag-live"),
               },
-              "在跑 " + used + " / 剩余 " + Math.max(max - used, 0),
+              "Running " + used + " / Available " + Math.max(max - used, 0),
             ),
         h("div", { className: "rt-spacer" }),
         h(
           "button",
           { className: "rt-btn", disabled: busy, onClick: load },
-          busy ? "读取中…" : "刷新",
+          busy ? "Reading…" : "Refresh",
         ),
       ),
       h(
@@ -8881,44 +8883,44 @@ export const __dshPurgeDrill = (() => {
         h(
           "div",
           { className: "rt-card" },
-          h("h4", null, "并发规则（硬约束）"),
+          h("h4", null, "Concurrency rules (hard constraints)"),
           h(
             "div",
             { style: { fontSize: 12, lineHeight: 1.7 } },
-            "· 同一靶标**同时最多 " +
+            "- **At most " +
               max +
-              " 个执行智能体**；主会话派活前用 `redteam_agent_slot` 占位，满了直接拒绝。",
+              " execution agents at the same time** per engagement; the main session must reserve a slot with `redteam_agent_slot` before dispatching, and reject when full.",
             h("br"),
-            "· **默认一个一个派、按顺序推进**；只有确实互不依赖的活才并行。",
+            "- **Dispatch one at a time and proceed sequentially by default**; parallelize only tasks that are truly independent.",
             h("br"),
-            "· 每个会话有**自己的靶标绑定**：多会话并行不会把报告写串（子智能体继承父会话的靶标）。",
+            "- Each session has **its own engagement binding**: parallel sessions do not mix up reports (sub-agents inherit the parent session engagement).",
           ),
         ),
         h(
           "div",
           { className: "rt-card" },
-          h("h4", null, "六个角色"),
+          h("h4", null, "Six roles"),
           h(
             "div",
             { style: { fontSize: 12, lineHeight: 1.8 } },
-            "① 信息收集 `recon` —— 只收集资产，把单位资产收集完整（含边缘与未备案资产）",
+            "1. Reconnaissance `recon` — collect assets only; cover all organization assets (including edge and unregistered assets)",
             h("br"),
-            "② 资产梳理 `assess` —— 一条一条过，评易打性并全部落库",
+            "2. Asset assessment `assess` — review each asset, assess exploitability, and store all results",
             h("br"),
-            "③ 漏洞发现 `vuln-scan` —— 先查库去重 → Nday/1day 优先 → 接口未授权探测",
+            "3. Vulnerability discovery `vuln-scan` — dedupe against database first -> prioritize Nday/1day -> probe for unauthorized interfaces",
             h("br"),
-            "④ 漏洞利用 `exploit` —— 先拿服务器权限（冰蝎/哥斯拉马）+ 建 suo5 隧道，再打其它得分项",
+            "4. Exploitation `exploit` — obtain server access first (Behinder/Godzilla webshell) + establish suo5 tunnel, then pursue other scoring items",
             h("br"),
-            "⑤ 内网渗透 `internal` —— 走隧道，依次拉起 ①②③④ 做内网",
+            "5. Internal penetration `internal` — go through tunnels and run 1-2-3-4 in sequence for the internal network",
             h("br"),
-            "⑥ 主会话 `plan` —— 只做计划、派活、汇总、汇报，不动手",
+            "6. Main session `plan` — planning, dispatch, summarization, and reporting only; no hands-on execution",
           ),
         ),
         h(ConcurrencyCard, { concurrency, onSaved: load }),
         h(
           "div",
           { className: "rt-card" },
-          h("h4", null, "角色提示词（按靶标存，可在这里编辑）"),
+          h("h4", null, "Role prompts (stored per engagement, editable here)"),
           h(
             "div",
             {
@@ -8928,7 +8930,7 @@ export const __dshPurgeDrill = (() => {
                 marginBottom: 6,
               },
             },
-            "「智能体提示词」已并入本页；下面是完整编辑器（改完点保存，只影响当前靶标）。",
+            "\"Agent prompts\" has been merged into this page; below is the full editor (save after changes; affects current engagement only).",
           ),
           h(PromptsTab, { engagement: eng, refreshKey: refreshKey }),
         ),
@@ -8949,10 +8951,10 @@ export const __dshPurgeDrill = (() => {
     const used = typeof info.used === "number" ? info.used : null;
     const source =
       info.source === "settings"
-        ? "面板中设置"
+        ? "Set in panel"
         : info.source === "env"
-          ? "环境变量 REDTEAM_MAX_AGENTS"
-          : "默认值";
+          ? "Environment variable REDTEAM_MAX_AGENTS"
+           : "Default";
     const n = Number(draft);
     const invalid =
       !Number.isFinite(n) || Math.floor(n) !== n || n < 1 || n > limit;
@@ -8964,11 +8966,11 @@ export const __dshPurgeDrill = (() => {
         (r) => {
           setBusy(false);
           if (!r || r.ok === false) {
-            setMsg({ err: (r && r.error) || "保存失败" });
+            setMsg({ err: (r && r.error) || "Save failed" });
             return;
           }
           setMsg({
-            ok: "已保存：并发上限 " + r.max + "（立即生效，不用重启）",
+            ok: "Saved: concurrency limit " + r.max + " (effective immediately, no restart required)",
           });
           if (props.onSaved) props.onSaved();
         },
@@ -8981,23 +8983,23 @@ export const __dshPurgeDrill = (() => {
     return h(
       "div",
       { className: "rt-card" },
-      h("h4", null, "并发数量"),
+      h("h4", null, "Concurrency count"),
       h(
         "div",
         { style: { fontSize: 12, lineHeight: 1.8, marginBottom: 8 } },
-        "同一靶标**同时最多几个执行智能体**。当前生效：**" +
+        "**Maximum execution agents at the same time** per engagement. Currently effective: **" +
           (info.max || "?") +
           "**" +
           (used === null
             ? ""
-            : "（在跑 " +
+             : " (running " +
               used +
-              "，剩余 " +
+              ", available " +
               Math.max((info.max || 0) - used, 0) +
               "）") +
-          "，来源：" +
+          ", source: " +
           source +
-          "。改完**立即生效**，不用重启。",
+          ". Changes take effect **immediately**, no restart required.",
       ),
       h(
         "div",
@@ -9026,7 +9028,7 @@ export const __dshPurgeDrill = (() => {
               color: "var(--dsw-alias-label-secondary)",
             },
           },
-          "范围 1 – " + limit,
+          "Range 1 - " + limit,
         ),
         h(
           "button",
@@ -9035,7 +9037,7 @@ export const __dshPurgeDrill = (() => {
             disabled: busy || invalid,
             onClick: save,
           },
-          busy ? "保存中…" : "保存",
+          busy ? "Saving…" : "Save",
         ),
         msg && msg.err
           ? h(
@@ -9060,19 +9062,19 @@ export const __dshPurgeDrill = (() => {
       h(
         "div",
         { className: "rt-note", style: { marginTop: 8 } },
-        "⚠️ 调大不等于更快：**同一个模型 API Key 的并发/速率上限是共享的**，同时派太多会互相挤占，" +
-          "表现为排队等待、超时、返回被截断甚至限流报错 —— 反而让测试结果不稳定（漏测、半途而废）。" +
-          "建议从 2–3 开始，只有在确认 Key 的额度足够、任务之间确实互不依赖时才调大。",
+        "Warning: increasing does not mean faster: **concurrency/rate limits are shared for the same model API key**; dispatching too many at once causes contention, " +
+          "leading to queuing, timeouts, truncated responses, or rate-limit errors — making test results unstable (missed tests, incomplete runs). " +
+          "Start with 2-3, and increase only when the key quota is sufficient and tasks are truly independent.",
       ),
     );
   }
 
   /**
-   * 版本显示 + 自动更新按钮。
+   * Version display + auto-update button.
    *
-   * 行为：挂载时静默查一次最新版本（npm registry），有新版本就把按钮点亮成
-   * 「有新版本 vX」；点击弹出确认框（当前版本 / 最新版本 / 安装位置 / 阻塞项），
-   * 确认后由 host 侧执行 安装 → 重启 dsh web（页面会断开，重启后刷新即可）。
+   * Behavior: silently check latest version on mount (npm registry); if a new version exists, highlight the button as
+   * "New version vX"; clicking opens a confirmation dialog (current version / latest version / install location / blockers),
+   * after confirmation the host performs install -> restart dsh web (page will disconnect; refresh after restart).
    */
   function VersionBar(props) {
     const [info, setInfo] = React.useState(null);
@@ -9105,8 +9107,8 @@ export const __dshPurgeDrill = (() => {
         (r) => {
           setBusy(false);
           if (!r || r.ok === false) {
-            /* 开发态或查不到 registry：只显示当前版本，不报错打扰用户 */
-            if (!silent) setErr((r && r.error) || "检查更新失败");
+            /* Dev mode or registry unavailable: show current version only, no error to disturb user */
+            if (!silent) setErr((r && r.error) || "Update check failed");
             api({ op: "version" }).then(
               (v) => {
                 if (v && v.ok !== false) setInfo(v);
@@ -9144,13 +9146,13 @@ export const __dshPurgeDrill = (() => {
         (r) => {
           setBusy(false);
           if (!r || r.ok === false) {
-            setMsg({ err: (r && r.error) || "更新失败" });
+            setMsg({ err: (r && r.error) || "Update failed" });
             return;
           }
           setMsg({
-            ok: "已安装 " + (r.installed || "") + "，正在重启当前宿主…",
+            ok: "Installed " + (r.installed || "") + ", restarting current host...",
           });
-          /* 重启会断开这个页面：倒计时提示用户稍后刷新 */
+          /* Restart will disconnect this page: countdown prompts user to refresh later */
           setCountdown(6);
           clearCountdown();
           countdownRef.current = setInterval(() => {
@@ -9191,15 +9193,15 @@ export const __dshPurgeDrill = (() => {
         {
           className: "rt-tag" + (hasNew ? " rt-tag-warn" : ""),
           title:
-            "当前版本 " +
-            (current || "未知") +
-            (latest ? "\n最新版本 " + latest : "") +
+            "Current version " +
+            (current || "Unknown") +
+            (latest ? "\nLatest version " + latest : "") +
             (mode === "dev"
-              ? "\n安装方式：开发态（源码软链）"
+              ? "\nInstall method: Development (source symlink)"
               : mode === "package"
-                ? "\n安装方式：包安装"
+                 ? "\nInstall method: Package install"
                 : "") +
-            (info && info.check_error ? "\n检查失败：" + info.check_error : ""),
+            (info && info.check_error ? "\nCheck failed: " + info.check_error : ""),
         },
         "v" + (current || "?"),
       ),
@@ -9214,11 +9216,11 @@ export const __dshPurgeDrill = (() => {
                 setMsg(null);
               },
               title:
-                "发现新版本 " +
+                "New version found " +
                 latest +
-                "：点击查看并一键更新（会重启当前宿主）",
+                ": click to view and update with one click (will restart current host)",
             },
-            busy ? "检查中…" : "有新版本 v" + latest,
+            busy ? "Checking…" : "New version v" + latest,
           )
         : h(
             "button",
@@ -9226,9 +9228,9 @@ export const __dshPurgeDrill = (() => {
               className: "rt-btn",
               disabled: busy,
               onClick: () => check(false),
-              title: "重新检查 npm 上的最新版本",
+              title: "Recheck latest version on npm",
             },
-            busy ? "检查中…" : "检查更新",
+            busy ? "Checking…" : "Check for updates",
           ),
       open
         ? h(
@@ -9244,41 +9246,41 @@ export const __dshPurgeDrill = (() => {
                 className: "rt-modal-box",
                 onClick: (e) => e.stopPropagation(),
               },
-              h("h4", { style: { marginTop: 0 } }, "更新 RedTeam 模式"),
+              h("h4", { style: { marginTop: 0 } }, "Update RedTeam mode"),
               h(
                 "div",
                 { className: "rt-kv" },
-                h("b", null, "当前版本"),
-                h("span", null, current || "未知"),
+                h("b", null, "Current version"),
+                h("span", null, current || "Unknown"),
               ),
               h(
                 "div",
                 { className: "rt-kv" },
-                h("b", null, "最新版本"),
-                h("span", null, latest || "未知"),
+                h("b", null, "Latest version"),
+                h("span", null, latest || "Unknown"),
               ),
               h(
                 "div",
                 { className: "rt-kv" },
-                h("b", null, "安装方式"),
+                h("b", null, "Install method"),
                 h(
                   "span",
                   null,
                   mode === "dev"
-                    ? "开发态（源码软链）"
+                    ? "Development (source symlink)"
                     : mode === "package"
-                      ? "包安装（" +
+                      ? "Package install (" +
                         ((info.install && info.install.packageManager) ||
                           "npm") +
                         "）"
-                      : "未知",
+                      : "Unknown",
                 ),
               ),
               info && info.install && info.install.dir
                 ? h(
                     "div",
                     { className: "rt-kv" },
-                    h("b", null, "安装位置"),
+                    h("b", null, "Install location"),
                     h("span", { className: "rt-mono" }, info.install.dir),
                   )
                 : null,
@@ -9289,7 +9291,7 @@ export const __dshPurgeDrill = (() => {
                     h(
                       "div",
                       { style: { fontWeight: 600, marginBottom: 4 } },
-                      "现在不能更新：",
+                      "Cannot update now: ",
                     ),
                     blockers.map((b, i) =>
                       h("div", { key: "b" + i }, "· " + b),
@@ -9312,8 +9314,8 @@ export const __dshPurgeDrill = (() => {
                     margin: "8px 0",
                   },
                 },
-                "更新过程：安装新版本 → 自动重启当前宿主（官方 exe / 社区版 / dsh web；当前页面会断开，约 5–10 秒后自动刷新）。" +
-                  "重启前会检查有没有智能体在跑，有就拦住不动。",
+                "Update process: install new version -> automatically restart current host (official exe / community edition / dsh web; this page will disconnect and auto-refresh after ~5-10 seconds). " +
+                  "Before restart, checks if any agents are running and blocks if so.",
               ),
               msg
                 ? h(
@@ -9326,7 +9328,7 @@ export const __dshPurgeDrill = (() => {
                 ? h(
                     "div",
                     { className: "rt-foot" },
-                    "宿主正在重启，" + countdown + " 秒后自动刷新页面…",
+                    "Host is restarting, page will auto-refresh in " + countdown + " seconds...",
                   )
                 : null,
               h(
@@ -9342,7 +9344,7 @@ export const __dshPurgeDrill = (() => {
                 h(
                   "button",
                   { className: "rt-btn", onClick: closeModal },
-                  "关闭",
+                  "Close",
                 ),
                 h(
                   "button",
@@ -9351,13 +9353,13 @@ export const __dshPurgeDrill = (() => {
                     disabled: busy || blockers.length > 0 || mode === "dev",
                     title:
                       mode === "dev"
-                        ? "开发态安装请用仓库流程升级"
+                        ? "Use repository workflow to upgrade development installs"
                         : blockers.length
-                          ? "先解决上面的阻塞项"
-                          : "安装并重启",
+                          ? "Resolve the blockers above first"
+                           : "Install and restart",
                     onClick: apply,
                   },
-                  busy ? "更新中…" : "一键更新并重启",
+                  busy ? "Updating…" : "Update and restart",
                 ),
               ),
             ),
@@ -9366,11 +9368,11 @@ export const __dshPurgeDrill = (() => {
     );
   }
 
-  /* ---------------------------------------------------------- 常驻面板主体 */
+  /* ---------------------------------------------------------- Persistent panel body */
   /**
-   * 「未读」状态：按靶标记在 localStorage 里，每 25 秒问一次 host 的 consoleDigest
-   * （每个页签的条数 + 最近更新时间）。比本地记住的快照新 → 该页签点红点；
-   * 用户点开那个页签就把当前值记成已读，红点消失。
+   * "Unread" state: recorded per engagement in localStorage; polls host consoleDigest every 25 seconds
+   * (count and last update time per tab). If newer than locally remembered snapshot -> show red dot on that tab;
+   * opening that tab marks current values as read and the red dot disappears.
    */
   const UNREAD_KEY = "rt-unread:";
   const loadUnread = (eng) => {
@@ -9386,10 +9388,10 @@ export const __dshPurgeDrill = (() => {
     try {
       window.localStorage.setItem(UNREAD_KEY + eng, JSON.stringify(value));
     } catch (e) {
-      /* 隐私模式等：不持久化也能用 */
+      /* Privacy mode, etc.: works without persistence */
     }
   };
-  /** 这个页签相对上次查看有没有新内容（条数变多，或最新一条比上次查看还新）。 */
+  /** Whether this tab has new content since last viewed (count increased, or latest item newer than last view). */
   const digestHasNew = (prev, cur) => {
     if (!cur) return false;
     if (!prev) return true;
@@ -9425,7 +9427,7 @@ export const __dshPurgeDrill = (() => {
       const saved = Number(window.localStorage.getItem("rt-dock-width"));
       if (Number.isFinite(saved) && saved >= 320 && saved <= 1200) w = saved;
     } catch (e) {
-      /* 隐私模式 */
+      /* Privacy mode */
     }
     const h = Math.max(240, Math.min(640, vh - 24));
     return clampRtGeom({ x: Math.max(0, vw - w - 12), y: 12, w: w, h: h });
@@ -9437,13 +9439,13 @@ export const __dshPurgeDrill = (() => {
       );
       if (raw && typeof raw === "object") return clampRtGeom(raw);
     } catch (e) {
-      /* 隐私模式或坏数据 */
+      /* Privacy mode or invalid data */
     }
     return defaultRtGeom();
   }
 
   function Panel(props) {
-    /* embedded：嵌在 dsh-purge 外层 dock 里时，不再自带收起/全面浏览/拖拽条，避免与外层按钮重叠 */
+    /* embedded: when embedded in outer dsh-purge dock, omit built-in collapse/full-view/drag bar to avoid overlapping outer buttons */
     const embedded = !!(props && props.embedded);
     const st = useUI();
     const [engagements, setEngagements] = React.useState([]);
@@ -9462,7 +9464,7 @@ export const __dshPurgeDrill = (() => {
       try {
         window.localStorage.setItem(RT_GEOM_KEY, JSON.stringify(geom));
       } catch (e) {
-        /* 隐私模式 */
+        /* Privacy mode */
       }
     }, [geom, embedded]);
     React.useEffect(() => {
@@ -9480,7 +9482,7 @@ export const __dshPurgeDrill = (() => {
       api({ op: "snapshot", engagement: id }).then(
         (r) => {
           if (!r || r.ok === false) {
-            setErr((r && r.error) || "加载失败");
+            setErr((r && r.error) || "Load failed");
             return;
           }
           setErr(null);
@@ -9507,7 +9509,7 @@ export const __dshPurgeDrill = (() => {
       api({ op: "bootstrap" }).then(
         (r) => {
           if (!r || r.ok === false) {
-            setErr((r && r.error) || "无法连接资产库");
+            setErr((r && r.error) || "Cannot connect to asset database");
             return;
           }
           setEngagements(r.engagements || []);
@@ -9532,7 +9534,7 @@ export const __dshPurgeDrill = (() => {
         (r) => {
           setCreating(false);
           if (!r || r.ok === false) {
-            setErr((r && r.error) || "创建失败");
+            setErr((r && r.error) || "Creation failed");
             return;
           }
           setNewName("");
@@ -9545,7 +9547,7 @@ export const __dshPurgeDrill = (() => {
       );
     };
 
-    /** 刷新：重新拉取名册/快照，并让当前页签重新取数。 */
+    /** Refresh: re-fetch roster/snapshot and reload data for the current tab. */
     const refreshAll = () => {
       setRefreshKey((k) => k + 1);
       api({ op: "bootstrap" }).then(
@@ -9636,7 +9638,7 @@ export const __dshPurgeDrill = (() => {
       );
     };
 
-    /* 切靶标：重新读该靶标的未读快照，并立刻取一次摘要 */
+    /* Switch engagement: re-read unread snapshot for this engagement and fetch a summary immediately */
     React.useEffect(() => {
       if (!eng) {
         setDigest(null);
@@ -9648,7 +9650,7 @@ export const __dshPurgeDrill = (() => {
       let digestInflight = false;
       const tick = () => {
         if (digestInflight)
-          return; /* 上一轮还没回来，跳过这一轮，别把请求堆起来 */
+          return; /* Previous round not returned yet; skip this round to avoid piling up requests */
         digestInflight = true;
         api({ op: "consoleDigest", engagement: eng })
           .then(
@@ -9657,7 +9659,7 @@ export const __dshPurgeDrill = (() => {
                 setDigest(r.sections);
             },
             () => {
-              /* 网络异常：不打断，等下一轮 */
+              /* Network error: do not interrupt, wait for next round */
             },
           )
           .finally(() => {
@@ -9673,8 +9675,8 @@ export const __dshPurgeDrill = (() => {
     }, [eng, refreshKey]);
 
     /**
-     * 打开某个页签 = 看过这个页签的内容：把当前摘要记成已读。
-     * 没读过（第一次打开面板）不算新内容 —— 否则一进来满屏红点，反而看不出"哪里有新东西"。
+     * Opening a tab means viewing its content: mark current summary as read.
+     * Never-read (first panel open) is not treated as new content — otherwise the screen would be full of red dots on first load.
      */
     const markTabSeen = React.useCallback(
       (tab) => {
@@ -9707,16 +9709,16 @@ export const __dshPurgeDrill = (() => {
 
     const stats = (snapshot && snapshot.stats) || {};
     const tabs = [
-      ["assets", "资产测绘"],
-      ["env", "环境适配"],
-      ["agents", "智能体"],
-      ["sessions", "会话隧道"],
-      ["findings", "漏洞战果"],
-      ["chain", "攻击链"],
-      ["scores", "得分目标"],
-      ["report", "报告"],
-      ["knowledge", "知识库"],
-      ["skills", "技能库"],
+      ["assets", "Asset mapping"],
+      ["env", "Environment adaptation"],
+      ["agents", "Agent"],
+      ["sessions", "Session tunnels"],
+      ["findings", "Vulnerability findings"],
+      ["chain", "Attack chain"],
+      ["scores", "Score goals"],
+      ["report", "Report"],
+      ["knowledge", "Knowledge base"],
+      ["skills", "Skill library"],
     ];
     const full = isFullWindow();
     const openFull = () => {
@@ -9727,15 +9729,15 @@ export const __dshPurgeDrill = (() => {
           "noopener",
         );
       } catch (e) {
-        setErr("无法打开新窗口：" + ((e && e.message) || e));
+        setErr("Cannot open new window: " + ((e && e.message) || e));
       }
     };
     const exitFull = () => {
-      /* 优先关掉脚本打开的窗口；关不掉就退回带侧栏的普通界面 */
+      /* Prefer closing script-opened window; if not possible, fall back to normal interface with sidebar */
       try {
         window.close();
       } catch (e) {
-        /* 非脚本打开的窗口无法关闭 */
+        /* Windows not opened by script cannot be closed */
       }
       try {
         if (window.location.hash) {
@@ -9757,7 +9759,7 @@ export const __dshPurgeDrill = (() => {
 
     let body;
     if (err) body = h("div", { className: "rt-err" }, err);
-    /* 全局页：没有靶标也能看（知识库 / 环境适配 / 技能库 / 智能体概览） */
+    /* Global pages: viewable without an engagement (Knowledge base / Environment / Skill library / Agent overview) */
     else if (st.tab === "knowledge")
       body = h(KnowledgeTab, { refreshKey: refreshKey });
     else if (st.tab === "env") body = h(EnvTab, { refreshKey: refreshKey });
@@ -9772,7 +9774,7 @@ export const __dshPurgeDrill = (() => {
         h(
           "div",
           { className: "rt-card" },
-          h("h4", null, "还没有靶标"),
+          h("h4", null, "No engagement yet"),
           h(
             "div",
             {
@@ -9782,7 +9784,7 @@ export const __dshPurgeDrill = (() => {
                 marginBottom: 8,
               },
             },
-            "输入攻防演练靶标单位名称，创建演练并开始资产测绘。",
+            "Enter the target organization name for the exercise, create an engagement, and start asset mapping.",
           ),
           h(
             "div",
@@ -9790,7 +9792,7 @@ export const __dshPurgeDrill = (() => {
             h("input", {
               className: "rt-input",
               style: { flex: 1 },
-              placeholder: "例如：示例科技有限公司",
+              placeholder: "e.g. Example Technology Co., Ltd.",
               value: newName,
               onChange: (e) => setNewName(e.target.value),
               onKeyDown: (e) => {
@@ -9804,7 +9806,7 @@ export const __dshPurgeDrill = (() => {
                 disabled: creating,
                 onClick: () => openEngagement(),
               },
-              creating ? "创建中…" : "创建靶标",
+              creating ? "Creating…" : "Create engagement",
             ),
           ),
         ),
@@ -9837,7 +9839,7 @@ export const __dshPurgeDrill = (() => {
       body = h(FindingsTab, { engagement: eng, refreshKey: refreshKey });
     else if (st.tab === "scores")
       body = h(ScoreTab, { engagement: eng, refreshKey: refreshKey });
-    else body = h("div", { className: "rt-empty" }, "未知页签");
+    else body = h("div", { className: "rt-empty" }, "Unknown tab");
 
     const shellProps = full
       ? { className: "rt-full", style: { display: "flex" } }
@@ -9868,28 +9870,28 @@ export const __dshPurgeDrill = (() => {
         ? null
         : h("div", {
             className: "rt-grip",
-            title: "拖动调整宽度",
+            title: "Drag to resize width",
             onMouseDown: startResizeLeft,
           }),
       full || embedded
         ? null
         : h("div", {
             className: "rt-resize-r",
-            title: "拖动调整宽度",
+            title: "Drag to resize width",
             onMouseDown: startResizeRight,
           }),
       full || embedded
         ? null
         : h("div", {
             className: "rt-resize-b",
-            title: "拖动调整高度",
+            title: "Drag to resize height",
             onMouseDown: startResizeBottom,
           }),
       full || embedded
         ? null
         : h("div", {
             className: "rt-resize-c",
-            title: "拖动调整大小",
+            title: "Drag to resize",
             onMouseDown: startResizeCorner,
           }),
       h(
@@ -9897,7 +9899,7 @@ export const __dshPurgeDrill = (() => {
         {
           className: "rt-head",
           onMouseDown: full || embedded ? undefined : startDrag,
-          title: full || embedded ? undefined : "按住拖动面板",
+          title: full || embedded ? undefined : "Drag to move panel",
         },
         embedded
           ? null
@@ -9905,12 +9907,12 @@ export const __dshPurgeDrill = (() => {
               "div",
               { className: "rt-title" },
               h("span", { className: "rt-dot" }),
-              full ? "演练台 · 全面浏览" : "演练台",
+              full ? "Operations console · Full view" : "Operations console",
               full
                 ? h(
                     "span",
                     { className: "rt-tag", style: { marginLeft: 6 } },
-                    "独立窗口",
+                    "Separate window",
                   )
                 : null,
             ),
@@ -9927,7 +9929,7 @@ export const __dshPurgeDrill = (() => {
             onChange: (e) => {
               setEng(e.target.value);
               loadSnapshot(e.target.value);
-              /* 同步「当前靶标」：原生 skill 目录按它解析技能根 */
+              /* Sync "current engagement": native skill directory resolves skill roots based on it */
               api({
                 op: "activateEngagement",
                 engagement: e.target.value,
@@ -9937,10 +9939,10 @@ export const __dshPurgeDrill = (() => {
           h(
             "option",
             { value: "", disabled: true },
-            engagements.length ? "选择靶标" : "暂无靶标",
+            engagements.length ? "Select engagement" : "No engagement",
           ),
           engagements.map((x) =>
-            h("option", { key: x.id, value: x.id }, x.name || x.id || "未命名"),
+            h("option", { key: x.id, value: x.id }, x.name || x.id || "Unnamed"),
           ),
         ),
         h("div", { className: "rt-spacer" }),
@@ -9950,10 +9952,10 @@ export const __dshPurgeDrill = (() => {
               "button",
               {
                 className: "rt-btn",
-                title: "回到带侧栏的普通界面（或按 Esc）",
+                title: "Return to normal interface with sidebar (or press Esc)",
                 onClick: exitFull,
               },
-              "退出全面浏览",
+              "Exit full view",
             )
           : null,
         embedded
@@ -9962,10 +9964,10 @@ export const __dshPurgeDrill = (() => {
               "button",
               {
                 className: "rt-btn",
-                title: "刷新名册、快照与当前页面数据",
+                title: "Refresh roster, snapshot, and current page data",
                 onClick: refreshAll,
               },
-              "刷新",
+              "Refresh",
             ),
         full || embedded
           ? null
@@ -9973,10 +9975,10 @@ export const __dshPurgeDrill = (() => {
               "button",
               {
                 className: "rt-btn",
-                title: "在新浏览器窗口打开完整控制台",
+                title: "Open full console in a new browser window",
                 onClick: openFull,
               },
-              "全面浏览",
+              "Full view",
             ),
         full || embedded
           ? null
@@ -9984,14 +9986,14 @@ export const __dshPurgeDrill = (() => {
               "button",
               {
                 className: "rt-btn",
-                title: "收起面板",
+                title: "Collapse panel",
                 onClick: () => setUI({ open: false }),
               },
-              "收起",
+              "Collapse",
             ),
       ),
-      /* 页签栏用标准 tablist/tab 角色：读屏软件据此播报「第几个页签、是否选中」。
-           键盘用户 Tab 进来后可用 Enter/Space 切换（由 clickable 提供）。 */
+      /* Tab bar uses standard tablist/tab roles: screen readers announce tab index and selection state.
+           Keyboard users can switch with Enter/Space after tabbing in (provided by clickable). */
       h(
         "div",
         { className: "rt-tabs", role: "tablist" },
@@ -9999,7 +10001,7 @@ export const __dshPurgeDrill = (() => {
           const activate = () => {
             markTabSeen(t[0]);
             setUI({ tab: t[0] });
-            /* 强制当前页重新取数，避免切页后仍显示上一页缓存视觉 */
+            /* Force current page to refetch data to avoid showing cached content from previous page */
             setRefreshKey((k) => k + 1);
           };
           return h(
@@ -10010,13 +10012,13 @@ export const __dshPurgeDrill = (() => {
               role: "tab",
               "aria-selected": st.tab === t[0] ? "true" : "false",
               title: unreadOf(t[0])
-                ? t[1] + "：有新内容，点开看过红点就会消失"
+                ? t[1] + ": New content; open to mark as read and clear the dot"
                 : t[1],
             }),
             t[1],
             unreadOf(t[0])
-              ? /* 红点是纯视觉信息，给读屏软件一个文字替代 */
-                h("span", { className: "rt-tab-dot", "aria-label": "有新内容" })
+              ? /* Red dot is visual only; provide text alternative for screen readers */
+                h("span", { className: "rt-tab-dot", "aria-label": "New content" })
               : null,
           );
         }),
@@ -10029,30 +10031,30 @@ export const __dshPurgeDrill = (() => {
       h(
         "div",
         { className: "rt-foot" },
-        h("span", null, "C 段 " + (stats.segments || 0)),
+        h("span", null, "C segments " + (stats.segments || 0)),
         h(
           "span",
           null,
-          "资产 " +
+          "Assets " +
             (stats.assets || 0) +
-            "（存活 " +
+            " (live " +
             (stats.liveAssets || 0) +
             "）",
         ),
-        h("span", null, "端口 " + (stats.openPorts || 0)),
-        h("span", null, "指纹 " + (stats.fingerprints || 0)),
-        h("span", null, "漏洞 " + (stats.vulns || 0)),
+        h("span", null, "Ports " + (stats.openPorts || 0)),
+        h("span", null, "Fingerprints " + (stats.fingerprints || 0)),
+        h("span", null, "Vulns " + (stats.vulns || 0)),
         h(
           "span",
           null,
-          "被动/主动 " +
+          "Passive/Active " +
             (stats.passiveSignals || 0) +
             "/" +
             (stats.activeSignals || 0),
         ),
         h("div", { className: "rt-spacer" }),
         full
-          ? h("span", null, "按 Esc 或点右上角「退出全面浏览」回到带侧栏的界面")
+          ? h("span", null, "Press Esc or click \"Exit full view\" in the top right to return to the sidebar interface")
           : null,
         h(
           "span",
@@ -10064,14 +10066,14 @@ export const __dshPurgeDrill = (() => {
     );
   }
 
-  /* ---------------------------------------------------------- 入口按钮 */
+  /* ---------------------------------------------------------- Entry buttons */
   function SidebarButton(props) {
     const st = useUI();
     return h(
       "button",
       {
         className: "rt-icon-btn" + (st.open ? " on" : ""),
-        title: "RedTeam 控制台（常驻右侧栏）",
+        title: "RedTeam console (persistent right sidebar)",
         onClick: () => setUI({ open: !st.open }),
       },
       h("span", { style: { fontSize: 14 } }, "⛨"),
@@ -10085,14 +10087,14 @@ export const __dshPurgeDrill = (() => {
       "button",
       {
         className: "rt-hbtn" + (st.open ? " on" : ""),
-        title: "RedTeam 控制台（常驻右侧栏）",
+        title: "RedTeam console (persistent right sidebar)",
         onClick: () => setUI({ open: !st.open }),
       },
       "⛨ RedTeam",
     );
   }
 
-  /** 侧栏「全面浏览」：在新浏览器窗口打开完整控制台（当前窗口不受影响）。 */
+  /** Sidebar "Full view": open full console in a new browser window (current window unaffected). */
   function FullButton(props) {
     const open = () => {
       try {
@@ -10102,7 +10104,7 @@ export const __dshPurgeDrill = (() => {
           "noopener",
         );
       } catch {
-        /* 被浏览器拦截 */
+        /* Blocked by browser */
       }
     };
     return h(
@@ -10110,21 +10112,21 @@ export const __dshPurgeDrill = (() => {
       {
         className: "rt-icon-btn",
         title:
-          "全面浏览：在新窗口打开完整控制台（当前窗口不受影响；新窗口内按 Esc 退出）",
+          "Full view: open full console in a new window (current window unaffected; press Esc in the new window to exit)",
         onClick: open,
       },
       h("span", { style: { fontSize: 14 } }, "⛶"),
-      props.wide ? h("span", null, "全面浏览") : null,
+      props.wide ? h("span", null, "Full view") : null,
     );
   }
 
-  /* ---------------------------------------------------------- 插件入口 */
-  /** 唯一硬依赖：槽位注册表。 */
+  /* ---------------------------------------------------------- Plugin entry */
+  /** Sole hard dependency: slot registry. */
   const inject = ["slots"];
 
   /**
-   * 注入样式 + 三处槽位。样式标签与宽度变量随 fiber 卸载一起移除。
-   * @param ctx - 客户端根上下文。
+   * Inject styles + three slots. Style tag and width variable are removed when the fiber unmounts.
+   * @param ctx - Client root context.
    */
   function applyDrillParts() {
     return {

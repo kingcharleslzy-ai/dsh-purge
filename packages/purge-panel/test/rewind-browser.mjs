@@ -55,10 +55,10 @@ try {
           roster.append(row);
           return row;
         }
-        const name = "普通笔记 · 子任务";
-        const historical = name + "（历史兼容 · aaaaaaaaaa）";
+        const name = "Note · Subtask";
+        const historical = name + " (Legacy compatibility · aaaaaaaaaa)";
         const alias = card("unrestricted-child-aaaaaaaaaa", historical);
-        const secondAlias = card("unrestricted-child-eeeeeeeeee", name + "（历史兼容 · eeeeeeeeee）");
+        const secondAlias = card("unrestricted-child-eeeeeeeeee", name + " (Legacy compatibility · eeeeeeeeee)");
         const aliases = [alias, secondAlias];
         const visible = row => getComputedStyle(row).display !== "none";
         if (!aliases.every(visible)) throw Error("historical rows hidden before current child loads");

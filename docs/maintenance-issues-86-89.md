@@ -1,41 +1,40 @@
-# #86 / #87 修复与 #89 复现边界
+# #86 / #87 Fixes and #89 Reproduction Boundaries
 
-## 1.6.60 的范围
+## 1.6.60 Scope
 
-- #86：1.6.58–1.6.59 在目标文件缺失分支引用未声明的 `detail`，导致应用中断。只删除这条无效写入；原有 missing_file / na / partial 诊断及补丁内容不变，不把缺文件算作成功。
-- #87 / PR #88：修复进程异常退出留下的维护锁，并保护并发维护、旧版长任务及安装/回滚失败恢复。
-- #89：本次只提供隔离 Windows 实测和诊断记录，**没有修改换包助手的启动机制，不宣称修复 #89**。
+- #86: In 1.6.58–1.6.59, the target-file-missing branch referenced an undeclared `detail`, causing apply to abort. Only this invalid write is removed; original `missing_file` / `na` / `partial` diagnostics and patch content are unchanged, and missing files are not counted as success.
+- #87 / PR #88: fixes maintenance locks left behind by abnormal process exits and protects concurrent maintenance, old-version long tasks, and install/rollback failure recovery.
+- #89: this batch provides only isolated Windows measurements and diagnostic records, **does not modify the package-swap helper startup mechanism, and does not claim to fix #89**.
 
-## 锁与恢复
+## Lock and Recovery
 
-`maintenance.guard/` 是新版写入者和回收者共用的互斥目录。先在唯一临时目录写完 owner 文件，再原子发布非空目录。回收只删除已确认结束的 owner 的唯一文件，然后使用非递归 rmdir；即使另一个进程已经取得新锁，也不会删除它的新 owner 文件或把它的目录移走。
+`maintenance.guard/` is the mutex directory shared by new-version writers and reclaimers. A unique temporary directory first has its owner file fully written, then the non-empty directory is atomically published. Reclaim deletes only the unique file of a confirmed-finished owner, then uses non-recursive rmdir; even if another process has already acquired a new lock, it does not delete that process's new owner file or remove its directory.
 
-仍维护 `maintenance.lock` 以阻挡旧版本维护器，兼容裸 PID、pid:nonce、host:pid:nonce 旧记录。新记录包含 hostname、PID、创建时间及唯一 token。只在同机 PID 已消失，或系统进程启动时间明确晚于锁创建时间时回收。**不凭“超过 30 分钟”或“心跳没更新”删除锁**；旧版长任务本来没有心跳。读取失败、跨机器记录、无效 PID/内容、无法取得进程信息均保留现场并报告。PID 复用的判定需要真实进程启动时间，不能只看进程名称。
+`maintenance.lock` is still maintained to block old-version maintainers, compatible with old records in bare PID, `pid:nonce`, and `host:pid:nonce` formats. New records include hostname, PID, creation time, and a unique token. Reclaim occurs only when the same-host PID has disappeared, or the system process start time is clearly later than the lock creation time. **Locks are not deleted based on "over 30 minutes" or "heartbeat not updated"**; old-version long tasks never had heartbeats. Read failures, cross-machine records, invalid PID/content, and inability to obtain process information all preserve the scene and report. PID-reuse determination requires real process start time; process name alone is not enough.
 
-CLI 和面板的手动清理入口也取得相同维护锁，避免清理正在建立的备份对象。
+Manual cleanup entries in CLI and panel also acquire the same maintenance lock to avoid cleaning backup objects that are being created.
 
-安装/回滚每个异步步骤结束后、写清单与配置前、清理与失败恢复前核对归属。丢锁或读锁失败时停止后续提交，也不把旧 checkpoint 自动恢复到新写入者的文件上；保留恢复目录。已启动的外部安装器不能靠一次 JavaScript 检查撤回，因此不允许正常活进程被自动抢锁。
+After each async step of install/rollback, before writing manifests and configuration, and before cleanup and failure recovery, ownership is rechecked. If the lock is lost or lock reads fail, subsequent commits stop and old checkpoints are not automatically restored onto files written by a new owner; recovery directories are preserved. An external installer that has already started cannot be withdrawn by a single JavaScript check, so normally live processes are not allowed to be automatically preempted.
 
-不建议用户手工删锁。若归属未知，先确认对应进程、锁时间、操作记录及是否共享 profile；只收集脱敏证据，不索取提示词、整个 profile 或凭证。
+Users are not advised to delete locks manually. If ownership is unknown, first confirm the corresponding process, lock time, operation records, and whether a profile is shared; collect only sanitized evidence and do not request prompts, the entire profile, or credentials.
 
 ## Windows #89
 
-在 4090 上使用临时 Electron 运行时、临时 holder 进程及伪归档，未启动、停止或修改正式 DSH：
+On a 4090 machine using a temporary Electron runtime, temporary holder process, and fake archive — without starting, stopping, or modifying official DSH:
 
-1. 普通 Electron 启动器退出：现有助手继续运行，holder 退出后成功移动测试归档，备份内容一致。
-2. `scripts/check-windows-job-handoff.ps1`：将隔离 Electron 放进明确设置 `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE` 的 Job Object，确认助手也属于该 Job；关闭测试 Job 后助手被结束，状态仍为 waiting_for_quit，测试归档保持原样。已重建报告中的故障表现。
+1. Normal Electron launcher exit: the existing helper kept running, and after the holder exited it successfully moved the test archive with backup content intact.
+2. `scripts/check-windows-job-handoff.ps1`: placed an isolated Electron into a Job Object with `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE` explicitly set, confirmed the helper also belonged to that Job; after closing the test Job, the helper was terminated, state remained `waiting_for_quit`, and the test archive stayed unchanged. The reported failure symptom was reproduced.
 
-这证明一种具体的进程生命周期机制可以造成该症状，**不能证明报告者的 DSH 一定由相同 Job 管理**。仍需确认启动方式（普通桌面/管理器/任务代理）、完整退出方式，以及退出前 helper 的父进程与 Job 归属。不得只因父子关系就断言 Windows 会自动终止所有后代。
+This proves one specific process-lifecycle mechanism can cause this symptom; **it cannot prove the reporter's DSH is necessarily managed by the same Job**. Startup method (normal desktop/manager/task agent), full-exit method, and helper parent-process/Job membership before exit still need confirmation. Do not assert from parent-child relationship alone that Windows automatically terminates all descendants.
 
-该脚本只接受 TEMP 下的隔离 Electron，终止的都是它自己建立的测试进程。不能对正式 DSH 运行，也不用于自动修复换包。复现未满足时会失败并保留证据。
+This script accepts only an isolated Electron under TEMP and terminates only test processes it created. It must not be run against official DSH and is not used for automatic package-swap repair. If reproduction is not satisfied, it fails and preserves evidence.
 
-## 验收
+## Acceptance
 
-锁测试包括真实子进程崩溃、真实多进程互斥，以及受控交错、PID 复用、旧格式、跨机/未知锁、磁盘写入失败、读锁失败。安装/回滚丢锁测试使用隔离 profile 和构造的安装器失败；完整 CLI/pnpm 安装、迁移、回滚另由 `scripts/check-install-lifecycle-runtime.mjs` 在隔离副本执行。二者不混称完整桌面 UI 验收，也不测试模型回复效果。
+Lock tests include real child-process crashes, real multi-process mutual exclusion, and controlled interleaving, PID reuse, old formats, cross-machine/unknown locks, disk write failures, and lock-read failures. Install/rollback lock-loss tests use isolated profiles and constructed installer failures; full CLI/pnpm install, migration, and rollback are executed separately by `scripts/check-install-lifecycle-runtime.mjs` in isolated copies. The two are not conflated as full desktop UI acceptance, nor do they test model reply quality.
 
+### Follow-up Job Object Recheck
 
-### 后续的 Job Object 对照复测
+The reporter added the measured value `0x2000` (terminate member processes after the last Job handle closes). Under the same conditions, Windows 11 non-admin PowerShell 5.1 and a real Electron runtime can reproduce the 1.6.59 helper being terminated. The revised launcher first checks Job membership and, when inside a Job, submits a one-time helper via local WMI. If system policy refuses creation, it preserves the error and broker log. The helper still uses original package hash, operation token, and same-path host exit as package-swap conditions.
 
-报告者补充了 `0x2000`（最后一个 Job 句柄关闭后终止成员进程）的实测值。相同条件下，Windows 11 非管理员 PowerShell 5.1 和真实 Electron 运行时可重现 1.6.59 助手被结束。修订的启动器先检查 Job 成员关系，在 Job 内由本机 WMI 提交一次性助手。若系统策略拒绝创建，保留错误与 broker 日志。助手仍以原包哈希、操作 token 和同路径宿主退出为换包条件。
-
-在 TEMP 中用 Electron 自带的 default_app.asar 做真实归档对照。`-ExpectLegacyFailure` 验证旧版助手随 Job 消失且原归档完整；默认验证新版助手存活，等待单独的测试宿主退出，完成换包并从备份还原相同 SHA256。这项测试不启动正式桌面窗口。Windows 发行包在完整插件上的升级和回滚须另外验收。
+A real-archive comparison was done in TEMP using Electron's bundled `default_app.asar`. `-ExpectLegacyFailure` verifies the old helper disappears with the Job and the original archive remains intact; the default verification confirms the new helper survives, waits for a separate test host to exit, completes the package swap, and restores the same SHA256 from backup. This test does not start an official desktop window. Upgrade and rollback on Windows release packages over the full plugin must be accepted separately.

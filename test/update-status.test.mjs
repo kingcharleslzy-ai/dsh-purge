@@ -125,8 +125,8 @@ test('strict version evidence and prerelease/rollback transitions',()=>{
     assert.equal(reconcileUpdateStatus(old,running,disk).restartRequired,true);
     assert.equal(reconcileUpdateStatus(old,disk,disk).restartRequired,false);
   }
-  assert.throws(()=>reconcileUpdateStatus(old,'','1.6.40'),/无法确认/);
-  assert.throws(()=>reconcileUpdateStatus(old,'1.6.40','bad'),/无法确认/);
+  assert.throws(()=>reconcileUpdateStatus(old,'','1.6.40'),/cannot confirm/);
+  assert.throws(()=>reconcileUpdateStatus(old,'1.6.40','bad'),/cannot confirm/);
 });
 
 test('production disk reader follows current profile, validates identity and refuses missing evidence',t=>{
@@ -137,7 +137,7 @@ test('production disk reader follows current profile, validates identity and ref
     assert.equal(installedVersion(f.home),'1.6.40');
     f.writeVersion('1.6.41'); assert.equal(installedVersion(f.home),'1.6.41');
     assert.equal(runningVersion(),loaded,'disk target changes cannot relabel loaded code');
-    fs.writeFileSync(f.pkg,'{"name":"wrong","version":"1.6.41"}'); assert.throws(()=>installedVersion(f.home),/标识/);
+    fs.writeFileSync(f.pkg,'{"name":"wrong","version":"1.6.41"}'); assert.throws(()=>installedVersion(f.home),/identity/);
     fs.unlinkSync(f.pkg); assert.throws(()=>installedVersion(f.home),/ENOENT/);
   }finally{for(const [k,v]of Object.entries(env)){if(v===undefined)delete process.env[k];else process.env[k]=v;}}
 });

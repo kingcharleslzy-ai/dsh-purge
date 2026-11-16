@@ -1,61 +1,61 @@
-# 更新完整性与诊断审查（#27–#30）
+# Update Integrity and Diagnostic Review (#27–#30)
 
-本次改动只涉及更新、备份回滚、版本比较和诊断。没有修改提示词过滤策略、权限设置、工具表或用户配置，也不自动应用宿主补丁、退出或重启 DSH。
+This change only involves updates, backup rollback, version comparison, and diagnostics. It does not modify prompt filtering policy, permission settings, tool lists, or user configuration, and it does not automatically apply host patches, quit, or restart DSH.
 
-## #28：逐 profile 检查与重试
+## #28: Per-Profile Checks and Retry
 
-旧逻辑把任意安装成功视为已安装，并按当前插件副本的版本检查更新。两个 profile 部分成功后，失败的副本可能被遗漏。
+The old logic treated any successful installation as installed and checked for updates based on the version of the current plugin copy. After two profiles partially succeeded, a failed copy could be missed.
 
-新逻辑逐一读取各 profile 的 `node_modules/dsh-purge-community/package.json`。共享同一个包目录的 profile 也分别处理，因为 manifest 与链接各自独立。缺失或不可读的包显示为待修复，不视为最新。
+The new logic reads `node_modules/dsh-purge-community/package.json` for each profile individually. Profiles that share the same package directory are also handled separately because manifests and links are independent. Missing or unreadable packages are shown as needing repair, not as up to date.
 
-- `ok` 表示全部目标成功；`applied` 仅表示本次确实改动了至少一个目标。
-- 部分失败保留 `hasUpdate` 和各目标错误，不提交全局版本 pin，不写自动更新完成保护标记。
-- 下次自动检查仍遵守用户的检查、安装开关及版本锁定；仅在确认磁盘存在版本分裂时允许越过“等待重启”保护，补装失败目标。
-- 已达到目标版本的 profile 不重复安装。自动更新不降级较新的副本；用户显式选择历史版本仍可回退。
-- 安装前备份，失败按目标回滚，安装后核对实际包版本。不会把发行版本直接冒充为运行中版本。
-- 手动切换到历史锁定版本部分失败时，继续显示失败，需重试该明确版本；不擅自改变原 pin 或转为自动更新。
+- `ok` means all targets succeeded; `applied` only means at least one target was actually changed in this run.
+- Partial failures preserve `hasUpdate` and per-target errors, do not commit a global version pin, and do not write the auto-update completion protection marker.
+- The next automatic check still respects the user's check/install switches and version lock; only when a version split is confirmed on disk may it bypass the "waiting for restart" protection to supplement failed targets.
+- Profiles that have already reached the target version are not reinstalled. Auto-update does not downgrade newer copies; users can still roll back by explicitly selecting a historical version.
+- Back up before installation, roll back per target on failure, and verify the actual package version after installation. The release version is not impersonated as the running version.
+- If a manual switch to a historical pinned version partially fails, continue to show failure and retry that explicit version; do not change the original pin or switch to auto-update on your own.
 
-## #29：旧 ZIP 通道的校验
+## #29: Verification for the Old ZIP Channel
 
-正式版 TGZ 通道原已有 SHA256SUMS 校验。本次补的是上游源码 ZIP 路径：
+The official TGZ channel already had SHA256SUMS verification. This adds verification for the upstream source ZIP path:
 
-1. 通过 GitHub API 将用户选定的分支／标签解析成完整 commit SHA。
-2. 读取该 commit 的完整 Git tree；截断、未知文件类型或非法路径直接失败。
-3. 只下载固定 SHA 的 codeload ZIP，不再在下载过程中追随移动分支。
-4. 使用有大小限制的 Node 解压器，只生成普通文件／目录，不创建归档内的符号链接。
-5. 对全部文件按 Git blob 格式计算对象摘要，与该提交的 tree 比对；多文件、少文件、改内容均失败。全部通过后才写入安装目录。
-6. 记录实际验证的提交，不在安装后另查一次可能已经移动的分支。
+1. Resolve the user-selected branch/tag to a full commit SHA via the GitHub API.
+2. Read the complete Git tree for that commit; truncated data, unknown file types, or illegal paths fail directly.
+3. Download only the codeload ZIP for the fixed SHA and no longer follow a moving branch during download.
+4. Use a size-limited Node extractor that creates only regular files/directories and does not create symlinks from inside the archive.
+5. Compute object digests for all files in Git blob format and compare them against that commit's tree; extra files, missing files, or changed content all fail. Only after all checks pass is the installation directory written.
+6. Record the actual verified commit and do not query a possibly moved branch again after installation.
 
-这证明“下载内容与 GitHub API 所指提交一致”，不是发行商签名或对上游代码安全性的认证。其信任来源仍是 GitHub HTTPS/API；API 不可用、限流或清单不完整时保持失败，不降级为不校验安装。用户设置、原安装和备份保留。
+This proves "downloaded content matches the commit indicated by the GitHub API," not publisher signature or certification of upstream code safety. Its trust source remains GitHub HTTPS/API; if the API is unavailable, rate-limited, or the manifest is incomplete, it remains a failure and does not degrade to unverified installation. User settings, original installation, and backups are preserved.
 
-## PR #27 审查与补充
+## PR #27 Review and Additions
 
-保留贡献者的诊断、版本比较、状态戳、短暂占用重试与回滚修复，并补齐：
+Kept the contributor's diagnostics, version comparison, status stamps, transient-busy retry, and rollback fixes, with the following additions:
 
-- 状态读取抛错或返回不完整记录时为 unknown，不能显示全绿。显式 `missing_file`/`na` 仍与“没有返回状态”区分。
-- SemVer 忽略 build metadata；预发布数字段按整数比较，支持超出 Number 精确范围的数字。
-- 回滚时保留未纳入备份的 `node_modules` 与 `.git`；任一搬回失败则撤销这次回滚并报错，不能只留下 retired 目录却宣称成功。
-- 普通文件快照复制保留 rwx 权限，防止回滚后丢失 CLI 执行位。
-- 新安装失败产生的半安装目录移到隔离位置保留诊断证据；原先已存在的目录不擅自删除。安装器错误依然保留快照 ID。
+- When status reads throw or return incomplete records, treat as unknown and do not show all-green. Explicit `missing_file`/`na` remain distinct from "no status returned."
+- SemVer ignores build metadata; prerelease numeric segments are compared as integers and support numbers beyond Number's exact range.
+- Rollback preserves `node_modules` and `.git` not included in the backup; if any move-back fails, undo this rollback and report error — it must not leave only a retired directory while claiming success.
+- Regular-file snapshot copies preserve rwx permissions to prevent losing CLI execute bits after rollback.
+- A half-installed directory produced by a failed new install is moved to an isolated location to preserve diagnostic evidence; directories that already existed are not deleted arbitrarily. Installer errors still preserve the snapshot ID.
 
-边界：包管理器失败后的整个依赖图／锁文件自动恢复不是这次新增的事务保证。现有快照回滚能力保留；不得把仅恢复 manifest 的失败路径称为完整依赖图回滚。
+Boundary: automatic recovery of the entire dependency graph/lock file after package-manager failure is not a new transactional guarantee added here. Existing snapshot rollback capability is retained; a failure path that restores only the manifest must not be called complete dependency-graph rollback.
 
-## #30：普通任务能力调查
+## #30: Ordinary-Task Capability Investigation
 
-目前不能确认“模型智力下降”，也没有证据支持“必然打断思考”或“只能拆任务／停用插件”的结论。
+At present, "model intelligence decline" cannot be confirmed, and there is no evidence supporting conclusions such as "thinking is necessarily interrupted" or "tasks must be split / plugin must be disabled."
 
-隔离普通任务观察（不调用模型、不操作用户安装）：
+Isolated ordinary-task observations (no model calls, no operations on user installations):
 
-| 项目 | 观察 |
+| Item | Observation |
 | --- | --- |
-| 项目规则与记忆以 system section 承载 | 启用对应过滤策略时会被移除；关闭对应过滤时保留 |
-| 工具说明、技能目录、普通用户任务夹具 | 两组均保留 |
-| 提问默认等待、显式 60 秒 | 当前代码分别保留 120 秒、60 秒；已不再固定 1 秒 |
-| 显式无限等待 | 仍与原生不同：当前收为 300 秒 |
-| 插话 | 已有真实方法体回归测试；不能据此证明报告者安装已经应用并加载了新代码 |
+| Project rules and memory carried as system sections | Removed when corresponding filtering policies are enabled; preserved when those filters are disabled |
+| Tool descriptions, skill directory, ordinary user-task fixtures | Preserved in both groups |
+| Default question wait, explicit 60 seconds | Current code preserves 120 seconds and 60 seconds respectively; no longer fixed to 1 second |
+| Explicit infinite wait | Still differs from native: currently capped to 300 seconds |
+| Interjection | Real method-body regression tests exist; this cannot prove the reporter's installation has applied and loaded the new code |
 
-**承载位置很重要**：上述规则丢失只证明特定 system section 的行为，不等于所有工作区规则都丢失。DSH rc.2 的消息型 `agent-instructions` 与 system section 是不同通路。用户版本、策略、实际输入和宿主加载状态需要分别核对。
+**Carrier location matters**: loss of the above rules only proves behavior of specific system sections and does not mean all workspace rules are lost. In DSH rc.2, message-type `agent-instructions` and system sections are different channels. User version, policy, actual input, and host load state need to be checked separately.
 
-后续模型级对照应固定 DSH/模型版本、推理等级、工具和普通任务仓库；使用干净原生副本和插件副本，交错重复至少三次，记录完成率、约束遵循、重复工具调用、耗时及 token。只关闭插件不是干净基线，因为宿主磁盘修改仍可能存在。
+Follow-up model-level comparisons should fix DSH/model version, reasoning level, tools, and an ordinary-task repository; use a clean native copy and a plugin copy, interleave and repeat at least three times, and record completion rate, constraint compliance, repeated tool calls, duration, and tokens. Turning off the plugin alone is not a clean baseline because host disk modifications may still exist.
 
-需要报告者提供：DSH 和插件版本、一个可公开的普通任务、预期结果与实际错误、更新后是否手动应用并重开。不要索取私人提示词、完整配置、令牌或整份聊天记录。获得可复现样本前保持调查状态，不承诺此次维护修复会改善模型输出质量。
+Reporters need to provide: DSH and plugin version, one shareable ordinary task, expected result versus actual error, and whether they manually applied and reopened after update. Do not request private prompts, full configuration, tokens, or entire chat logs. Keep investigation status before a reproducible sample is obtained; do not promise this maintenance fix will improve model output quality.

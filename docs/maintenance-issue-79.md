@@ -1,29 +1,29 @@
-# #79 / #77：运行时链接迁移与错误详情
+# #79 / #77: Runtime Symlink Migration and Error Details
 
-## 已复现的故障
+## Reproduced Failure
 
-当旧版在平铺目录创建 `app/runtime → ../runtime`，宿主布局后来变成 `runtime/<process.arch>/primary-runtime/...`，旧链接仍然存活，却不能满足 CLI 的平铺加载路径。1.6.51 对此返回 `runtime_conflict`；更早的平铺检测返回 `missing_runtime`。这是一条已重建并验证的故障路径，不代表已确认报告者的系统及目录布局。
+When an old version created `app/runtime → ../runtime` in a flat directory and the host layout later became `runtime/<process.arch>/primary-runtime/...`, the old link could still exist but fail to satisfy the CLI's flat load path. 1.6.51 returned `runtime_conflict` for this case; earlier flat-layout detection returned `missing_runtime`. This is a reconstructed and verified failure path and does not mean the reporter's system and directory layout have been confirmed.
 
-后端的应用失败响应带 `cli_repair`，旧前端只留下总错误字符串；具体 reason、启动器读写错误和恢复状态被丢弃。1.6.54 展示这些白名单字段，仍保留 HTTP 错误与原始失败状态，不展开完整配置/提示词。HTTP 200 但应用未完整成功的响应也使用同一详细错误格式。
+The backend's apply-failure response included `cli_repair`, but the old frontend kept only the aggregate error string; specific reason, launcher read/write errors, and recovery state were discarded. 1.6.54 displays these allowlisted fields while still preserving HTTP errors and the original failure state, without expanding full configuration/prompts. Responses that return HTTP 200 but are not fully successful also use the same detailed error format.
 
-## 迁移和恢复边界
+## Migration and Recovery Boundaries
 
-- 只迁移同一安装外层 runtime 的旧链接；当前进程架构目录与 pnpm 加载器必须真实存在且解析在该 runtime 内。
-- 先重命名旧链接为唯一 `.dshpurge-link-*.bak`，再建立新链接。Windows 使用绝对 Junction，macOS 使用相对符号链接。
-- 创建/验证失败时，将可能存在的新链接单独留存，恢复旧链接；恢复失败显式返回 `rollback_failed` 和备份位置。不递归删除链接或任何目标文件。
-- 真实目录、其他目标活链接、外部架构/加载器、未知架构、权限及读取失败不靠覆盖或跳过解决。目标在检查期间消失也不能误判为旧链接损坏。
-- 备份成功不等于迁移成功；迁移成功不等于宿主已重载。插件不会自动退出或重新打开 DSH。
+- Only migrate old links of the outer runtime in the same installation; the current-process architecture directory and pnpm loader must actually exist and resolve inside that runtime.
+- First rename the old link to a unique `.dshpurge-link-*.bak`, then create the new link. Windows uses an absolute Junction; macOS uses a relative symlink.
+- If creation/verification fails, leave any newly created link separately and restore the old link; if restore fails, explicitly return `rollback_failed` and the backup location. Do not recursively delete links or any target files.
+- Real directories, other active links to other targets, external architecture/loaders, unknown architecture, permission, and read failures are not resolved by overwrite or skip. A target disappearing during inspection must not be misjudged as old-link corruption.
+- A successful backup does not mean migration succeeded; a successful migration does not mean the host reloaded. The plugin does not automatically quit or reopen DSH.
 
-## 复现与验收
+## Reproduction and Acceptance
 
-维护脚本 `scripts/check-runtime-migration.mjs` 只能使用带 `.purge-install-test-fixture` 标记的新临时 CLI 副本；Mac 副本不得含 `.app` 或 Info.plist 身份。参数为测试副本路径及已校验发布包的解压目录。必须用副本自己的 Electron 在 `ELECTRON_RUN_AS_NODE=1` 下执行。
+The maintenance script `scripts/check-runtime-migration.mjs` may only use a fresh temporary CLI copy marked with `.purge-install-test-fixture`; Mac copies must not contain `.app` or Info.plist identity. Arguments are the test-copy path and the extracted directory of a verified release package. It must be run with the copy's own Electron in `ELECTRON_RUN_AS_NODE=1`.
 
-脚本先使用旧发布包的真实链接函数建立平铺链接、执行 pnpm，再重建架构布局。验证旧版失败后，注入链接创建及恢复失败，检查原链接/备份/目标内容，再执行新迁移与真实 pnpm。错误注入仅用于失败分支；文件系统和 Electron/pnpm 为实际执行。
+The script first uses the real link function from the old release package to create a flat link and run pnpm, then rebuilds the architecture layout. After verifying the old version fails, it injects link-creation and restore failures, checks original link/backup/target content, then performs the new migration and real pnpm. Error injection is used only for failure branches; filesystem and Electron/pnpm are actual executions.
 
-然后运行 `scripts/check-install-lifecycle-runtime.mjs`：实际官方 CLI/pnpm 的全新安装、旧包迁移、社区包及别名升级、回滚、再次升级；在实际包管理器事务后注入校验失败，确认依赖清单、锁文件、设置和用户后续编辑恢复/保留。安装不启动宿主服务，不应用宿主补丁，不测试模型或预设下拉。
+Then run `scripts/check-install-lifecycle-runtime.mjs`: actual official CLI/pnpm fresh install, old-package migration, community-package and alias upgrade, rollback, re-upgrade; after actual package-manager transactions it injects verification failures and confirms dependency manifest, lock file, settings, and user follow-up edits are restored/preserved. Installation does not start host services, does not apply host patches, and does not test models or preset dropdowns.
 
-这与完整桌面 UI 验收不同：目录变化为人工重建，未运行宿主自动升级器；未验证报告者的具体客户端、市场点击、预设重启消失。HTTP 错误回归使用真实本机 HTTP 服务和真实前端解析器，响应为构造诊断数据，不对正式 DSH 调用应用接口。
+This differs from full desktop UI acceptance: directory changes are manually reconstructed and the host auto-updater is not run; the reporter's specific client, marketplace click flow, and preset restart disappearance were not verified. HTTP error regressions use a real local HTTP service and real frontend parser, with responses as constructed diagnostic data, not applying to the official DSH through an application interface.
 
-## 向报告者收集
+## Information to Collect from Reporter
 
-无需卸载重装。先核对运行中的插件版本及 DSH 发行名称/版本、操作系统和架构；若升级后仍失败，提供本次详细错误中的 reason/code/恢复结果，路径可脱敏。不要索取提示词、完整配置、密钥或环境变量。预设重启消失保持独立待确认，不仅凭总错误归因为用户没点“应用”。
+No uninstall/reinstall is needed. First verify the running plugin version and DSH release name/version, OS, and architecture; if it still fails after upgrade, provide the reason/code/recovery result from this detailed error, with paths sanitized. Do not request prompts, full configuration, secrets, or environment variables. Preset restart disappearance remains an independent pending item and must not be attributed solely to "user did not click Apply" based only on the aggregate error.

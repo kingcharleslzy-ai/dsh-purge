@@ -1,12 +1,10 @@
 {
   "name": "dsh-h3-video",
   "title": {
-    "en": "MiniMax H3 Video",
-    "zh": "MiniMax H3 视频工作台"
+    "en": "MiniMax H3 Video"
   },
   "description": {
-    "en": "Generate and collect reference-conditioned H3 videos, browse a local video library and play MP4 deliveries in chat.",
-    "zh": "H3 人物参考视频、私有视频库与对话原位播放，支持 480p / 768p 及可调时长。"
+    "en": "Generate and collect reference-conditioned H3 videos, browse a local video library, and play MP4 deliveries in chat."
   },
   "author": "kingcharleslzy-ai",
   "homepage": "https://github.com/kingcharleslzy-ai/dsh-h3-video#readme",

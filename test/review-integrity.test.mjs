@@ -17,10 +17,10 @@ const collect = async stream => { const result = []; for await (const c of strea
 
 test("ordinary technical answers and quotations keep their complete original stream", async () => {
   for (const text of [
-    "Prompt injection 防护需要区分用户指令和网页内容。",
-    "Jailbreak 是本文讨论的术语，下面分析其风险。",
-    "我注意到提示词包含两个格式要求，下面分别处理。",
-    "这段指令用于覆盖界面主题颜色，修改如下。",
+    "Prompt injection defenses must separate user instructions from web content.",
+    "Jailbreak is the term this article discusses; its risks are analyzed below.",
+    "I noticed the prompt contains two formatting requirements; handled separately below.",
+    "This instruction overrides the UI theme colors, modified as follows.",
   ]) {
     assert.equal(looksLikeRefusal(text), false);
     let calls = 0;
@@ -44,13 +44,13 @@ test("consumer cancellation closes the ordinary upstream stream", async () => {
 
 test("prompt prose, quotes, fenced examples and mixed-case text are preserved", () => {
   for (const text of [
-    "请解释 CTF CORE CONTRACT 一词。\n后续用户规则必须保留。",
-    "> CTF CORE CONTRACT\n引用后的正文",
-    "`CTF CORE CONTRACT`\n正文",
-    "```text\nCTF CORE CONTRACT\n```\n正文",
-    "~~~~\nCTF CORE CONTRACT\n~~~\n仍在代码块",
-    "CTF Core Contract\n正文",
-    "    CTF CORE CONTRACT\n缩进代码之后",
+    "Please explain the term CTF CORE CONTRACT.\nLater user rules must be preserved.",
+    "> CTF CORE CONTRACT\nbody after the quote",
+    "`CTF CORE CONTRACT`\nbody",
+    "```text\nCTF CORE CONTRACT\n```\nbody",
+    "~~~~\nCTF CORE CONTRACT\n~~~\nstill inside the code block",
+    "CTF Core Contract\nbody",
+    "    CTF CORE CONTRACT\nafter the indented code",
   ]) {
     assert.deepEqual(splitRedteamInject(text), { common: text, ctfTail: "" });
     assert.equal(withoutCtfContract(text), text);

@@ -45,16 +45,16 @@ export function shimKind(v) {
 }
 
 export const LAYER_GROUP = {
-  提示词: "prompt",
-  代码: "code",
-  工具: "tools",
-  "0.1.5 兼容": "compat",
-  "0.2.0 兼容": "dsh20",
+  Prompt: "prompt",
+  Code: "code",
+  Tools: "tools",
+  "0.1.5 Compatible": "compat",
+  "0.2.0 Compatible": "dsh20",
 };
 
 export const GROUP_ORDER = ["prompt", "code", "tools", "compat", "dsh20"];
 
-// 补丁按"谁在管它"分成三组，状态页的开关和计数都按这个口径走。
+// Group patches by their controlling setting for consistent switches and counts.
 export const PERMISSION_PATCH_IDS = [
   6, 7, 8, 9, 10, 13, 14, 15, 16, 35, 51, 59, 60, 62,
 ];
@@ -72,9 +72,9 @@ export function patchGroupOf(id) {
 }
 
 /**
- * 逐补丁行。只认 `patch_rows`（服务端按 88 条补丁逐条给出）。
- * `state.patches` 是「显示分组」，一个分组聚合了多条补丁、只有一条 status，
- * 拿它当逐补丁列表会少算条目、也会把混合状态压成一个（1.7.18 修的就是这个）。
+ * Individual patch rows come from patch_rows (88 server-provided entries).
+ * state.patches contains display groups aggregating multiple patches into one status.
+ * Counting groups loses entries and collapses mixed states, fixed in 1.7.18.
  */
 function rowsFromState(state) {
   if (!state || !state.ai_base) return [];
@@ -101,7 +101,7 @@ function rowsFromState(state) {
       }))
       .filter((r) => r.st && Number.isFinite(r.id));
   }
-  // 老载荷/夹具只剩分组表：只能按分组显示，明确标注为退化输入。
+  // Legacy payloads expose only groups; explicitly mark this reduced detail.
   return (Array.isArray(state.patches) ? state.patches : [])
     .map((p) => ({
       id: Number(p.id),
@@ -116,7 +116,7 @@ export function patchRowsOf(state) {
   return rowsFromState(state).filter((r) => r.st !== "na");
 }
 
-/** 含"本端不适用"的全量行：状态页要能单独把它们列出来，但不进分母。 */
+/** Include inapplicable rows for display, but exclude them from the denominator. */
 export function patchRowsAll(state) {
   return rowsFromState(state);
 }
@@ -125,7 +125,7 @@ function isNaRow(row) {
   return row.st === "na" || row.st === "skipped" || row.st === "missing_file";
 }
 
-/** 四态计数：已应用 / 待应用 / 未启用 / 本端不适用，后两者互斥且不计入分母。 */
+/** Applied / pending / disabled / inapplicable; the last two exclude each other and the denominator. */
 export function patchGroupCounts(rows) {
   const out = { applied: 0, pending: 0, off: 0, na: 0, total: 0, denom: 0 };
   for (const row of rows || []) {
@@ -177,7 +177,7 @@ function Tile({ kind, label, value, title, text }) {
   );
 }
 
-/** 顶部健康度：一条主数字 + 四格拆分 + 进度条。 */
+/** Health summary: a main count, four state tiles, and a progress bar. */
 export function PatchHealth({ state }) {
   const t = useT();
   if (!state || !state.ai_base) return null;
@@ -291,8 +291,8 @@ function Switch({ on, busy, label, desc, hintTitle, hint, chip, onToggle }) {
 }
 
 /**
- * 两个补丁组开关。只改 tuning，不写宿主：
- * 关掉权限补丁不会立刻回滚已写入的文件，下次「应用」才生效——这是刻意的。
+ * Group switches change tuning without writing host files.
+ * Disabling permission patches intentionally takes effect only on the next Apply.
  */
 export function PatchGroupSwitches({ state, onSaved }) {
   const t = useT();
@@ -407,7 +407,7 @@ export function PatchGroupSwitches({ state, onSaved }) {
 
 const FILTERS = ["all", "pending", "off", "na"];
 
-/** 补丁明细：过滤条 + 分组表。组内保留状态说明文字，便于直接看出"要修什么"。 */
+/** Filterable patch groups retain status explanations to identify required repairs. */
 export function PatchGroups({ state }) {
   const t = useT();
   const [open, setOpen] = useState({ code: true });
@@ -486,7 +486,7 @@ export function PatchGroups({ state }) {
         notes.push(t("metric.driftedShort", { n: tally.drifted }));
       if (tally.disabled)
         notes.push(t("metric.disabledShort", { n: tally.disabled }));
-      // 「本端不适用」已经由顶部数字和组头灰色胶囊表达，这里不再重复一个「跳过 n」。
+      // Summary counts and muted group pills already represent inapplicable items.
       const expanded = !!open[key];
       return h(
         "div",
@@ -572,11 +572,11 @@ export function PatchGroups({ state }) {
                       (t("patch." + r.id) !== "patch." + r.id
                         ? t("patch." + r.id)
                         : r.name) || "patch." + r.id,
-                      // 样稿是两行：中文名 + 英文标识符。英文只在有独立名字时补一行。
+                      // Show a second identifier line only when a distinct name exists.
                       r.name && t("patch." + r.id) !== "patch." + r.id
                         ? h("span", { className: "dshpp-row-en" }, r.name)
                         : null,
-                      // 已应用的行不再重复解释原因：60 行同样的字只会把表撑长。
+                      // Applied rows omit repetitive explanations to keep the table compact.
                       r.st === "applied" || r.st === "already"
                         ? null
                         : h(
@@ -615,7 +615,7 @@ export function PatchGroups({ state }) {
   );
 }
 
-/** 写入流程：说清"点应用 → 你自己重开 → 回来核对"，插件不会替你重启。 */
+/** Explain Apply, manual restart, and verification; the plugin never restarts for you. */
 export function PatchApplySteps() {
   const t = useT();
   const step = (n, title, desc) =>

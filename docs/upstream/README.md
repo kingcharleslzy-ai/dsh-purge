@@ -1,4 +1,4 @@
-> 归档快照：原上游仓库 `YuJunZhiXue/dsh-purge` 已不可访问，本文中的上游链接仅作历史记录，点击可能 404。
+> Archived snapshot: the original upstream repository `YuJunZhiXue/dsh-purge` is no longer accessible. Upstream links in this document are kept for historical reference only and may return 404.
 
 > **Native panel fork:** This branch adds a separately installable presentation plugin in [`packages/purge-panel`](packages/purge-panel). Upstream backend behavior is unchanged. See [maintenance and update instructions](NATIVE-PANEL.md).
 
@@ -11,7 +11,7 @@
 <p align="center"><strong>Version 1.1.71</strong></p>
 
 <p align="center">
-  <em>DeepSeek Harness jailbreak: every model, swap prompts per model. Default prompt for 小码酱. Please star ⭐ If you build on this, see Attribution required.</em>
+  <em>DeepSeek Harness jailbreak: every model, swap prompts per model. Default prompt for Xiao Ma Jiang. Please star ⭐ If you build on this, see Attribution required.</em>
 </p>
 
 <p align="center">
@@ -30,7 +30,7 @@
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> | <a href="README.zh-CN.md">中文</a>
+  <a href="README.md">English</a>
 </p>
 
 > **Updates paused.** The author has no steady income for now because of work. Maintenance is on hold: no new releases, issues / PRs are not taken, and new dsh versions are not guaranteed. The repo stays usable; see Sponsor below. When maintenance resumes, this README will say so.
@@ -105,17 +105,17 @@ Using them without attribution, hiding the source, or passing them off as your o
 
 ## Unauthorized commercial use
 
-Douyin live account **「老张的ai」** (room name **「老张AI讲堂」**) is selling this repository: taking fees in the live room, no attribution, and ignoring the non-profit rule above. The author was in the room. They still charged.
+Douyin live account **"Lao Zhang's AI"** (room name **"Lao Zhang AI Lecture Hall"**) is selling this repository: taking fees in the live room, no attribution, and ignoring the non-profit rule above. The author was in the room. They still charged.
 
 This project is free and non-profit. Selling courses, the plugin, tokens, or reselling it voids the license on the spot. The author reserves the right to pursue it.
 
 Recorded 2026-10-12:
 
-<p align="center"><em>直播间截图已移除（涉及第三方账号信息）。</em></p>
+<p align="center"><em>Live stream screenshot removed (contains third-party account information).</em></p>
 
-WeChat name **「老张的ai科技」**, same handle as the live-room viewer board. Asked if they were this repo's developer, they said they were. The author said they would report it.
+WeChat name **"Lao Zhang's AI Technology"**, same handle as the live-room viewer board. Asked if they were this repo's developer, they said they were. The author said they would report it.
 
-<p align="center"><em>微信聊天截图已移除（涉及第三方隐私）。</em></p>
+<p align="center"><em>WeChat chat screenshot removed (contains third-party privacy information).</em></p>
 
 ---
 

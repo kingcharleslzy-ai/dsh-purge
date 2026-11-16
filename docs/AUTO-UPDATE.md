@@ -1,13 +1,13 @@
-# 更新检查与自动安装
+# Update Checks and Auto-Install
 
-维护区有两个独立开关：`autoCheck`（默认 true）和 `autoInstall`（默认 false，若旧 `autoUpdateOnStart=true` 则保留该偏好）。检查启动延迟 30 秒，间隔 `intervalHours` 为 1–168 小时整数，默认 6。
+The maintenance area has two independent switches: `autoCheck` (default `true`) and `autoInstall` (default `false`; if the old `autoUpdateOnStart=true` was set, that preference is preserved). Checks start after a 30-second delay, and the `intervalHours` interval is an integer from 1 to 168 hours, defaulting to 6.
 
-关闭检查会暂停安装但不清空安装偏好；这两项与 `autoApplyOnStart` 无关。设置保存在 `$DSH_HOME/dsh-purge/update-preferences.json`，读取默认值不写迁移文件。旧 profile、提示词、其他插件配置和通道锁定不变。
+Turning checks off pauses installation but does not clear the install preference; these two settings are independent of `autoApplyOnStart`. Settings are stored in `$DSH_HOME/dsh-purge/update-preferences.json`, and reading defaults does not write a migration file. Existing profiles, prompts, other plugin configuration, and channel locks remain unchanged.
 
-自动安装只针对未锁定的社区正式版本，沿用 SHA256 校验、备份和安装失败恢复。网络检查返回后再次读取开关；此时已关闭或插件已卸载，不开始安装。已开始的安装不强行终止，完成后持久化结果。
+Auto-install applies only to unpinned community stable releases and continues to use SHA256 verification, backups, and installation-failure recovery. After a network check returns, the switches are read again; if checks are off or the plugin has been uninstalled at that point, installation does not start. An installation that has already started is not forcibly terminated, and its result is persisted when it completes.
 
-`update-status.json` 记录检查时间、错误、可用版本及待重启版本。如果检查失败或只能读取过期缓存，`hasUpdate` 为 `null`，`availableVersion` 保留上一次确认值；此次检查的原因记录在 `error` 中。如果 GitHub 官方最新发行元数据仍可读取，提示中会单独显示该版本号；该信息不能确认安装包。安装成功后等待用户手动重启，暂停下一次自动安装；新进程加载对应版本后清除待重启标记。更新流程没有重启或客户端刷新动作；面板明确提示手动重启。
+`update-status.json` records the check time, errors, available version, and pending-restart version. If a check fails or only a stale cache can be read, `hasUpdate` is `null` and `availableVersion` keeps the last confirmed value; the reason for this check is recorded in `error`. If the latest official GitHub release metadata is still readable, that version number is shown separately in the prompt; that information does not confirm the installation package. After a successful installation, the system waits for a manual user restart and pauses the next auto-install; the pending-restart marker is cleared after the new process loads the corresponding version. The update flow does not restart or refresh the client; the panel explicitly prompts for a manual restart.
 
-未知字段、非法间隔或损坏的偏好文件会报错，不会悄悄恢复默认并安装。检查失败仍会在下个周期重试，但不冒充已是最新版。锁定版本时不会自动越过 pin。
+Unknown fields, invalid intervals, or corrupted preference files raise errors and do not silently restore defaults and install. Check failures are retried in the next cycle, but the system does not pretend it is already on the latest version. When a version is pinned, it does not automatically bypass the pin.
 
-验证包括生命周期取消、请求去重、关闭开关、部分更新、错误信息与设置保留。真实发行包安装/回滚沿用既有维护测试；未在用户正在工作的 DSH 中自动安装来测试。
+Validation covers lifecycle cancellation, request deduplication, turning switches off, partial updates, error messages, and settings preservation. Real release-package installation/rollback continues to use the existing maintenance tests; auto-install was not tested inside a DSH instance the user was actively working in.

@@ -12,8 +12,8 @@ import {hostFs} from '../lib/extract-asar.js';
 
 const component='dsh/node_modules/@deepseek-ai/dsh-desktop-host';
 function fixture(t) {
-  const root=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'desktop target 中文 ')));
-  const bundle=path.join(root,'Renamed.app'),exe=path.join(bundle,'Contents/MacOS/任意 Host'),resources=path.join(bundle,'Contents/Resources');
+  const root=fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(),'desktop target ascii ')));
+  const bundle=path.join(root,'Renamed.app'),exe=path.join(bundle,'Contents/MacOS/Any Host'),resources=path.join(bundle,'Contents/Resources');
   fs.mkdirSync(path.dirname(exe),{recursive:true});fs.mkdirSync(resources,{recursive:true});fs.writeFileSync(exe,'fixture',{mode:0o700});
   t.after(()=>fs.rmSync(root,{recursive:true,force:true}));return {root,bundle,exe,resources};
 }

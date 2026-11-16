@@ -1,12 +1,12 @@
-// 真实 OS 级文件占用验证（Windows）。
+// Real OS-level file-lock verification (Windows).
 //
-// 注意：Node 的 fs.open 默认带 FILE_SHARE_DELETE，被它打开的文件仍然可以 rename，
-// 所以那不能代表杀软/索引器造成的占用。这里用 PowerShell 的 FileStream 以
-// FileShare.Read（不含 Delete）持有句柄 —— 这才是会让 MoveFile 失败的那种锁。
+// Note: Node's fs.open defaults to FILE_SHARE_DELETE, so a file it opened can still be renamed,
+// which cannot represent a lock held by an AV scanner or indexer. Here a PowerShell FileStream
+// holds the handle with FileShare.Read (no Delete) — the kind of lock that actually makes MoveFile fail.
 //
-// 非 Windows 跳过（POSIX 下 rename 不受打开句柄影响）。
+// Skipped off Windows (on POSIX rename ignores open handles).
 //
-// 运行：node --test test/windows-lock.test.mjs
+// Run: node --test test/windows-lock.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -17,7 +17,7 @@ import { spawn } from "node:child_process";
 const TMP = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "purge-lock-")));
 const isWindows = process.platform === "win32";
 
-/** 用不含 FILE_SHARE_DELETE 的共享模式持有文件；resolve 时锁已生效 */
+/** Holds the file with a share mode that excludes FILE_SHARE_DELETE; the lock is active when resolved */
 function holdExclusive(file) {
   const literal = String(file).replace(/'/g, "''");
   const script =
@@ -45,7 +45,7 @@ function holdExclusive(file) {
       try {
         child.kill();
       } catch {
-        /* 已经退出 */
+        /* already exited */
       }
       setTimeout(resolve, 4000).unref();
     });
@@ -61,7 +61,7 @@ function tryRename(from, to) {
   }
 }
 
-test("独占句柄下改名被拒绝，释放后成功", { skip: !isWindows }, async () => {
+test("rename is rejected under an exclusive handle and succeeds after release", { skip: !isWindows }, async () => {
   const dir = path.join(TMP, "hold");
   fs.mkdirSync(dir, { recursive: true });
   const source = path.join(dir, "app.asar");
@@ -72,23 +72,23 @@ test("独占句柄下改名被拒绝，释放后成功", { skip: !isWindows }, a
   await holder.ready;
   try {
     const blocked = tryRename(source, target);
-    assert.equal(blocked.ok, false, "被占用时改名必须失败，否则会动到宿主正在读的归档");
+    assert.equal(blocked.ok, false, "rename must fail while locked, or it would touch the archive the host is reading");
     assert.ok(
       ["EPERM", "EBUSY", "EACCES", "EUNKNOWN"].includes(blocked.code),
-      `期望占用类错误码，实际 ${blocked.code}`,
+      `expected a lock-type error code, got ${blocked.code}`,
     );
-    assert.equal(fs.existsSync(source), true, "失败后原文件必须原地不动");
-    assert.equal(fs.existsSync(target), false, "失败后不得留下半个备份");
+    assert.equal(fs.existsSync(source), true, "after failure the original file must stay in place");
+    assert.equal(fs.existsSync(target), false, "after failure no half backup may be left behind");
   } finally {
     await holder.stop();
   }
 
   const after = tryRename(source, target);
-  assert.equal(after.ok, true, "释放后同一次改名必须成功");
+  assert.equal(after.ok, true, "after release the same rename must succeed");
   assert.equal(fs.readFileSync(target, "utf8"), "ARCHIVE-BYTES");
 });
 
-test("轮询重试：占用期间连续失败，释放后第一次成功", { skip: !isWindows }, async () => {
+test("polling retry: repeated failures while locked, first success after release", { skip: !isWindows }, async () => {
   const dir = path.join(TMP, "poll");
   fs.mkdirSync(dir, { recursive: true });
   const source = path.join(dir, "app.asar");
@@ -108,11 +108,11 @@ test("轮询重试：占用期间连续失败，释放后第一次成功", { ski
     }
     failures += 1;
     assert.ok(["EPERM", "EBUSY", "EACCES", "EUNKNOWN"].includes(result.code));
-    if (failures === 3) await holder.stop(); // 第三次失败后释放，模拟宿主退出
+    if (failures === 3) await holder.stop(); // release after the third failure, simulating the host exiting
     await new Promise((r) => setTimeout(r, 100));
   }
 
-  assert.ok(failures >= 3, `至少经历三次占用失败，实际 ${failures}`);
-  assert.equal(succeeded, true, "释放后轮询必须收敛到成功");
+  assert.ok(failures >= 3, `at least three lock failures expected, got ${failures}`);
+  assert.equal(succeeded, true, "polling must converge to success after release");
   assert.equal(fs.readFileSync(target, "utf8"), "ARCHIVE");
 });

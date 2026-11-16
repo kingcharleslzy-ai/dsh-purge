@@ -8,7 +8,7 @@ import path from 'node:path';
 import { EventEmitter } from 'node:events';
 import { spawn, spawnSync } from 'node:child_process';
 import { WINDOWS_ASAR_HANDOFF_PS1 as script, scheduleWindowsAsarHandoff, readWindowsAsarHandoff } from '../lib/windows-asar-handoff.js';
-const temp = () => fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'purge handoff 中文 ')));
+const temp = () => fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'purge handoff zh ')));
 const powershell=process.env.PURGE_TEST_POWERSHELL || 'powershell.exe';
 const wait = ms => new Promise(r => setTimeout(r, ms));
 async function until(fn, ms=12000) { const end=Date.now()+ms; while(Date.now()<end) { if(fn())return; await wait(100); } throw Error('handoff timeout'); }

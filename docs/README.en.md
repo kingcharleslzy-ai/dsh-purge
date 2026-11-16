@@ -4,13 +4,13 @@
 
 **Helping your AI assistant stay focused on your learning and hands-on work.**
 
-A self-hosted add-on for DeepSeek Harness (known in the community as a 破甲 / "jailbreak" plugin) · 86 host patches · 25 status layers
+A self-hosted add-on for DeepSeek Harness (known in the community as an "armor-breaking" or "jailbreak" plugin) · 86 host patches · 25 status layers
 
 [![Release](https://img.shields.io/github/v/release/kingcharleslzy-ai/dsh-purge?label=release)](https://github.com/kingcharleslzy-ai/dsh-purge/releases)
 
 Current version 1.7.18 · targets **DSH Desktop 0.2.2-rc.3** (0.2.2-rc.1 / 0.2.1-rc.1 / rc.2 / rc.3 / rc.5 also pass)
 
-**Original project and author:** independently maintained from [dsh-purge by 小杨 / YuJunZhiXue](https://github.com/YuJunZhiXue/dsh-purge). The original repository is available again. Original attribution, copyright and the MIT license are retained; this community distribution is not an official upstream release.
+**Original project and author:** independently maintained from [dsh-purge by Xiao Yang / YuJunZhiXue](https://github.com/YuJunZhiXue/dsh-purge). Original attribution, copyright and the MIT license are retained; this community distribution is not an official upstream release. Historical attribution does not verify the identity of a current account using the same name.
 
 </div>
 
@@ -31,7 +31,7 @@ dsh-purge Community runs entirely on your own machine and gathers the parts of d
 
 The goal is simple: let the assistant support your learning and hands-on experiments coherently, instead of stopping to ask before every step.
 
-People usually call this a 破甲 ("armor-breaking") or unrestrained-mode plugin: it lowers interaction friction so the agent can keep working. It does not change the model itself, and it does not change what you are trying to do.
+People usually call this an "armor-breaking" or unrestricted-mode plugin: it lowers interaction friction so the agent can keep working. It does not change the model itself, and it does not change what you are trying to do.
 
 ## Principles
 
@@ -60,7 +60,7 @@ dsh plugin --profile web add "https://github.com/kingcharleslzy-ai/dsh-purge/rel
 
 Use the actual instance's profile and `DSH_HOME`. This project distributes via GitHub; do not substitute bare npm package names. The official command does not run our extra Release SHA256 check, migration snapshot or rollback wrapper.
 
-[Copyable macOS, Windows and Linux installer commands](../README.md#安装) start with downloading the script; no source checkout is assumed. macOS defaults to `/Applications/DeepSeek Harness.app`; Windows requires a uniquely identified exe (otherwise pass `-DshExe`). Open DSH once first to initialize its profile. Paths, custom home/profile and recovery commands are explained in the [installation guide](INSTALLATION.md).
+[Copyable macOS, Windows and Linux installer commands](../README.md#installation) start with downloading the script; no source checkout is assumed. macOS defaults to `/Applications/DeepSeek Harness.app`; Windows requires a uniquely identified exe (otherwise pass `-DshExe`). Open DSH once first to initialize its profile. Paths, custom home/profile and recovery commands are explained in the [installation guide](INSTALLATION.md).
 
 Dry-run verifies prerequisites, download and SHA256, **not** dependency installation or application startup. Scripts/bootstrap come from this repository's master branch; the archive checksum is not an independent signature for those scripts. A real installation snapshots and invokes the selected official CLI. For unpacked desktops it may repair `app/runtime`; on read-only Linux hosts it may prepare a user-owned host copy and switch a user launcher after success. It never applies host patches or restarts DSH automatically, and does not change the proxy or global npm registry.
 
@@ -94,7 +94,7 @@ purge-community diagnose
 purge-community audit --limit 20
 ```
 
-New releases use patch numbers 0–99 without leading zeros. Existing releases keep their original numbers. See the [release numbering policy](MAINTENANCE.md#发行版本号).
+New releases use patch numbers 0–99 without leading zeros. Existing releases keep their original numbers. See the [release numbering policy](MAINTENANCE.md#release-numbering).
 
 If the panel does not open, confirm both sides run the same version, then follow [MAINTENANCE.md](MAINTENANCE.md); do not overwrite `Resources/app` directly.
 
@@ -104,7 +104,7 @@ If the panel does not open, confirm both sides run the same version, then follow
 
 Agent-facing instructions live in [AGENTS.md](../AGENTS.md); when the two disagree, AGENTS.md wins.
 
-**Keywords**: 破甲 · unrestricted mode · prompt injection · jailbreak · DSH plugin · status self-check · backup and rollback
+**Keywords**: unrestricted mode · prompt injection · jailbreak · DSH plugin · status self-check · backup and rollback
 
 ## 1.6.39
 

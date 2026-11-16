@@ -30,8 +30,8 @@ test('metadata, raw and archives share scoped mirror; no token even on redirect 
 test('authoritative checksum requests bypass mirror and cannot redirect into one',async()=>{
  const env={PURGE_GH_MIRROR:mirror,GITHUB_TOKEN:'fixture-token'};
  await requestUpdate(api,{env,authoritative:true,fetch:async(url,options)=>{assert.equal(String(url),api);assert.equal(options.headers.authorization,'Bearer fixture-token');return new Response('ok');}});
- await assert.rejects(requestUpdate(api,{env,authoritative:true,fetch:async()=>new Response(null,{status:302,headers:{location:mirror+'checksum'}})}),/来源/);
- await assert.rejects(requestUpdate('https://untrusted.example/release',{env,fetch:()=>assert.fail('invalid source must not reach mirror')}),/来源/);
+ await assert.rejects(requestUpdate(api,{env,authoritative:true,fetch:async()=>new Response(null,{status:302,headers:{location:mirror+'checksum'}})}),/invalid update download source/);
+ await assert.rejects(requestUpdate('https://untrusted.example/release',{env,fetch:()=>assert.fail('invalid source must not reach mirror')}),/invalid update download source/);
 });
 test('saved mirror survives unrelated preference edits; blank disables inherited mirror without altering tokens',t=>{
  const home=fs.mkdtempSync(path.join(os.tmpdir(),'purge-mirror-settings-'));t.after(()=>fs.rmSync(home,{recursive:true,force:true}));
@@ -55,6 +55,6 @@ test('foreign release URLs stop before any network request or cache write',async
  const home=fs.mkdtempSync(path.join(os.tmpdir(),'purge-mirror-source-'));t.after(()=>fs.rmSync(home,{recursive:true,force:true}));
  const base=`https://github.com/${REPOSITORY}/releases/download/v1.6.74/`;
  const release={ref:'v1.6.74',version:'1.6.74',asset:base+PACKAGE+'-1.6.74.tgz',sums:base+'SHA256SUMS.txt'};
- for(const field of ['asset','sums'])await assert.rejects(prepareRelease({base:home},{...release,[field]:release[field].replace(REPOSITORY,'other/repo')},()=>assert.fail('untrusted source reached network')),/官方发行来源/);
+ for(const field of ['asset','sums'])await assert.rejects(prepareRelease({base:home},{...release,[field]:release[field].replace(REPOSITORY,'other/repo')},()=>assert.fail('untrusted source reached network')),/official release source/);
  assert.deepEqual(fs.readdirSync(home),[]);
 });

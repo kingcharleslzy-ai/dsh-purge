@@ -49,8 +49,8 @@ export function Pill({ value, label }) {
 }
 
 /**
- * 名词解释：DSH 自己的设置页也是"标题 + 小问号 + 悬浮说明"，
- * 这里用同构的轻量实现（不依赖 react-dom portal，右侧栏/整页都能用）。
+ * Match the host's title, question-mark button, and tooltip layout.
+ * Avoid portals so this works in both the sidebar and the full page.
  */
 export function HelpTip({ title, children, label }) {
   const [open, setOpen] = useState(false);
@@ -62,7 +62,7 @@ export function HelpTip({ title, children, label }) {
       {
         type: "button",
         className: "dshpp-help-btn",
-        "aria-label": (label || title || "说明") + "（查看说明）",
+        "aria-label": (label || title || "Help") + " (view help)",
         "aria-expanded": open ? "true" : "false",
         onMouseEnter: () => setOpen(true),
         onMouseLeave: () => setOpen(false),

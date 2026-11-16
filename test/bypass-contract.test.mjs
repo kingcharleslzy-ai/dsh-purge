@@ -1,6 +1,6 @@
-// 破甲契约：这 25 条是"闸门"。任何人（包括后续优化）改动它们，
-// 指纹就会变，CI 直接红——要动必须先说明理由并更新这里的指纹。
-// 质量优化只能碰非闸门补丁（例如已移除的 #18/#19）。
+// Bypass contract: these 25 are the "gates". Anyone (including later optimizations) changing them
+// changes the fingerprint and CI goes red — argue the reason and update the fingerprint here first.
+// Quality work may only touch non-gate patches (e.g. the removed #18/#19).
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import crypto from "node:crypto";
@@ -67,8 +67,8 @@ test("all 25 bypass gates exist with unchanged semantics", () => {
 });
 
 test("quality-reducing patches stay opt-in and off by default", () => {
-  // #18/#19 关闭的是上下文保护（重复调用提醒、工具结果修剪），不是门禁。
-  // 它们以 disabledByDefault 形态存在：能显式打开，但默认绝不写入宿主。
+  // #18/#19 disable context protection (repeated-call reminders, tool-result trimming), not a gate.
+  // They exist as disabledByDefault: explicitly openable, but never written to the host by default.
   for (const id of [18, 19]) {
     const patch = ALL_PATCHES.find((p) => p.id === id);
     assert.ok(patch, `#${id} should exist as an opt-in patch`);

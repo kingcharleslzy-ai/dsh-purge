@@ -27,10 +27,10 @@ for (const log of [missingLog.replace('bash-win32-x64','private-package'),missin
  });
 }
 for(const registry of ['https://private.example/',OFFICIAL_REGISTRY,'undefined','http://registry.npmmirror.com/'])test('no public fallback from '+registry,async()=>{
- let count=0;await assert.rejects(installWithRegistryRecovery({run:async()=>{count++;throw failure()},config:async()=>registry,request:()=>assert.fail()}),/未关闭安全校验/);assert.equal(count,1);
+ let count=0;await assert.rejects(installWithRegistryRecovery({run:async()=>{count++;throw failure()},config:async()=>registry,request:()=>assert.fail()}),/Security checks were not disabled/);assert.equal(count,1);
 });
 for(const change of [m=>delete m.versions['0.2.1'],m=>delete m.time,m=>m.versions['0.2.1'].dist.tarball='https://evil.example/a.tgz',m=>m.versions['0.2.1'].name='wrong',m=>delete m.versions['0.2.1'].dist.integrity])test('incomplete/untrusted official metadata never permits retry '+change,async()=>{
- let count=0;const m=metadata();change(m);await assert.rejects(installWithRegistryRecovery({run:async()=>{count++;throw failure()},config,request:async()=>new Response(JSON.stringify(m))}),/未关闭安全校验/);assert.equal(count,1);
+ let count=0;const m=metadata();change(m);await assert.rejects(installWithRegistryRecovery({run:async()=>{count++;throw failure()},config,request:async()=>new Response(JSON.stringify(m))}),/Security checks were not disabled/);assert.equal(count,1);
 });
 test('official metadata failure and failed retry stop with useful diagnostics',async()=>{
  let count=0;await assert.rejects(installWithRegistryRecovery({run:async()=>{count++;throw failure()},config,request:async()=>{throw Error('offline')}}),/issue #7/);assert.equal(count,1);

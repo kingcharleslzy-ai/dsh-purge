@@ -10,7 +10,7 @@ import { bootstrapInstall, desktopCli, webCli, prepareLinuxHost } from "../scrip
 const exec = promisify(execFile);
 
 function fixture(t) {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "purge Linux 中文 "));
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "purge Linux ascii "));
   t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
   const home = path.join(tmp, "home"), profile = path.join(home, "profiles/web");
   fs.mkdirSync(profile, { recursive: true });
@@ -24,7 +24,7 @@ function fixture(t) {
 test("read-only official Linux DSH gets an owned, executable, idempotent copy with contained links", { skip: process.platform !== "linux" || process.getuid?.() === 0 }, async t => {
   let restore;
   t.after(() => restore?.());
-  const f = fixture(t), root = path.join(f.tmp, "official"), userHome = path.join(f.tmp, "user 中文");
+  const f = fixture(t), root = path.join(f.tmp, "official"), userHome = path.join(f.tmp, "user ascii");
   const cli = path.join(root, "lib/bin.js"), base = path.join(root, "node_modules/@deepseek-ai");
   fs.mkdirSync(path.dirname(cli), { recursive: true }); fs.mkdirSync(base, { recursive: true });
   fs.writeFileSync(path.join(root, "package.json"), JSON.stringify({ name: "@deepseek-ai/dsh", version: "0.2.1-rc.2", bin: { dsh: "lib/bin.js" } }));
@@ -38,7 +38,7 @@ test("read-only official Linux DSH gets an owned, executable, idempotent copy wi
   assert.equal(result.copied, true);
   assert(!fs.existsSync(result.launcher), "preparing a copy must not activate it");
   result.activate();
-  assert.deepEqual(JSON.parse((await exec(result.launcher, ["web", "含 空格", "--port", "3081"])).stdout), ["web", "含 空格", "--port", "3081"]);
+  assert.deepEqual(JSON.parse((await exec(result.launcher, ["web", "with space", "--port", "3081"])).stdout), ["web", "with space", "--port", "3081"]);
   assert.equal(fs.statSync(path.join(result.aiBase, "fixture.js")).mode & 0o777, 0o600);
   assert.equal(fs.realpathSync(path.join(result.aiBase, "internal")), path.join(result.aiBase, "fixture.js"));
   fs.writeFileSync(path.join(result.aiBase, "fixture.js"), "patched");

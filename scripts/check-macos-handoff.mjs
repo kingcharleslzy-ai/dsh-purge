@@ -20,7 +20,7 @@ if (!binary || !binary.includes("/Electron.app/Contents/MacOS/"))
 const root = fs.realpathSync(
   fs.mkdtempSync(path.join(os.tmpdir(), "purge-mac-electron-")),
 );
-const bundle = path.join(root, "验收 Fixture.app"),
+const bundle = path.join(root, "Acceptance Fixture.app"),
   resources = path.join(bundle, "Contents/Resources"),
   asar = path.join(resources, "app.asar");
 const exe = path.join(bundle, "Contents/MacOS/Electron");

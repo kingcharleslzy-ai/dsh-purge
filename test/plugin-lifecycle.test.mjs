@@ -51,7 +51,7 @@ test("real Cordis late service, replacement and parent reload retain commands an
       const req=Object.assign(Readable.from(["{}"]),{method,headers:{host:"127.0.0.1:3080"}});
       const res={writeHead(code){this.code=code;},end(body){this.body=body;}};
       await routes.get("/dsh-purge/update").handler(req,res);
-      assert.equal(res.code,500);assert.match(JSON.parse(res.body).error,/无法读取更新密钥设置.*JSON/);assert(!res.body.includes("FAKE_SECRET"));
+      assert.equal(res.code,500);assert.match(JSON.parse(res.body).error,/cannot read update secret settings.*JSON/);assert(!res.body.includes("FAKE_SECRET"));
     }
     fs.unlinkSync(path.join(tmp,"dsh-purge/update-channel.json"));
     await web.dispose();await tick();assert.equal(routes.size,0);

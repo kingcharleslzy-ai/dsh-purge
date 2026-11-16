@@ -1,103 +1,103 @@
 ---
 name: nuclei-scan
-description: nuclei 模板化漏洞扫描：13,000+ 模板覆盖 CVE/暴露面/配置缺陷/默认口令，Nday 与 1day 的主力检测手段
-whenToUse: 漏洞发现阶段拿到存活资产清单后，做 Nday/1day 批量检测；或已知组件版本想快速确认是否有现成模板
+description: Nuclei template-based vulnerability scanning: 13,000+ templates covering CVEs/exposure/misconfig/default credentials; primary method for N-day and 1-day detection
+whenToUse: During vulnerability discovery after obtaining a live asset inventory for batch N-day/1-day detection; or when a known component version needs quick confirmation against existing templates
 role: vuln-scan
 enabled: true
 ---
 
-# nuclei（模板化漏洞检测）
+# nuclei (template-based vulnerability detection)
 
-`nuclei` 是漏洞发现阶段的**主力**：一条命令覆盖 CVE、暴露面、错误配置、默认口令、未授权访问。
-本机模板库已就位（详见下方路径），**不要上网重新找 POC**。
+`nuclei` is the **primary** tool in the vulnerability discovery phase: one command covers CVEs, exposures, misconfigurations, default credentials, and unauthorized access.
+The local template library is ready (see paths below); **do not search for POCs online again**.
 
-## 本机二进制与模板
+## Local binary and templates
 
-| 项 | 值 |
+| Item | Value |
 | --- | --- |
-| 二进制 | `/usr/bin/nuclei`（v3.11.1） |
-| 模板库 | `~/.local/nuclei-templates`（**13,742 个模板**） |
-| 模板版本 | v10.4.9（更新于 2026-09-18） |
-| 配置 | `~/.config/nuclei/config.yaml`、`.templates-config.json` |
+| Binary | `/usr/bin/nuclei` (v3.11.1) |
+| Template library | `~/.local/nuclei-templates` (**13,742 templates**) |
+| Template version | v10.4.9 (updated 2026-09-18) |
+| Config | `~/.config/nuclei/config.yaml`, `.templates-config.json` |
 
-模板分布（写报告时按类引用）：`http/` 11,364（其中 `http/cves` 4,320、`http/misconfiguration` 981、
-`http/vulnerabilities` 961、`http/exposures` 707、`http/default-logins` 307）、`cloud/` 663、`file/` 447、
-`network/` 282、`dast/` 251。
+Template distribution (reference by category when reporting): `http/` 11,364 (including `http/cves` 4,320, `http/misconfiguration` 981,
+`http/vulnerabilities` 961, `http/exposures` 707, `http/default-logins` 307), `cloud/` 663, `file/` 447,
+`network/` 282, `dast/` 251.
 
-**更新模板**：`nuclei -update-templates`（频率不超过每周一次；更新后先跑 `-tl` 确认没坏）。
+**Update templates**: `nuclei -update-templates` (no more than once per week; run `-tl` after update to confirm nothing is broken).
 
-## 基本用法
+## Basic usage
 
 ```bash
-# 1) 单目标快速体检（先看会命中什么，不实际打）
+# 1) Quick single-target check (see what would match without attacking)
 nuclei -u https://target.example.com -severity critical,high,medium -rl 30 -c 15
 
-# 2) 批量：从资产库导出的存活 URL 清单
+# 2) Batch: live URL list exported from asset database
 nuclei -l runs/alive-urls.txt -severity critical,high -rl 50 -c 25 \
   -jsonl -o runs/nuclei-$(date +%m%d-%H%M).jsonl
 
-# 3) 指定模板（已知组件版本 → 精确打击，命中率高、噪声小）
+# 3) Specific templates (known component version → precise hit, high accuracy, low noise)
 nuclei -u http://target:8080 -t http/cves/2021/CVE-2021-44228.yaml
 nuclei -u http://target -t http/exposures/ -t http/default-logins/
 
-# 4) 按标签（tags）批量
+# 4) Batch by tags
 nuclei -l runs/alive-urls.txt -tags seeyon,weaver,panel,exposure -rl 20
 
-# 5) 只列出会跑的模板（不发包，先评估覆盖面）
+# 5) List templates that would run (no packets sent; evaluate coverage first)
 nuclei -l runs/alive-urls.txt -tags cve -tl
 ```
 
-## 关键参数（本场景常用）
+## Key parameters (common in this scenario)
 
-| 参数 | 作用 | 建议 |
+| Parameter | Purpose | Recommendation |
 | --- | --- | --- |
-| `-rl` | 每秒请求上限 | 互联网侧 30–50；被 WAF 盯上后降到 5 |
-| `-c` | 并发模板数 | 15–25，过高会打崩小站 |
-| `-severity` | 只跑指定等级 | 演练只关心 `critical,high`（中低危不得分） |
-| `-tags` / `-t` | 模板筛选 | 有指纹线索时优先用，别全量轰 |
-| `-jsonl -o` | 结构化输出 | **必须落 `runs/`**，报告要引用 |
-| `-proxy` | 走代理 | 降噪用 `cn-proxy-pool`；**内网目标走 suo5 隧道加 `-proxy socks5://127.0.0.1:1080`** |
-| `-H` | 自定义头 | 带 Cookie/Token 测登录后功能点 |
-| `-duc` | 禁用模板更新检查 | 批量跑时省时间 |
-| `-stats -si 30` | 进度输出 | 长任务看进度 |
+| `-rl` | Max requests per second | 30–50 for internet targets; drop to 5 if watched by WAF |
+| `-c` | Concurrent templates | 15–25; too high can crash small sites |
+| `-severity` | Run only specified severities | In exercises, focus on `critical,high` (medium/low usually not scored) |
+| `-tags` / `-t` | Template selection | Prefer when you have fingerprint hints; avoid full blast |
+| `-jsonl -o` | Structured output | **Must save to `runs/`** for report references |
+| `-proxy` | Use proxy | For noise reduction use `cn-proxy-pool`; **for intranet targets use suo5 tunnel with `-proxy socks5://127.0.0.1:1080`** |
+| `-H` | Custom headers | Add Cookie/Token to test authenticated functions |
+| `-duc` | Disable template update check | Saves time in batch runs |
+| `-stats -si 30` | Progress output | Monitor long tasks |
 
-## 与知识库的配合（先查再打，禁止重复劳动）
+## Coordination with knowledge base (check before running; avoid duplicate work)
 
-动手前先 `redteam_poc_search`（按 CVE / 组件 / 版本 / 正文特征）——它一次查两层：**本机 POC 知识库 + 本机 nuclei 模板库**。
-命中就用 `redteam_poc_get` 取全文或直接 `nuclei -t <模板>`；两层都没有才上网找，最后才手搓。
+Before running, call `redteam_poc_search` (by CVE / component / version / body signature)—it checks two layers at once: **local POC knowledge base + local nuclei template library**.
+If found, use `redteam_poc_get` for full text or run directly with `nuclei -t <template>`; only if missing from both layers search online, and handcraft only as last resort.
 
-验证有效的新模板/EXP 用 `redteam_poc_add` 回填知识库（带 `category` + `engagement` + `asset_target` + `verified` + `verified_note`，脱敏本次靶标信息）。
+Feed back verified new templates/EXPs to the knowledge base with `redteam_poc_add` (include `category` + `engagement` + `asset_target` + `verified` + `verified_note`, sanitized of target-specific details).
 
-## 降噪与自保（重要）
+## Noise reduction and safety (important)
 
-1. **默认 ignore 已排除危险标签**：`~/.config/nuclei/.nuclei-ignore` 里默认忽略 `dos`、`local`、`fuzz`、`bruteforce`、`txt-service`——
-   **不要为了"打得更全"去掉这些忽略项**，DoS 类模板会打死生产系统，直接毁掉演练。
-2. **先探测后开火**：先用 `-severity critical,high` 跑一轮；命中后再对具体命中项深入，不要一上来全量。
-3. **WAF/封禁处理**：被拦先降 `-rl` 到 5 并加 `--delay 1s`，换 UA（`-H "User-Agent: ..."`），
-   必要时用技能 `cn-proxy-pool` 换出口；**同一目标累计被封 >3 次立刻放弃**（`redteam_asset_test` status=abandoned + blocked=true），转向下一个目标。
-4. **生产系统避开业务高峰**：定时任务、批量任务类模板（如触发同步/重建索引的）先在测试/预发资产上验证。
+1. **Default ignore already excludes dangerous tags**: `~/.config/nuclei/.nuclei-ignore` ignores `dos`, `local`, `fuzz`, `bruteforce`, `txt-service` by default—
+   **do not remove these ignores to "scan more thoroughly"**; DoS templates can take down production systems and ruin the exercise.
+2. **Probe before firing**: run one pass with `-severity critical,high` first; go deeper only on specific hits, do not start with full scan.
+3. **WAF/block handling**: if blocked, lower `-rl` to 5 and add `--delay 1s`, change UA (`-H "User-Agent: ..."`),
+   use skill `cn-proxy-pool` to rotate egress if needed; **if the same target is blocked >3 times total, abandon immediately** (`redteam_asset_test` status=abandoned + blocked=true) and move to next target.
+4. **Avoid peak business hours on production systems**: validate templates that trigger scheduled/batch jobs (e.g. sync/index rebuild) on test/staging assets first.
 
-## 输出与落库（强制）
+## Output and recording (required)
 
-跑完立刻落库，**不要攒到最后**：
+Record immediately after each run; **do not save it all for the end**:
 
-1. 读 `runs/nuclei-*.jsonl`，逐条 `redteam_vuln_add`：
-   - `title`（模板名 + 命中点）、`severity`、`cve`（模板带的 `classification.cve-id`）、`target`（**带端口**）、
-     `evidence`（命中回显/响应特征/matched-at）、`confidence=confirmed`（nuclei 命中即为已确认存在于响应层面）、
-     `gained`（通过它能拿到什么）、`agent=vuln-scan`。
-2. **每条确认漏洞配一条 `redteam_http_evidence_add`**：请求行 + Host + 关键请求头 + 响应摘要（模板的 `curl-command` 字段可直接用）。
-3. 每个关键动作 `redteam_chain_add`：`stage_code=recon` 或 `internet`，
-   `tool` 写**实际命令原文**（例如 `nuclei -l runs/alive-urls.txt -severity critical,high -rl 50 -jsonl -o runs/nuclei-0918.jsonl`），
-   `result` 写回显摘要（例如 `命中 3 条：CVE-2023-xxxx（critical）…`）。
-4. 测完该资产立刻 `redteam_asset_test` 回写：`status`（testing/tested/no_surface/blocked）、`test`（追加式结论）、`surface`（还剩什么可测）。
-5. **只记能得分的面**：与得分无关的信息泄露、版本暴露、CORS/CSRF、SSL 与响应头类问题**最多记一行排除结论**，不深挖、不重复跑。
+1. Read `runs/nuclei-*.jsonl` and `redteam_vuln_add` each item:
+   - `title` (template name + hit point), `severity`, `cve` (template `classification.cve-id`), `target` (**include port**),
+     `evidence` (hit output/response signature/matched-at), `confidence=confirmed` (nuclei hit means confirmed at response level),
+     `gained` (what can be obtained through it), `agent=vuln-scan`.
+2. **Add one `redteam_http_evidence_add` per confirmed vulnerability**: request line + Host + key request headers + response summary (template `curl-command` field can be used directly).
+3. For each key action, add `redteam_chain_add`: `stage_code=recon` or `internet`,
+   put **actual command text** in `tool` (e.g. `nuclei -l runs/alive-urls.txt -severity critical,high -rl 50 -jsonl -o runs/nuclei-0918.jsonl`),
+   and output summary in `result` (e.g. `3 hits: CVE-2023-xxxx (critical)…`).
+4. After testing an asset, immediately write back with `redteam_asset_test`: `status` (testing/tested/no_surface/blocked), `test` (append-only conclusion), `surface` (what remains testable).
+5. **Only record scorable surfaces**: information leaks, version disclosure, CORS/CSRF, SSL and response-header issues unrelated to scoring should have **at most one line of exclusion note**, no deep dive, no repeated scans.
 
-## 常见坑
+## Common pitfalls
 
-| 现象 | 原因 | 处理 |
+| Symptom | Cause | Action |
 | --- | --- | --- |
-| 一条不命中 | 目标不是 HTTP，或模板被 ignore | 加 `-tl` 看实际跑了哪些模板；确认协议 `-t http/` vs `network/` |
-| 大量 `could not resolve` | URL 清单里有死链 | 先用 `pd-httpx` 过滤存活：`pd-httpx -l all.txt -o alive-urls.txt -silent` |
-| 命中一堆 low/info | severity 没限 | 演练加 `-severity critical,high,medium` |
-| 目标被打挂 | 并发过高 / 跑了 dos 模板 | 降 `-rl`/`-c`；确认 ignore 文件没被动过 |
-| 内网目标打不到 | 没走隧道 | 加 `-proxy socks5://127.0.0.1:<suo5端口>`（技能 `suo5-tunnel`） |
+| No hits at all | Target not HTTP, or templates ignored | Use `-tl` to see which templates actually ran; confirm protocol `-t http/` vs `network/` |
+| Many `could not resolve` | Dead links in URL list | Filter live first with `pd-httpx`: `pd-httpx -l all.txt -o alive-urls.txt -silent` |
+| Many low/info hits | Severity not limited | Add `-severity critical,high,medium` in exercises |
+| Target crashed | Concurrency too high / ran dos templates | Lower `-rl`/`-c`; confirm ignore file was not modified |
+| Cannot reach intranet target | No tunnel | Add `-proxy socks5://127.0.0.1:<suo5-port>` (skill `suo5-tunnel`) |

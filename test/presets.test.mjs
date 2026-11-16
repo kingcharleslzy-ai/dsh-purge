@@ -35,10 +35,10 @@ test("install is idempotent and never overwrites user edits without force", () =
     assert.equal(first.action, "installed");
     const file = path.join(first.dir, "agent.cordis.yml");
     assert(fs.existsSync(file));
-    // 落盘时就合并了 #24：模板里的 fetch: false 会被打开
+    // #24 is merged at write time: the template's fetch: false gets turned on
     const installed = fs.readFileSync(file, "utf8");
     assert(installed.includes("fetch: true"), "preset ships with web fetch enabled");
-    // 精确断言：装完以后 #24 已无活可干（模板注释里提到 fetch: false 不算）
+    // exact assertion: after install #24 has nothing left to do (a fetch: false in a template comment does not count)
     assert.equal(
       applyReplacementsToText(installed, ALL_PATCHES.find((p) => p.id === 24)).changed,
       false,
@@ -62,7 +62,7 @@ test("install is idempotent and never overwrites user edits without force", () =
 test("the bundled preset parses into a registry definition", () => {
   const def = readPresetDefinition("unrestricted", bundledPresetDir());
   assert.equal(def.id, "unrestricted");
-  assert.equal(def.name, "无限制模式");
+  assert.equal(def.name, "Unrestricted Mode");
   assert.equal(def.order, 20);
   assert(Array.isArray(def.plugins), "plugins rows");
   assert(def.plugins.length >= 12, `expected a full composition, got ${def.plugins.length}`);

@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import React from "react";
 import { create, act } from "react-test-renderer";
-import { zh } from "../src/shared/locale.js";
+import { en } from "../src/shared/locale.js";
 import {
   ARM_KEY,
   DRAFT_KEY,
@@ -35,7 +35,7 @@ globalThis.document = {
   addEventListener() {},
   removeEventListener() {},
 };
-const t = (key) => zh[key] || key;
+const t = (key) => en[key] || key;
 const posts = [];
 let visible = false;
 let saveFails = false;
@@ -162,15 +162,15 @@ assert.equal(tree.toJSON(), null);
 await set(true);
 await act(async () => settings.unmount());
 assert.equal(rewindButton().props.disabled, false);
-assert(rewindButton().props.children.join("").includes("回退"));
+assert(rewindButton().props.children.join("").includes("Undo"));
 await act(async () => rewindButton().props.onClick());
 const items = () =>
   tree.root.findAll(
     (x) => x.type === "button" && x.props.className === "dshp-rewind-item",
   );
-assert.equal(items().length, 2, "menu keeps 回退一次 / 回退上一轮");
+assert.equal(items().length, 2, "menu keeps Undo once / Undo last round");
 
-// 2) "回退一次" posts {sessionId, mode:"once"} and refills the composer
+// 2) Rewind once posts {sessionId, mode:"once"} and refills the composer
 await act(async () =>
   items()[0].props.onClick({ preventDefault() {}, stopPropagation() {} }),
 );

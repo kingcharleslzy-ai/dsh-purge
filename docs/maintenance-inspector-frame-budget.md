@@ -1,7 +1,7 @@
-# Inspector 的 Cordis 树快照超限
+# Inspector Cordis Tree Snapshot Over Budget
 
-部分 Inspector 构建按 payload 大小剪枝，但在写入 state 时会连同 topic、时间戳等一起计量。树接近字节上限时，即使剪枝成功，写入仍可能超限。
+Some Inspector builds prune by payload size, but when writing state they account for topic, timestamp, etc. together with it. When the tree is near the byte limit, a write may still exceed the limit even if pruning succeeded.
 
-宿主和渲染端各预留 1 KiB 给记录外壳。如果 Cordis 树仍因 state 超限而被退回，缓冲区保留上一帧，下一次更新仍可发布。其它 topic 的超限、采集器错误、序列化错误和监听器异常继续按宿主原有语义报告。实现只匹配回滚后的超限分支，未包装整个发布回调。
+Both host and renderer reserve 1 KiB for the record envelope. If the Cordis tree is still rolled back due to state exceeding the limit, the buffer keeps the previous frame and the next update can still be published. Over-limit conditions for other topics, collector errors, serialization errors, and listener exceptions continue to be reported according to the host's original semantics. The implementation matches only the over-limit branch after rollback and does not wrap the entire publish callback.
 
-回归测试执行缓冲区的方法，覆盖正常入队、超限后保留旧值、无旧值时撤回、其它 topic 超限和异常传播。可运行 `node --test test/inspector-budget.test.mjs`。
+Regression tests exercise buffer methods, covering normal enqueue, retaining the old value after over-limit, retracting when no old value exists, over-limit on other topics, and exception propagation. Run `node --test test/inspector-budget.test.mjs`.

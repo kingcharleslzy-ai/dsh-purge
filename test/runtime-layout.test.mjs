@@ -8,7 +8,7 @@ import {repairOfficialCliAfterUnpack} from '../lib/desktop.js';
 import {hostFs} from '../lib/extract-asar.js';
 
 function fixture() {
- const root=fs.mkdtempSync(path.join(os.tmpdir(),'purge runtime 中文 ')),resources=path.join(root,'resources');
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'purge runtime ascii ')),resources=path.join(root,'resources');
  fs.mkdirSync(path.join(resources,'app'),{recursive:true});
  const host=path.join(resources,'app/dsh/node_modules/@deepseek-ai/dsh-desktop-host');
  fs.mkdirSync(path.join(host,'lib'),{recursive:true});fs.writeFileSync(path.join(host,'lib/cli.js'),'// fixture');

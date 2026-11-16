@@ -1,27 +1,27 @@
 ---
 name: dir-bruteforce
-description: 目录与文件爆破：后台入口、备份文件、配置泄露、源码与版本库暴露（ffuf/feroxbuster/dirsearch/gobuster）
-whenToUse: 已确认 Web 存活但指纹无直接 Nday 线索；需要找后台入口、备份、配置、源码、上传点等隐藏路径
+description: Directory and file brute force: admin entries, backup files, config leaks, source/version-control exposure (ffuf/feroxbuster/dirsearch/gobuster)
+whenToUse: When web service is confirmed alive but fingerprinting shows no direct N-day path; need to find hidden admin entries, backups, configs, source, upload points, etc.
 role: vuln-scan
 enabled: true
 ---
 
-# 目录与文件爆破（找入口的主力）
+# Directory and file brute force (primary method for finding entry points)
 
-**实战里大部分入口不是 CVE 打进去的，是目录爆破扫出来的**：后台 `/admin`、备份 `www.zip`、配置 `.env`、
-源码 `.git/`、接口文档 `swagger-ui.html`、上传点、调试页、actuator/druid 监控台。
-本技能覆盖本机已就位的四个工具，**不要只用一个**——它们的字典与判定逻辑不同，互补。
+**In practice, most entry points are found by directory brute force, not CVEs**: admin panels `/admin`, backups `www.zip`, configs `.env`,
+source `.git/`, API docs `swagger-ui.html`, upload points, debug pages, actuator/druid consoles.
+This skill covers four tools already available locally—**do not use only one**; they differ in wordlists and detection logic and complement each other.
 
-## 本机工具
+## Local tools
 
-| 工具 | 路径 | 版本 | 特点 |
+| Tool | Path | Version | Notes |
 | --- | --- | --- | --- |
-| **feroxbuster** | `/usr/bin/feroxbuster` | 2.13.1 | Rust，递归爆破最强，自动跟随目录层级，**首选** |
-| **ffuf** | `/usr/bin/ffuf` | 2.1.0-dev | 最快、最灵活，支持多字典/vhost/参数 fuzz |
-| **dirsearch** | `$DSH_HOME/redteam/toolkit/dirsearch/dirsearch` | v0.5.0 | Python。`setup.sh` 不下载，需自行放到该路径 |
-| **gobuster** | `/usr/bin/gobuster` | — | 轻量稳定，dir/dns/vhost 三模式 |
+| **feroxbuster** | `/usr/bin/feroxbuster` | 2.13.1 | Rust, strongest for recursive brute force, auto-follows directory levels, **preferred** |
+| **ffuf** | `/usr/bin/ffuf` | 2.1.0-dev | Fastest and most flexible; supports multi-wordlist/vhost/parameter fuzzing |
+| **dirsearch** | `$DSH_HOME/redteam/toolkit/dirsearch/dirsearch` | v0.5.0 | Python. Not downloaded by `setup.sh`; place it at this path manually if needed |
+| **gobuster** | `/usr/bin/gobuster` | — | Lightweight and stable; dir/dns/vhost modes |
 
-## 一、feroxbuster（首选：递归 + 自动过滤）
+## 1. feroxbuster (preferred: recursive + auto-filtering)
 
 ```bash
 feroxbuster -u https://target.example.com \
@@ -32,27 +32,27 @@ feroxbuster -u https://target.example.com \
   -o runs/ferox-target.txt --json -o runs/ferox-target.json
 ```
 
-要点：`-d 3`（递归深度）别开太大；`--rate-limit` 交给服务器喘气；`-x` 后缀表必须带**备份与配置类**。
+Key points: do not set `-d 3` (recursion depth) too high; use `--rate-limit` to give the server breathing room; include **backup and config extensions** in `-x`.
 
-## 二、ffuf（最快，多字典 / vhost / 参数）
+## 2. ffuf (fastest; multi-wordlist / vhost / parameter fuzzing)
 
 ```bash
-# 目录与文件（两轮：先目录，再按命中的目录加后缀）
+# Directories and files (two passes: directories first, then extensions on found directories)
 ffuf -u https://target/FUZZ -w /usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt \
   -mc 200,204,301,302,307,401,403,500 -fc 404 -t 40 -rate 80 -timeout 10 \
   -o runs/ffuf-dir.json -of json
 
-# 敏感文件（备份/配置/源码/密钥）
+# Sensitive files (backups/configs/source/keys)
 ffuf -u https://target/FUZZ -w /usr/share/seclists/Discovery/Web-Content/quickhits.txt \
   -mc all -fc 404 -t 40 -o runs/ffuf-quick.json -of json
 
-# vhost 虚拟主机发现（同 IP 多站点，边缘资产常从这里出来）
+# vhost discovery (multiple sites on same IP; edge assets often found here)
 ffuf -u https://target/ -H "Host: FUZZ.example.com" \
   -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-20000.txt \
   -fs 0 -mc all -t 50 -o runs/ffuf-vhost.json -of json
 ```
 
-## 三、dirsearch（字典全，适合补漏）
+## 3. dirsearch (broad dictionary, good for gap filling)
 
 ```bash
 $DSH_HOME/redteam/toolkit/dirsearch/dirsearch \
@@ -61,55 +61,55 @@ $DSH_HOME/redteam/toolkit/dirsearch/dirsearch \
   -r -R 3 --format json -o runs/dirsearch-target.json
 ```
 
-## 四、gobuster（轻量兜底）
+## 4. gobuster (lightweight fallback)
 
 ```bash
 gobuster dir -u https://target -w /usr/share/seclists/Discovery/Web-Content/common.txt \
   -x php,asp,aspx,jsp,zip,bak -t 30 -k -o runs/gobuster-target.txt
 ```
 
-## 字典（本机已有，优先用这些）
+## Wordlists (available locally; prefer these)
 
-| 用途 | 路径 |
+| Purpose | Path |
 | --- | --- |
-| 大目录字典 | `/usr/share/seclists/Discovery/Web-Content/raft-large-directories.txt` |
-| 中目录字典 | `/usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt` |
-| 常见文件 | `/usr/share/seclists/Discovery/Web-Content/common.txt` |
-| 敏感文件（quickhits） | `/usr/share/seclists/Discovery/Web-Content/quickhits.txt` |
-| 子域（vhost 用） | `/usr/share/seclists/Discovery/DNS/subdomains-top1million-20000.txt` |
+| Large directory list | `/usr/share/seclists/Discovery/Web-Content/raft-large-directories.txt` |
+| Medium directory list | `/usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt` |
+| Common files | `/usr/share/seclists/Discovery/Web-Content/common.txt` |
+| Sensitive files (quickhits) | `/usr/share/seclists/Discovery/Web-Content/quickhits.txt` |
+| Subdomains (for vhost) | `/usr/share/seclists/Discovery/DNS/subdomains-top1million-20000.txt` |
 
-字典目录：`/usr/share/seclists`、`/usr/share/wordlists`。**缺字典时**用 `redteam_credential_list` 里已收集的
-单位词（品牌名、拼音缩写）自造小字典——针对性字典命中率往往高于通用大字典。
+Wordlist directories: `/usr/share/seclists`, `/usr/share/wordlists`. **If wordlists are missing**, build a small targeted list from organization terms collected in `redteam_credential_list`
+(brand names, abbreviations/pinyin initials)—targeted lists often outperform generic large dictionaries.
 
-## 重点目标（扫到就要跟到底）
+## High-value hits (follow through immediately)
 
-| 命中 | 下一步 |
+| Hit | Next step |
 | --- | --- |
-| `/admin`、`/manage`、`/login`、后台路径 | 交给账号权限路线：默认口令/弱口令（技能 `credential-attack`） |
-| `.git/`、`.svn/`、`.env`、`config.php.bak`、`www.zip`、`web.rar` | **源码与配置泄露**：拉下来找数据库连接串、密钥、硬编码账号 → `redteam_credential_add` |
-| `swagger-ui.html`、`/v2/api-docs`、`/openapi.json` | 提取全量接口清单 → 未授权与越权探测（技能 `unauth-exploit`） |
-| `actuator`、`druid`、`/console`、`/jmx` | 未授权监控台，常直通 RCE 或数据库 |
-| 上传点、导入、备份恢复、模板/报表设计 | 交给漏洞利用角色串 getshell 链 |
-| `.ssh/`、`id_rsa`、`*.pem`、`*.jks` | 私钥泄露 → 直接尝试登录（`ssh -i`） |
+| `/admin`, `/manage`, `/login`, admin paths | Account-access route: default/weak passwords (skill `credential-attack`) |
+| `.git/`, `.svn/`, `.env`, `config.php.bak`, `www.zip`, `web.rar` | **Source/config leak**: pull it down, find DB connection strings/keys/hardcoded accounts → `redteam_credential_add` |
+| `swagger-ui.html`, `/v2/api-docs`, `/openapi.json` | Extract full API list → unauthorized access and IDOR testing (skill `unauth-exploit`) |
+| `actuator`, `druid`, `/console`, `/jmx` | Unauthorized consoles, often leading to RCE or database access |
+| Upload points, import, backup/restore, template/report designers | Hand to exploitation role to chain into shell access |
+| `.ssh/`, `id_rsa`, `*.pem`, `*.jks` | Private key leak → attempt direct login (`ssh -i`) |
 
-## 降噪与自保
+## Noise reduction and safety
 
-1. **必须先过滤 404 的软 404**：先请求一个不存在的随机路径，看返回状态码与响应长度，用它做 `--filter-size` / `-fs`。
-2. **限速**：`-rate 80` / `--delay 0.1` / `-t 30` 起步；被 WAF 拦（大量 403/429）先降到 5–10 req/s。
-3. **别碰危险路径**：`/logout`、`/reboot`、`/shutdown`、`/delete*`、`/reset*` 这类会改状态的不要爆破，
-   字典里遇到也要排除（会造成业务中断，且演练记分不认）。
-4. **被封 >3 次放弃**该资产（`redteam_asset_test` status=abandoned + blocked=true），转下一个。
-5. **内网目标走隧道**：feroxbuster `--proxy socks5://127.0.0.1:1080`、ffuf `-x socks5://127.0.0.1:1080`
-   （技能 `suo5-tunnel`）。
+1. **Filter soft 404s first**: request a nonexistent random path, observe status code and response length, then use as `--filter-size` / `-fs`.
+2. **Rate limit**: start at `-rate 80` / `--delay 0.1` / `-t 30`; if blocked by WAF (many 403/429), drop to 5–10 req/s.
+3. **Avoid dangerous paths**: do not brute force paths that change state such as `/logout`, `/reboot`, `/shutdown`, `/delete*`, `/reset*`;
+   exclude them from wordlists (can cause outages and do not count for scoring).
+4. **Abandon after blocked >3 times** for that asset (`redteam_asset_test` status=abandoned + blocked=true), move to next.
+5. **Use tunnels for intranet targets**: feroxbuster `--proxy socks5://127.0.0.1:1080`, ffuf `-x socks5://127.0.0.1:1080`
+   (skill `suo5-tunnel`).
 
-## 输出与落库（强制）
+## Output and recording (required)
 
-1. **隐藏路径本身不是得分项**，但**每个拿到东西的路径都要落库**：
-   - 找到后台/上传点/接口文档 → 记进该资产 `redteam_asset_test` 的 `surface`（追加式），交给漏洞发现/利用的下一个动作；
-   - 泄露源码/配置/密钥/凭据 → `redteam_credential_add`（`source=配置泄露`，`tool` 写路径与命令，明文写 `secret_value`）；
-   - 未授权可访问的接口/监控台 → 直接 `redteam_vuln_add`（含 `evidence` 回显）+ `redteam_http_evidence_add`。
-2. 每个关键动作 `redteam_chain_add`：`stage_code=internet`（或 `internal`），
-   `tool` 写实际命令原文（例如 `feroxbuster -u https://target -w raft-large-directories.txt -x php,zip,bak -d 3 --rate-limit 80`），
-   `result` 写命中摘要（例如 `命中 /admin/、/backup/www.zip、/.env`）。
-3. 跑完立刻 `redteam_asset_test` 回写 `status`/`test`/`surface`——不写状态后面的人一定重复扫。
-4. 字典与结果文件一律放 `runs/`（报告要能复现）。
+1. **Hidden paths themselves are not scoring items**, but **every path that yields something must be recorded**:
+   - Found admin/upload/API docs → append to that asset's `surface` in `redteam_asset_test` and pass to next vuln discovery/exploitation action;
+   - Leaked source/config/keys/credentials → `redteam_credential_add` (`source=config leak`, put path and command in `tool`, plaintext in `secret_value`);
+   - Unauthorized accessible APIs/consoles → directly `redteam_vuln_add` (with `evidence` output) + `redteam_http_evidence_add`.
+2. For each key action, add `redteam_chain_add`: `stage_code=internet` (or `internal`),
+   put actual command text in `tool` (e.g. `feroxbuster -u https://target -w raft-large-directories.txt -x php,zip,bak -d 3 --rate-limit 80`),
+   and hit summary in `result` (e.g. `found /admin/, /backup/www.zip, /.env`).
+3. Immediately write back `status`/`test`/`surface` with `redteam_asset_test` after each run—without status, others will rescan.
+4. Store wordlists and result files under `runs/` (reports must be reproducible).

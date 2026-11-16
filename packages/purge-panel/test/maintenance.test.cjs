@@ -74,10 +74,11 @@ test("mount/remount load existing backups and never preselect a rollback target"
   let tree = await mount(h);
   assert(text(tree).includes("first"));
   assert.equal(
-    tree.root.findByProps({ "aria-label": "选择回滚备份" }).props.value,
+    tree.root.findByProps({ "aria-label": "Select a backup to restore" }).props
+      .value,
     "",
   );
-  assert(button(tree, "回滚插件").props.disabled);
+  assert(button(tree, "Roll back plugin").props.disabled);
   await unmount(tree);
   rows = [backup("second")];
   tree = await mount(h);
@@ -98,17 +99,17 @@ test("loading, read failure and empty backup lists are distinct; refresh recover
       : reply({ ok: true, backups: [] }),
   );
   const tree = await mount(h);
-  assert(text(tree).includes("正在读取备份"));
-  assert(!text(tree).includes("暂无备份"));
+  assert(text(tree).includes("Loading backups"));
+  assert(!text(tree).includes("No backups yet"));
   await act(async () => {
     resolve(reply({ ok: false, error: "profile ambiguous" }));
     await flush();
   });
-  assert(text(tree).includes("读取备份失败：profile ambiguous"));
-  assert(!text(tree).includes("暂无备份"));
+  assert(text(tree).includes("Failed to load backups: profile ambiguous"));
+  assert(!text(tree).includes("No backups yet"));
   mode = "empty";
-  await click(tree, "刷新备份列表");
-  assert(text(tree).includes("暂无备份"));
+  await click(tree, "Refresh backups");
+  assert(text(tree).includes("No backups yet"));
   await unmount(tree);
 });
 test("HTTP 200 business failure shows the update error and rereads recovery backups without replaying writes", async () => {
@@ -132,14 +133,15 @@ test("HTTP 200 business failure shows the update error and rereads recovery back
     return reply({ ok: false, errors: ["CLI not located"] });
   });
   const tree = await mount(h);
-  await click(tree, "检查社区版更新");
-  await click(tree, "安装所选版本");
+  await click(tree, "Check for community updates");
+  await click(tree, "Install selected version");
   assert(text(tree).includes("CLI not located"));
   assert(text(tree).includes("recovery"));
-  assert(!text(tree).includes("备份已创建：undefined"));
+  assert(!text(tree).includes("Backup created: undefined"));
   assert.equal(h.calls.filter((c) => c.body?.op === "update").length, 1);
   assert.equal(
-    tree.root.findByProps({ "aria-label": "选择回滚备份" }).props.value,
+    tree.root.findByProps({ "aria-label": "Select a backup to restore" }).props
+      .value,
     "",
   );
   await unmount(tree);
@@ -161,11 +163,15 @@ test("successful update reports its version and DSH process restart, not a backu
           }),
   );
   const tree = await mount(h);
-  await click(tree, "检查社区版更新");
-  await click(tree, "安装所选版本");
-  assert(text(tree).includes("插件已安装：1.6.4"));
-  assert(text(tree).includes("仅刷新浏览器不会加载新版后端"));
-  assert(!text(tree).includes("备份已创建："));
+  await click(tree, "Check for community updates");
+  await click(tree, "Install selected version");
+  assert(text(tree).includes("Plugin installed: 1.6.4"));
+  assert(
+    text(tree).includes(
+      "refreshing the browser alone will not load the updated backend",
+    ),
+  );
+  assert(!text(tree).includes("Backup created:"));
   await unmount(tree);
 });
 test("no-op, backup success and partial update failure keep their own result semantics", async () => {
@@ -175,8 +181,8 @@ test("no-op, backup success and partial update failure keep their own result sem
       : reply({ ok: true, id: "created" }),
   );
   const tree = await mount(h);
-  await click(tree, "立即备份");
-  assert(text(tree).includes("备份已创建：created"));
+  await click(tree, "Back up now");
+  assert(text(tree).includes("Backup created: created"));
   await unmount(tree);
   const context = { module: { exports: {} }, exports: {}, require };
   context.exports = context.module.exports;
@@ -184,7 +190,7 @@ test("no-op, backup success and partial update failure keep their own result sem
   const { maintenanceNotice, assertMaintenanceResult } = context.module.exports;
   assert(
     maintenanceNotice("update", { ok: true, applied: false }).includes(
-      "未安装新版本",
+      "No new version was installed",
     ),
   );
   assert.match(
@@ -193,7 +199,7 @@ test("no-op, backup success and partial update failure keep their own result sem
       applied: true,
       cleanup_warnings: [{ stage: "checkpoint", code: "EPERM" }],
     }),
-    /清理未完成.*checkpoint:EPERM.*残留已保留/,
+    /Cleanup incomplete.*checkpoint:EPERM.*remaining files were retained/,
   );
   assert.throws(
     () =>
@@ -202,7 +208,7 @@ test("no-op, backup success and partial update failure keep their own result sem
         applied: true,
         error: "one target failed",
       }),
-    /部分目标已更新/,
+    /some targets were updated/,
   );
 });
 test("late reads from an unmounted panel cannot update a new panel", async () => {
@@ -242,30 +248,33 @@ test("update switches save separate preferences without invoking install or rest
     return reply({ ok: true, update_preferences: prefs });
   });
   const tree = await mount(h);
-  assert(text(tree).includes("等待你手动重启"));
+  assert(text(tree).includes("Waiting for you to restart DSH manually"));
   await act(async () => {
     await tree.root
-      .findByProps({ "aria-label": "自动安装更新" })
+      .findByProps({ "aria-label": "Automatically install updates" })
       .props.onChange({ target: { checked: true } });
     await flush();
   });
   assert.equal(h.calls.at(-1).body.value.autoInstall, true);
   assert.equal(
-    tree.root.findByProps({ "aria-label": "自动检查更新" }).props.checked,
+    tree.root.findByProps({ "aria-label": "Automatically check for updates" })
+      .props.checked,
     true,
   );
   await act(async () => {
     await tree.root
-      .findByProps({ "aria-label": "自动检查更新" })
+      .findByProps({ "aria-label": "Automatically check for updates" })
       .props.onChange({ target: { checked: false } });
     await flush();
   });
   assert.equal(
-    tree.root.findByProps({ "aria-label": "自动安装更新" }).props.checked,
+    tree.root.findByProps({ "aria-label": "Automatically install updates" })
+      .props.checked,
     true,
   );
   assert.equal(
-    tree.root.findByProps({ "aria-label": "更新检查间隔" }).props.disabled,
+    tree.root.findByProps({ "aria-label": "Update check interval" }).props
+      .disabled,
     true,
   );
   assert(
@@ -273,10 +282,12 @@ test("update switches save separate preferences without invoking install or rest
   );
   await act(async () => {
     tree.root
-      .findByProps({ "aria-label": "自动安装更新（查看说明）" })
+      .findByProps({
+        "aria-label": "Automatically install updates (view help)",
+      })
       .props.onMouseEnter();
   });
-  assert(text(tree).includes("不会自动重启 DSH"));
+  assert(text(tree).includes("Restart DSH manually afterward"));
   await unmount(tree);
 });
 
@@ -290,24 +301,24 @@ test("selfcheck inferred and unknown values show warning labels and explanation 
               state: "unknown",
               layers: [
                 {
-                  title: "当前 profile 的权限选择",
+                  title: "Current profile permission selection",
                   kind: "config",
                   state: "inferred",
                   ok: false,
                   applied: 0,
                   total: 1,
                   broken: [],
-                  note: "未显式固定，宿主推导已生效",
+                  note: "Not explicitly pinned; inferred from the host",
                 },
                 {
-                  title: "宿主运行方式",
+                  title: "Host runtime layout",
                   kind: "layout",
                   state: "unknown",
                   ok: false,
                   applied: 0,
                   total: 1,
                   broken: [],
-                  note: "当前进程未定位宿主",
+                  note: "The current process has not located the host",
                 },
               ],
             },
@@ -316,11 +327,11 @@ test("selfcheck inferred and unknown values show warning labels and explanation 
   );
   const tree = await mount(h);
   const rendered = text(tree);
-  assert(rendered.includes("2 层需确认"));
-  assert(rendered.includes("宿主推导"));
-  assert(rendered.includes("未确认"));
-  assert(!rendered.includes("层未生效"));
-  assert(!rendered.includes("全部在位"));
+  assert(rendered.includes("2 layers need confirmation"));
+  assert(rendered.includes("Inferred from host"));
+  assert(rendered.includes("Unconfirmed"));
+  assert(!rendered.includes("layers inactive"));
+  assert(!rendered.includes("layers in place"));
   assert(!rendered.includes("is-bad"));
   await unmount(tree);
 });
@@ -332,21 +343,26 @@ test("cached releases and failed fallbacks are visible instead of claiming lates
         ? reply({ ok: true, backups: [] })
         : reply(
             failed
-              ? { ok: false, error: "API 额度耗尽；Atom 降级失败：代理超时" }
+              ? {
+                  ok: false,
+                  error:
+                    "API quota exhausted; Atom fallback failed: proxy timeout",
+                }
               : {
                   ok: true,
                   versions: [],
                   hasUpdate: false,
                   stale: true,
-                  degraded: "API 额度耗尽，沿用最近一次成功列表",
+                  degraded:
+                    "API quota exhausted; using the last successful list",
                 },
           ),
     );
     const tree = await mount(h);
-    await click(tree, "检查社区版更新");
-    assert(text(tree).includes("额度耗尽"));
-    assert(text(tree).includes(failed ? "代理超时" : "缓存列表"));
-    assert(!text(tree).includes("当前已是最新正式版"));
+    await click(tree, "Check for community updates");
+    assert(text(tree).includes("quota exhausted"));
+    assert(text(tree).includes(failed ? "proxy timeout" : "cached list"));
+    assert(!text(tree).includes("The latest stable version is installed"));
     await unmount(tree);
   }
 });
@@ -369,14 +385,14 @@ test("update status distinguishes loaded code, pending disk version and independ
     pendingVersion: "1.6.41",
     restartRequired: true,
   });
-  assert(text(tree).includes("磁盘版本 1.6.41，当前运行 1.6.40"));
+  assert(text(tree).includes("Version on disk: 1.6.41; running: 1.6.40"));
   await render({
     runningVersion: "1.6.41",
     restartRequired: false,
     checkedAt: "2026-10-21T00:00:00Z",
     installError: "web rollback failed",
   });
-  assert(!text(tree).includes("等待你手动重启"));
+  assert(!text(tree).includes("Waiting for you to restart DSH manually"));
   assert(text(tree).includes("web rollback failed"));
   await render({
     restartRequired: true,
@@ -385,11 +401,11 @@ test("update status distinguishes loaded code, pending disk version and independ
     error: "network timeout",
     installError: "web rollback failed",
   });
-  assert(text(tree).includes("安装状态待核对"));
+  assert(text(tree).includes("Installation status needs verification"));
   assert(text(tree).includes("package unreadable"));
   assert(text(tree).includes("network timeout"));
   assert(text(tree).includes("web rollback failed"));
-  assert(!text(tree).includes("等待你手动重启"));
+  assert(!text(tree).includes("Waiting for you to restart DSH manually"));
   assert.equal(
     h.calls.length,
     0,
@@ -438,7 +454,7 @@ test("saving a token does not erase masked proxy credentials or auto-update pref
   await act(async () =>
     field.props.onChange({ target: { value: "fixture-token" } }),
   );
-  await click(tree, "保存");
+  await click(tree, "Save");
   assert(saved);
   assert.equal(h.calls.length, 1);
   assert.deepEqual(h.calls[0].body, {
@@ -472,10 +488,12 @@ test("mirror changes save only the transport preference and clearing it is expli
         }),
       );
     });
-    const field = tree.root.findByProps({ placeholder: "https://镜像主机/" });
+    const field = tree.root.findByProps({
+      placeholder: "https://mirror.example/",
+    });
     assert.equal(field.props.value, initial);
     await act(async () => field.props.onChange({ target: { value: next } }));
-    await click(tree, "保存");
+    await click(tree, "Save");
     assert.equal(h.calls.length, 1);
     assert.deepEqual(h.calls[0].body, {
       op: "preferences",

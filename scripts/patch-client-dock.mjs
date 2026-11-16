@@ -1,5 +1,5 @@
 /**
- * 把 client.js 改成右侧 dsh-purge 双页签（清洗 + 演练台），并嵌入 vendor 演练台 UI。
+ * Convert client.js into a right-side dsh-purge dual-tab panel (Clean + Drill) and embed the vendor drill console UI.
  * node scripts/patch-client-dock.mjs
  */
 import { readFileSync, writeFileSync } from "node:fs";
@@ -21,28 +21,28 @@ let client = readFileSync(clientPath, "utf8").replace(/\r\n/g, "\n");
 // 1) locale keys
 if (!client.includes('"dock.clean"')) {
 	client = client.replace(
-		'\t\t\tnav: "规则设定",',
+		'\t\t\tnav: "dsh-purge",',
 		`\t\t\tnav: "dsh-purge",
-			"dock.clean": "清洗",
-			"dock.drill": "演练台",
+			"dock.clean": "Clean",
+			"dock.drill": "Drill",
 			"dock.toggle": "dsh-purge",
 			"dock.newSession": "dsh-purge",
-			"dock.full": "全面浏览",
-			"dock.close": "收起",
-			"dock.unauthorized": "未授权",
-			"auth.title": "演练台授权确认",
-			"auth.lead": "清洗不需要这一步。第一次进入演练台，或打开全面浏览，都要先完成本窗。",
-			"auth.warn": "安全警告：演练台只用于你有权管理的本机、离线靶标，或已书面授权的演练环境。未经授权的渗透、攻击、窃取和破坏一律禁止。",
-			"auth.hint.wait": "请阅读声明。{n} 秒后才能勾选。",
-			"auth.hint.scroll": "倒计时已结束。请把声明滚到文末，再勾选。",
-			"auth.hint.check": "倒计时已结束。请勾选全部三项。",
-			"auth.check.read": "我已读完《安全与禁止违法声明》，并认可其中的全部条款。",
-			"auth.check.scope": "我确认只用在本机已授权环境、离线靶标或合规演练中。",
-			"auth.check.ban": "我确认禁止任何违法用途。未完成本授权，不得使用演练台。",
-			"auth.no": "暂不进入",
-			"auth.ok": "确认授权",
-			"auth.ok.tab": "确认授权并进入演练台",
-			"auth.ok.full": "确认授权并全面浏览",`,
+			"dock.full": "Full view",
+			"dock.close": "Collapse",
+			"dock.unauthorized": "Unauthorized",
+			"auth.title": "Drill Console Authorization",
+			"auth.lead": "Cleaning does not need this step. The first time you enter Drill or open Full view, you must complete this dialog.",
+			"auth.warn": "Security warning: the drill console is only for local hosts you manage, offline targets, or written-authorized exercise environments. Unauthorized penetration, attacks, theft, and sabotage are strictly prohibited.",
+			"auth.hint.wait": "Please read the notice. You can check the boxes in {n}s.",
+			"auth.hint.scroll": "Countdown finished. Scroll the notice to the end, then check the boxes.",
+			"auth.hint.check": "Countdown finished. Check all three items.",
+			"auth.check.read": "I have read the Safety and Prohibited Conduct Notice and accept all of its terms.",
+			"auth.check.scope": "I confirm I will only use this in locally authorized environments, offline targets, or compliant exercises.",
+			"auth.check.ban": "I confirm that any illegal use is prohibited. Without completing this authorization, the drill console must not be used.",
+			"auth.no": "Not now",
+			"auth.ok": "Authorize",
+			"auth.ok.tab": "Authorize and open Drill",
+			"auth.ok.full": "Authorize and open Full view",`,
 	);
 	client = client.replace(
 		'\t\t\tnav: "Rules",',

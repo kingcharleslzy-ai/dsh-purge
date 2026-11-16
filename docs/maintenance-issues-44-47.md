@@ -1,41 +1,42 @@
-# 慢网更新、配置合成与审计权限（#44 / PR #45–47）
+# Slow-Network Updates, Config Composition, and Audit Permissions (#44 / PR #45–47)
 
-## 更新 Agent 的操作顺序
+## Update-Agent Operation Order
 
-先确认失败发生在查版本、下载、校验还是安装阶段。官方 API 能访问不代表 release-assets 域名也能访问。正式 TGZ 原来使用 30 秒下载预算，不能把所有失败都归因于另一路默认 12 秒。
+First confirm whether the failure occurs at version lookup, download, verification, or installation. Being able to access the official API does not mean the release-assets domain is also reachable. Official TGZs originally used a 30-second download budget; not all failures should be blamed on another path's default 12 seconds.
 
-1. 默认无需配置：正式归档下载总预算 180 秒，包含重定向与响应体；元数据仍沿用原请求预算。
-2. 慢网可设置 `PURGE_DOWNLOAD_TIMEOUT_MS=300000`（毫秒，范围 30000–900000），只影响正式发行归档。
-3. 没有 CONNECT 代理而有可信的 URL 前缀服务时，可以由用户明确设置 `PURGE_GH_MIRROR=https://mirror.example/`。此处是示例地址，项目不内置或自动选择公共镜像。仅允许 HTTPS 默认端口、无账号密码、查询串或片段的前缀；也支持带路径的前缀。
-4. 该镜像仅承载社区正式 TGZ。API、校验清单、README、分支与源码 ZIP 不经此入口改写；源码通道沿用 1.6.37 指向本仓库的修复。镜像模式从官方 GitHub API 重新获取该 release asset 的 SHA256；老发行没有 digest 时从官方原地址获取 SHA256SUMS。官方摘要无法获取、版本/资产不匹配或字节校验失败时停止，不能让镜像同时提供包和信任依据。
-5. 变量应由启动 DSH 的进程继承，容器在自己的服务配置中设置。不要把 URL 前缀镜像填入 `HTTPS_PROXY`：后者需要 HTTP CONNECT。不要自动改用户代理、关闭 TLS 校验或重启 DSH。现有进程未继承新环境时，等用户方便时自行重新启动。
-6. 下载、摘要及归档身份检查完成后，才进入备份与安装；网络失败不会执行安装回滚。安装阶段失败仍使用原有备份/恢复流程，不能因此关闭回滚功能。缓存文件不等于已安装。
+1. No configuration needed by default: official archive download total budget is 180 seconds, including redirects and response body; metadata still uses the original request budget.
+2. For slow networks, set `PURGE_DOWNLOAD_TIMEOUT_MS=300000` (milliseconds, range 30000–900000), affecting only official release archives.
+3. When there is no CONNECT proxy but there is a trusted URL-prefix service, the user may explicitly set `PURGE_GH_MIRROR=https://mirror.example/`. This is an example address; the project does not include or auto-select public mirrors. Only HTTPS default port, no credentials, query string, or fragment prefixes are allowed; path-prefixed mirrors are also supported.
+4. This mirror carries only community official TGZs. API, checksums, README, branches, and source ZIPs are not rewritten through this entry; the source channel retains the 1.6.37 fix pointing to this repository. Mirror mode re-fetches the release asset's SHA256 from the official GitHub API; for old releases without digest, it fetches SHA256SUMS from the official original address. If the official digest cannot be obtained, version/asset does not match, or byte verification fails, stop — the mirror cannot provide both package and trust basis.
+5. Variables must be inherited by the process that starts DSH; containers set them in their own service configuration. Do not put a URL-prefix mirror into `HTTPS_PROXY`: the latter requires HTTP CONNECT. Do not automatically change user proxy, disable TLS verification, or restart DSH. If the existing process did not inherit the new environment, let the user restart it when convenient.
+6. Only after download, digest, and archive-identity checks complete does it enter backup and installation; network failures do not trigger install rollback. Installation-stage failures still use the original backup/recovery flow — rollback must not be disabled because of this. Cached files do not mean installed.
+7. Do not claim full network cold install when dependency caches may be reused.
 
-暂不支持断点续传。无进展的连接仍受总时限约束。镜像失效要明确报错，不自动试一串第三方站点。GitHub Token 仅发往 api.github.com，不发给镜像。
+Resumable downloads are not yet supported. Connections with no progress are still constrained by the total time limit. A failing mirror must report clearly and must not automatically try a series of third-party sites. GitHub tokens are sent only to api.github.com, not to mirrors.
 
-## 配置合成
+## Config Composition
 
-删除 insert 前的同名 `dsh-purge` inject 修改，保留 insert 内完整定义。新安装不再产生该条找不到目标的告警；已有自定义项不被此冗余段覆盖。用户后置 override 仍优先；不删除红队旧包迁移段或屏蔽其他告警。测试使用真实宿主 `composeEntries`，不只对 YAML 做字符串断言。
+Remove the same-name `dsh-purge` inject modification before inserts while preserving the complete definition inside inserts. New installs no longer produce "target not found" warnings for that entry; existing custom items are not overwritten by this redundant segment. User post-overrides still take precedence; do not delete legacy redteam migration segments or suppress other warnings. Tests use the real host `composeEntries`, not just string assertions on YAML.
 
-## 审计目录与运行用户
+## Audit Directory and Runtime User
 
-不迁移日志路径，不递归 chown，不把私密目录放宽成 755。新目录保持 700，新日志保持 600，已有权限保持。仅在 root 调用时处理已知审计目录和 `audit.jsonl`、`.1`、`.2` 的 root 所有权；文件必须是无硬链接的普通文件，符号链接拒绝处理。Linux 使用打开的目录和文件描述符约束修改目标，轮转后创建的日志也交还给目标用户。
+Do not migrate log paths, do not chown recursively, and do not widen private directories to 755. New directories remain 700, new logs remain 600, and existing permissions remain unchanged. Only when called as root are known audit directories and `audit.jsonl`, `.1`, `.2` root ownership handled; files must be regular files without hard links, and symlinks are refused. On Linux, open directory and file descriptors constrain modification targets, and logs created after rotation are also handed back to the target user.
 
-- DSH_HOME 属于普通用户：以该 UID/GID 作为审计运行用户。
-- 容器的 DSH_HOME 本身属于 root：无法自动知道 `gosu` 后的用户。先用只读方式确认服务的数字 UID/GID，再由用户明确提供 `PURGE_AUDIT_UID` 与 `PURGE_AUDIT_GID`。必须成对提供；非 root home 与指定 UID 冲突时停止修复。不要猜用户名或递归修改整个数据目录。
-- 普通用户没有 chown 权限：插件不会尝试提权；旧 root 文件需要管理员按上述明确用户上下文执行操作。Windows 无 POSIX 所有权修复；macOS 跨用户目录修复不会自动执行。
-- 审计写入失败仍返回 false 并告警，不阻断主任务；读取遇到权限错误明确失败，不再伪装成空记录。
+- DSH_HOME belongs to a regular user: use that UID/GID as the audit runtime user.
+- DSH_HOME in a container itself belongs to root: the user after `gosu` cannot be known automatically. First confirm the service's numeric UID/GID in read-only mode, then have the user explicitly provide `PURGE_AUDIT_UID` and `PURGE_AUDIT_GID`. They must be provided as a pair; if a non-root home conflicts with the specified UID, stop repair. Do not guess usernames or recursively modify the entire data directory.
+- Regular users lack chown permission: the plugin will not attempt privilege escalation; old root-owned files require an administrator to operate in the explicit user context above. Windows has no POSIX ownership repair; cross-user directory repair on macOS is not performed automatically.
+- Audit write failures still return false and warn without blocking the main task; read permission errors fail explicitly and are no longer disguised as empty records.
 
-上述修复不承诺修复其他 root 所有的备份或配置文件。那些路径需单独诊断，不能混入这次审计修复。
+The above fixes do not promise to repair other root-owned backup or configuration files. Those paths require separate diagnosis and must not be mixed into this audit fix.
 
-## 验证与回滚
+## Verification and Rollback
 
-回归覆盖慢速持续传输、停滞超时、镜像跳转、官方摘要不可用、篡改包、下载失败不安装/回滚，以及安装后失败保留原恢复语义。Linux CI 以真实 root 和非特权子进程覆盖新目录、旧 root 日志、历史轮转、显式容器 UID/GID 与链接逃逸负例。
+Regressions cover slow sustained transfer, stall timeout, mirror redirects, unavailable official digests, tampered packages, download-failure no-install/rollback, and preserving original recovery semantics for failures after installation. Linux CI covers new directories, old root logs, historical rotations, explicit container UID/GID, and symlink-escape negatives with real root and unprivileged subprocesses.
 
-三平台官方 npm 宿主验收使用独立目录：安装 1.6.36 → 安装候选包 → 回滚 → 再升级 → 注入回滚验证失败并恢复；核对配置和提示词原字节。既有 macOS/Windows Electron 手动退出换包测试继续运行。不会启动或重启用户的 DSH，不调用模型。
+Three-platform official npm host acceptance uses isolated directories: install 1.6.36 → install candidate package → rollback → re-upgrade → inject rollback verification failure and recover; verify configuration and prompt original bytes. Existing macOS/Windows Electron manual-exit package-swap tests continue to run. It does not start or restart the user's DSH and does not call the model.
 
-Windows 官方 npm 宿主验收复现了 8.3 临时目录别名与长路径混用导致 pnpm store 索引文件名过长的 ENOENT。安装入口仅将实际存在的归档解析为 native 真实路径；不修改全局 pnpm 配置、不清缓存，也不改变备份身份。
+Windows official npm host acceptance reproduced ENOENT caused by mixing 8.3 temporary-directory aliases with long paths, making pnpm store index filenames too long. The installation entry resolves only actually existing archives to native real paths; it does not modify global pnpm configuration, clear caches, or change backup identity.
 
-回滚安装包使用已有 Maintenance 快照。修复后的审计所有权不自动改回 root，否则会再次导致普通用户无法写入；原日志内容与权限没有被删除或放宽。
+Rollback of the installation package uses existing Maintenance snapshots. Fixed audit ownership is not automatically changed back to root, otherwise regular users would again be unable to write; original log content and permissions were not deleted or widened.
 
-本版保留 1.6.37 的来源修复：beta / 源码 ZIP 通道与正式发行通道均指向本仓库，旧常量名称作为兼容别名保留。源码 ZIP 不走上述 TGZ 镜像入口。历史上游不可访问不阻断社区正式版本更新。
+This release retains the 1.6.37 source fix: beta / source ZIP channels and the official release channel both point to this repository, with old constant names retained as compatibility aliases. Source ZIPs do not go through the TGZ mirror entry above. Historical upstream unavailability does not block community official release updates.

@@ -22,7 +22,7 @@ for (const entry of ['app.asar', 'app', 'app.asar.unpacked']) {
       assert.equal(result.handoff.phase, 'unknown_target');
       assert.equal(result.disk.archive_exists, null);
       assert.equal(result.disk.unpacked_exists, null);
-      assert.match(result.note, /尚未定位/u);
+      assert.match(result.note, /not located/u);
       assert.equal(probes, 0);
     }
   });

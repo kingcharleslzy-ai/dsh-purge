@@ -13,7 +13,7 @@ import { removeTreeNoFollowSync } from "../lib/remove-tree.js";
 const MISSING_ANCHOR = {
   id: 959,
   name: "SYNTHETIC_DRIFT",
-  layer: "代码",
+  layer: "Code",
   optional: true,
   file: ["pi-ai-responses-shared"],
   replacements: [{ pattern: "const goneAnchor = 1;", replace: "const replaced = 2;" }],

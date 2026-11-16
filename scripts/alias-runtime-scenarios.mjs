@@ -72,7 +72,7 @@ for(const alias of ['dsh-purge-community','dsh-purge']){
   const bytes=protectedFiles.map(p=>fs.readFileSync(p));
   const verifier=m.verifier;m.verifier=async()=>{throw Error('injected verification failure')};
   for(const operation of [()=>m.install(legacy),()=>m.rollback(saved.id)]){
-    await assert.rejects(operation,/已恢复/);
+    await assert.rejects(operation,/restored/);
     protectedFiles.forEach((p,i)=>assert.deepEqual(fs.readFileSync(p),bytes[i]));
     assert.equal(installedCommunityPackage(profile).package.version,candidate.version);
   }

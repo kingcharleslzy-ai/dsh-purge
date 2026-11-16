@@ -1,52 +1,52 @@
-# Purge 界面
+# Purge UI
 
-独立的 DSH 桌面端界面插件。官方 `dsh-purge` 提供功能和数据接口；`dsh-purge-panel` 提供右侧入口、设置布局及由插件生命周期管理的旧入口隐藏样式。它不写入官方包、不复制后端补丁、不安装会话钩子，也不自动应用或恢复补丁。
+A standalone DSH desktop UI plugin. The original `dsh-purge` provides functionality and data APIs; `dsh-purge-panel` provides navigation, settings layout, and lifecycle-managed styles that hide legacy entries. It does not write to the original package, duplicate backend patches, install session hooks, or automatically apply or restore patches.
 
-## 使用
+## Usage
 
-先安装、启用官方 dsh-purge，再安装本包。右侧栏的「＋ → Purge」打开设置。也可以从本插件的配置入口打开。
+Install and enable the original dsh-purge, then install this package. Open Purge from the sidebar or this plugin's configuration entry.
 
-两个插件独立更新：更新官方 Purge 不会替换本包中的界面文件。禁用本插件后，官方原有入口会重新显示，官方配置和数据不会删除。迁移前的 `dsh-purge@1.1.71-local.*` 是旧的内嵌界面版本，请先换回官方原版，以免重复注册右侧标签。
+The plugins update independently: updating the original Purge does not replace this package's UI files. Disabling this plugin restores the original entries without deleting configuration or data. The older `dsh-purge@1.1.71-local.*` packages contain an embedded UI; replace them with the original distribution before migration to avoid duplicate registration.
 
-## 兼容范围
+## Compatibility
 
-实测 DSH 桌面版当前安装环境与官方 Purge 1.1.71。界面通过 `/dsh-purge/*`、原演练台 `/redteam/api` 使用现有接口；服务不可用或版本未经验证时，会显示提示。官方未来改变接口或入口 class 名时，本插件可能需要适配，不能承诺永久兼容。
+Tested against the installed DSH desktop environment and original Purge 1.1.71. The UI uses existing `/dsh-purge/*` and drill `/redteam/api` endpoints. It displays notices when services are unavailable or versions are unverified. Future upstream API or entry-class changes may require adaptation; permanent compatibility is not guaranteed.
 
-隐藏旧入口只使用 `.dshp-launch`、`.dshp-hero-chip`、`.dshp-tab-chip`、`.dshp-dock` 四个 CSS 选择器。样式由插件加载生命周期直接挂到文档 head，不依赖设置页或 shell.overlay 是否渲染；禁用插件时只清理自身创建的样式节点。没有全局 DOM 扫描、猴子补丁、加载器劫持或对官方安装文件的重写。官方自身的隐藏组件及扫描逻辑仍由官方运行；独立界面不能在不侵入官方实现的情况下去掉它们。
+Legacy entries are hidden using only `.dshp-launch`, `.dshp-hero-chip`, `.dshp-tab-chip`, and `.dshp-dock`. The plugin lifecycle attaches styles directly to the document head, independently of settings-page or shell-overlay rendering. Disabling the plugin removes only its own style node. This hiding mechanism does not scan the global DOM, monkey-patch the host, hijack the loader, or rewrite installed files. The original plugin still controls its own hidden components and scanning behavior; removing those would require modifying its implementation.
 
-界面使用独立的 `dshpp-` 类名和 locale 命名空间，防止官方 CSS 更新串样式。切换分类保持未保存草稿；刷新状态不重写草稿。已访问分类保持挂载。
+The UI uses separate `dshpp-` classes and a locale namespace to avoid collisions with upstream CSS. Switching categories preserves unsaved drafts; refreshing status does not overwrite them. Previously visited categories remain mounted.
 
-## 来源与维护
+## Source and maintenance
 
-界面部分派生自 YuJunZhiXue/dsh-purge 1.1.71，版权归原作者，MIT 许可证见 LICENSE。独立界面并非官方发布。本地适配仅调整展示与入口，不修改提示词、安全策略、模型行为或后端能力。
+The UI derives from YuJunZhiXue/dsh-purge 1.1.71. Copyright remains with the original author; see LICENSE for the MIT license. This standalone UI is not an official release. Local adaptations concern presentation and navigation rather than prompts, security policies, model behavior, or backend capabilities.
 
-当前独立版本：1.1.2。源码位于 src/，client.js 是自动生成的安装产物，禁止手工编辑；index.js 是无副作用的宿主入口，cordis.patch.yml 只注册本插件自身。
+Current standalone version: 1.1.2. Source lives in `src/`; `client.js` is generated and must not be edited manually. `index.js` is a side-effect-free host entry; `cordis.patch.yml` registers only this plugin.
 
-## 1.0.1 修复
+## 1.0.1 fixes
 
-- 初次读取完成前禁止编辑，避免慢响应覆盖刚输入的内容。
-- 保存中的新输入保留为未保存草稿，旧保存响应不会覆盖它；重复保存合并为一次请求。
-- 文本保存统一采用超时和 HTTP 状态检查，失败后保留内容并恢复保存按钮。
-- 兼容提示复用状态页数据，刷新时一起更新，避免重复状态请求。
-- 授权状态同步纳入插件生命周期，禁用时清理重试。
-- 增加异步竞态、HTTP 500、超时恢复与模块加载无副作用测试。
+- Disable editing until the initial read completes so slow responses cannot overwrite new input.
+- Preserve edits made during a save as unsaved drafts. Older save responses cannot overwrite them, and duplicate saves share one request.
+- Apply timeouts and HTTP status checks to text saves; preserve content and restore the Save button after failure.
+- Reuse status-page data for compatibility notices and refresh both together.
+- Manage authorization synchronization through the plugin lifecycle and cancel retries on disable.
+- Add tests for asynchronous races, HTTP 500 responses, timeout recovery, and side-effect-free module loading.
 
-本轮不是对上游补丁、演练台或所有第三方依赖的全面安全审计。未来上游 API / 入口选择器变化仍需适配。
+These changes are not a comprehensive security audit of upstream patches, the drill console, or every third-party dependency. Future API and entry-selector changes still require adaptation.
 
-## 1.1.0 模块化
+## 1.1.0 modularization
 
-- `src/entry.js`：DSH 注册与生命周期。
-- `src/api/`：请求、超时、HTTP 错误和旧路由兼容。
-- `src/state/`：侧栏状态、授权读取和当前工作区的只读订阅。
-- `src/components/`：设置页、规则、技能、状态和对话框。
-- `src/shared/`：语言、版本判断和公共 React 导出。
-- `src/styles/`：可直接编辑的 CSS。
-- `src/vendor/drill.js`：保留的上游演练台，仅隔离模块；不代表已完成其功能审计。
+- `src/entry.js`: DSH registration and lifecycle.
+- `src/api/`: requests, timeouts, HTTP errors, and legacy route compatibility.
+- `src/state/`: sidebar state, authorization reads, and read-only subscriptions to the current workspace.
+- `src/components/`: settings, rules, skills, status, and dialogs.
+- `src/shared/`: language, version checks, and shared React exports.
+- `src/styles/`: directly editable CSS.
+- `src/vendor/drill.js`: retained upstream drill console, isolated as a module; this does not imply a completed functional audit.
 
-清理独立界面中未启用的旧回退/续写、悬浮窗定位、发送挂件副本及其样式；官方插件原有行为未改变。规则页直接读取当前会话目录，切换会话会刷新，迟到的旧请求不会覆盖新状态。技能接口只在 404/405 时回退到旧路由；500 或格式错误不会重发可能已经执行的写入。
+Removed unused copies of legacy rewind/continuation controls, floating-window positioning, send widgets, and their styles from the standalone UI without changing original plugin behavior. The rules page reads the current session directory and refreshes on session changes; late responses cannot overwrite newer state. Skill requests fall back to legacy routes only on 404/405. HTTP 500 responses or malformed data do not replay writes that may already have executed.
 
-开发时运行 `npm ci --ignore-scripts --legacy-peer-deps`、`npm run build`、`npm test`。CI 检查源码与提交的构建产物一致，测试不会修改真实配置。源码模块化不等于整个上游已无缺陷，后续按模块逐项验证。
+For development, run `npm ci --ignore-scripts --legacy-peer-deps`, `npm run build`, and `npm test`. CI verifies that checked-in bundles match source. Tests do not modify real configuration. Modularization does not imply that all upstream defects are resolved; modules continue to receive targeted verification.
 
-## 1.1.2 修复
+## 1.1.2 fixes
 
-旧入口的隐藏样式不再依赖 shell.overlay 内的 React style 节点。即使关闭或切换页面导致 overlay 不渲染，旧悬浮按钮和旧面板仍保持隐藏；停止本界面插件后按生命周期恢复。回归覆盖 overlay 完全不渲染、挂载后卸载及插件清理，不改动官方插件文件、提示词或个人设置。
+Legacy-entry hiding no longer depends on a React style node inside `shell.overlay`. Floating buttons and the old panel remain hidden even when closing or switching pages prevents overlay rendering. Stopping the UI plugin restores them through lifecycle cleanup. Regression coverage includes no overlay render, mount followed by unmount, and plugin cleanup, without modifying original plugin files, prompts, or personal settings.

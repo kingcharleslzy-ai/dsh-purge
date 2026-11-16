@@ -18,12 +18,12 @@ function fixture(t) {
 const dead=pid=>{if(pid===DEAD) throw Object.assign(Error('dead'),{code:'ESRCH'});};
 test('dead legacy lock is recovered, with a real exclusive lock throughout the body',t=>{
  const f=fixture(t);f.plant(DEAD);const g=acquireMaintenanceLock(f.root,{kill:dead});
- g.check();assert.throws(()=>acquireMaintenanceLock(f.root),/已有维护操作/);g.release();
+ g.check();assert.throws(()=>acquireMaintenanceLock(f.root),/maintenance already running/);g.release();
  assert(!fs.existsSync(f.lock));assert(!fs.existsSync(path.join(f.root,'maintenance.guard')));
 });
 test('old live legacy writer is not stolen even after 45 minutes',t=>{
  const f=fixture(t);f.plant(process.pid,stale);
- assert.throws(()=>acquireMaintenanceLock(f.root,{kill:()=>{},birth:()=>Date.now()-3600000}),/已有维护操作/);
+ assert.throws(()=>acquireMaintenanceLock(f.root,{kill:()=>{},birth:()=>Date.now()-3600000}),/maintenance already running/);
  assert.equal(fs.readFileSync(f.lock,'utf8'),String(process.pid));
 });
 test('reused PID is reclaimed only when process birth proves the old owner ended',t=>{
@@ -35,7 +35,7 @@ for(const [label,raw,io] of [
  ['EPERM',String(DEAD),{kill:()=>{throw Object.assign(Error('denied'),{code:'EPERM'});}}],
  ['unknown liveness error',String(DEAD),{kill:()=>{throw Object.assign(Error('unknown'),{code:'EIO'});}}]
 ]) test(`${label} never becomes stale merely through age`,t=>{
- const f=fixture(t);f.plant(raw,stale);assert.throws(()=>acquireMaintenanceLock(f.root,io),/已有维护操作/);assert.equal(fs.readFileSync(f.lock,'utf8'),raw);
+ const f=fixture(t);f.plant(raw,stale);assert.throws(()=>acquireMaintenanceLock(f.root,io),/maintenance already running/);assert.equal(fs.readFileSync(f.lock,'utf8'),raw);
 });
 test('metadata write failure releases gate and empty file without hiding disk failure',t=>{
  const f=fixture(t);const io=new Proxy(fs,{get(target,key){if(key==='writeFileSync')return (file,...args)=>{if(String(file).endsWith('.json'))throw Object.assign(Error('disk full'),{code:'ENOSPC'});return fs.writeFileSync(file,...args);};return target[key];}});
@@ -50,7 +50,7 @@ test('a new owner cannot be removed by a stale directory reaper',t=>{
    if(file===path.join(gate,old)&&!next){fs.unlinkSync(file);fs.rmdirSync(gate);next=acquireMaintenanceLock(f.root);return;}
    return fs.unlinkSync(file);
  };return target[key];}});
- assert.throws(()=>acquireMaintenanceLock(f.root,{fs:io,kill:dead}),/已有维护操作/);
+ assert.throws(()=>acquireMaintenanceLock(f.root,{fs:io,kill:dead}),/maintenance already running/);
  next.check();next.release();
 });
 test('lost ownership stops body completion and never removes replacement lock',async t=>{
@@ -88,7 +88,7 @@ test('public cleanup and actual CLI cannot prune during maintenance', async t=>{
    const cli=new URL('../bin/community.js',import.meta.url);
    const {fileURLToPath}=await import('node:url');
    const result=spawnSync(process.execPath,[fileURLToPath(cli),'prune'],{encoding:'utf8',env:{...process.env,DSH_HOME:f.root,DSH_PROFILE:'web',PURGE_PROFILE_DIR:profile,DSH_BASE:f.root}});
-   assert.notEqual(result.status,0);assert.match(result.stderr+result.stdout,/已有维护操作/);
+   assert.notEqual(result.status,0);assert.match(result.stderr+result.stdout,/maintenance already running/);
  });
  const result=await m.pruneLocked();assert.deepEqual(result.removed,[]);
 });

@@ -41,7 +41,7 @@ try{
   const manifest=fs.readFileSync(path.join(profile,'package.json')),lock=fs.readFileSync(path.join(profile,'pnpm-lock.yaml'));
   m.verifier=async()=>{throw Error('injected verification failure')};
   for(const [stage,op] of [['failed install',()=>m.install(baseline)],['failed rollback',()=>m.rollback(saved.id)]]){
-   await assert.rejects(op,/已恢复/);check(stage);
+   await assert.rejects(op,/restored/);check(stage);
    assert.deepEqual(fs.readFileSync(path.join(profile,'package.json')),manifest);assert.deepEqual(fs.readFileSync(path.join(profile,'pnpm-lock.yaml')),lock);await verifyInstalledPackage(profile,b);
   }
   reports.push({protocol,stages,externalFiles:Object.keys(expected),settingsPreserved:true});

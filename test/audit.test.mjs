@@ -18,12 +18,12 @@ test("audit appends, rotates and reads newest first", () => {
     assert.equal(rows[0].nonce, "purge-deadbeef");
     assert(rows[0].at && rows[0].pid);
 
-    // 半行/坏行不会让读取崩
+    // A half-line/bad line must not crash reading
     const file = path.join(home, "dsh-purge-community", "audit.jsonl");
     fs.appendFileSync(file, '{"broken\n');
     assert.equal(readAudit({ home }).length, 2);
 
-    // 超过上限会轮转，旧的进 .1
+    // Exceeding the limit triggers rotation; the old log goes to .1
     fs.writeFileSync(file, "x".repeat(AUDIT_MAX_BYTES + 10));
     logAudit("revert", { reverted: 3 }, home);
     assert(fs.existsSync(file + ".1"), "rotated copy exists");
@@ -53,6 +53,6 @@ test('audit read permission errors are visible, not an empty history', {skip:pro
   const home=fs.mkdtempSync(path.join(os.tmpdir(),'purge-audit-unreadable-'));
   const dir=path.join(home,'dsh-purge-community');fs.mkdirSync(dir);
   const file=path.join(dir,'audit.jsonl');fs.writeFileSync(file,'private',{mode:0o000});
-  try { assert.throws(()=>readAudit({home}),/审计日志读取失败/); }
+  try { assert.throws(()=>readAudit({home}),/audit log read failed/); }
   finally {fs.chmodSync(file,0o600);fs.rmSync(home,{recursive:true,force:true});}
 });

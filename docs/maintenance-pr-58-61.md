@@ -1,39 +1,39 @@
-# PR #58–#61：可靠性修复与保留范围
+# PR #58–#61: Reliability Fixes and Retained Scope
 
-## 原 PR 保持开放
+## Original PRs Remain Open
 
-本版采用独立修复提交，不关闭原 PR，也不宣称四个提案已完整实现。
+This release uses independent fix commits, does not close the original PRs, and does not claim that all four proposals are fully implemented.
 
-| PR | 本次处理 | 未采用的部分 |
+| PR | Handled in this release | Parts not adopted |
 | --- | --- | --- |
-| #58 | 保持原实现 | 提示词排序调整未合入 |
-| #59 | 收紧旧标记识别，保护普通正文、引用和代码示例 | 大小写不敏感的扩大匹配未合入 |
-| #60 | 取消向上游传播；仅记录传输完成、失败和取消 | 扩大拒绝检测与修改重试文案未合入 |
-| #61 | 统一设置审计；纠正 retry 生效说明 | 新 inject CLI 写入入口未合入；rewind 仍需界面重载 |
+| #58 | Kept original implementation | Prompt-ordering adjustment was not merged |
+| #59 | Tightened old-marker recognition to protect normal text, quotes, and code examples | Broader case-insensitive matching was not merged |
+| #60 | Stopped propagation upstream; only records transfer completion, failure, and cancellation | Expanded refusal detection and modified retry wording were not merged |
+| #61 | Unified settings audit; corrected retry-effect description | New inject CLI write entry was not merged; rewind still requires UI reload |
 
-审查发现：#58 的默认强化段也会受排序变化影响，不能仅靠复制宿主常量的测试证明兼容；#59 的非锚定匹配会命中正文；#60 的新增词条会命中正常技术讨论；#61 对 rewind 即时生效的说明与前端缓存不符。保留原 PR，方便针对这些未解决项继续讨论。
+Review findings: #58's default strengthening section would also be affected by ordering changes, and compatibility cannot be proven by tests that only copy host constants; #59's unanchored matching would hit body text; #60's added terms would hit normal technical discussion; #61's claim of immediate rewind effect does not match frontend cache behavior. Original PRs are retained to allow continued discussion on these unresolved items.
 
-感谢 loLollipop 的提案和问题线索。本次不修改现有检测模式、重试提示词、默认开关或宿主补丁表。
+Thanks to loLollipop for the proposals and issue clues. This release does not modify existing detection patterns, retry prompts, default switches, or the host patch table.
 
-## 可复现的问题
+## Reproducible Issues
 
-在隔离的 1.6.41 源码副本中，普通句子中出现旧标记会截断后续文字；消费者取消普通输出时，上游生成器 finally 不执行；直接写入设置不会生成审计条目。相同输入在新回归中要求正文完整、上游关闭、实际设置变化仅记一次。
+In an isolated 1.6.41 source copy, old markers appearing in ordinary sentences truncated following text; when consumers cancelled ordinary output, the upstream generator's `finally` did not run; directly writing settings did not generate audit entries. The same inputs now require complete body text, upstream closure, and only one record per actual settings change in new regressions.
 
-旧分段行为仍以结构性标记为界；本次保护的是非结构性正文和示例，并不声称可以自动理解任意用户文档。标记仍需是代码围栏外、无缩进且独占整行的旧版大写文本。
+Old segmentation behavior is still bounded by structural markers; this release protects non-structural body text and examples and does not claim it can automatically understand arbitrary user documents. Markers must still be old-version uppercase text outside code fences, unindented, and occupying the entire line.
 
-## 状态和日志语义
+## State and Log Semantics
 
-- `tuning_setting` 仅记录已知开关及枚举的有效变化；无效类型显示 `invalid`，不把任意字符串或对象复制到审计。未知字段原样保存在配置中。
-- 写入失败不会生成成功记录。审计自身失败沿用原有警告，不改变设置保存和输出流的结果。
-- `refusal_retry_outcome` 在源流结束后记录传输类型，不能当成回答正确、任务成功或模型行为的判据。
-- `text`、`tool_call`、`reasoning_only`、`empty` 区分输出形态；`error`、`cancelled` 区分异常和消费者取消。晚到错误不提前记录为成功。
-- 新流诊断不记录正文、推理内容、工具参数、错误原文或 URL。
-- retry 在下一请求读取设置；rewind 前端可见性缓存仍要求重载。插件不会自动重启。
+- `tuning_setting` records only valid changes to known switches and enumerations; invalid types show `invalid` and do not copy arbitrary strings or objects into audit. Unknown fields are preserved in configuration as-is.
+- Write failures do not generate success records. Audit failures themselves follow the original warning behavior and do not change the result of settings saves and output streams.
+- `refusal_retry_outcome` records transfer type after the source stream ends and must not be treated as a judgment of answer correctness, task success, or model behavior.
+- `text`, `tool_call`, `reasoning_only`, and `empty` distinguish output forms; `error` and `cancelled` distinguish exceptions from consumer cancellation. Late errors are not recorded early as success.
+- New stream diagnostics do not record body text, reasoning content, tool arguments, raw errors, or URLs.
+- retry reads settings on the next request; rewind frontend visibility cache still requires reload. The plugin does not restart automatically.
 
-## 验证方式
+## Verification Method
 
-`test/review-integrity.test.mjs` 覆盖普通技术回答的逐块保留、不额外发起请求、普通正文/引用/代码围栏保护、消费者取消、晚到错误、同步创建错误、工具调用流、纯推理流、无输出、审计失败、真实 CLI 子进程、重复保存、写入失败以及未知配置保留。
+`test/review-integrity.test.mjs` covers chunk-by-chunk preservation of normal technical answers, no extra requests, protection of normal text/quotes/code fences, consumer cancellation, late errors, synchronous creation errors, tool-call streams, reasoning-only streams, no output, audit failures, real CLI subprocesses, repeated saves, write failures, and preservation of unknown configuration.
 
-其中 HTTP 用例实际启动仅监听 127.0.0.1 的服务器，消费首块后取消，断言服务端连接关闭。测试不请求外部模型、不触碰用户 profile。
+HTTP cases actually start a server listening only on 127.0.0.1, cancel after consuming the first chunk, and assert the server-side connection closes. Tests do not request external models and do not touch user profiles.
 
-全套回归与三平台安装/回滚工作流继续运行。自动化流测试不是实际模型质量评测；npm 宿主安装验收也不等同于三平台全部界面功能验收。
+Full regressions and three-platform install/rollback workflows continue to run. Automated stream tests are not actual model-quality evaluations; npm host installation acceptance is not equivalent to full UI feature acceptance on all three platforms.

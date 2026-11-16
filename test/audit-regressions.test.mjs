@@ -1,4 +1,4 @@
-// 审计回归：这一组用例对应四个“报告和事实不一致”的缺陷，修好之前它们全部失败。
+// Audit regressions: this group corresponds to four "report vs fact mismatch" defects; before the fix they all failed.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -11,21 +11,21 @@ import { dirBackup, dirRestore } from "../lib/update-install.js";
 
 const tmp = (tag) => fs.mkdtempSync(path.join(os.tmpdir(), `purge ${tag} `));
 
-test("读取补丁状态失败时，自检不能报成全绿", () => {
-  // patchStatus 抛错后 selfCheck 传 status={} + statusError：每一层都必须是 unknown。
+test("when reading patch status fails, selfcheck must not report all green", () => {
+  // After patchStatus throws, selfCheck passes status={} + statusError: every layer must be unknown.
   const failed = rollupLayers({}, true, { statusError: "patchStatus boom" });
   assert(failed.every((l) => l.state === "unknown" && l.ok === false));
-  assert(failed.every((l) => l.broken.length === 0), "读不到状态不等于补丁损坏");
+  assert(failed.every((l) => l.broken.length === 0), "unable to read status does not mean patches are broken");
   assert(failed[0].note.includes("patchStatus boom"));
   assert.equal(failed[0].status_error, "patchStatus boom");
 
-  // 空状态表不能证明目标缺失：未返回的状态仍应未知。
+  // An empty status table cannot prove targets are missing: unreturned states must remain unknown.
   assert(rollupLayers({}, true).every((l) => l.state === "unknown"));
-  // 未定位宿主仍是 unknown，不会被上面的错误分支吞掉。
+  // When the host is not located it remains unknown and must not be swallowed by the error branch above.
   assert(rollupLayers({}, false).every((l) => l.state === "unknown"));
 });
 
-test("预发布段按数字比较：rc.2 不比 rc.10 新", () => {
+test("prerelease segments are compared numerically: rc.2 is not newer than rc.10", () => {
   assert.equal(versionIsNewer("0.2.1-rc.2", "0.2.1-rc.10"), false);
   assert.equal(versionIsNewer("0.2.1-rc.10", "0.2.1-rc.2"), true);
   assert.equal(versionIsNewer("0.2.1-rc.2", "0.2.1"), false);
@@ -34,13 +34,13 @@ test("预发布段按数字比较：rc.2 不比 rc.10 新", () => {
   assert.equal(versionIsNewer("1.6.100", "1.6.99"), true);
 });
 
-test("sameRev 只对 git sha 做前缀比较，不把 apply:<版本> 当成同一修订", () => {
+test("sameRev only compares git SHA prefixes, and does not treat apply:<version> as the same revision", () => {
   assert.equal(sameRev("apply:1.6.2", "apply:1.6.27"), false);
   assert.equal(sameRev("abc1234", "abc1234def"), true);
   assert.equal(sameRev("abc1234", "fff9999"), false);
 });
 
-test("rename 撞到瞬时占用会退避重试，而不是直接让状态文件写失败", () => {
+test("rename backs off and retries on transient contention instead of failing the state file write directly", () => {
   const root = tmp("rename");
   const file = path.join(root, "state.json");
   fs.writeFileSync(file, "old");
@@ -54,10 +54,10 @@ test("rename 撞到瞬时占用会退避重试，而不是直接让状态文件�
     };
     atomicFiles(fake).atomicWriteSync(file, "new");
     assert.equal(fs.readFileSync(file, "utf8"), "new");
-    assert.equal(calls, 3, "前两次 EBUSY 后应再试一次");
-    assert.deepEqual(fs.readdirSync(root), ["state.json"], "重试不应留下临时文件");
+    assert.equal(calls, 3, "should retry once after the first two EBUSY errors");
+    assert.deepEqual(fs.readdirSync(root), ["state.json"], "retries must not leave temporary files");
 
-    // 非占用类错误不重试：权限错误重试没有意义。
+    // Non-contention errors must not be retried: retrying permission errors is meaningless.
     let fatal = 0;
     const deny = { ...fs, promises: { ...fs.promises } };
     deny.renameSync = () => {
@@ -71,7 +71,7 @@ test("rename 撞到瞬时占用会退避重试，而不是直接让状态文件�
   }
 });
 
-test("目录回滚保住被备份有意跳过的 node_modules", () => {
+test("directory rollback preserves node_modules that the backup intentionally skipped", () => {
   const root = tmp("dirrestore");
   const home = path.join(root, "home");
   const dir = path.join(root, "plugin");
@@ -81,14 +81,14 @@ test("目录回滚保住被备份有意跳过的 node_modules", () => {
     fs.writeFileSync(path.join(dir, "lib", "index.js"), "v1");
     fs.writeFileSync(path.join(dir, "node_modules", "yaml", "index.js"), "dep");
     const backup = dirBackup(dir, { home, reason: "test" });
-    // 升级把源码写坏，但 node_modules 仍在盘上
+    // The upgrade corrupted source files, but node_modules is still on disk
     fs.writeFileSync(path.join(dir, "lib", "index.js"), "broken");
     dirRestore(backup, dir);
     assert.equal(fs.readFileSync(path.join(dir, "lib", "index.js"), "utf8"), "v1");
     assert.equal(
       fs.existsSync(path.join(dir, "node_modules", "yaml", "index.js")),
       true,
-      "回滚后依赖必须还在，否则插件 import yaml 直接失败",
+      "dependencies must remain after rollback, otherwise importing yaml will fail directly",
     );
   } finally {
     fs.rmSync(root, { recursive: true, force: true });

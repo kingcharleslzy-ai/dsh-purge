@@ -1,15 +1,15 @@
-# DSH 自定义市场索引
+# DSH custom marketplace index
 
-正式源地址：**https://kingcharleslzy-ai.github.io/dsh-purge/index.json**
+Official source URL: **https://kingcharleslzy-ai.github.io/dsh-purge/index.json**
 
-DSH「插件 → 实验性插件 → 更多 → 自定义插件市场」开启后，在「发现 → 添加索引源」粘贴该地址。没有这个功能的旧宿主仍可通过 GitHub Release 安装。
+In DSH, enable `Plugins → Experimental Plugins → More → Custom Plugin Marketplace`, then paste this URL in `Discover → Add Index Source`. Older hosts without this feature can still install via GitHub Releases.
 
-索引遵循官方 format 1，收录 Purge（从 1.6.5 起）、DSH-Spicy 和 Breeze Voice 的正式版本；源码安装固定到完整 Git 提交，不指向可变分支。发布工作流成功后生成并部署 GitHub Pages，不需要手改索引。
+The index follows the official format 1 and lists official versions of Purge (from 1.6.5 onward), DSH-Spicy, and Breeze Voice. Source installs are pinned to full Git commits, not mutable branches. After the release workflow succeeds, GitHub Pages is generated and deployed automatically; no manual index editing is required.
 
-每个条目分别声明其已验证的宿主版本范围，不声称其他宿主已验证。市场展示不代表 DeepSeek 官方背书，也不会自动应用宿主补丁。
+Each entry declares its own verified host version range and does not claim verification for other hosts. Marketplace listing does not imply DeepSeek endorsement and does not automatically apply host patches.
 
-社区目录收录与自建源是两件事：自建源由用户添加；社区目录需提交条目并等待维护者审核。
+Community directory listings and self-hosted sources are different things: users add self-hosted sources themselves; community directory entries must be submitted and reviewed by maintainers.
 
-官方规范：https://deepseek-harness.github.io/deepseek-harness/en/guide/plugin-market
+Official specification: https://deepseek-harness.github.io/deepseek-harness/en/guide/plugin-market
 
-发布新版 Breeze Voice 后，将发行包的预编译 Git 快照提交、发布时间和宿主兼容范围登记在 `market/breeze-voice.json`，验证后部署索引。
+After releasing a new Breeze Voice version, record the release package's prebuilt Git snapshot commit, release time, and host compatibility range in `market/breeze-voice.json`, verify it, then deploy the index.

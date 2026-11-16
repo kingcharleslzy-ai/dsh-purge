@@ -106,7 +106,7 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
 
   const updateErrorText = (tr, e) => {
     const msg = String((e && e.message) || e || "");
-    if (msg === "timeout" || /aborted|abort|超时/i.test(msg))
+    if (msg === "timeout" || /aborted|abort|timeout/i.test(msg))
       return tr("update.timeout");
     if (/\b404\b/.test(msg) || /non-json/.test(msg))
       return tr("update.needRestart");
@@ -300,7 +300,7 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
           setState(d);
           try {
             setScannedAt(
-              new Date().toLocaleTimeString("zh-CN", {
+              new Date().toLocaleTimeString("en-US", {
                 hour: "2-digit",
                 minute: "2-digit",
                 hour12: false,
@@ -453,7 +453,7 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
               if (d.manualQuit) {
                 setNotice({
                   kind: "ok",
-                  text: "补丁已写入磁盘，当前进程尚未加载。换包助手等待你完整退出（macOS 用 ⌘Q，Windows 从系统托盘退出）。确认换包完成后再手动打开 DSH，不会自动重启。",
+                  text: "Patches have been written to disk but are not loaded by the current process. The handoff helper is waiting for a full exit (Cmd+Q on macOS, system tray on Windows). After confirming handoff completion, open DSH manually. It will not restart automatically.",
                 });
                 setAskRestart(false);
                 loadAll();
@@ -510,7 +510,7 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
         rejectNeedPrompt(t);
         return;
       }
-      if (!d || !d.ok) throw new Error((d && d.error) || "保存失败");
+      if (!d || !d.ok) throw new Error((d && d.error) || "Save failed");
       const unchanged = readPromptBox() === content;
       if (unchanged && typeof d.content === "string") {
         overrideRef.current = d.content;
@@ -520,7 +520,7 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
         kind: "ok",
         text: unchanged
           ? t("saved.override")
-          : "已保存提交的版本；当前修改尚未保存。",
+          : "The submitted version was saved; current edits are still unsaved.",
       });
     } catch (e) {
       if (ticket === actionTicket.current)
@@ -542,7 +542,7 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ content }),
       });
-      if (!d || !d.ok) throw new Error((d && d.error) || "保存失败");
+      if (!d || !d.ok) throw new Error((d && d.error) || "Save failed");
       const unchanged = ownRef.current === content;
       if (unchanged && typeof d.content === "string") {
         ownRef.current = d.content;
@@ -551,7 +551,7 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
       setNotice({
         kind: "ok",
         text: !unchanged
-          ? "已保存提交的版本；当前修改尚未保存。"
+          ? "The submitted version was saved; current edits are still unsaved."
           : d.dropped > 0
             ? t("saved.own.dropped", { n: d.dropped })
             : t("saved.own"),
@@ -595,7 +595,7 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
           kind: "ok",
           text: unchanged
             ? tr("saved.restoreInject")
-            : "已恢复默认值；当前修改尚未保存。",
+            : "Defaults were restored; current edits are still unsaved.",
         });
       })
       .catch((e) => {
@@ -700,7 +700,7 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
     desktopLikely &&
     !!(s && (s.asar_still_sealed || s.desktop_exe || s.desktop_install));
   const patchesLost = !located && !!(s && s.patches_lost);
-  // 状态页所有数字同源：逐补丁真值。旧口径按“显示分组”计，会少数几十条。
+  // Count individual patches consistently; display groups undercount the total.
   const allRows = located ? patchRowsAll(s) : [];
   const tally = located
     ? tallyPatches(allRows)
@@ -845,7 +845,7 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
     h(
       "div",
       { hidden: page !== "status" },
-      // 标题行：左侧页面名，右侧操作组 + 扫描时间（对齐样稿，不再用 hero 卡包一层）
+      // Align the page title with actions and the last scan time.
       h(
         "div",
         { className: "dshpp-status-head" },
@@ -900,7 +900,9 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
         ? h(
             "p",
             { className: "dshpp-status-note" },
-            sealedReady ? "宿主还没解开：点「应用」" : t("metric.unlocated"),
+            sealedReady
+              ? "Host is still packed: click Apply"
+              : t("metric.unlocated"),
           )
         : null,
       noticeNode(notice),
@@ -931,7 +933,7 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
       h(
         "details",
         null,
-        h("summary", null, "高级选项"),
+        h("summary", null, "Advanced options"),
         h(HooksDenySection, { onSaved: loadAll }),
       ),
       askUninstall
@@ -1066,7 +1068,7 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
       h("textarea", {
         className: "dshpp-area",
         ref: promptAreaRef,
-        "aria-label": "提示词内容",
+        "aria-label": "Prompt content",
         disabled: !overrideLoaded,
         value: override,
         onChange: (e) => {
@@ -1116,7 +1118,7 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
       ),
       h("textarea", {
         className: "dshpp-area",
-        "aria-label": "服务器名单",
+        "aria-label": "Server list",
         disabled: !ownLoaded,
         value: ownServers,
         onChange: (e) => {

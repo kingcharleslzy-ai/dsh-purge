@@ -11,7 +11,7 @@ import { tallyPatchStatus } from "../lib/selfcheck.js";
 function fixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "purge-40-"));
   const home = path.join(root, "home"),
-    app = path.join(root, "任意名.app/Contents/Resources/app"),
+    app = path.join(root, "any-name.app/Contents/Resources/app"),
     host = path.join(app, "dsh/node_modules/@deepseek-ai");
   fs.mkdirSync(home);
   fs.mkdirSync(host, { recursive: true });

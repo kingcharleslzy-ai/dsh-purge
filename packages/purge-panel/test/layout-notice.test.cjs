@@ -23,30 +23,30 @@ test("layout notice never equates a disk archive or absent archive with loaded c
   const render = (info) =>
     renderToStaticMarkup(React.createElement(LayoutNotice, { info }));
   const legacy = render({ asar_still_sealed: true });
-  assert.match(legacy, /加载来源尚未确认/);
-  assert.doesNotMatch(legacy, /当前进程仍加载/);
+  assert.match(legacy, /load source is unconfirmed/);
+  assert.doesNotMatch(legacy, /current process still loads/);
   const unpacked = render({
     asar_still_sealed: false,
     host_layout: {
       state: "unpacked_entry",
       process: { matches_target: true },
-      note: "入口位置不能证明之后写入的内容已重新加载。",
+      note: "The entry location cannot prove that later writes have been reloaded.",
       disk: { archive_exists: false },
     },
   });
-  // 换包正常时说明折进 details，但内容仍在，绝不能出现"已加载"这种断言
-  assert.match(unpacked, /不能证明/);
-  assert.match(unpacked, /已从解包目录启动/);
-  assert.doesNotMatch(unpacked, /已加载 app\.asar/);
+  // Collapsed details retain the explanation without asserting runtime reload.
+  assert.match(unpacked, /cannot prove/);
+  assert.match(unpacked, /Started from the unpacked directory/);
+  assert.doesNotMatch(unpacked, /loaded app\.asar/);
   const different = render({
     asar_still_sealed: true,
     host_layout: {
-      note: "当前服务入口与所选目标安装不同。",
+      note: "The current service entry differs from the selected target installation.",
       disk: { archive_exists: true },
     },
   });
-  assert.match(different, /安装不同/);
-  assert.match(different, /目标磁盘仍有 app.asar/);
+  assert.match(different, /differs from the selected target installation/);
+  assert.match(different, /app.asar remains on the target disk/);
 });
 
 test("unknown, different and unreadable layouts never claim handoff completion", () => {
@@ -69,7 +69,7 @@ test("unknown, different and unreadable layouts never claim handoff completion",
         },
       }),
     );
-    assert.doesNotMatch(html, /换包完成/);
+    assert.doesNotMatch(html, /handoff complete/i);
     assert.match(html, /183/);
     assert.match(html, /&lt;failure&gt;/);
   }
@@ -91,9 +91,9 @@ test("only a confirmed Web target without desktop evidence or failures gets a ne
   const render = (info) =>
     renderToStaticMarkup(React.createElement(LayoutNotice, { info }));
   const html = render(web);
-  assert.match(html, /不适用（Web 宿主）/);
+  assert.match(html, /not applicable \(web host\)/);
   assert.match(html, /unknown_runtime/);
-  assert.doesNotMatch(html, /dshpp-warn|换包完成/);
+  assert.doesNotMatch(html, /dshpp-warn|handoff complete/i);
   for (const info of [
     { ...web, surface: "desktop" },
     { ...web, desktop_exe: "host.exe" },
@@ -114,6 +114,6 @@ test("only a confirmed Web target without desktop evidence or failures gets a ne
     { ...web, surface: undefined },
   ]) {
     assert.match(render(info), /dshpp-warn/);
-    assert.doesNotMatch(render(info), /不适用（Web 宿主）/);
+    assert.doesNotMatch(render(info), /not applicable \(web host\)/);
   }
 });

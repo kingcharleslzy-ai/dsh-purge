@@ -15,12 +15,12 @@ import { __dshPurgeDrill } from "../vendor/drill.js";
 import { readDrillAuth, setDock, requestDrill } from "../state/dock.js";
 
 const TABS = [
-  ["status", "状态", "宿主兼容、补丁、破甲自检"],
-  ["prompt", "提示词", "注入正文与破甲强化段"],
-  ["rules", "规则", "规则集与工作区策略"],
-  ["skills", "技能", "DSH 技能目录"],
-  ["drill", "演练台", "红队演练与环境适配"],
-  ["more", "更多", "会话外观与服务器设置"],
+  ["status", "Status", "Host compatibility, patches, and self-check"],
+  ["prompt", "Prompts", "Prompt injection and boost"],
+  ["rules", "Rules", "Rule sets and workspace policies"],
+  ["skills", "Skills", "DSH skill directory"],
+  ["drill", "Drill", "Red-team exercises and environment setup"],
+  ["more", "More", "Conversation appearance and server settings"],
 ];
 
 function PurgeGlyph({ size = 18 } = {}) {
@@ -60,49 +60,51 @@ export function StatusStrip({ info }) {
     h(
       "span",
       { className: "dshpp-strip-item" },
-      "兼容级别 ",
+      "Compatibility level ",
       h(
         "b",
         null,
         level
           ? compatibilityLevelText(t, level)
           : info?.ok === false
-            ? "读取失败"
-            : "检测中",
+            ? "Failed to load"
+            : "Checking",
       ),
       h(
         HelpTip,
-        { title: "兼容级别" },
+        { title: "Compatibility level" },
         compat.message ||
-          "读取宿主组件版本后给出结论。qualified 表示该 DSH 版本的补丁锚点已逐条回归。",
+          "Determined from host component versions. Qualified means every patch anchor has been regression-tested against this DSH version.",
       ),
     ),
     h(
       "span",
       { className: "dshpp-strip-item" },
-      "磁盘写入计数 ",
+      "Patches written to disk ",
       h(
         "b",
         null,
         `${info?.patches_applied ?? "?"}/${info?.patches_total ?? "?"}`,
-        info?.patches_na > 0 ? ` · ${info.patches_na} 条本机不适用` : "",
+        info?.patches_na > 0
+          ? ` · ${info.patches_na} not applicable locally`
+          : "",
       ),
       h(
         HelpTip,
-        { title: "宿主补丁" },
-        `实际写进 DSH 宿主代码的补丁条数（分母只算本机适用的）。全部补丁 ${info?.patches_total_all ?? "?"} 条，其中 ${info?.patches_na ?? 0} 条目标插件/预设未安装；待应用表示锚点还在、还没写入；没对上表示宿主源码已变，需要重新定位锚点。`,
+        { title: "Host patches" },
+        `Patches actually written into DSH host code; the denominator includes only locally applicable patches. Of ${info?.patches_total_all ?? "?"} patches, ${info?.patches_na ?? 0} target plugins or presets are not installed. Pending means the anchor exists but the patch has not been written. A mismatch means the host source changed and the anchor must be relocated.`,
       ),
     ),
     h(
       "span",
       { className: "dshpp-strip-item" },
-      "插件 ",
+      "Plugin ",
       h("b", null, info?.plugin_version || __PANEL_VERSION__),
     ),
   );
 }
 
-/** 磁盘归档与进程入口分别呈现；不能从磁盘写入推断运行时已加载。 */
+/** Disk archives and process entry points are separate evidence of runtime state. */
 export function LayoutNotice({ info }) {
   if (!info || (!info.asar_still_sealed && !info.host_layout)) return null;
   if (info.host_layout?.family === "tauri") {
@@ -115,13 +117,13 @@ export function LayoutNotice({ info }) {
   const sealed = info.asar_still_sealed === true;
   const note =
     info.host_layout?.note ||
-    "目标磁盘仍有 app.asar；当前进程加载来源尚未确认。";
+    "app.asar remains on the target disk; the current process's load source is unconfirmed.";
   const handoff = info.asar_handoff
-    ? ` 换包状态：${{ not_scheduled: "尚未应用：点「应用」后才会安排换包", archive_reappeared: "归档再次出现，旧换包记录不代表当前已完成", backup_missing: "原归档备份缺失，请检查诊断", unknown_target: "目标实例未确定", unreadable: "换包记录不可读，请检查诊断", starting: "助手启动中（尚未确认就绪）", ready: "助手已就绪", waiting_for_quit: "等待完整退出（macOS ⌘Q / Windows 系统托盘）", waiting_for_unlock: "等待归档解锁", moving: "正在保留原归档", complete: "换包完成，请手动打开 DSH", already_unsealed: "归档已移走，请手动打开 DSH", failed: "失败，请查看诊断并按恢复文档操作", expired: "等待超时，请重新应用或按恢复文档操作", helper_stopped: "助手意外结束，请重新应用或按恢复文档操作" }[info.asar_handoff.phase] || info.asar_handoff.phase}。`
+    ? ` Archive handoff: ${{ not_scheduled: "Not applied; click Apply to schedule the handoff", archive_reappeared: "The archive reappeared; the previous handoff record does not confirm current completion", backup_missing: "Original archive backup missing; check diagnostics", unknown_target: "Target instance unknown", unreadable: "Handoff record unreadable; check diagnostics", starting: "Helper starting; readiness unconfirmed", ready: "Helper ready", waiting_for_quit: "Waiting for a full exit (macOS Cmd+Q / Windows system tray)", waiting_for_unlock: "Waiting for the archive to unlock", moving: "Preserving the original archive", complete: "Handoff complete; open DSH manually", already_unsealed: "Archive already moved; open DSH manually", failed: "Failed; check diagnostics and follow the recovery documentation", expired: "Wait timed out; apply again or follow the recovery documentation", helper_stopped: "Helper exited unexpectedly; apply again or follow the recovery documentation" }[info.asar_handoff.phase] || info.asar_handoff.phase}.`
     : "";
   const failure = info.asar_handoff?.error;
   const detail = info.asar_handoff?.detail
-    ? ` 详情：${info.asar_handoff.detail}${failure?.win32_code != null ? `（Windows 错误 ${failure.win32_code}）` : ""}`
+    ? ` Details: ${info.asar_handoff.detail}${failure?.win32_code != null ? ` (Windows error ${failure.win32_code})` : ""}`
     : "";
   const layout = info.host_layout;
   if (
@@ -144,11 +146,11 @@ export function LayoutNotice({ info }) {
     return h(
       "details",
       { className: "dshpp-layout-details" },
-      h("summary", null, "换包状态：不适用（Web 宿主）"),
+      h("summary", null, "Archive handoff: not applicable (web host)"),
       h(
         "p",
         { className: "dshpp-note" },
-        "Web 服务无需桌面归档换包。原始诊断：",
+        "Web services do not require desktop archive handoff. Raw diagnostics: ",
         layout.state,
         " / ",
         info.asar_handoff.phase,
@@ -161,7 +163,7 @@ export function LayoutNotice({ info }) {
     info.host_layout?.disk?.archive_exists === false;
   const diskNote =
     info.host_layout?.disk?.archive_exists === true
-      ? " 目标磁盘仍有 app.asar。"
+      ? " app.asar remains on the target disk."
       : "";
   if (sealed || !confirmed) {
     return h(
@@ -173,23 +175,26 @@ export function LayoutNotice({ info }) {
       detail,
     );
   }
-  // 换包正常时只留一行确认，说明折进 details：它讲的是"入口不代表已重载"，
-  // 属于常驻解释，不该每次都占一行注意力。
+  // Collapse the standing explanation when the handoff is confirmed.
   return h(
     "details",
     { className: "dshpp-layout-details" },
-    h("summary", null, "✓ 已从解包目录启动（换包完成）"),
+    h(
+      "summary",
+      null,
+      "✓ Started from the unpacked directory (handoff complete)",
+    ),
     h("p", { className: "dshpp-note" }, note, diskNote, handoff, detail),
   );
 }
 
-/** 界面与后端不是同一份包时，必须显眼提示——否则用户会以为设置没生效。 */
+/** Make frontend/backend version mismatches visible before settings appear broken. */
 export function VersionNotice({ info }) {
   if (info && info.ok === false) {
     return h(
       "p",
       { className: "dshpp-warn", role: "status" },
-      `状态读取失败：${info.error || "接口不可用"}。当前宿主与补丁状态未知，请点「刷新」重试；持续失败时请提供操作系统、DSH/插件版本和此错误。`,
+      `Failed to read status: ${info.error || "API unavailable"}. Current host and patch states are unknown. Click Refresh to retry; if this persists, report your OS, DSH/plugin versions, and this error.`,
     );
   }
   const backend = info?.plugin_version;
@@ -197,7 +202,7 @@ export function VersionNotice({ info }) {
   return h(
     "p",
     { className: "dshpp-warn", role: "status" },
-    `官方版本 ${backend}；界面 ${__PANEL_VERSION__}。两者不一致时设置可能不生效，请更新到同一版本后重启 DSH。`,
+    `Backend version ${backend}; UI ${__PANEL_VERSION__}. Settings may not work when these differ. Update both to the same version, then restart DSH.`,
   );
 }
 
@@ -214,7 +219,7 @@ export function PurgePage() {
     apiJson("/dsh-purge/status")
       .then(setInfo)
       .catch((error) => setInfo(unavailableStatus(error)));
-  // 子组件的 onStatus 在依赖里，必须是稳定引用，否则每次渲染都会再 setInfo 一次。
+  // Keep onStatus stable to prevent child effects calling setInfo on every render.
   const mergeInfo = useCallback((s) => s && setInfo(s), []);
   useEffect(() => {
     if (tab === "status") loadInfo();
@@ -255,7 +260,7 @@ export function PurgePage() {
             ? h(
                 "span",
                 { className: "dshpp-page-ver" },
-                "社区版 " + __PANEL_VERSION__,
+                "Community " + __PANEL_VERSION__,
               )
             : null,
         ),
@@ -328,7 +333,7 @@ export function PurgePage() {
                   h(
                     "p",
                     { className: "dshpp-muted" },
-                    "演练台需要先完成一次授权。",
+                    "Complete the one-time authorization before using the drill console.",
                   ),
                   h(
                     Btn,
@@ -339,7 +344,7 @@ export function PurgePage() {
                         requestDrill("auth");
                       },
                     },
-                    "去授权",
+                    "Authorize",
                   ),
                 ),
           )
@@ -349,8 +354,8 @@ export function PurgePage() {
       "footer",
       { className: "dshpp-page-foot" },
       __COMMUNITY__
-        ? "基于 YuJunZhiXue/dsh-purge 1.1.71 独立维护 · MIT · 保留原作者署名"
-        : "界面独立维护 · 基于 YuJunZhiXue/dsh-purge 1.1.71（MIT）",
+        ? "Independently maintained, based on YuJunZhiXue/dsh-purge 1.1.71 · MIT · Original author credited"
+        : "Independently maintained UI · Based on YuJunZhiXue/dsh-purge 1.1.71 (MIT)",
     ),
   );
 }

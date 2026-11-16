@@ -1,50 +1,50 @@
-# Web / Headless 维护定位（issue #3）
+# Web / Headless Maintenance Diagnosis (issue #3)
 
-此修复限于维护界面、CLI 与只读自检的实例识别，不改变权限选择、补丁表、提示词或现有清理策略。
+This fix is limited to instance identification for the maintenance UI, CLI, and read-only selfcheck. It does not change permission choices, the patch table, prompt content, or existing cleanup policy.
 
-## 备份列表与操作结果
+## Backup List and Operation Results
 
-- 进入或重新挂载维护面板时读取列表；可以手动刷新。
-- 分别显示读取中、读取失败和暂无备份，失败不伪装成空列表。
-- 不自动选中回滚目标；选中的备份不再存在时清空选择。
-- 更新、回滚或备份失败后只重新读取列表，不自动重试写操作。失败过程已经生成的恢复快照也能看到。
-- HTTP 200 不等于操作成功：JSON 的 `ok:false`、错误数组和部分成功都会显示真实结果。
-- 更新成功会显示版本和重启提示；需要重启的是服务端 DSH 进程，仅刷新浏览器不会重新加载后端。插件不会代替用户停止或重启服务。
+- The list is read when entering or remounting the maintenance panel; it can be refreshed manually.
+- Loading, read failure, and no-backup states are shown separately; failures are not disguised as an empty list.
+- No rollback target is selected automatically; if the selected backup no longer exists, the selection is cleared.
+- After an update, rollback, or backup failure, only the list is re-read; write operations are not retried automatically. Recovery snapshots created during a failed process are also visible.
+- HTTP 200 does not mean the operation succeeded: JSON `ok:false`, error arrays, and partial successes all show the real result.
+- A successful update shows version and restart information; what needs restart is the server-side DSH process, and refreshing the browser alone does not reload the backend. The plugin does not stop or restart services on behalf of the user.
 
-## 当前 profile
+## Current Profile
 
-维护、备份与权限自检共用解析器，按以下顺序使用信息：
+Maintenance, backup, and permission selfcheck share the same resolver and use information in the following order:
 
-1. 调用方显式指定的 profile / `PURGE_PROFILE_DIR`。
-2. 宿主启动参数中的当前 `DSH_HOME/profiles/<name>` 目录。
-3. `--profile <name>` 或 `--profile=<name>`。
-4. `DSH_PROFILE`。
-5. 唯一已初始化的 profile（目录有 package.json）。
+1. Profile / `PURGE_PROFILE_DIR` explicitly specified by the caller.
+2. The current `DSH_HOME/profiles/<name>` directory from host startup arguments.
+3. `--profile <name>` or `--profile=<name>`.
+4. `DSH_PROFILE`.
+5. The only initialized profile (directory has `package.json`).
 
-多个 profile 且无明确线索时直接报错，不默认选 desktop。显式指定的目录不存在、启动参数与 DSH_HOME 冲突，也不会静默改选另一个目录。
+If there are multiple profiles and no clear clue, it fails directly and does not default to desktop. If an explicitly specified directory does not exist, or startup arguments conflict with `DSH_HOME`, it does not silently switch to another directory.
 
-例如，服务实际使用 web profile 时，可在**该服务的启动环境**设置 `DSH_PROFILE=web`；自定义目录使用 `PURGE_PROFILE_DIR`。这些变量只说明当前目标，不设置沙箱或审批权限。
+For example, when the service actually uses the web profile, set `DSH_PROFILE=web` in **that service's startup environment**; for a custom directory, use `PURGE_PROFILE_DIR`. These variables only indicate the current target and do not set sandbox or approval permissions.
 
-## 安装 CLI
+## Installation CLI
 
-显式 `PURGE_DSH_CLI` 仍然优先，可以指向当前服务使用的可执行启动器或 npm CLI 的 `.js/.mjs/.cjs` 文件。
+An explicit `PURGE_DSH_CLI` still takes precedence and can point to the executable launcher used by the current service or to the `.js/.mjs/.cjs` file of the npm CLI.
 
-未指定时，安装器只在当前启动路径/目标宿主中定位：npm 部署读取 `@deepseek-ai/dsh` 的 package.json 中声明的 `bin.dsh`；Desktop 使用该实例自身的 Resources。不会从 PATH、其他全局 npm 安装或另一份桌面应用猜一个 CLI。
+When not specified, the installer locates it only within the current startup path/target host: npm deployments read the `bin.dsh` declared in the `package.json` of `@deepseek-ai/dsh`; Desktop uses that instance's own Resources. It does not guess a CLI from PATH, other global npm installations, or another desktop application.
 
-子进程使用当前服务的 Node 执行 JS CLI，并传入当前 `DSH_HOME` 与选定的 profile。独立运行 `purge-community` 时，如无法从启动信息确定目标，请明确设置 `DSH_BASE` 或 `PURGE_DSH_CLI`；不要让它猜另一份安装。
+Child processes execute JS CLIs with the current service's Node and pass the current `DSH_HOME` and selected profile. When running `purge-community` independently, if the target cannot be determined from startup information, explicitly set `DSH_BASE` or `PURGE_DSH_CLI`; do not let it guess another installation.
 
-## Web 与 Desktop 共存
+## Web and Desktop Coexistence
 
-只读自检的“宿主运行方式”针对当前被检查的宿主路径：
+The "host runtime mode" in read-only selfcheck applies to the host path currently being checked:
 
-- Web：桌面 app.asar 检查为“不适用”，应用数和总数均为 0，不计入布局失败。
-- Desktop：只检查该目标自身的 app.asar，不扫描其他桌面安装。
-- 目标不明确或无法读取：报告无法确定，不当成成功。
+- Web: desktop app.asar checks are "not applicable," with applied count and total both 0, and are not counted as layout failures.
+- Desktop: checks only that target's own app.asar and does not scan other desktop installations.
+- Target unclear or unreadable: reports indeterminate, not success.
 
-权限项仍只读取实际 profile。用户有意选择需要审批的权限，会保持原配置及真实状态，不会为了让自检全绿自动调整。
+Permission items still read only the actual profile. If the user intentionally chose permissions requiring approval, the original configuration and real state are preserved; selfcheck is not automatically adjusted just to make everything green.
 
-## 验证范围
+## Verification Scope
 
-回归覆盖 React 面板挂载/重新进入、业务失败、部分更新、失败后的快照、当前/冲突 profile、npm CLI 子进程参数、Web/Desktop 共存及未知状态。
+Regression coverage includes React panel mount/remount, business failures, partial updates, snapshots after failures, current/conflicting profiles, npm CLI child-process arguments, Web/Desktop coexistence, and unknown states.
 
-CLI 执行测试使用临时目录里的可控 npm CLI 测试入口，未安装到用户 DSH，也未宣称完成真实 Linux Web 服务或所有补丁的端到端验收。
+CLI execution tests use a controllable npm CLI test entry in a temporary directory, were not installed into the user's DSH, and do not claim complete end-to-end acceptance of a real Linux Web service or all patches.

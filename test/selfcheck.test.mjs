@@ -28,7 +28,7 @@ test("an empty home reports the layers as missing instead of pretending they are
     const report = await selfCheck(path.join(f.home, "no-host"), f.home);
     assert.equal(report.ok, false);
     assert.equal(report.host_version, "unknown");
-    assert.equal(report.layers.filter(l => l.title !== "其他必需目标文件").length, BYPASS_LAYERS.length + 3); // + runtime / config / layout
+    assert.equal(report.layers.filter(l => l.title !== "other required target files").length, BYPASS_LAYERS.length + 3); // + runtime / config / layout
     const runtime = report.layers.find((l) => l.kind === "runtime");
     assert.equal(runtime.ok, false, "empty inject must not pass");
     const config = report.layers.find((l) => l.kind === "config");
@@ -82,7 +82,7 @@ test("runtime inject and profile policy are detected from the real files", async
 });
 
 test("pending patches are not reported as broken layers", () => {
-  // 24 待应用、37 已应用 → 这一层是 pending，不是 broken
+  // #24 pending, #37 applied → this layer is pending, not broken
   const pending = rollupLayers({ 24: "pending", 37: "applied" }, true);
   const layer = pending.find((l) => l.ids.includes(24));
   assert.equal(layer.state, "pending");
@@ -90,17 +90,17 @@ test("pending patches are not reported as broken layers", () => {
   assert.deepEqual(layer.pending, [24]);
   assert.deepEqual(layer.broken, []);
 
-  // 锚点对不上才是真的坏
+  // a mismatched anchor is what really breaks it
   const broken = rollupLayers({ 24: "pattern_not_found", 37: "applied" }, true);
   const bad = broken.find((l) => l.ids.includes(24));
   assert.equal(bad.state, "broken");
   assert.equal(bad.broken[0].id, 24);
 
-  // 目标插件没装 → 不适用，不算坏
+  // target plugin not installed → not applicable, not broken
   const absent = rollupLayers({ 24: "na", 37: "na" }, true);
   const na = absent.find((l) => l.ids.includes(24));
   assert.equal(na.state, "ok");
-  assert(na.note.includes("不适用"));
+  assert(na.note.includes("does not apply"));
 });
 
 
@@ -118,7 +118,7 @@ test("standalone JSON and text distinguish uncertainty from a confirmed policy m
     for (const format of ["--json","--text"]) {
       const unknown=spawnSync(process.execPath,["bin/community.js","selfcheck",format],{env,encoding:"utf8"});
       assert.equal(unknown.status,0,unknown.stderr);
-      assert(!unknown.stdout.includes("所有层都在位"));
+      assert(!unknown.stdout.includes("all layers are in place"));
       if(format==="--json")assert.equal(JSON.parse(unknown.stdout).state,"unknown");
     }
     fs.writeFileSync(path.join(f.profile,"cordis.patch.yml"),"- id: permission\n  config:\n    defaultPreset: workspace-write\n    presets:\n      workspace-write:\n        sandbox: workspace-write\n        approval: ask\n");
@@ -196,7 +196,7 @@ test("#38 shipped default preset with comments and unrelated JS tags needs no wo
     assert.equal(layer.applied,4);
     assert.equal(layer.required,4);
     assert.deepEqual(layer.absent,[76]);
-    assert.match(layer.note,/无需处理/);
+    assert.match(layer.note,/needs nothing/);
     assert.equal(report.patch.total,ALL_PATCHES.length-1);
     assert.equal(report.patch.applied,ALL_PATCHES.length-1);
   }

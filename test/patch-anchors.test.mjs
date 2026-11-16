@@ -38,7 +38,7 @@ test("0.2.2 complete preset still carries the dsh-purge inject after assemble", 
   const out = applyReplacementsToText(SYSTEM_PROMPT_ASSEMBLE, patch(40));
   assert.equal(out.changed, true);
   assert.ok(out.text.includes("const dshPurgeSections ="));
-  // complete 模式保留原 complete 段，并把注入段一并带上。
+  // complete mode keeps the original complete section and carries the inject sections along.
   assert.ok(out.text.includes("[completeSection, ...dshPurgeSections]"));
   assert.ok(out.text.includes("const requiredContexts = new Set("));
   assert.ok(out.text.includes("requiredContexts.has(entry.name)"));

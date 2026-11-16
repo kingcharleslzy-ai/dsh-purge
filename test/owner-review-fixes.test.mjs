@@ -1,12 +1,12 @@
-// 覆盖 PR #102 owner 2026-11-01 「Changes requested」 的三个代码问题：
-//   1. NEXT 资格没进判定链（compatibility 只看内层版本 → qualified:true）
-//   2. 首选 app 丢组件时被 app.asar.unpacked 旁路掩盖
-//   3. usableAiBase 的 catch-all 把 EACCES/EIO 降成「目录无效」
+// Covers three code issues from PR #102 owner 2026-11-01 "Changes requested":
+//   1. NEXT qualification did not enter the decision chain (compatibility only checked inner version → qualified:true)
+//   2. Missing components in preferred app were masked by app.asar.unpacked side path
+//   3. usableAiBase's catch-all downgraded EACCES/EIO to "invalid directory"
 //
-// 跨平台注意：macOS 上 os.tmpdir() 给的是 /var/...，realpath 是 /private/var/...，
-// 所有路径比较都先过 realpath，否则夹具本身会在 mac CI 上假失败。
+// Cross-platform note: on macOS os.tmpdir() returns /var/..., while realpath is /private/var/...,
+// all path comparisons go through realpath first, otherwise fixtures themselves would fail falsely on mac CI.
 //
-// 运行：node --test test/owner-review-fixes.test.mjs
+// Run: node --test test/owner-review-fixes.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -19,8 +19,8 @@ const inst = await import(pathToFileURL(PLUGIN + "/lib/instance.js").href);
 const { compatibility } = await import(pathToFileURL(PLUGIN + "/lib/community.js").href);
 
 const TMP = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "purge-owner-")));
-/** 跨平台路径比较：两边都过 realpath，消掉 /var ↔ /private/var。
- *  预期路径可能本来就不存在（正是要断言的场景），realpath 失败时退回 resolve。 */
+/** Cross-platform path comparison: run both sides through realpath to eliminate /var ↔ /private/var.
+ *  The expected path may not exist (which is exactly what we want to assert), so fall back to resolve if realpath fails. */
 const realOr = (p) => {
   try {
     return fs.realpathSync.native(p);
@@ -69,7 +69,7 @@ function buildAsar(target, entries) {
   );
 }
 
-/** 装一个宿主包：给 @deepseek-ai 下若干组件写 package.json */
+/** Seed a host package: write package.json for several components under @deepseek-ai */
 function seedHost(base, { version = "0.2.1-rc.2", withLib = true } = {}) {
   for (const pkg of ["dsh-agent-instructions", "dsh-agent-loop", "dsh-system-prompt"]) {
     write(path.join(base, pkg, "package.json"), JSON.stringify({ name: pkg, version }));
@@ -78,7 +78,7 @@ function seedHost(base, { version = "0.2.1-rc.2", withLib = true } = {}) {
   return base;
 }
 
-/** NEXT 桌面布局：resources/app.asar 带 NEXT 包证据 */
+/** NEXT desktop layout: resources/app.asar carries NEXT package evidence */
 function makeResources(root, { identity = "next" } = {}) {
   const resources = path.join(root, "resources");
   buildAsar(path.join(resources, "app.asar"), {
@@ -92,23 +92,23 @@ function makeResources(root, { identity = "next" } = {}) {
   return resources;
 }
 
-/* ---------------- 1. 资格判定：内核层 vs 家族层 ---------------- */
+/* ---------------- 1. Qualification: kernel layer vs family layer ---------------- */
 
-test("NEXT + rc.2：内核已回归，但整机不判 qualified", () => {
+test("NEXT + rc.2: kernel is regressed/verified but the whole installation is not qualified", () => {
   const resources = makeResources(path.join(TMP, "c-next"));
   const base = seedHost(path.join(resources, "app", "node_modules", "@deepseek-ai"));
 
   const compat = compatibility(base);
   assert.equal(compat.host_family, "next");
-  assert.equal(compat.kernel.qualified, true, "rc.2 在内核清单里，内核层必须为 true");
-  assert.equal(compat.family_qualified, false, "NEXT 家族整体未验证");
-  assert.equal(compat.qualified, false, "两层必须都过才算 qualified");
-  assert.equal(compat.level, "kernel-verified", "不能报 qualified，也不能笼统报 unverified");
-  assert.match(compat.message, /内核版本已逐条回归/);
-  assert.match(compat.message, /尚未验证/);
+  assert.equal(compat.kernel.qualified, true, "rc.2 is in the kernel list, so kernel layer must be true");
+  assert.equal(compat.family_qualified, false, "NEXT family as a whole is unverified");
+  assert.equal(compat.qualified, false, "both layers must pass to be qualified");
+  assert.equal(compat.level, "kernel-verified", "must not report qualified, and must not broadly report unverified");
+  assert.match(compat.message, /regressed per patch/); // runtime message now English
+  assert.match(compat.message, /not reported as regressed/); // runtime message now English
 });
 
-test("官方 bundled-host + rc.2：仍然判 qualified（回归不受影响）", () => {
+test("official bundled-host + rc.2: still qualified (regression unaffected)", () => {
   const resources = makeResources(path.join(TMP, "c-official"), { identity: "official" });
   const base = seedHost(path.join(resources, "app", "node_modules", "@deepseek-ai"));
 
@@ -119,17 +119,17 @@ test("官方 bundled-host + rc.2：仍然判 qualified（回归不受影响）",
   assert.equal(compat.level, "qualified");
 });
 
-test("官方 bundled-host + 0.2.2-rc.2：进入已验证清单后判 qualified", () => {
+test("official bundled-host + 0.2.2-rc.2: qualified after entering the verified list", () => {
   const resources = makeResources(path.join(TMP, "c-official-022rc2"), { identity: "official" });
   const base = seedHost(path.join(resources, "app", "node_modules", "@deepseek-ai"), { version: "0.2.2-rc.2" });
   const compat = compatibility(base);
-  assert.equal(compat.kernel.qualified, true, "0.2.2-rc.2 必须在已验证清单里");
+  assert.equal(compat.kernel.qualified, true, "0.2.2-rc.2 must be in the verified list");
   assert.equal(compat.family_qualified, true);
   assert.equal(compat.qualified, true);
   assert.equal(compat.level, "qualified");
 });
 
-test("非桌面路径（npm 全局安装）：家族层不拦，按内核判定", () => {
+test("non-desktop path (npm global install): family layer does not block, judged by kernel", () => {
   const base = seedHost(path.join(TMP, "c-npm", "node_modules", "@deepseek-ai"));
   const compat = compatibility(base);
   assert.equal(compat.host_family, "unknown");
@@ -137,7 +137,7 @@ test("非桌面路径（npm 全局安装）：家族层不拦，按内核判定"
   assert.equal(compat.qualified, true);
 });
 
-test("NEXT + 不在清单的版本：两层都不合格", () => {
+test("NEXT + version not in list: neither layer qualifies", () => {
   const resources = makeResources(path.join(TMP, "c-next-old"));
   const base = seedHost(path.join(resources, "app", "node_modules", "@deepseek-ai"), { version: "0.2.0" });
   const compat = compatibility(base);
@@ -146,13 +146,13 @@ test("NEXT + 不在清单的版本：两层都不合格", () => {
   assert.equal(compat.level, "unverified");
 });
 
-/* ---------------- 2. 首选 app 的缺失诊断不被旁路掩盖 ---------------- */
+/* ---------------- 2. Preferred app missing diagnosis must not be masked by side path ---------------- */
 
-test("app 存在但整个 @deepseek-ai 缺失：返回 app 的预期路径，不取 unpacked 副本", () => {
+test("app exists but entire @deepseek-ai is missing: returns expected app path, not unpacked copy", () => {
   const resources = makeResources(path.join(TMP, "s-scope-missing"));
-  // 首选 app 目录存在，但没有 @deepseek-ai
+  // Preferred app directory exists but has no @deepseek-ai
   fs.mkdirSync(path.join(resources, "app"), { recursive: true });
-  // 旁路里有一份可用的（owner 的复现场景）
+  // Side path has a usable copy (owner's repro scenario)
   seedHost(path.join(resources, "app.asar.unpacked", "node_modules", "@deepseek-ai"));
 
   const host = inst.diagnosticHost({
@@ -166,12 +166,12 @@ test("app 存在但整个 @deepseek-ai 缺失：返回 app 的预期路径，不
   assert.equal(
     same(host, path.join(resources, "app", "node_modules", "@deepseek-ai")),
     true,
-    "必须停在首选 app 的预期路径上",
+    "must stay at the preferred app's expected path",
   );
-  assert.ok(!norm(host).includes("app.asar.unpacked"), "不得回落到旁路目录");
+  assert.ok(!norm(host).includes("app.asar.unpacked"), "must not fall back to side-path directory");
 });
 
-test("app 的 @deepseek-ai 存在但缺 lib：锁定这一份，不换 unpacked", () => {
+test("app's @deepseek-ai exists but lib is missing: locks to this copy, does not switch to unpacked", () => {
   const resources = makeResources(path.join(TMP, "s-partial"));
   seedHost(path.join(resources, "app", "node_modules", "@deepseek-ai"), { withLib: false });
   seedHost(path.join(resources, "app.asar.unpacked", "node_modules", "@deepseek-ai"));
@@ -188,11 +188,11 @@ test("app 的 @deepseek-ai 存在但缺 lib：锁定这一份，不换 unpacked"
   assert.ok(!norm(host).includes("app.asar.unpacked"));
 
   const compat = compatibility(host);
-  assert.equal(compat.layout_found, false, "缺 lib 必须报 layout 缺失");
+  assert.equal(compat.layout_found, false, "missing lib must report layout missing");
   assert.equal(compat.level, "no-host");
 });
 
-test("app 完整时照常返回物理 app", () => {
+test("returns physical app as usual when app is complete", () => {
   const resources = makeResources(path.join(TMP, "s-full"));
   const base = seedHost(path.join(resources, "app", "node_modules", "@deepseek-ai"));
   const host = inst.diagnosticHost({
@@ -206,9 +206,9 @@ test("app 完整时照常返回物理 app", () => {
   assert.equal(same(host, base), true);
 });
 
-/* ---------------- 3. 读取异常保留原因 ---------------- */
+/* ---------------- 3. Read exceptions preserve reason ---------------- */
 
-test("probeAiBase：EACCES 保留为 unreadable + 错误码，不退成 missing", () => {
+test("probeAiBase: EACCES is preserved as unreadable + error code, not downgraded to missing", () => {
   const fake = {
     statSync() {
       const error = new Error("EAccess denied");
@@ -223,7 +223,7 @@ test("probeAiBase：EACCES 保留为 unreadable + 错误码，不退成 missing"
   assert.match(probe.error, /denied/);
 });
 
-test("probeAiBase：ENOENT 才是 missing", () => {
+test("probeAiBase: ENOENT is missing", () => {
   const fake = {
     statSync() {
       const error = new Error("no such file");
@@ -236,7 +236,7 @@ test("probeAiBase：ENOENT 才是 missing", () => {
   assert.equal(probe.code, "ENOENT");
 });
 
-test("resolveInstance：不可读的 DSH_BASE 给出具体错误，而不是「不是有效插件根」", () => {
+test("resolveInstance: unreadable DSH_BASE gives a specific error instead of \"not a valid plugin root\"", () => {
   const base = seedHost(path.join(TMP, "r-eacces"));
   const real = fs;
   const reader = {
@@ -254,13 +254,13 @@ test("resolveInstance：不可读的 DSH_BASE 给出具体错误，而不是「�
   assert.equal(resolved.resolved, false);
   assert.equal(resolved.probe.reason, "unreadable");
   assert.equal(resolved.probe.code, "EIO");
-  assert.match(resolved.reason, /无法读取/);
+  assert.match(resolved.reason, /unreadable/); // runtime reason now English
   assert.match(resolved.reason, /EIO/);
 });
 
-/* ---------------- 4. 写入失败注入（跨平台，不依赖 chmod） ---------------- */
+/* ---------------- 4. Write-failure injection (cross-platform, no chmod dependency) ---------------- */
 
-test("写入失败用例不依赖 chmod：把目标换成目录，状态必须不是 applied", async () => {
+test("write-failure case does not depend on chmod: replace target with a directory, status must not be applied", async () => {
   const core = await import(pathToFileURL(PLUGIN + "/lib/core.js").href);
   const home = path.join(TMP, "w-home");
   write(path.join(home, "profiles", "desktop", "package.json"), JSON.stringify({ name: "dsh-profile-desktop" }));
@@ -273,7 +273,7 @@ test("写入失败用例不依赖 chmod：把目标换成目录，状态必须�
     const target = path.join(aiBase, "dsh-agent-instructions", "lib", "index.js");
     const original = patch.replacements[0].pattern + ";";
     write(target, original);
-    // 注入失败：目标是文件时无法当作目录写入；换成同名目录即可跨平台制造写失败
+    // Inject failure: when target is a file it cannot be written as a directory; replacing with a same-name directory creates a cross-platform write failure
     fs.rmSync(target);
     fs.mkdirSync(target);
     process.env.DSH_BASE = aiBase;
@@ -285,8 +285,8 @@ test("写入失败用例不依赖 chmod：把目标换成目录，状态必须�
     } catch (error) {
       status = "throw:" + (error.code || error.message);
     }
-    assert.notEqual(status, "applied", "写入失败不得报 applied");
-    assert.equal(fs.statSync(target).isDirectory(), true, "失败时目标保持原状");
+    assert.notEqual(status, "applied", "write failure must not report applied");
+    assert.equal(fs.statSync(target).isDirectory(), true, "target must remain unchanged on failure");
   } finally {
     if (savedHome === undefined) delete process.env.DSH_HOME; else process.env.DSH_HOME = savedHome;
     if (savedBase === undefined) delete process.env.DSH_BASE; else process.env.DSH_BASE = savedBase;

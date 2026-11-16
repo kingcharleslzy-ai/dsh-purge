@@ -52,7 +52,7 @@ await manager.rollback(installed.backup_id);preserved();
 await manager.install(candidate,{reason:'before-migration'});preserved();
 const manifest=fs.readFileSync(path.join(profile,'package.json')),lock=fs.readFileSync(path.join(profile,'pnpm-lock.yaml')),patch=fs.readFileSync(config);
 manager.verifier=async()=>{throw Error('injected post-install validation failure');};
-await assert.rejects(manager.install(candidate),/安装前依赖、安装与清单已恢复/);
+await assert.rejects(manager.install(candidate),/pre-install dependencies, install, and manifest restored/);
 assert.deepEqual(fs.readFileSync(path.join(profile,'package.json')),manifest);
 assert.deepEqual(fs.readFileSync(path.join(profile,'pnpm-lock.yaml')),lock);
 assert.deepEqual(fs.readFileSync(config),patch);

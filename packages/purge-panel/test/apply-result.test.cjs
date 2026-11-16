@@ -8,7 +8,7 @@ const { buildSync } = require("esbuild");
 const code = buildSync({
   stdin: {
     contents:
-      'export { PurgifySection } from "./src/components/settings-form.js"; export { incompleteApplyDetail } from "./src/shared/apply-result.js"; export { zh, en, setTranslate } from "./src/shared/locale.js";',
+      'export { PurgifySection } from "./src/components/settings-form.js"; export { incompleteApplyDetail } from "./src/shared/apply-result.js"; export { en, setTranslate } from "./src/shared/locale.js";',
     resolveDir: path.join(__dirname, ".."),
   },
   bundle: true,
@@ -60,7 +60,7 @@ function harness(result, applyStatus = 200) {
   vm.runInNewContext(code, context);
   const exports = context.module.exports;
   const tr = (key, values = {}) =>
-    (exports.zh[key] || key).replace(/\{(\w+)\}/g, (_, k) =>
+    (exports.en[key] || key).replace(/\{(\w+)\}/g, (_, k) =>
       String(values[k] ?? ""),
     );
   exports.setTranslate(tr);
@@ -72,11 +72,11 @@ test("legacy incomplete response never invents a CMD failure or claims prompt pe
     { ok: true, complete: false, failed: 0, cmd_flash: { ok: true } },
     h.tr,
   );
-  assert.match(message, /未返回具体原因/);
-  assert.doesNotMatch(message, /CMD|窗口抑制|提示词已写入/);
+  assert.match(message, /did not provide a specific cause/);
+  assert.doesNotMatch(message, /CMD|suppression|prompt written/i);
   assert.match(
     h.incompleteApplyDetail({ complete: false }, h.tr),
-    /未返回具体原因/,
+    /did not provide a specific cause/,
   );
 });
 test("explicit host, restoration and runtime failures remain distinct and visible", () => {
@@ -89,10 +89,10 @@ test("explicit host, restoration and runtime failures remain distinct and visibl
     },
     h.tr,
   );
-  assert.match(message, /目标宿主/);
-  assert.match(message, /配置恢复/);
+  assert.match(message, /Target host/);
+  assert.match(message, /Configuration restoration/);
   assert.match(message, /CLI/);
-  assert.doesNotMatch(message, /窗口抑制/);
+  assert.doesNotMatch(message, /Console-window suppression/);
 });
 test("actual terminal check failures and failed item IDs are retained together", () => {
   const h = harness();
@@ -105,23 +105,22 @@ test("actual terminal check failures and failed item IDs are retained together",
     h.tr,
   );
   assert.match(message, /#12,13/);
-  assert.match(message, /窗口抑制检查未通过（missing）/);
+  assert.match(message, /Console-window suppression check failed \(missing\)/);
   assert.match(
     h.incompleteApplyDetail({ failed: 1, failed_items: "bad" }, h.tr),
     /#\?/,
   );
 });
-test("new diagnostic strings have Chinese and English translations", () => {
+test("new diagnostic strings have English translations", () => {
   const h = harness();
   for (const key of ["host", "restore", "runtime", "unknown", "flash"])
-    for (const dict of [h.zh, h.en])
-      assert.equal(typeof dict["restart.incomplete." + key], "string");
+    assert.equal(typeof h.en["restart.incomplete." + key], "string");
 });
 for (const [name, result, expected] of [
   [
     "legacy unknown",
     { ok: true, complete: false, failed: 0, cmd_flash: { ok: true } },
-    /未返回具体原因/,
+    /did not provide a specific cause/,
   ],
   [
     "confirmed host condition",
@@ -132,7 +131,7 @@ for (const [name, result, expected] of [
       cmd_flash: { ok: true },
       host_written: false,
     },
-    /目标宿主/,
+    /Target host/,
   ],
 ])
   test(`actual Apply interaction renders ${name} as an error without restart or extra writes`, async () => {
@@ -146,7 +145,7 @@ for (const [name, result, expected] of [
     try {
       const apply = tree.root
         .findAllByType("button")
-        .find((b) => b.children.join("") === "应用");
+        .find((b) => b.children.join("") === "Apply");
       assert(apply);
       await act(async () => {
         apply.props.onClick();
@@ -157,7 +156,7 @@ for (const [name, result, expected] of [
         (n) =>
           n.type === "span" &&
           n.props.className === "dshpp-notice is-bad" &&
-          n.children.join("").startsWith("应用未完成"),
+          n.children.join("").startsWith("Apply did not complete"),
       );
       assert(notice.length > 0);
       assert(
@@ -166,7 +165,10 @@ for (const [name, result, expected] of [
         ),
       );
       assert.match(notice[0].children.join(""), expected);
-      assert.doesNotMatch(notice[0].children.join(""), /CMD 无感|提示词已写入/);
+      assert.doesNotMatch(
+        notice[0].children.join(""),
+        /CMD silent|prompt written/i,
+      );
       assert.deepEqual(
         h.calls
           .filter((c) => c.method === "POST")
@@ -226,7 +228,7 @@ test("Apply HTTP 500 displays runtime details without restart or leaking respons
   try {
     const apply = tree.root
       .findAllByType("button")
-      .find((b) => b.children.join("") === "应用");
+      .find((b) => b.children.join("") === "Apply");
     await act(async () => {
       apply.props.onClick();
       await flush();

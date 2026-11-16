@@ -1,27 +1,28 @@
-# 从插件市场安装或迁移 Purge
+# Installing or Migrating Purge from the Plugin Marketplace
 
-首次安装可在 dsh-market 搜索 `kingcharleslzy-ai/dsh-purge`。确认仓库作者和包名 `dsh-purge-community`；同名镜像不是同一发行来源。不要运行 `dsh plugin add dsh-purge` 或裸包名 `dsh-purge-community`：本项目通过 GitHub Releases 发行，不依赖这两个 npm 名称。
+For a first-time installation, search for `kingcharleslzy-ai/dsh-purge` in dsh-market. Confirm the repository owner and package name `dsh-purge-community`; mirrors with the same name are not the same release source. Do not run `dsh plugin add dsh-purge` or the bare package name `dsh-purge-community`: this project is distributed through GitHub Releases and does not depend on those two npm names.
 
-## 已装旧版：直接迁移，不先卸载
+## Already Installed an Old Version: Migrate Directly, Do Not Uninstall First
 
-市场提示“已以 dsh-purge 安装”时，不代表社区版已经装好。两个包沿用相同的入口 ID，强行同时启用会冲突。请使用 [README 的 macOS / Windows 安装入口](../README.md)；它会校验来源与 SHA256、先备份，再迁移到当前 profile。**不要先卸载、删除 DSH_HOME 或清空提示词。**
+When the marketplace says "already installed as dsh-purge," that does not mean the community edition is already installed. The two packages share the same entry ID; forcibly enabling both will conflict. Use the [macOS / Windows installation entry in the README](../README.md); it verifies source and SHA256, backs up first, and then migrates to the current profile. **Do not uninstall first, delete DSH_HOME, or clear prompts.**
 
-1. 确认目标 DSH、数据目录及 profile。运行安装器的 `--dry-run`（Windows `-DryRun`）核对；路径不唯一时明确指定。不要拿其他用户的目录照抄。
-2. 去掉 dry-run 执行迁移。需要提前结束其他安装操作；不必停止聊天或自动重启 DSH。
-3. 安装器保留提示词、规则、更新偏好、权限、其他插件及旧包文件。仅切换 Purge bundle 和已识别的旧包 `name` 引用，配置值与注释保留。
-4. 成功后记录 `backup_id`。用户方便时手动退出重开，核对加载版本；安装、应用宿主补丁、重启是三个独立动作，不自动执行后两项。
+1. Confirm the target DSH, data directory, and profile. Run the installer's `--dry-run` (Windows: `-DryRun`) to verify; specify explicitly when the path is not unique. Do not copy another user's directory.
+2. Remove dry-run and execute the migration. Other installation operations should be finished first; you do not need to stop chat or auto-restart DSH.
+3. The installer preserves prompts, rules, update preferences, permissions, other plugins, and old package files. It only switches the Purge bundle and recognized old-package `name` references; configuration values and comments are preserved.
+4. After success, record the `backup_id`. Manually quit and reopen when convenient for the user and verify the loaded version; installation, applying host patches, and restart are three independent actions and are not performed automatically.
+5. If it fails, inspect the `backup_id` first and recover with `purge-community rollback <backup_id>`. Public issues must contain only sanitized errors.
 
-### Agent 必须注意
+### What Agents Must Note
 
-- 官方宿主 CLI 的安装规则一致，但第三方市场可能增加目录筛选、重复安装保护、来源转换和加载验证。市场网页列出插件，不等于其 `index.json` 包含该插件。
-- 缺少 npm 发布不等于没有安装包。独立索引是 <https://kingcharleslzy-ai.github.io/dsh-purge/index.json>，Git 版本固定完整提交 SHA。第三方索引遗漏应修生成器，不能伪造 npm 元数据或降低完整性校验。
-- 迁移仅识别 `dsh-purge`、redteam、presets、store、ui 的标准入口。手动 `insert`、未知 ID、动态包名、错误 YAML 保持失败并恢复依赖；报告具体入口冲突，不能删参数或盲目禁用来消除错误。
-- `migrated_references` 是实际改写的包引用数量。0 不代表失败：没有显式旧包覆盖时无需改配置。成功后还需检查启用列表只有社区包、配置合成无重复 ID、用户配置值仍在。
-- 回滚使用 `purge-community rollback <backup_id>`，恢复旧包入口并保留当前配置值。配置被并发修改、迁移记录损坏、恢复失败应明确报告并保留恢复目录；不能把备份存在当作回滚成功。
-- 失败时只索取脱敏的市场名/版本、DSH 版本、系统、安装来源和错误码；不要收集完整提示词、密钥、配置或备份。
+- The official host CLI follows the same installation rules, but third-party marketplaces may add directory filtering, duplicate-install protection, source conversion, and load verification. A marketplace webpage listing the plugin does not mean its `index.json` contains that plugin.
+- Lack of an npm release does not mean there is no installation package. The standalone index is <https://kingcharleslzy-ai.github.io/dsh-purge/index.json>, and Git versions are pinned to full commit SHAs. If a third-party index is missing it, fix the generator; do not fabricate npm metadata or weaken integrity checks.
+- Migration only recognizes standard entries for `dsh-purge`, redteam, presets, store, and ui. Manual `insert`, unknown IDs, dynamic package names, and invalid YAML must remain failures and restore dependencies; report the specific entry conflict and do not delete parameters or blindly disable things to eliminate the error.
+- `migrated_references` is the number of package references actually rewritten. 0 does not mean failure: if there is no explicit old-package override, no config rewrite is needed. After success, also verify that only the community package is in the enabled list, config composition has no duplicate IDs, and user config values are still present.
+- Use `purge-community rollback <backup_id>` to roll back, restoring the old package entry while preserving current config values. If configuration was modified concurrently, migration records are corrupted, or restore fails, report it clearly and keep the recovery directory; do not treat the existence of a backup as a successful rollback.
+- On failure, ask only for sanitized marketplace name/version, DSH version, OS, installation source, and error code; do not collect full prompts, secrets, configuration, or backups.
 
-## 测试与边界
+## Tests and Boundaries
 
-`scripts/check-market-migration-runtime.mjs <官方CLI> <旧版tgz> <候选tgz>` 创建全新隔离 home，执行真实安装、配置合成、回滚、再升级和失败恢复，并检查私有内容哨兵。它不启动宿主或运行插件 apply，不代表完整模型行为测试。Mac 与 Windows 均需运行。
+`scripts/check-market-migration-runtime.mjs <official CLI> <old tgz> <candidate tgz>` creates a completely isolated fresh home and performs real installation, config composition, rollback, re-upgrade, and failure recovery, while checking private-content sentinels. It does not start the host or run plugin apply and does not represent full model-behavior testing. It must be run on both Mac and Windows.
 
-第三方 dsh-market 的迁移提示与社区索引生成器需由其维护者合并发布。我们的新版独立安装器可先用于迁移；不能声称更新 Purge 就能改掉尚未加载 Purge 的市场拦截逻辑。
+Migration prompts in third-party dsh-market and the community index generator must be merged and released by their maintainers. Our new standalone installer can be used for migration first; do not claim that updating Purge can change marketplace interception logic that has not yet loaded Purge.

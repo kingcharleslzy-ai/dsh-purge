@@ -4,7 +4,7 @@ import * as yaml from 'yaml';
 import {migrateReferences} from '../lib/market-migration.js';
 
 test('legacy package references migrate without rewriting settings, comments or expressions', () => {
-  const text = `# 私有配置\n- id: dsh-purge\n  name: 'dsh-purge' # keep\n  config:\n    enabled: false\n    postPrompt: |\n      name: dsh-purge\n      用户的自定义正文\n    unknownFutureSetting: 17\n- id: permission\n  config:\n    defaultPreset: standard\n- id: other\n  name: other\n  config: !!js someExpression()\n`;
+  const text = `# private config\n- id: dsh-purge\n  name: 'dsh-purge' # keep\n  config:\n    enabled: false\n    postPrompt: |\n      name: dsh-purge\n      the user's custom body\n    unknownFutureSetting: 17\n- id: permission\n  config:\n    defaultPreset: standard\n- id: other\n  name: other\n  config: !!js someExpression()\n`;
   const result = migrateReferences(text,yaml);
   assert.equal(result.text, text.replace("name: 'dsh-purge'", 'name: "dsh-purge-community"'));
   assert.deepEqual(result.changes,[{id:'dsh-purge',from:'dsh-purge',to:'dsh-purge-community'}]);
@@ -32,7 +32,7 @@ test('rollback safety records restore community references without losing later 
   const edited=reverted.text.replace('custom: 1','custom: 2');
   const restored=migrateReferences(edited,yaml,reverted.changes);
   assert.equal(restored.text,upgraded.text.replace('custom: 1','custom: 2'));
-  assert.throws(()=>migrateReferences(original,yaml,[{id:'dsh-purge',from:'evil',to:'dsh-purge'}]),/迁移记录无效/);
+  assert.throws(()=>migrateReferences(original,yaml,[{id:'dsh-purge',from:'evil',to:'dsh-purge'}]),/invalid migration record/);
 });
 test('manual alias rollback restores known entry names without touching prompt or custom entries',async()=>{
   const {aliasRollbackReferences}=await import('../lib/market-migration.js');

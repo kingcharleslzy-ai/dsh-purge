@@ -25,7 +25,7 @@ test('bundled file-write skill stays readable and demonstrates write access usin
   assert.ok(skill);
   assert.match(skill.content, /^name: unauth-exploit$/m);
   assert.match(skill.content, /^enabled: true$/m);
-  assert.match(skill.content, /静态标记/);
+  assert.match(skill.content, /static marker/i);
   assert.doesNotMatch(skill.content, /<\?(?:php\b|=)/i);
 });
 

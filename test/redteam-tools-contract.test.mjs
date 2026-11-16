@@ -1,4 +1,4 @@
-// 账本工具必须真的挂到工具面上：1.6.78 只拷了模块没接线，属于死代码。
+// Ledger tools must actually sit on the tool surface: 1.6.78 copied the module without wiring it, which is dead code.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -24,14 +24,14 @@ const TOOLS = [
 test("evidence ledger tools are registered, not just imported", () => {
   assert.match(source, /from '\.\/evidence-ledger\.mjs'/);
   for (const name of TOOLS) {
-    assert.ok(source.includes(`name: '${name}'`), `${name} 必须注册到工具面`);
+    assert.ok(source.includes(`name: '${name}'`), `${name} must be registered on the tool surface`);
   }
-  assert.match(source, /function ledgerOf\(/, "必须有取账本的帮助函数");
-  assert.match(source, /function unknownsOf\(/, "必须有取未知登记的帮助函数");
+  assert.match(source, /function ledgerOf\(/, "must have a ledger accessor helper");
+  assert.match(source, /function unknownsOf\(/, "must have a residual-unknown accessor helper");
 });
 
 test("knowledge-base tools stay available in this fork", () => {
   for (const name of ["redteam_poc_search", "redteam_poc_add"]) {
-    assert.ok(source.includes(`name: '${name}'`), `${name} 不应被上游的开源裁剪带走`);
+    assert.ok(source.includes(`name: '${name}'`), `${name} must not be dropped by upstream open-source trimming`);
   }
 });

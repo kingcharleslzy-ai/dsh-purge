@@ -51,7 +51,7 @@ test("skill imports preserve long paths, reject links and enforce the entry limi
   }
   for (const name of ["link.tar", "link.zip", "many.zip"]) {
     const home = path.join(root, "rejected-" + name);
-    await assert.rejects(importArchive(home, fs.readFileSync(path.join(root, name)), name), /仅支持普通文件|链接条目|文件太多/);
+    await assert.rejects(importArchive(home, fs.readFileSync(path.join(root, name)), name), /only an archive or folder|linked entries|too many files|tar supports plain files and directories only|too many entries/);
     assert.equal(fs.existsSync(home), false);
   }
 });

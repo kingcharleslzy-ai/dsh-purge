@@ -58,7 +58,8 @@ export function bindPresetMenu(doc, listPresets) {
           const suffix = /^unrestricted-child-([a-f0-9]{10})$/.exec(
             row.id,
           )?.[1];
-          const marker = "（历史兼容 · " + suffix + "）";
+          const compatMarker = " (Legacy compatibility · " + suffix + ")";
+          const marker = compatMarker;
           if (
             !suffix ||
             !row.name?.endsWith(marker) ||
@@ -71,7 +72,7 @@ export function bindPresetMenu(doc, listPresets) {
             continue;
           const canonical = row.name.slice(0, -marker.length);
           if (
-            canonical.endsWith(" · 子任务") &&
+            canonical.endsWith(" · Subtask") &&
             [...rendered.values()].some(
               (other) =>
                 /^unrestricted-child-[a-f0-9]{10}$/.test(other.id) &&

@@ -1,12 +1,12 @@
-// NEXT 宿主家族（第三方桌面壳 dsh-desktop-next）的独立回归测试。
+// Independent regression tests for the NEXT host family (third-party desktop shell dsh-desktop-next).
 //
-// 覆盖四项验收要求里可自动化的部分：
-//   - 身份：只认包证据；裸 exe / 别的 Electron 应用一律拒绝
-//   - 实例选择：显式选择器优先；指错就报错，绝不回落到别的安装
-//   - 换包：解包旁路 / 残留清理 / 提交与回滚 / 提交失败留 recover.json
-//   - 恢复：补丁写入失败不伪装成功，原文与备份都保持可回滚
+// Covers the automatable parts of the four acceptance requirements:
+//   - Identity: recognize only package evidence; bare exe / other Electron apps are always rejected
+//   - Instance selection: explicit selectors take priority; wrong selector reports an error and never falls back to another installation
+//   - Package swap: extraction side path / leftover cleanup / commit and rollback / leave recover.json on commit failure
+//   - Recovery: patch write failure does not pretend success; original text and backups remain rollback-safe
 //
-// 运行：node --test test/desktop-next-host.test.mjs
+// Run: node --test test/desktop-next-host.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -33,9 +33,9 @@ import {
   newestPreservedDir,
 } from "../lib/extract-asar.js";
 
-// realpath 归一化：macOS 的 os.tmpdir() 给的是 /var/folders/...，而实现层
-// （statSync / readdir 回来的路径）是 /private/var/folders/...。不归一化的话
-// 「预期路径 vs 实际路径」的断言会在 mac 上假失败，与实现无关。
+// realpath normalization: macOS os.tmpdir() returns /var/folders/..., while the implementation
+// (paths returned by statSync / readdir) uses /private/var/folders/.... Without normalization,
+// "expected path vs actual path" assertions would fail falsely on mac, unrelated to implementation.
 const TMP = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "dsh-purge-next-")));
 const norm = (p) => String(p).split(path.sep).join("/");
 const rm = (p) => fs.rmSync(p, { recursive: true, force: true });
@@ -46,7 +46,7 @@ function write(file, text = "") {
   return file;
 }
 
-/** 造一个 NEXT 安装：resources/app/{package.json,lib/main.js} */
+/** Create a NEXT installation: resources/app/{package.json,lib/main.js} */
 function makeNextInstall(root, { name = NEXT_FAMILY.id, main = "lib/main.js", withMain = true, withAiBase = false } = {}) {
   const resources = path.join(root, "resources");
   const app = path.join(resources, "app");
@@ -62,7 +62,7 @@ function makeNextInstall(root, { name = NEXT_FAMILY.id, main = "lib/main.js", wi
   return { root, resources, app, exe: path.join(root, "DSH NEXT.exe") };
 }
 
-/** 造一个官方 bundled-host 布局：resources/app/dsh/node_modules/@deepseek-ai/dsh-desktop-host */
+/** Create an official bundled-host layout: resources/app/dsh/node_modules/@deepseek-ai/dsh-desktop-host */
 function makeOfficialInstall(root) {
   const resources = path.join(root, "resources");
   const host = path.join(resources, "app", "dsh", "node_modules", "@deepseek-ai", "dsh-desktop-host");
@@ -72,7 +72,7 @@ function makeOfficialInstall(root) {
   return { root, resources, exe: path.join(root, "DSH Desktop.exe") };
 }
 
-test("NEXT 家族：包证据齐全才认，名字不同/入口缺失都拒绝", () => {
+test("NEXT family: recognized only with complete package evidence; different name/missing entry are rejected", () => {
   const good = makeNextInstall(path.join(TMP, "good"));
   const wrongName = makeNextInstall(path.join(TMP, "wrong-name"), { name: "some-other-electron-app" });
   const noMain = makeNextInstall(path.join(TMP, "no-main"), { withMain: false });
@@ -85,14 +85,14 @@ test("NEXT 家族：包证据齐全才认，名字不同/入口缺失都拒绝",
   assert.equal(nextIdentity({ name: "@deepseek-ai/dsh-desktop-host" }), null);
 });
 
-test("官方 bundled-host 身份不受 NEXT 支持影响", () => {
+test("official bundled-host identity is not affected by NEXT support", () => {
   const official = makeOfficialInstall(path.join(TMP, "official"));
   const found = desktopIdentity(official.resources);
   assert.equal(found.kind, "bundled-host");
   assert.equal(found.package, "@deepseek-ai/dsh-desktop-host");
 });
 
-test("isDesktopExecutable：只认包证据，裸 exe / 别的应用都拒绝", () => {
+test("isDesktopExecutable: recognizes only package evidence; bare exe / other apps are rejected", () => {
   const next = makeNextInstall(path.join(TMP, "exe-next"));
   const bare = path.join(TMP, "exe-bare");
   write(path.join(bare, "DSH NEXT.exe"));
@@ -104,7 +104,7 @@ test("isDesktopExecutable：只认包证据，裸 exe / 别的应用都拒绝", 
   assert.equal(isDesktopExecutable(other.exe), false);
 });
 
-test("resolveInstance：显式选择器优先，指错就报错不回落", () => {
+test("resolveInstance: explicit selector takes priority; wrong selector errors without fallback", () => {
   const next = makeNextInstall(path.join(TMP, "resolve"), { withAiBase: true });
   const aiBase = path.join(next.app, "node_modules", "@deepseek-ai");
 
@@ -119,7 +119,7 @@ test("resolveInstance：显式选择器优先，指错就报错不回落", () =>
   assert.equal(norm(bad.host), norm(decoy.root));
   assert.equal(bad.source, "DSH_BASE");
   assert.notEqual(norm(bad.host), norm(aiBase));
-  assert.match(bad.reason, /不是有效插件根/);
+  assert.match(bad.reason, /not a valid plugin root/); // runtime reason is now English
 
   assert.throws(
     () => resolveInstance({ env: { PURGE_DSH_CLI: path.join(TMP, "nope", "dsh") }, argv: [] }),
@@ -132,14 +132,14 @@ test("resolveInstance：显式选择器优先，指错就报错不回落", () =>
   assert.equal(byEntry.family, "next");
 });
 
-test("diagnosticHost：只有部分 app.asar.unpacked 时返回预期路径，不把半成品当宿主", () => {
+test("diagnosticHost: returns expected path when only partial app.asar.unpacked exists, does not treat half-finished state as host", () => {
   const next = makeNextInstall(path.join(TMP, "partial"));
   fs.mkdirSync(path.join(next.resources, "app.asar.unpacked", "node_modules", "@deepseek-ai", "dsh-agent-preset"), { recursive: true });
   const host = diagnosticHost({ resourcesPath: next.resources, electron: "44.7.0", env: {}, argv: [] });
   assert.equal(norm(host), norm(path.join(next.app, "node_modules", "@deepseek-ai")));
 });
 
-test("CLI 修复：NEXT 是 notApplicable，官方失败仍然是失败", () => {
+test("CLI repair: NEXT is notApplicable, official failure remains a failure", () => {
   const next = makeNextInstall(path.join(TMP, "cli"));
   const verdict = repairOfficialCliAfterUnpack(next.exe);
   assert.equal(verdict.ok, false);
@@ -156,7 +156,7 @@ test("CLI 修复：NEXT 是 notApplicable，官方失败仍然是失败", () => 
   assert.deepEqual(nextAiBaseCandidates(next.resources).length, 2);
 });
 
-test("换包闸门：只有 notApplicable / 真修好 / 未封包才放行", () => {
+test("package-swap gate: only notApplicable / truly repaired / unsealed are allowed", () => {
   const nextVerdict = { ok: false, notApplicable: true };
   assert.equal(cliRepairBlocksApply({ handoff: {}, sealed: true, cliRepair: nextVerdict }), false);
   assert.equal(cliRepairBlocksApply({ handoff: {}, sealed: true, cliRepair: { ok: true } }), false);
@@ -165,7 +165,7 @@ test("换包闸门：只有 notApplicable / 真修好 / 未封包才放行", () 
   assert.equal(cliRepairBlocksApply({ handoff: {}, sealed: false, cliRepair: null }), false);
 });
 
-/* ---------------- 换包 / 恢复 ---------------- */
+/* ---------------- package swap / recovery ---------------- */
 function buildAsar(target, entries, unpacked = {}) {
   fs.mkdirSync(path.dirname(target), { recursive: true });
   const files = {};
@@ -198,7 +198,7 @@ function buildAsar(target, entries, unpacked = {}) {
   for (const [rel, buf] of Object.entries(unpacked)) write(path.join(target + ".unpacked", rel), buf);
 }
 
-test("换包：解包旁路 / 残留清理 / overlay / 提交保留旧目录", () => {
+test("package swap: extraction side path / leftover cleanup / overlay / commit preserves old directory", () => {
   const root = path.join(TMP, "swap");
   const asar = path.join(root, "app.asar");
   buildAsar(
@@ -224,9 +224,9 @@ test("换包：解包旁路 / 残留清理 / overlay / 提交保留旧目录", (
   assert.match(fs.readFileSync(path.join(committed.prev, "package.json"), "utf8"), /OLD/);
 });
 
-test("换包：提交失败留 recover.json，旧目录不丢，新目录可重试", (t) => {
+test("package swap: leaves recover.json on commit failure; old directory is not lost and new directory can be retried", (t) => {
   const otherVolume = ["D:/", "E:/"].find((d) => fs.existsSync(d));
-  if (!otherVolume) return t.skip("需要第二个卷来制造 EXDEV");
+  if (!otherVolume) return t.skip("need a second volume to trigger EXDEV");
   const root = path.join(TMP, "commit-fail");
   const dest = path.join(root, "resources", "app");
   write(path.join(dest, "keep.txt"), "original");
@@ -243,7 +243,7 @@ test("换包：提交失败留 recover.json，旧目录不丢，新目录可重�
   rm(nextDir);
 });
 
-test("换包：中断后能从 .dshpurge-prev 还原", () => {
+test("package swap: can restore from .dshpurge-prev after interruption", () => {
   const app = path.join(TMP, "restore", "app");
   const prev = app + ".dshpurge-prev";
   write(path.join(prev, "package.json"), JSON.stringify({ version: "PREV" }));
@@ -252,7 +252,7 @@ test("换包：中断后能从 .dshpurge-prev 还原", () => {
   assert.match(fs.readFileSync(path.join(app, "package.json"), "utf8"), /PREV/);
 });
 
-test("换包：归档改名保留 app.asar.bak", () => {
+test("package swap: renaming archive preserves app.asar.bak", () => {
   const asar = path.join(TMP, "rename", "app.asar");
   write(asar, "ARCHIVE");
   const moved = renameAsarAside(asar);
@@ -261,8 +261,8 @@ test("换包：归档改名保留 app.asar.bak", () => {
   assert.equal(fs.readFileSync(moved.bak, "utf8"), "ARCHIVE");
 });
 
-/* ---------------- 补丁失败恢复 ---------------- */
-test("补丁：写失败显式报错，原文与备份都可回滚，恢复后能重试", async () => {
+/* ---------------- patch failure recovery ---------------- */
+test("patch: write failure is reported explicitly; original and backup remain rollback-safe; retry works after recovery", async () => {
   const home = path.join(TMP, "home");
   write(path.join(home, "profiles", "desktop", "package.json"), JSON.stringify({ name: "dsh-profile-desktop" }));
   const savedHome = process.env.DSH_HOME;
@@ -289,12 +289,12 @@ test("补丁：写失败显式报错，原文与备份都可回滚，恢复后�
     assert.equal((reverted.errors || []).length, 0);
     assert.equal(fs.readFileSync(target, "utf8"), original);
 
-    // 注入写入失败：把目标文件换成同名目录。
-    // 不用 chmod(0o444) —— POSIX 下 rename 只看目录权限，文件位拦不住替换，
-    // 那样注入实际会返回 applied，属于夹具失效而不是断言太松。
-    // revertAll 回滚后会清掉备份，先重新应用一次把可回滚的原文造出来。
+    // Simulate injection write failure: replace the target file with a directory of the same name.
+    // Do not use chmod(0o444) — on POSIX, rename only checks directory permissions so file bits cannot block replacement,
+    // which would make injection actually return applied, indicating fixture failure rather than weak assertions.
+    // revertAll clears backups after rollback, so reapply once first to recreate a rollback-safe original.
     await core.applyPatchesAllHosts([patch1], {});
-    assert.ok(fs.existsSync(target + ".dshpurge.bak"), "失败注入前必须已有可回滚的备份");
+    assert.ok(fs.existsSync(target + ".dshpurge.bak"), "a rollback-safe backup must exist before the failed injection");
     fs.rmSync(target);
     fs.mkdirSync(target);
     let failed = null;
@@ -305,10 +305,10 @@ test("补丁：写失败显式报错，原文与备份都可回滚，恢复后�
       failed = { status: "throw:" + (error.code || error.message) };
     }
     assert.notEqual(failed.status, "applied");
-    assert.equal(fs.statSync(target).isDirectory(), true, "写失败不得改动目标现状");
-    assert.equal(fs.readFileSync(target + ".dshpurge.bak", "utf8"), original, "备份必须是可回滚的原文");
+    assert.equal(fs.statSync(target).isDirectory(), true, "a write failure must not change the target's current state");
+    assert.equal(fs.readFileSync(target + ".dshpurge.bak", "utf8"), original, "backup must be the rollback-safe original");
 
-    // 恢复成未应用状态，重试必须真的写进去（而不是 already）
+    // Restore to unapplied state; retry must actually write (not return already)
     fs.rmdirSync(target);
     fs.writeFileSync(target, original);
     const retried = await core.applyPatchesAllHosts([patch1], {});
@@ -319,7 +319,7 @@ test("补丁：写失败显式报错，原文与备份都可回滚，恢复后�
   }
 });
 
-test("有效 DSH_BASE 不会收到重复设置目录的建议", () => {
+test("a valid DSH_BASE does not receive repeated directory-setup suggestions", () => {
   const base = path.join(TMP, "validated-base", "@deepseek-ai");
   fs.mkdirSync(path.join(base, "dsh-agent-instructions", "lib"), { recursive: true });
   const before = { DSH_BASE: process.env.DSH_BASE, DSH_SURFACE: process.env.DSH_SURFACE };
@@ -327,7 +327,7 @@ test("有效 DSH_BASE 不会收到重复设置目录的建议", () => {
     process.env.DSH_BASE = base;
     process.env.DSH_SURFACE = "web";
     const message = core.missingAiBaseMessage();
-    assert.match(message, /已通过校验/);
+    assert.match(message, /host directory validated/); // runtime message is now English
     assert.match(message, /web/);
     assert.doesNotMatch(message, /set DSH_BASE/);
   } finally {
@@ -339,12 +339,12 @@ test("有效 DSH_BASE 不会收到重复设置目录的建议", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 回归：真实 NEXT 归档里同时带 @deepseek-ai/dsh（内核）。
-// 上面的 makeNextInstall 默认不写这个包，所以 identity() 撞不到 bundled-cli 分支，
-// 套件一直是绿的——这就是缺陷能长期存在的原因。
+// Regression: real NEXT archives also include @deepseek-ai/dsh (kernel).
+// The makeNextInstall above does not write this package by default, so identity() never hit the bundled-cli branch,
+// and the suite stayed green — which is why the defect could persist.
 // ---------------------------------------------------------------------------
 
-/** 往已有安装里补内核包：node_modules/@deepseek-ai/dsh（bin 指向真实文件） */
+/** Add the kernel package to an existing installation: node_modules/@deepseek-ai/dsh (bin points to a real file) */
 function withKernelPackage(install) {
   const dshRoot = path.join(install.app, "node_modules", "@deepseek-ai", "dsh");
   write(path.join(dshRoot, "package.json"), JSON.stringify({
@@ -356,14 +356,14 @@ function withKernelPackage(install) {
   return install;
 }
 
-test("NEXT：归档同时带内核包时仍判 next，不被 bundled-cli 抢占", () => {
+test("NEXT: still identified as next when archive also includes the kernel package, not preempted by bundled-cli", () => {
   const inst = withKernelPackage(makeNextInstall(path.join(TMP, "next-kernel")));
-  // 修复前必然失败：bundled-cli 分支先命中，kind 变成 "bundled-cli"。
+  // Would have failed before the fix: bundled-cli branch matched first and kind became "bundled-cli".
   assert.equal(desktopIdentity(inst.resources).kind, "next");
 });
 
-test("官方 bundled-host：归档同时带内核包时仍判 bundled-host", () => {
-  // Review 要求覆盖「同样内含 CLI 的官方壳」：NEXT 判定提前后，不能把官方壳抢走。
+test("official bundled-host: still identified as bundled-host when archive also includes the kernel package", () => {
+  // Review requires covering "official shell that also contains CLI": after NEXT detection is moved earlier, it must not steal the official shell.
   const inst = makeOfficialInstall(path.join(TMP, "official-kernel"));
   withKernelPackage({ app: path.join(inst.resources, "app") });
   const found = desktopIdentity(inst.resources);
@@ -371,24 +371,24 @@ test("官方 bundled-host：归档同时带内核包时仍判 bundled-host", () 
   assert.equal(found.package, "@deepseek-ai/dsh-desktop-host");
 });
 
-test("未知壳：带内核包但身份不在已知家族里，仍判 bundled-cli", () => {
-  // Review 要求覆盖「未知壳」：ordering 改动只让 NEXT 提前，其他壳的结论必须不变。
+test("unknown shell: still identified as bundled-cli when it has kernel package but identity is not in a known family", () => {
+  // Review requires covering "unknown shell": ordering change only moves NEXT earlier, conclusions for other shells must remain unchanged.
   const inst = makeNextInstall(path.join(TMP, "unknown-shell"), { name: "some-other-electron-app" });
   withKernelPackage(inst);
   assert.equal(desktopIdentity(inst.resources).kind, "bundled-cli");
 });
 
-test("未知壳：既无已知身份也无内核包时仍返回 null", () => {
+test("unknown shell: still returns null when it has neither known identity nor kernel package", () => {
   const inst = makeNextInstall(path.join(TMP, "unknown-bare"), { name: "some-other-electron-app" });
   assert.equal(desktopIdentity(inst.resources), null);
 });
 
-test("NEXT：内核包在场时 CLI 闸门不得阻断换包", () => {
+test("NEXT: CLI gate must not block package swap when kernel package is present", () => {
   const inst = withKernelPackage(makeNextInstall(path.join(TMP, "next-gate")));
   const verdict = repairOfficialCliAfterUnpack(inst.exe);
-  assert.equal(verdict.notApplicable, true, "NEXT 没有官方 runtime/cli shim，应报 notApplicable");
+  assert.equal(verdict.notApplicable, true, "NEXT has no official runtime/cli shim, so it should report notApplicable");
   assert.equal(verdict.reason, "next_family_has_no_runtime_cli");
-  // 密封包 + handoff 时 notApplicable 必须放行；修复前拿到 not_official 会返回 true。
+  // With a sealed package + handoff, notApplicable must be allowed; before the fix not_official would return true.
   assert.equal(
     cliRepairBlocksApply({
       handoff: { exe: inst.exe, asar: path.join(inst.resources, "app.asar"), swapAsar: true },
@@ -399,23 +399,23 @@ test("NEXT：内核包在场时 CLI 闸门不得阻断换包", () => {
   );
 });
 
-test("家族探针目录与补丁写入目录必须是同一处", () => {
-  // Review 要求：目标实例需与当前 resources 目录一致。
-  // probe 可以回退到 process.resourcesPath，但官方路径写补丁时不能沿用它。
+test("family probe directory and patch write directory must be the same location", () => {
+  // Review requires: target instance must match the current resources directory.
+  // probe may fall back to process.resourcesPath, but official path patch writing must not reuse it.
   const inst = withKernelPackage(makeNextInstall(path.join(TMP, "probe-same")));
   const before = process.resourcesPath;
   try {
-    // 把 process.resourcesPath 指向一个完全不相干的目录：
-    // 若实现把 probe 目录泄漏进写入路径，这里就会改错地方。
+    // Point process.resourcesPath to a completely unrelated directory:
+    // if the implementation leaks the probe directory into the write path, this will write to the wrong place.
     Object.defineProperty(process, "resourcesPath", {
       value: path.join(TMP, "decoy-resources"),
       configurable: true,
     });
     const verdict = repairOfficialCliAfterUnpack(inst.exe);
-    // NEXT 家族走 notApplicable，不会写任何 shim；结论必须来自 inst 自己。
+    // NEXT family takes the notApplicable path and writes no shim; the conclusion must come from inst itself.
     assert.equal(verdict.notApplicable, true);
     assert.equal(verdict.reason, "next_family_has_no_runtime_cli");
-    // 且诱饵目录不能被创建或写入。
+    // And the decoy directory must not be created or written to.
     assert.equal(fs.existsSync(path.join(TMP, "decoy-resources")), false);
   } finally {
     Object.defineProperty(process, "resourcesPath", { value: before, configurable: true });

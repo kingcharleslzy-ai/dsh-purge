@@ -1,4 +1,4 @@
-// 红队证据账本：语义哈希、置信度契约、待证未知登记。
+// Red-team evidence ledger: semantic hash, confidence contract, residual-unknown registry.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import os from "node:os";
@@ -56,7 +56,7 @@ test("ledger records, lists and rejects an unknown confidence", () => {
     assert.equal(rows.length, 1);
     assert.equal(rows[0].confidence, "observed");
     const bad = ledger.record({ operation: "x", result: { ok: 1 }, confidence: "certain" });
-    assert.equal(bad.ok, false, "非法置信度不能落成一条已证实事实");
+    assert.equal(bad.ok, false, "an invalid confidence must not become a verified fact");
     assert.match(String(bad.error), /confidence/i);
   });
 });

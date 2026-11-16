@@ -20,13 +20,13 @@ test("a probe is single-valued, expires, and disappears from the prompt text", (
     assert(text.includes(created.nonce), "probe nonce is in the injected text");
     assert(text.includes("dsh_probe"));
 
-    // 过期后自动失效
+    // expires automatically
     const file = path.join(home, "dsh-purge", "probe.json");
     fs.writeFileSync(file, JSON.stringify({ nonce: created.nonce, at: Date.now() - PROBE_TTL_MS - 1000 }));
     assert.equal(readProbe(home), null);
     assert.equal(probeText(home), "");
 
-    // 坏文件不抛
+    // a corrupt file must not throw
     fs.writeFileSync(file, "{oops");
     assert.equal(readProbe(home), null);
     assert(probeMessage("purge-deadbeef").includes("purge-deadbeef"));

@@ -1,5 +1,5 @@
-// 注入契约：瘦身后的 prompt-inject 必须仍包含每一条强制语句（逐字）。
-// 夹具由旧版注入正文抽取而来；改动注入时这条测试先红，除非确实删掉某条规则。
+// Injection contract: the slimmed prompt-inject must still contain every mandatory clause (verbatim).
+// The fixture was extracted from the old injection body; when changing the injection this test should fail first unless a rule is actually removed.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -14,12 +14,12 @@ const norm = (s) => s.replace(/\s+/g, " ").trim();
 function check(file, label) {
   const text = norm(fs.readFileSync(file, "utf8"));
   const missing = clauses.filter((c) => !text.includes(norm(c)));
-  assert.deepEqual(missing, [], `${label} 丢失 ${missing.length} 条强制语句`);
+  assert.deepEqual(missing, [], `${label} is missing ${missing.length} mandatory clause(s)`);
 }
 
 test("shipped inject keeps every mandatory clause", () => {
   const shipped = path.join(here, "../presets/inject-core.md");
-  if (!fs.existsSync(shipped)) return; // 尚未启用瘦身版
+  if (!fs.existsSync(shipped)) return; // slimmed version not enabled yet
   check(shipped, "presets/inject-core.md");
 });
 
@@ -31,6 +31,6 @@ test("installed inject (if present) keeps every mandatory clause", () => {
 
 test("the boost block asks for a direct artifact and one confirmation line", async () => {
   const { BOOST_TEXT } = await import("../lib/boost.js");
-  assert.match(BOOST_TEXT, /要现在执行吗/);
+  assert.match(BOOST_TEXT, /Execute now\?/);
   assert.match(BOOST_TEXT, /return the artifact directly/i);
 });

@@ -92,22 +92,22 @@ test('real CONNECT tunnel validates TLS, scopes credentials and respects total t
     assert.equal(requests[1].headers.authorization,undefined);
     assert.equal(requests[0].headers['proxy-authorization'],undefined);
     assert(connects.every(r=>!r.headers.authorization && r.headers['proxy-authorization']==='Basic '+Buffer.from('user:fixture').toString('base64')));
-    await assert.rejects(requestUpdate(`https://github.com:${server.address().port}/asset`,{env}),/网络连接失败/);
-    await assert.rejects(requestUpdate(base+'/large',{env,maxBytes:2}),/过大/);
+    await assert.rejects(requestUpdate(`https://github.com:${server.address().port}/asset`,{env}),/network connection failed/);
+    await assert.rejects(requestUpdate(base+'/large',{env,maxBytes:2}),/too large/);
     for(const route of ['/reset','/partial']) {
       assert.equal((await requestUpdate(base+route,{env})).body.toString(),'verified');
       assert.equal(counts.get(route),2,'real reset/partial body retries exactly once');
     }
     await assert.rejects(requestUpdate(base+'/unauthorized',{env}),/HTTP 401/);assert.equal(counts.get('/unauthorized'),1);
-    await assert.rejects(requestUpdate(base+'/reset-always',{env}),/ECONNRESET.*尝试 3 次/);assert.equal(counts.get('/reset-always'),3);
+    await assert.rejects(requestUpdate(base+'/reset-always',{env}),/ECONNRESET.*attempt 3/);assert.equal(counts.get('/reset-always'),3);
     const socksEnv={PURGE_HTTPS_PROXY:`socks5h://user:fixture@127.0.0.1:${socks.address().port}`,GITHUB_TOKEN:'socks-token'};
     const begin=requests.length;
     assert.equal((await requestUpdate(base+'/redirect',{env:socksEnv})).body.toString(),'verified');
     assert.equal(requests[begin].headers.authorization,'Bearer socks-token');
     assert.equal(requests[begin+1].headers.authorization,undefined);
     assert.equal(requests[begin].headers['proxy-authorization'],undefined);
-    await assert.rejects(requestUpdate(`https://github.com:${server.address().port}/asset`,{env:socksEnv}),/网络连接失败/);
-    await assert.rejects(requestUpdate(base+'/slow',{env:socksEnv,timeout:100}),/超时/);
+    await assert.rejects(requestUpdate(`https://github.com:${server.address().port}/asset`,{env:socksEnv}),/network connection failed/);
+    await assert.rejects(requestUpdate(base+'/slow',{env:socksEnv,timeout:100}),/timed out/);
 
     // Actual HTTPS -> CONNECT -> mirror byte stream -> official digest -> tar identity check.
     Object.assign(process.env,env,{PURGE_HTTPS_PROXY:env.HTTPS_PROXY,NO_PROXY:'',no_proxy:'',GITHUB_TOKEN:'test-token',PURGE_GH_MIRROR:'https://mirror.example/'});
@@ -121,7 +121,7 @@ test('real CONNECT tunnel validates TLS, scopes credentials and respects total t
     await assert.rejects(prepareRelease({base:path.join(dir,'cache')},release),/SHA256/);
     assert.deepEqual(fs.readFileSync(prepared),bytes,'tampered response cannot replace validated cache');
     assert.equal((await requestUpdate(base+'/stream',{env,timeout:1000})).body.toString(),'xxxxxx');
-    await assert.rejects(requestUpdate(base+'/stream',{env,timeout:100}),/超时/);
-    await assert.rejects(requestUpdate(base+'/slow',{env,timeout:100}),/超时/);
+    await assert.rejects(requestUpdate(base+'/stream',{env,timeout:100}),/timed out/);
+    await assert.rejects(requestUpdate(base+'/slow',{env,timeout:100}),/timed out/);
   } finally {for(const socket of sockets)socket.destroy();await Promise.all([server,proxy,socks].map(s=>new Promise(resolve=>s.close(resolve))));}
 });

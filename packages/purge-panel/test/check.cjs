@@ -106,7 +106,7 @@ vm.runInNewContext(
 const ctx = {
   locale: {
     register: (_, v) => {
-      dict = v.zh;
+      dict = v.en;
       return () => {};
     },
     bind: () => (k) => dict[k] || k,
@@ -170,29 +170,31 @@ const test = async () => {
     root.findAllByType("button").find((x) => x.children.join("") === text);
   const area = (label) =>
     root.findAllByType("textarea").find((x) => x.props["aria-label"] === label);
-  // 1.7.18 起状态页没有「刷新」按钮，改成右上角“上次扫描 · 点击刷新”的文字开关。
+  // Since 1.7.18, the status page uses a scan-time text control to refresh.
   const scan = () =>
     root
       .findAllByType("button")
       .find((x) => String(x.props.className || "").includes("dshpp-scan"));
-  assert.equal(area("提示词内容").props.value, "Existing test prompt");
-  await act(async () => btn("提示词").props.onClick());
+  assert.equal(area("Prompt content").props.value, "Existing test prompt");
+  await act(async () => btn("Prompts").props.onClick());
   await act(async () =>
-    area("提示词内容").props.onChange({ target: { value: "UNSAVED prompt" } }),
+    area("Prompt content").props.onChange({
+      target: { value: "UNSAVED prompt" },
+    }),
   );
-  await act(async () => btn("更多").props.onClick());
+  await act(async () => btn("More").props.onClick());
   await act(async () =>
-    area("服务器名单").props.onChange({
+    area("Server list").props.onChange({
       target: { value: "unsaved.example.test" },
     }),
   );
-  await act(async () => btn("状态").props.onClick());
+  await act(async () => btn("Status").props.onClick());
   await act(async () => {
     scan().props.onClick();
     await new Promise((r) => setTimeout(r, 10));
   });
-  assert.equal(area("提示词内容").props.value, "UNSAVED prompt");
-  assert.equal(area("服务器名单").props.value, "unsaved.example.test");
+  assert.equal(area("Prompt content").props.value, "UNSAVED prompt");
+  assert.equal(area("Server list").props.value, "unsaved.example.test");
   responses["/dsh-purge/status"].plugin_version = "2.0.0";
   await act(async () => {
     scan().props.onClick();
@@ -201,7 +203,7 @@ const test = async () => {
   assert(
     root
       .findAll((x) => x.props.role === "status")
-      .some((x) => x.children.join("").includes("官方版本 2.0.0")),
+      .some((x) => x.children.join("").includes("Backend version 2.0.0")),
     "Compatibility banner must follow refreshed status",
   );
   assert.equal(
@@ -231,7 +233,7 @@ const test = async () => {
       1,
       "first-run welcome notice is restored into the overlay",
     );
-    assert(JSON.stringify(o.toJSON()).includes("用户须知"));
+    assert(JSON.stringify(o.toJSON()).includes("User notice"));
     assert(
       !o.root
         .findAllByType("button")
@@ -246,7 +248,7 @@ const test = async () => {
     await act(async () => {
       o.root
         .findAllByType("button")
-        .find((x) => x.children.join("") === "我已知晓并继续")
+        .find((x) => x.children.join("") === "I understand — continue")
         .props.onClick();
     });
     assert.equal(dialogs().length, 0, "acknowledging closes the notice");
@@ -270,7 +272,7 @@ const test = async () => {
     assert(
       tree.root
         .findAll((x) => x.props.role === "status")
-        .some((x) => x.children.join("").includes("官方版本 2.0.0")),
+        .some((x) => x.children.join("").includes("Backend version 2.0.0")),
     );
     await act(async () => tree.unmount());
     responses["/dsh-purge/status"] = { ok: false, error: "unavailable" };
@@ -281,7 +283,9 @@ const test = async () => {
     assert(
       tree.root
         .findAll((x) => x.props.role === "status")
-        .some((x) => x.children.join("").includes("状态读取失败：unavailable")),
+        .some((x) =>
+          x.children.join("").includes("Failed to read status: unavailable"),
+        ),
     );
     await act(async () => tree.unmount());
     assert.equal(writes.length, 0);
@@ -292,8 +296,8 @@ const test = async () => {
   console.log(
     "PASS: native registry, persistent tab, loaded values, draft preservation across tabs and refresh, no implicit writes, no legacy launchers",
   );
-  // 演练台：旧版靠外层 dock 把 .rt-* 的 CSS 注入 <head>，重构时丢了 → 面板在右侧栏里
-  // 完全没样式。这条守住"CSS 必须随组件一起发出"和"容器要能撑开"。
+  // The drill must ship its own CSS and have an expandable container;
+  // relying on the outer dock previously left the sidebar unstyled.
   const bundleText = fs.readFileSync(process.env.PANEL_CLIENT, "utf8");
   assert(
     bundleText.includes("data-dsh-purge-drill"),

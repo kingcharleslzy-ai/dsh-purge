@@ -1,18 +1,18 @@
-# PR #42：Linux 安装与卸载边界
+# PR #42: Linux Installation and Uninstall Boundaries
 
-此变更增加 Linux CLI/Web 安装入口，未更改补丁表、提示词、权限选择或用户设置，也不会自动应用补丁或重启宿主。
+This change adds a Linux CLI/Web installation entry. It does not change the patch table, prompts, permission choices, or user settings, and it does not automatically apply patches or restart the host.
 
-## 审查发现与修复
+## Review Findings and Fixes
 
-- **卸载跟随符号链接**：清理列表曾对链接再次执行 realpath，绕过外部目录保护。现在按链接原路径删除链接（含失效链接和 Windows junction），不删除外部源码、共享依赖或外部 profile。普通插件目录仅在当前 DSH home 内清理。还原或注销失败时不执行清理。
-- **安装失败提前切换入口**：创建用户宿主副本与激活入口分离。先校验包、准备副本并运行迁移；只有迁移成功才原子切换 `~/.local/bin/dsh`。失败时原入口保持原样；首次安装失败不会留下新入口。未激活的完整副本保留，供重试复用，不自动删除可能被其他进程使用的副本。
-- **并发修改**：迁移期间若入口被用户替换，停止激活并明确报错，不覆盖用户命令。此时插件迁移可能已成功，但启动入口没有切换，应检查当前入口后重试，不应把错误当作全部回滚成功。
-- **路径别名**：测试和用户副本定位都按真实路径处理，兼容 macOS 的 `/var` 别名及 Linux 的符号链接 home。
+- **Uninstall followed symlinks**: the cleanup list used to call `realpath` again on links, bypassing external-directory protection. Now links are deleted by their original link path (including broken links and Windows junctions) without deleting external source, shared dependencies, or external profiles. Regular plugin directories are cleaned only inside the current DSH home. Cleanup is not performed if restore or unregister fails.
+- **Install failure switched entry too early**: creating the user host copy and activating the entry were separated. The package is validated, the copy prepared, and migration run first; only after migration succeeds is `~/.local/bin/dsh` switched atomically. On failure the original entry remains unchanged; a first-install failure does not leave a new entry. An unactivated complete copy is retained for retry reuse and is not automatically deleted when it may be used by other processes.
+- **Concurrent modification**: if the entry is replaced by the user during migration, activation stops and reports clearly; it does not overwrite the user's command. In that case plugin migration may have succeeded but the startup entry was not switched — check the current entry and retry, and do not treat the error as a complete rollback success.
+- **Path aliases**: both test and user-copy location handling use real paths, compatible with macOS `/var` aliases and Linux symlinked homes.
 
-## 验证范围
+## Verification Scope
 
-`npm test` 包含实际文件系统链接/卸载测试与解压后迁移子进程的成功、失败测试，覆盖原有入口不变、首次安装不激活、设置字节不变、并发入口冲突、复制失败清理、无关文件保留，以及原有诊断和功能回归。Linux 只读目录测试必须在非 root Linux 用户下执行；Windows 用 junction 验证卸载边界，不能把平台跳过算作通过。
+`npm test` includes real filesystem link/uninstall tests and extracted-migration subprocess success/failure tests, covering original entry unchanged, first install not activated, settings bytes unchanged, concurrent entry conflict, copy-failure cleanup, unrelated files preserved, and existing diagnostic and function regressions. Linux read-only-directory tests must run as a non-root Linux user; Windows uses junctions to verify uninstall boundaries, and platform skips must not be counted as passes.
 
-GitHub 三平台 installer 矩阵执行完整测试和打包 smoke；Windows 另有两种 PowerShell 与真实 Electron 交接测试，macOS 有真实 Electron 诊断测试。Linux shell 入口和下载包装测试包含隔离替身，并不等价于登录真实模型完成任务；`linux-runtime` 作业另外安装官方 `@deepseek-ai/dsh@0.2.1-rc.2`，将隔离副本设为只读，实际运行 bootstrap、用户副本 CLI、插件导入、备份/回滚和失败恢复。它不启动模型服务，也不等价于完整图形界面或模型能力验收。
+The GitHub three-platform installer matrix runs full tests and packaging smoke; Windows additionally has two PowerShell variants and real Electron handoff tests, and macOS has real Electron diagnostic tests. Linux shell entry and download-wrapper tests include isolated stand-ins and are not equivalent to logging into a real model to complete tasks; the `linux-runtime` job additionally installs official `@deepseek-ai/dsh@0.2.1-rc.2`, makes the isolated copy read-only, and actually runs bootstrap, user-copy CLI, plugin import, backup/rollback, and failure recovery. It does not start model services and is not equivalent to full GUI or model-capability acceptance.
 
-维护时不要改用户全局 npm 源、代理、权限、提示词或启动中的服务。准备副本不需要 sudo；系统目录始终保持原状。
+During maintenance, do not change the user's global npm registry, proxy, permissions, prompts, or running services. Preparing a copy does not require sudo; system directories always remain unchanged.

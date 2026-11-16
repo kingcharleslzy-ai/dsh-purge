@@ -1,5 +1,5 @@
-// 面板路由的 Host 归属校验。DNS rebinding 时 Host 与 Origin 都是攻击者域名，
-// 「两者相等」这种自比较证明不了任何事 —— 必须先要求 Host 属于本机监听目标。
+// Host ownership validation for panel routes. During DNS rebinding, Host and Origin are both attacker domains;
+// "both are equal" self-comparison proves nothing — Host must first be required to belong to a local listener target.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { allowPluginRequest } from "../lib/index.js";
@@ -19,8 +19,8 @@ const decide = (headers, trusted) => {
   return { allowed, code: res.seen.code, body: res.seen.body };
 };
 
-test("DNS rebinding：Host 与 Origin 同为攻击者域名时拒绝", () => {
-  // 浏览器把两个头都写成攻击者域名，sec-fetch-site 仍是 same-origin。
+test("DNS rebinding: rejected when Host and Origin are both attacker domains", () => {
+  // The browser writes both headers as the attacker domain; sec-fetch-site remains same-origin.
   const out = decide({
     host: "rebind.attacker.example:43120",
     origin: "http://rebind.attacker.example:43120",
@@ -30,63 +30,63 @@ test("DNS rebinding：Host 与 Origin 同为攻击者域名时拒绝", () => {
   assert.equal(out.code, 403);
 });
 
-test("DNS rebinding：无 Origin 的读请求同样拒绝", () => {
-  // 图片/脚本类探测不带 Origin，Host 是唯一可判断的头。
+test("DNS rebinding: read requests without Origin are also rejected", () => {
+  // Image/script probes do not carry Origin; Host is the only header that can be checked.
   const out = decide({ host: "rebind.attacker.example:43120", "sec-fetch-site": "same-origin" });
   assert.equal(out.allowed, false);
   assert.equal(out.code, 403);
 });
 
-test("本地面板请求放行（127.0.0.1 / localhost / [::1]）", () => {
+test("local panel requests are allowed (127.0.0.1 / localhost / [::1])", () => {
   for (const host of ["127.0.0.1:43120", "localhost:43120", "[::1]:43120"]) {
     const out = decide({ host, origin: `http://${host}`, "sec-fetch-site": "same-origin" });
     assert.equal(out.allowed, true, host);
   }
 });
 
-test("任意 127/8 都算回环，非回环公网地址不算", () => {
+test("any 127/8 address counts as loopback; non-loopback public addresses do not", () => {
   assert.equal(decide({ host: "127.0.0.53:3080" }).allowed, true);
   assert.equal(decide({ host: "127.255.255.254:3080" }).allowed, true);
   assert.equal(decide({ host: "128.0.0.1:3080" }).allowed, false);
   assert.equal(decide({ host: "localhost.evil.example:3080" }).allowed, false);
 });
 
-test("IPv6 回环，含 IPv4-mapped 形式", () => {
-  // 宿主 isLoopbackHost() 用 range() === "loopback"，把 mapped 形式也算回环。
+test("IPv6 loopback, including IPv4-mapped forms", () => {
+  // Host-side isLoopbackHost() uses range() === "loopback", which also treats mapped forms as loopback.
   for (const host of ["[::1]:43120", "[::1]", "[0:0:0:0:0:0:0:1]:43120"]) {
     assert.equal(decide({ host }).allowed, true, host);
   }
   for (const host of ["[::ffff:127.0.0.1]:43120", "[::ffff:127.0.0.53]:43120"]) {
     assert.equal(decide({ host }).allowed, true, host);
   }
-  // 非回环 IPv6 不应因为格式被误判为回环
+  // Non-loopback IPv6 must not be misclassified as loopback due to format
   for (const host of ["[2001:db8::1]:43120", "[::2]:43120", "[fe80::1]:43120"]) {
     assert.equal(decide({ host }).allowed, false, host);
   }
 });
 
-test("绑定裸 IPv6 地址时，带方括号的 Host 能匹配", () => {
-  // webServer.host 是配置原文：可能是 `2001:db8::1` 这种不带方括号的裸地址，
-  // 而 HTTP 的 Host 头必须写成 `[2001:db8::1]:端口`。两者规范化后必须相等。
+test("when bound to a bare IPv6 address, a bracketed Host header can match", () => {
+  // webServer.host is the raw config value: it may be a bare address like `2001:db8::1` without brackets,
+  // while the HTTP Host header must be written as `[2001:db8::1]:port`. The two must be equal after normalization.
   const trusted = new Set(["2001:db8::1"]);
   assert.equal(
     decide({ host: "[2001:db8::1]:43120", origin: "http://[2001:db8::1]:43120", "sec-fetch-site": "same-origin" }, trusted).allowed,
     true,
   );
-  // 裸地址的端口写法有歧义，规范化后仍是地址本身
+  // Port notation for a bare address is ambiguous; after normalization it remains the address itself
   assert.equal(decide({ host: "2001:db8::1" }, trusted).allowed, true);
-  // 相邻地址仍拒绝
+  // Adjacent addresses are still rejected
   assert.equal(decide({ host: "[2001:db8::2]:43120" }, trusted).allowed, false);
 });
 
-test("绑定裸 ::1 时，回环请求仍放行", () => {
-  // 裸 `::1` 若按「最后一个冒号是端口」截断会变成 `:`，导致本机访问被拒。
+test("when bound to bare ::1, loopback requests are still allowed", () => {
+  // If bare `::1` were truncated by treating "last colon as port", it would become `:` and reject local access.
   const trusted = new Set(["::1"]);
   assert.equal(decide({ host: "[::1]:43120" }, trusted).allowed, true);
   assert.equal(decide({ host: "[::1]" }, trusted).allowed, true);
 });
 
-test("真跨站仍被原判定挡住", () => {
+test("true cross-site requests are still blocked by the original check", () => {
   const out = decide({
     host: "127.0.0.1:43120",
     origin: "http://evil.example",
@@ -96,11 +96,11 @@ test("真跨站仍被原判定挡住", () => {
   assert.equal(out.code, 403);
 });
 
-test("Origin: null 被拒绝", () => {
+test("Origin: null is rejected", () => {
   assert.equal(decide({ host: "127.0.0.1:43120", origin: "null" }).allowed, false);
 });
 
-test("同机但 Origin 指向别的端口时不放行", () => {
+test("same machine but Origin pointing to a different port is not allowed", () => {
   const out = decide({
     host: "127.0.0.1:43120",
     origin: "http://127.0.0.1:3080",
@@ -110,18 +110,18 @@ test("同机但 Origin 指向别的端口时不放行", () => {
   assert.equal(out.code, 403);
 });
 
-test("不绑定回环时，监听器自己的地址被接受", () => {
-  // 局域网绑定：从配置推导的 allowedHosts 才包含它，请求头本身不构成授权。
+test("when not bound to loopback, the listener's own address is accepted", () => {
+  // LAN binding: only allowedHosts derived from config include it; the request header itself does not grant authorization.
   const trusted = new Set(["192.168.1.50"]);
   assert.equal(
     decide({ host: "192.168.1.50:43120", origin: "http://192.168.1.50:43120", "sec-fetch-site": "same-origin" }, trusted).allowed,
     true,
   );
-  // 同一绑定但 Host 换成攻击者域名 → 仍拒绝。
+  // Same binding but Host replaced with an attacker domain → still rejected.
   assert.equal(decide({ host: "192.168.1.50:43120" }, new Set()).allowed, false);
 });
 
-test("显式信任的主机名（反向代理）可用，未列出的域名仍拒绝", () => {
+test("explicitly trusted hostnames (reverse proxy) are allowed; unlisted domains are still rejected", () => {
   const trusted = new Set(["panel.example.com"]);
   assert.equal(
     decide({ host: "panel.example.com", origin: "https://panel.example.com", "sec-fetch-site": "same-origin" }, trusted).allowed,
@@ -133,29 +133,29 @@ test("显式信任的主机名（反向代理）可用，未列出的域名仍�
   );
 });
 
-test("缺少 Host 头一律拒绝", () => {
+test("requests missing the Host header are always rejected", () => {
   assert.equal(decide({}).allowed, false);
   assert.equal(decide({ origin: "http://127.0.0.1:43120" }).allowed, false);
 });
 
-test("PURGE_TRUSTED_HOSTS 解析出可用的信任名单（默认参数路径）", (t) => {
+test("PURGE_TRUSTED_HOSTS parses into a usable trust list (default parameter path)", (t) => {
   const previous = process.env.PURGE_TRUSTED_HOSTS;
   t.after(() => {
     if (previous === undefined) delete process.env.PURGE_TRUSTED_HOSTS;
     else process.env.PURGE_TRUSTED_HOSTS = previous;
   });
 
-  // 分隔符混用：逗号、分号、空白、带端口、带方括号、大小写、前后空白。
+  // Mixed separators: comma, semicolon, whitespace, with port, with brackets, mixed case, surrounding whitespace.
   process.env.PURGE_TRUSTED_HOSTS = " Panel.Example.COM ; 192.168.1.50:43120 ,[fd00::1]:8080 ";
-  // 省略第三个参数 → 走 allowPluginRequest 的默认值（= 从环境变量读）。
+  // Omit the third argument → takes allowPluginRequest's default value (= read from environment variable).
   assert.equal(decide({ host: "panel.example.com", "sec-fetch-site": "same-origin" }).allowed, true);
-  assert.equal(decide({ host: "192.168.1.50:9999" }).allowed, true, "端口不同也应匹配主机名");
+  assert.equal(decide({ host: "192.168.1.50:9999" }).allowed, true, "different port should still match hostname");
   assert.equal(decide({ host: "[fd00::1]:43120" }).allowed, true);
-  // 未列出的域名仍拒绝。
+  // Unlisted domains are still rejected.
   assert.equal(decide({ host: "other.example.com" }).allowed, false);
 });
 
-test("清空 PURGE_TRUSTED_HOSTS 后不再放行非回环主机", (t) => {
+test("clearing PURGE_TRUSTED_HOSTS no longer allows non-loopback hosts", (t) => {
   const previous = process.env.PURGE_TRUSTED_HOSTS;
   t.after(() => {
     if (previous === undefined) delete process.env.PURGE_TRUSTED_HOSTS;
@@ -166,12 +166,12 @@ test("清空 PURGE_TRUSTED_HOSTS 后不再放行非回环主机", (t) => {
   assert.equal(decide({ host: "panel.example.com" }).allowed, true);
 
   delete process.env.PURGE_TRUSTED_HOSTS;
-  assert.equal(decide({ host: "panel.example.com" }).allowed, false, "取消信任后必须回落为拒绝");
-  // 回环不依赖该变量。
+  assert.equal(decide({ host: "panel.example.com" }).allowed, false, "must fall back to rejection after trust is removed");
+  // Loopback does not depend on this variable.
   assert.equal(decide({ host: "127.0.0.1:3080" }).allowed, true);
 });
 
-test("信任名单不影响回环判定，也不能绕过 Origin 同源检查", (t) => {
+test("trust list does not affect loopback determination and cannot bypass Origin same-origin checks", (t) => {
   const previous = process.env.PURGE_TRUSTED_HOSTS;
   t.after(() => {
     if (previous === undefined) delete process.env.PURGE_TRUSTED_HOSTS;
@@ -179,12 +179,12 @@ test("信任名单不影响回环判定，也不能绕过 Origin 同源检查", 
   });
   process.env.PURGE_TRUSTED_HOSTS = "panel.example.com";
 
-  // 信任了 panel，但 Origin 指向别处 → 仍然拒绝。
+  // panel is trusted, but Origin points elsewhere → still rejected.
   assert.equal(
     decide({ host: "panel.example.com", origin: "https://evil.example", "sec-fetch-site": "same-origin" }).allowed,
     false,
   );
-  // sec-fetch-site: cross-site 优先级高于信任名单。
+  // sec-fetch-site: cross-site has higher priority than the trust list.
   assert.equal(
     decide({ host: "panel.example.com", origin: "https://panel.example.com", "sec-fetch-site": "cross-site" }).allowed,
     false,
@@ -197,35 +197,35 @@ test("malformed port or bracket suffix does not identify a local listener", () =
   }
 });
 
-test("宿主 --trusted-host 的域名可进面板（与 DSH 本体口径一致）", () => {
-  // 部署用 `--trusted-host dsh.example.com` 让 DSH 本体接受这个域名，
-  // 面板原先只认回环 + 监听地址，于是同一台机器上"宿主能进、面板 403"。
-  // 合并宿主连接服务给出的清单后，两边判定一致。
+test("host --trusted-host domain can access the panel (consistent with DSH core behavior)", () => {
+  // Deployment uses `--trusted-host dsh.example.com` so DSH core accepts this domain;
+  // the panel previously only recognized loopback + listener addresses, causing "core accessible, panel 403" on the same machine.
+  // After merging the list provided by the host connection service, both sides make consistent decisions.
   const trusted = new Set(["dsh.example.com"]);
   assert.equal(
     decide({ host: "dsh.example.com", origin: "https://dsh.example.com", "sec-fetch-site": "same-origin" }, trusted).allowed,
     true,
   );
-  // 合并不等于放松：未列出的域名照样拒绝。
+  // Merging does not mean relaxing: unlisted domains are still rejected.
   assert.equal(
     decide({ host: "other.example.com", origin: "https://other.example.com", "sec-fetch-site": "same-origin" }, trusted).allowed,
     false,
   );
 });
 
-test("宿主受信清单不绕过 Origin 同源与 cross-site 检查", () => {
+test("host trusted list does not bypass Origin same-origin and cross-site checks", () => {
   const trusted = new Set(["dsh.example.com"]);
-  // Host 已受信，但 Origin 指向攻击者 → 拒绝。
+  // Host is trusted, but Origin points to attacker → rejected.
   assert.equal(
     decide({ host: "dsh.example.com", origin: "https://evil.example", "sec-fetch-site": "same-origin" }, trusted).allowed,
     false,
   );
-  // cross-site 的优先级更高。
+  // cross-site has higher priority.
   assert.equal(
     decide({ host: "dsh.example.com", origin: "https://dsh.example.com", "sec-fetch-site": "cross-site" }, trusted).allowed,
     false,
   );
-  // Origin: null 依旧拒绝。
+  // Origin: null is still rejected.
   assert.equal(decide({ host: "dsh.example.com", origin: "null" }, trusted).allowed, false);
 });
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// 统计拒绝率：扫 audit.jsonl 的 refusal_retry + 最近会话里的拒绝式回答。
-// 用法：node scripts/refusal-report.mjs [--days 7] [--home ~/.dsh]
+// Refusal rate stats: scan audit.jsonl for refusal_retry events + refusal-style replies in recent sessions.
+// Usage: node scripts/refusal-report.mjs [--days 7] [--home ~/.dsh]
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -105,11 +105,11 @@ for (const file of files) {
   if (texts.length) perSession.push({ file: path.basename(path.dirname(file)), answers: texts.length, refusals: hit });
 }
 const rate = answers ? ((refusals / answers) * 100).toFixed(2) : "0.00";
-console.log(`窗口：最近 ${days} 天 · 会话 ${files.length} 个 · 助手回答 ${answers} 条 · 拒绝式 ${refusals} 条 → 拒绝率 ${rate}%`);
-console.log(`重试事件（audit refusal_retry）：${retries.length} 次`);
-if (retries.length) console.log("最近一次：", JSON.stringify(retries[retries.length - 1]).slice(0, 200));
+console.log(`Window: last ${days} days · ${files.length} sessions · ${answers} assistant replies · ${refusals} refusal-style → refusal rate ${rate}%`);
+console.log(`Retry events (audit refusal_retry): ${retries.length}`);
+if (retries.length) console.log("Last one:", JSON.stringify(retries[retries.length - 1]).slice(0, 200));
 if (perSession.length) {
-  console.log("\n按会话（有拒绝的才列出）：");
+  console.log("\nBy session (only those with refusals):");
   for (const s of perSession.filter((x) => x.refusals > 0).slice(-10)) {
     console.log(`  ${s.file}: ${s.refusals}/${s.answers}`);
   }

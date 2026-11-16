@@ -1,40 +1,40 @@
-# 1.6.48：自定义正文保护与安装别名
+# 1.6.48: Custom Body Protection and Install Aliases
 
-## #72：正文归属不能靠关键词猜测
+## #72: Body Ownership Must Not Be Guessed by Keywords
 
-旧版只要正文同时含三个模板标记，就会认为它是插件默认值，甚至忽略 `customized: true`。保存可以成功，但后续启动同步或应用可能把自定义内容换成默认值。
+The old version treated a body containing all three template markers as the plugin default, even ignoring `customized: true`. Saving could succeed, but later startup sync or apply might replace custom content with the default.
 
-本版统一启动同步、应用及默认安装路径的判断：
+This release unifies the determination across startup sync, apply, and default installation paths:
 
-- 明确保存的自定义内容保留；保留模板标记不改变归属。
-- 无状态记录、状态损坏或手工编辑后无法确认来源的非空正文保留。
-- 当前默认值，以及 `customized: false` 且正文指纹精确匹配记录的旧默认值，仍按原逻辑更新。
-- 读取正文出错时停止写入并返回错误，不将错误当作空文件。
-- 「恢复默认」仍是显式操作，不更改注入位置、强化段、宿主补丁或现有开关。
+- Explicitly saved custom content is preserved; retaining template markers does not change ownership.
+- Non-empty bodies with no state record, corrupted state, or unconfirmable origin after manual editing are preserved.
+- The current default, and old defaults where `customized: false` and the body fingerprint exactly matches the record, are still updated according to the original logic.
+- If reading the body fails, stop writing and return an error; do not treat the error as an empty file.
+- "Restore default" remains an explicit operation and does not change injection position, strengthening section, host patches, or existing switches.
 
-旧版本已覆盖掉的正文不能自动推导恢复。先查看用户自己保存的稿件或本机备份，仅恢复确认过的正文，不恢复整份配置覆盖后续改动。不要要求用户在公开 issue 上传私人提示词。无法确认来源的旧默认会保留；确实想使用新默认时由用户显式选择恢复默认。
+Bodies already overwritten by old versions cannot be automatically inferred back. First check drafts saved by the user or local backups, and restore only confirmed bodies — do not restore an entire configuration and overwrite later changes. Do not ask users to upload private prompts in public issues. Old defaults with unconfirmable origin will be preserved; if the user truly wants the new default, they must explicitly choose restore default.
 
-## #74：依赖名与包身份分开核对
+## #74: Separate Dependency Name and Package Identity Checks
 
-支持 `node_modules/dsh-purge-community`，以及实际 `package.json.name` 为 `dsh-purge-community` 的 `node_modules/dsh-purge` 别名。仅检查当前明确选定的 profile，优先其启用 bundle；不拿运行进程的旧版本代替磁盘版本，不扫描其他应用或全局安装。
+Supports `node_modules/dsh-purge-community`, and `node_modules/dsh-purge` aliases whose actual `package.json.name` is `dsh-purge-community`. Checks only the currently explicitly selected profile, preferring its enabled bundle; does not substitute an old running-process version for the disk version and does not scan other apps or global installations.
 
-包缺失、身份/版本不符、不可读、多个不同的启用副本仍然报错。两个不同副本都未明确选中时也保持歧义。真正的上游 `dsh-purge` 不冒充社区版。自定义第三种依赖名不在本次自动迁移支持范围内，不能通过删除依赖或伪造版本消除错误。
+Missing packages, identity/version mismatch, unreadable, or multiple different enabled copies still report errors. Two different copies that are both not explicitly selected also remain ambiguous. A real upstream `dsh-purge` does not impersonate the community edition. Custom third dependency names are not in scope for automatic migration here; errors cannot be eliminated by deleting dependencies or faking versions.
 
-YAML 解析器从已验证包的真实物理路径解析，覆盖 pnpm 隔离依赖布局。备份同时记录依赖名和实际包名；回滚使用原依赖名安装并恢复对应 bundle 和已知配置引用，保留提示词、其他设置及备份后用户新增内容。旧备份格式继续可读。
+The YAML parser resolves from the verified package's real physical path, covering pnpm isolated dependency layouts. Backups record both dependency name and actual package name; rollback installs using the original dependency name and restores the corresponding bundle and known config references, preserving prompts, other settings, and user-added content after backup. Old backup formats remain readable.
 
-旧版有 `reconciliationError` 时会停止自动安装，所以不能只等待它自行升级。使用新版独立安装器原地升级，无需卸载、删锁文件或清空状态文件。安装后由用户安排手动重启；当前进程仍是旧代码。回滚到 1.6.47 或更早版本也会带回旧版正文判断缺陷，回滚完成时保留文件不等于旧版重新加载后仍有新保护。
+When old versions had `reconciliationError`, auto-install would stop, so you cannot just wait for it to upgrade itself. Use the new standalone installer to upgrade in place; no uninstall, lock-file deletion, or state-file clearing is needed. After installation, the user schedules a manual restart; the current process is still old code. Rolling back to 1.6.47 or earlier also brings back the old body-determination defect; files preserved at rollback completion do not mean the old version will still have the new protection after reload.
 
-## 验证方法与边界
+## Verification Methods and Boundaries
 
-- `test/prompt-preservation.test.mjs`：保存、启动同步、应用、旧默认迁移、状态缺失/损坏、手工编辑、显式恢复默认、读取失败。
-- `test/installed-package.test.mjs`：标准名/别名、pnpm 物理路径解析、多个副本、选中入口缺失、包身份错误与别名备份。
-- `scripts/check-alias-install-runtime.mjs`：使用显式 Mac CLI 专用副本或未运行的 Windows 测试副本与全新 home，真实 DSH CLI/pnpm 安装两种名称，执行自动升级、手动快照回滚、重新升级、安装失败恢复、回滚失败恢复并逐字节核对用户数据。Mac 继承系统写入沙箱，禁止写入正式应用和用户 DSH 数据。
-- CI 的 `scripts/check-npm-alias-runtime.mjs` 在独立官方 npm 宿主上复用同一场景，不使用生产 profile。
+- `test/prompt-preservation.test.mjs`: save, startup sync, apply, old-default migration, missing/corrupted state, manual edits, explicit restore default, read failure.
+- `test/installed-package.test.mjs`: standard name/alias, pnpm physical-path resolution, multiple copies, selected-entry missing, package-identity errors, and alias backup.
+- `scripts/check-alias-install-runtime.mjs`: using an explicit Mac CLI-only copy or an unrun Windows test copy with a fresh home, real DSH CLI/pnpm installs both names and performs auto-upgrade, manual-snapshot rollback, re-upgrade, install-failure recovery, rollback-failure recovery, and byte-for-byte user-data verification. On Mac it inherits system write sandbox and is forbidden from writing to the official app and user DSH data.
+- CI's `scripts/check-npm-alias-runtime.mjs` reuses the same scenarios on isolated official npm hosts without using production profiles.
 
-这些测试不启动桌面应用、不自动应用宿主补丁、不调用模型，不把安装通过表述为所有模型行为已验证。
+These tests do not start the desktop app, do not automatically apply host patches, and do not call the model; passing installation must not be described as all model behavior verified.
 
-## 发布前实际记录
+## Pre-Release Actual Records
 
-Mac 与 Windows 11 4090 的隔离副本均使用 Electron 44.7.0 / Node 24.21.0，以官方 DSH CLI/pnpm 完成 1.6.47 → 1.6.48，两种安装名均通过升级、回滚、再次升级、安装失败恢复、回滚失败恢复和正文逐字节保留。Windows 访问 npm 官方源遇到连接重置和超时，随后使用已有依赖缓存完成真实安装；这不代表该机器的在线下载链路已经恢复，未修改代理。
+Isolated copies on Mac and Windows 11 4090 both used Electron 44.7.0 / Node 24.21.0 and completed 1.6.47 → 1.6.48 with official DSH CLI/pnpm; both installation names passed upgrade, rollback, re-upgrade, install-failure recovery, rollback-failure recovery, and byte-for-byte body preservation. On Windows, access to the official npm source encountered connection resets and timeouts; actual installation was then completed using existing dependency cache. This does not mean that machine's online download path has recovered, and proxy settings were not modified.
 
-本地完整回归 360 项：348 通过，12 项仅适用于其他平台而跳过，0 失败；UI、文档、客户端构建一致性与打包 smoke 均通过。云端另跑三平台安装器和官方 npm 宿主测试，最终状态以 PR #75 检查记录为准。
+Local full regression: 360 items, 348 passed, 12 skipped as applicable only to other platforms, 0 failed; UI, docs, client build consistency, and packaging smoke all passed. Cloud runs three-platform installer and official npm host tests separately; final status is determined by PR #75 check records.

@@ -1,8 +1,8 @@
-// ZIP 解压只走 Node 读取器：外部工具分支已移除，三条保护不能被绕过。
+// ZIP extraction uses only the Node reader: external tool branches have been removed and the three protections cannot be bypassed.
 //
-// 背景：曾有 tar/unzip/python3/Expand-Archive 的回退链，但那条路径只做
-// 名字与符号链接检查，没有 maxEntries / verifyCrc / assertNoLinkedDescendants。
-// 回退一旦生效，这三层会静默失效。现在所有调用都走同一个受限读取器。
+// Background: there used to be a fallback chain of tar/unzip/python3/Expand-Archive, but that path only checked
+// names and symlinks, without maxEntries / verifyCrc / assertNoLinkedDescendants.
+// Once fallback took effect, those three layers would silently stop working. Now all calls go through the same restricted reader.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -77,18 +77,18 @@ function tmpdir(t) {
   return dir;
 }
 
-test("外部解压工具入口与无用列目录导出已移除", () => {
-  // 这些符号若被重新引入，要么说明外部工具回退链回来了（缺三层保护），
-  // 要么说明加了无人调用的导出。
+test("external extraction tool entry points and unused listing exports have been removed", () => {
+  // If these symbols are reintroduced, it means either the external tool fallback chain is back (missing three protections),
+  // or unused exports were added.
   for (const name of ["unzipTools", "listZipFile", "listZipEntries"]) {
-    assert.equal(typeof zipModule[name], "undefined", `${name} 应已删除`);
+    assert.equal(typeof zipModule[name], "undefined", `${name} should have been removed`);
   }
   assert.equal(typeof zipModule.extractZipArchive, "function");
   assert.equal(typeof zipModule.extractZipBuffer, "function");
   assert.equal(typeof zipModule.safeArchiveName, "function");
 });
 
-test("extractZipArchive 始终返回 node，且与 extractZipBuffer 结果一致", (t) => {
+test("extractZipArchive always returns node and produces the same result as extractZipBuffer", (t) => {
   const dir = tmpdir(t);
   const zip = path.join(dir, "a.zip");
   fs.writeFileSync(zip, buildZip([
@@ -101,7 +101,7 @@ test("extractZipArchive 始终返回 node，且与 extractZipBuffer 结果一致
   assert.ok(fs.existsSync(path.join(dest, "pkg", "sub", "a.txt")));
 });
 
-test("符号链接条目经 archive 入口被拒绝", (t) => {
+test("symlink entries are rejected through the archive entry point", (t) => {
   const dir = tmpdir(t);
   const zip = path.join(dir, "link.zip");
   fs.writeFileSync(zip, buildZip([
@@ -109,11 +109,11 @@ test("符号链接条目经 archive 入口被拒绝", (t) => {
     { name: "pkg/esc/x", data: "pwn" },
   ]));
   const dest = path.join(dir, "out");
-  assert.throws(() => extractZipArchive(zip, dest), /链接条目/);
+  assert.throws(() => extractZipArchive(zip, dest), /linked entries/);
   assert.equal(fs.existsSync(path.join(dest, "pkg", "esc")), false);
 });
 
-test("maxEntries 经 archive 入口生效", (t) => {
+test("maxEntries takes effect through the archive entry point", (t) => {
   const dir = tmpdir(t);
   const zip = path.join(dir, "many.zip");
   fs.writeFileSync(zip, buildZip(
@@ -121,11 +121,11 @@ test("maxEntries 经 archive 入口生效", (t) => {
   ));
   assert.throws(
     () => extractZipArchive(zip, path.join(dir, "out"), { maxEntries: 3 }),
-    /文件太多/,
+    /too many entries in the archive/,
   );
 });
 
-test("verifyCrc 经 archive 入口生效", (t) => {
+test("verifyCrc takes effect through the archive entry point", (t) => {
   const dir = tmpdir(t);
   const zip = path.join(dir, "badcrc.zip");
   fs.writeFileSync(zip, buildZip([
@@ -133,23 +133,23 @@ test("verifyCrc 经 archive 入口生效", (t) => {
   ]));
   assert.throws(
     () => extractZipArchive(zip, path.join(dir, "out"), { verifyCrc: true }),
-    /CRC 校验失败/,
+    /CRC check failed/,
   );
-  // 关闭时不校验，说明这是可选项而非恒真
+  // No check when disabled, showing this is optional rather than always on
   assert.doesNotThrow(() => extractZipArchive(zip, path.join(dir, "out2"), { verifyCrc: false }));
 });
 
-test("maxBytes 经 archive 入口生效", (t) => {
+test("maxBytes takes effect through the archive entry point", (t) => {
   const dir = tmpdir(t);
   const zip = path.join(dir, "big.zip");
   fs.writeFileSync(zip, buildZip([{ name: "a.bin", data: Buffer.alloc(4096, 0x41) }]));
   assert.throws(
     () => extractZipArchive(zip, path.join(dir, "out"), { maxBytes: 1024 }),
-    /超出大小上限/,
+    /exceeds the size limit/,
   );
 });
 
-test("extractZipBuffer 与 archive 入口对重复路径同样拒绝", (t) => {
+test("extractZipBuffer and archive entry point both reject duplicate paths", (t) => {
   const dir = tmpdir(t);
   const zip = path.join(dir, "dup.zip");
   const bytes = buildZip([
@@ -157,6 +157,6 @@ test("extractZipBuffer 与 archive 入口对重复路径同样拒绝", (t) => {
     { name: "pkg/a.txt", data: "2" },
   ]);
   fs.writeFileSync(zip, bytes);
-  assert.throws(() => extractZipArchive(zip, path.join(dir, "out")), /重复路径/);
-  assert.throws(() => extractZipBuffer(bytes, path.join(dir, "out2")), /重复路径/);
+  assert.throws(() => extractZipArchive(zip, path.join(dir, "out")), /duplicate path/);
+  assert.throws(() => extractZipBuffer(bytes, path.join(dir, "out2")), /duplicate path/);
 });

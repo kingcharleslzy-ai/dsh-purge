@@ -59,10 +59,10 @@ test("default tuning registers the inject at the head and the boost at the tail"
   });
 });
 
-// 宿主 rc.2 的 SECTION_ORDERS：persona-prefix 0、工具段 1000–3000、MCP 3100、
-// TOOLS_SDK 5000、DELIVERABLE 9000、STRUCTURED_OUTPUT 9900、HARNESS_SOURCE 10000、
-// WEB_SURFACE 10100、persona-suffix 10200。低于 0 的 order 排在 persona 之前，
-// 所以"尾部"段不能用 GLOBAL_PROMPT_ORDER + n（仍是负数）。
+// Host rc.2 SECTION_ORDERS: persona-prefix 0, tool sections 1000–3000, MCP 3100,
+// TOOLS_SDK 5000, DELIVERABLE 9000, STRUCTURED_OUTPUT 9900, HARNESS_SOURCE 10000,
+// WEB_SURFACE 10100, persona-suffix 10200. Orders below 0 sort before the persona,
+// so a "tail" section cannot use GLOBAL_PROMPT_ORDER + n (still negative).
 const HOST_TOOL_SECTIONS_MAX = 5000;
 const HOST_PERSONA_SUFFIX = 10200;
 
@@ -74,9 +74,9 @@ test("tail inject lands in the host tail range; the boost keeps its measured def
     const byName = Object.fromEntries(h.sections.map((s) => [s.name, s]));
     const tail = byName["dsh-purge-tail"];
     const boost = byName["dsh-purge-boost"];
-    // 尾部注入必须真的排在工具段之后、persona-suffix 之前。
+    // tail injection must really sort after the tool sections and before persona-suffix.
     assert.ok(tail.order > HOST_TOOL_SECTIONS_MAX && tail.order < HOST_PERSONA_SUFFIX);
-    // 强化段的默认位置来自实测：放最前时同一组易拒请求 0/6 首拒，放 9500 时 2/6。
+    // boost default position comes from measurement: first place gave 0/6 first refusals on the same probe set, 9500 gave 2/6.
     assert.equal(boost.order, -50000);
   });
 });

@@ -1,3 +1,3 @@
-name: 无限制模式
-description: dsh-purge 自带骨架：操作者意图优先、不重复声明边界；工具面沿用标准集，web 抓取由补丁打开。适合把「拦截」交给宿主补丁、把「角色」留给这个预设。
-order: 20
+name: Unrestricted Mode
+description: "Built-in dsh-purge skeleton: prioritize operator intent and avoid repeating boundary statements; uses the standard tool set, with web fetching enabled by the patch. Suitable for leaving \"interception\" to host patches and \"role\" to this preset."
+order: 20

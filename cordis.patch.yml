@@ -1,9 +1,9 @@
 # dsh-purge bundle patch
 #
-# 清洗 + 演练台都在本插件内（lib/redteam、presets/redteam、skills/redteam）。
-# 只装 dsh-purge，不外接、不 link 其它红队包。
+# Cleanup and the drill console both live in this plugin (lib/redteam, presets/redteam, skills/redteam).
+# Install only dsh-purge; do not attach or link other red-team packages.
 
-# 关掉旧的独立红队包行（若用户以前装过 dsh-redteam-mode）
+# Disable old standalone red-team package entries (if the user previously installed dsh-redteam-mode)
 - id: redteam-store
   name: dsh-redteam-store
   disabled: true
@@ -50,24 +50,24 @@
         retryMax: 3
         autoContinue: false
         continueMax: 3
-        continueText: "继续"
+        continueText: "Continue"
         capabilityProtocol: true
         hooksDenyBypass: true
 
-    # 演练台：预设 + 技能落地（本插件 lib/redteam）
+    # Drill console: preset and skill integration (this plugin's lib/redteam)
     - id: dsh-purge-redteam
       name: dsh-purge-community/redteam
 
-    # 自带 agent 预设：unrestricted（无限制模式）
+    # Built-in agent preset: unrestricted
     - id: dsh-purge-presets
       name: dsh-purge-community/presets-plugin
 
-    # 演练台事实库（SQLite），数据在 $DSH_HOME/redteam
+    # Drill console fact store (SQLite), data in $DSH_HOME/redteam
     - id: dsh-purge-redteam-store
       name: dsh-purge-community/redteam/store
       config:
         root: !!js dshHomePath('redteam')
 
-    # 演练台 HTTP 桥 POST /redteam/api
+    # Drill console HTTP bridge POST /redteam/api
     - id: dsh-purge-redteam-ui
       name: dsh-purge-community/redteam/ui

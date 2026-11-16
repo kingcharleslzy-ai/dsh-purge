@@ -1,124 +1,113 @@
-# NEXT 宿主家族（`dsh-desktop-next`）
+# NEXT Host Family (`dsh-desktop-next`)
 
-本文说明第三方桌面壳 **DSH NEXT** 为什么需要独立宿主家族、身份如何判定、换包与恢复走哪条路径，
-以及它与官方 `@deepseek-ai/dsh-desktop-host` 家族的边界。
+This document explains why the third-party desktop shell **DSH NEXT** needs an independent host family, how identity is determined, which path package swap and recovery take, and where its boundary lies with the official `@deepseek-ai/dsh-desktop-host` family.
 
-## 1. 为什么单独成族
+## 1. Why a Separate Family
 
-DSH NEXT 的发行包是 `dsh-desktop-next`（当前观测版本 `2.0.19-next`），它：
+The DSH NEXT release package is `dsh-desktop-next` (currently observed version `2.0.19-next`). It:
 
-- 没有 `@deepseek-ai/dsh-desktop-host` 包；
-- 把 DSH 组件放在应用根 `node_modules/@deepseek-ai`，没有官方那种 `dsh/node_modules/` 前缀；
-- 没有官方 `resources/runtime/cli/bin/dsh` 这套 CLI shim；
-- 入口是应用根的 `lib/host.js` / `lib/main.js`，`process.argv[1]` 在打包环境下也不指向脚本。
+- has no `@deepseek-ai/dsh-desktop-host` package;
+- places DSH components in the application root `node_modules/@deepseek-ai`, without the official `dsh/node_modules/` prefix;
+- does not have the official `resources/runtime/cli/bin/dsh` CLI shim;
+- its entry is `lib/host.js` / `lib/main.js` at the application root, and `process.argv[1]` does not point to a script in the packaged environment.
 
-因此它不能被“官方补丁表 + 官方身份判定”直接覆盖：官方的 `QUALIFIED_HOST_VERSIONS`
-逐条锚点回归、`repairOfficialCliAfterUnpack` 的失败语义，都不适用于这个壳。
+Therefore it cannot be directly covered by "official patch table + official identity determination": the official `QUALIFIED_HOST_VERSIONS` per-anchor regression and the failure semantics of `repairOfficialCliAfterUnpack` do not apply to this shell.
 
-## 2. 身份判定（只看包证据）
+## 2. Identity Determination (Package Evidence Only)
 
-`lib/next-host.js`：
+`lib/next-host.js`:
 
-| 输入 | 结论 |
+| Input | Conclusion |
 |---|---|
-| `resources/app/package.json` 的 `name === "dsh-desktop-next"` 且 `main` 存在 | 认作 `kind: "next"` |
-| `resources/app.asar/package.json` 同上（Electron 下 asar-aware fs 可读） | 同上 |
-| 只有同名 exe、`resources` 为空 | 拒绝 |
-| `resources/app` 属于别的 Electron 应用 | 拒绝 |
-| 有归档但 `package.json` 不是 NEXT | 拒绝 |
+| `resources/app/package.json` has `name === "dsh-desktop-next"` and `main` exists | Identified as `kind: "next"` |
+| `resources/app.asar/package.json` same (readable by asar-aware fs under Electron) | Same |
+| Only same-name exe, `resources` empty | Rejected |
+| `resources/app` belongs to another Electron application | Rejected |
+| Archive exists but `package.json` is not NEXT | Rejected |
 
-**不看 exe 文件名。** 名字表（`dsh next`、`deepseek harness` 等）只用于提示与排序，
-不参与合法性判定——否则任意一个同名 exe 都会被当成“要洗的宿主”。
+**Executable filename is not checked.** Name lists (`dsh next`, `deepseek harness`, etc.) are used only for hints and sorting, not for legitimacy determination — otherwise any same-named exe would be treated as "a host to be cleaned."
 
-## 3. 实例解析（不再用全局 `findAiBase` 回退）
+## 3. Instance Resolution (No Global `findAiBase` Fallback)
 
-`lib/instance.js#resolveInstance()` 是唯一入口，解析顺序：
+`lib/instance.js#resolveInstance()` is the single entry point, resolved in order:
 
-1. `DSH_BASE`（显式）
-2. `PURGE_DSH_CLI`（显式；文件不存在或不在 `@deepseek-ai/dsh` 包内直接抛错）
-3. 当前进程自身的入口（`argv[1]` / `process.resourcesPath` / Electron `app.getAppPath()`）
+1. `DSH_BASE` (explicit)
+2. `PURGE_DSH_CLI` (explicit; if file does not exist or is not inside the `@deepseek-ai/dsh` package, throw directly)
+3. The current process's own entry (`argv[1]` / `process.resourcesPath` / Electron `app.getAppPath()`)
 
-**不会**扫描 `DSH_HOME`、npm prefix、shim 目录或其它安装。指错实例时返回
-`{ resolved: false, host: "", reason: ... }`，面板如实显示“未定位”，而不是拿另一份安装的状态顶上。
+It **does not** scan `DSH_HOME`, npm prefix, shim directories, or other installations. When the wrong instance is specified it returns `{ resolved: false, host: "", reason: ... }`; the panel truthfully shows "not located" instead of substituting status from another installation.
 
-`/dsh-purge/status` 与 `/dsh-purge/selfcheck` 都改用这个入口；`gatherState({ aiBase: "" })`
-在 core 层就是“显式空目标”，不会触发发现逻辑。
+Both `/dsh-purge/status` and `/dsh-purge/selfcheck` use this entry; `gatherState({ aiBase: "" })` at the core layer means "explicit empty target" and does not trigger discovery logic.
 
-### 部分解包
+### Partial Unpack
 
-`diagnosticHost()` 只在候选目录**真的可用**（含 `dsh-agent-instructions/lib`）时上报。
-`app.asar.unpacked` 里那几包不完整的副本不会被当成宿主，而是返回本安装的“预期路径”
-`resources/app/node_modules/@deepseek-ai`，由 `compatibility()` 报 `no-host`。
+`diagnosticHost()` reports only when the candidate directory is **actually usable** (contains `dsh-agent-instructions/lib`). The incomplete copies of those packages in `app.asar.unpacked` are not treated as the host; instead the expected path for this installation, `resources/app/node_modules/@deepseek-ai`, is returned and `compatibility()` reports `no-host`.
 
-## 4. 换包与恢复
+## 4. Package Swap and Recovery
 
-NEXT 与官方共用解包/提交原语，但恢复语义在族内单独验证：
+NEXT and official share unpack/commit primitives, but recovery semantics are verified separately within the family:
 
 ```
 extractAsarToSide(asar, resources/app)   → resources/app.dshpurge-next
-overlayAsarUnpacked(asar, next)          → 原生 .node 覆盖进旁路目录
-commitExtractedDir(app, next)            → app → app.dshpurge-prev；next → app
+overlayAsarUnpacked(asar, next)          → native .node files overlaid into side directory
+commitExtractedDir(app, next)            → app → app.dshpurge-prev; next → app
 ```
 
-- 上次中断留下的 `.dshpurge-next` 在下次解包前被丢弃，不会污染新目录；
-- 提交失败（跨卷 `EXDEV`、占用等）会：保留旧 `app`、保留新目录、写
-  `app.dshpurge-recover.json`（含 `error` / `prev` / `prevRestored`），可以重试；
-- 只剩 `.dshpurge-prev` 时，`newestPreservedDir()` + `restoreSealedExtract()` 能放回旧目录；
-- 换包最后一步 `renameAsarAside()` 把归档保全为 `app.asar.bak`；Windows 换包由 handoff
-  助手改名为 `app.asar.purge-<uuid>.bak` 并记录 `archive_sha256`（与备份实际哈希一致）。
+- `.dshpurge-next` left from a previous interruption is discarded before the next unpack and does not contaminate the new directory;
+- Commit failure (cross-volume `EXDEV`, in-use, etc.) will: preserve old `app`, preserve the new directory, and write `app.dshpurge-recover.json` (containing `error` / `prev` / `prevRestored`) so it can be retried;
+- When only `.dshpurge-prev` remains, `newestPreservedDir()` + `restoreSealedExtract()` can put the old directory back;
+- The final package-swap step `renameAsarAside()` preserves the archive as `app.asar.bak`; on Windows the handoff helper renames it to `app.asar.purge-<uuid>.bak` and records `archive_sha256` (consistent with the actual backup hash).
 
-## 5. CLI 修复：`notApplicable` 而不是 `ok: true`
+## 5. CLI Repair: `notApplicable`, Not `ok: true`
 
-`repairOfficialCliAfterUnpack()` 对 NEXT 返回：
+`repairOfficialCliAfterUnpack()` returns for NEXT:
 
 ```js
 { ok: false, notApplicable: true, status: "not_applicable", reason: "next_family_has_no_runtime_cli" }
 ```
 
-`ok` 保持 `false`：我们确实没有修、也没有验证。若意外发现 `runtime/cli/bin/dsh` 存在，
-返回 `status: "unsupported_family"` 并按失败处理。
+`ok` remains `false`: we did not repair it and did not verify it. If `runtime/cli/bin/dsh` is unexpectedly found, it returns `status: "unsupported_family"` and is treated as failure.
 
-放行判定收敛到 `lib/apply-gate.js#cliRepairBlocksApply()`：
+The gate decision is centralized in `lib/apply-gate.js#cliRepairBlocksApply()`:
 
-| `cliRepair` | 行为 |
+| `cliRepair` | Behavior |
 |---|---|
-| `ok: true` | 放行 |
-| `notApplicable: true` | 放行（明确不适用） |
-| `ok: false` 其它 | 拦截，保留归档 |
-| 没有结论 | 拦截 |
+| `ok: true` | Allow |
+| `notApplicable: true` | Allow (explicitly not applicable) |
+| `ok: false` other | Block, preserve archive |
+| No conclusion | Block |
 
-这样官方构建的 `not_official` 拒绝路径保持原样，NEXT 也不会靠伪造成功来换取放行。
+This keeps the `not_official` rejection path for official builds unchanged while NEXT does not gain passage by faking success.
 
-## 6. 与官方补丁表的关系
+## 6. Relationship with the Official Patch Table
 
-- NEXT **不进入** `QUALIFIED_HOST_VERSIONS`；`NEXT_FAMILY.qualified === false`。
-- 补丁仍来自同一份 `ALL_PATCHES`，但每条的锚点命中/漂移逐条上报，不做“整族已回归”的结论。
-- 实机（0.2.1-rc.2 内层）结果：61/69 写入成功；`#82/#83/#84` 因 NEXT 的 `lib/main.js`
-  与官方不同而 `drifted`，属预期。
+- NEXT **does not enter** `QUALIFIED_HOST_VERSIONS`; `NEXT_FAMILY.qualified === false`.
+- Patches still come from the same `ALL_PATCHES`, but each anchor hit/drift is reported individually, without concluding "the whole family has regressed."
+- Live result (inner 0.2.1-rc.2): 61/69 writes succeeded; `#82/#83/#84` were `drifted` because NEXT's `lib/main.js` differs from official, which is expected.
 
-## 7. 测试
+## 7. Tests
 
-`test/desktop-next-host.test.mjs`（`node --test test/desktop-next-host.test.mjs`，12 例）覆盖：
+`test/desktop-next-host.test.mjs` (`node --test test/desktop-next-host.test.mjs`, 12 cases) covers:
 
-- 身份：NEXT 包证据接受；错名 / 缺 `main` / 裸 exe / 别的 Electron 应用拒绝
-- 官方 bundled-host 身份回归（不受本族影响）
-- `resolveInstance`：显式选择器优先、指错不回落、`PURGE_DSH_CLI` 不存在抛错
-- `diagnosticHost`：部分解包时返回预期路径
-- CLI 修复结论与换包闸门矩阵
-- 换包：解包/overlay/残留清理/提交保留旧目录
-- 提交失败：`recover.json`、旧目录不动、新目录保留
-- 中断恢复：从 `.dshpurge-prev` 还原
-- 归档改名保留备份
-- 补丁写入失败：状态显式失败、原文与备份可回滚、恢复后可重试
+- Identity: NEXT package evidence accepted; wrong name / missing `main` / bare exe / other Electron applications rejected
+- Official bundled-host identity regression (unaffected by this family)
+- `resolveInstance`: explicit selector precedence, no fallback on wrong target, `PURGE_DSH_CLI` non-existent throws
+- `diagnosticHost`: returns expected path on partial unpack
+- CLI repair conclusion and package-swap gate matrix
+- Package swap: unpack/overlay/residue cleanup/commit preserves old directory
+- Commit failure: `recover.json`, old directory untouched, new directory preserved
+- Interrupted recovery: restore from `.dshpurge-prev`
+- Archive rename preserves backup
+- Patch write failure: state explicitly fails, original and backup recoverable, retry possible after restore
 
-## 8. 未覆盖
+## 8. Not Covered
 
-- NEXT 自更新后重新生成 `app.asar`：需要重跑一次换包（未做自动化回归）
-- 真实 OS 级占用（杀软/索引器）造成的 sharing violation：用跨卷 `EXDEV` 代替注入
+- NEXT self-update regenerating `app.asar`: requires running package swap again (no automated regression)
+- Real OS-level contention (antivirus/indexer) causing sharing violations: cross-volume `EXDEV` is used as injection substitute
 - macOS handoff
 
-## 9. 兼容性承诺
+## 9. Compatibility Promises
 
-1. 官方构建的身份判定、`not_official` 拒绝路径、`app.asar` 保留语义不变；
-2. 不新增“仅凭文件名认定宿主”的通道；
-3. 面板状态只反映**本进程实例**，未定位就显示未定位。
+1. Identity determination for official builds, the `not_official` rejection path, and `app.asar` preservation semantics remain unchanged;
+2. No channel is added that "identifies a host by filename alone";
+3. Panel state reflects only **this process instance**; if not located, it shows not located.

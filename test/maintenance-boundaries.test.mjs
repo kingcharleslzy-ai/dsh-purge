@@ -131,13 +131,13 @@ test('staged archive must have all packed and external files at their declared s
   fs.mkdirSync(dest);
   fs.writeFileSync(path.join(dest, 'previous'), 'preserve');
   const { next } = extractAsarToSide(asar, dest);
-  assert.throws(() => verifyStagedAsar(asar, next), /解包不完整.*native/);
+  assert.throws(() => verifyStagedAsar(asar, next), /Unpack incomplete.*native/);
   fs.mkdirSync(asar + '.unpacked');
   fs.writeFileSync(path.join(asar + '.unpacked', 'native'), 'ABC');
   overlayAsarUnpacked(asar, next);
   verifyStagedAsar(asar, next);
   fs.truncateSync(path.join(next, 'original'), 1);
-  assert.throws(() => verifyStagedAsar(asar, next), /解包不完整.*original/);
+  assert.throws(() => verifyStagedAsar(asar, next), /Unpack incomplete.*original/);
   assert.equal(fs.readFileSync(path.join(dest, 'previous'), 'utf8'), 'preserve');
 }));
 

@@ -28,7 +28,7 @@ test("both package names in both profiles can hand off, missing helper is report
   let quits = 0;
   const app = { quit() { quits++; } };
   const inputs = [{ platform: "win32", execPath: "/test/exe", env: {DSH_HOME: root} }, path.join, os.homedir, fs.existsSync, app];
-  await assert.rejects(fn.call({}, ...inputs), /找不到官方安装器/);
+  await assert.rejects(fn.call({}, ...inputs), /Could not find the official installer/);
   for (const profile of ["desktop", "web"]) {
     for (const pkg of ["dsh-purge-community", "dsh-purge"]) {
       const dir = path.join(root, "profiles", profile, "node_modules", pkg, "lib");

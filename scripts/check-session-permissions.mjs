@@ -57,7 +57,7 @@ try {
       const result = spawnSync(argv[0], argv.slice(1), { cwd: workspace, encoding: "utf8", timeout: 30000 });
       assert.ifError(result.error);
       assert.equal(result.status === 0, allowed, result.stderr + result.stdout);
-      if (!allowed) assert.match(result.stderr + result.stdout, /denied|permitted|拒绝/i);
+      if (!allowed) assert.match(result.stderr + result.stdout, /denied|permitted/i);
       assert.equal(fs.readFileSync(file, "utf8"), allowed ? "AFTER" : "BEFORE");
       console.log(mode, path.basename(dir), "filesystem + process", allowed ? "allowed" : "denied");
     }

@@ -74,8 +74,8 @@ test('sealed diagnostics keep mixed versions, missing components and broken phys
   physical.writeFileSync(path.join(resources,'app.asar'),Buffer.concat([pre,...data]));
  };
  archive('0.2.1-rc.5');let value=compatibility(base);
- assert.equal(value.level,'mixed');assert.equal(value.sealed_host,true);assert.equal(value.runtime_supported,false);assert.equal(value.patch_writes_allowed,false);assert.match(value.message,/版本不一致/);
- archive();value=compatibility(base);assert.equal(value.prompt_version,'unknown');assert.match(value.message,/system-prompt 缺失/);assert.equal(value.runtime_supported,false);
+ assert.equal(value.level,'mixed');assert.equal(value.sealed_host,true);assert.equal(value.runtime_supported,false);assert.equal(value.patch_writes_allowed,false);assert.match(value.message,/mismatched/);
+ archive();value=compatibility(base);assert.equal(value.prompt_version,'unknown');assert.match(value.message,/system-prompt missing/);assert.equal(value.runtime_supported,false);
  archive('0.2.2-rc.1');value=compatibility(base);assert.equal(value.kernel.qualified,true);assert.equal(value.qualified,false,'new shell is not fully qualified merely by its kernel version');
  physical.mkdirSync(path.join(resources,'app'));value=compatibility(base);assert.equal(value.sealed_host,false);assert.equal(value.layout_found,false,'broken app cannot borrow the healthy archive');
  physical.rmdirSync(path.join(resources,'app'));

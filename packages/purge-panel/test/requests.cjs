@@ -111,7 +111,7 @@ vm.runInNewContext(
 const ctx = {
   locale: {
     register: (_, v) => {
-      dict = v.zh;
+      dict = v.en;
       return () => {};
     },
     bind:
@@ -184,7 +184,7 @@ const body = pageSeat.body;
   const btn = (text) =>
     tree.root.findAllByType("button").find((x) => x.children.join("") === text);
   assert.equal(
-    area("提示词内容").props.disabled,
+    area("Prompt content").props.disabled,
     true,
     "Initial loading must not overwrite editable input",
   );
@@ -192,11 +192,11 @@ const body = pageSeat.body;
     resolveGet(reply(responses["/dsh-purge/override"]));
     await flush();
   });
-  assert.equal(area("提示词内容").props.disabled, false);
+  assert.equal(area("Prompt content").props.disabled, false);
   fetchHook = null;
   await act(async () => {
-    btn("提示词").props.onClick();
-    area("提示词内容").props.onChange({ target: { value: "first draft" } });
+    btn("Prompts").props.onClick();
+    area("Prompt content").props.onChange({ target: { value: "first draft" } });
   });
   let resolvePost;
   fetchHook = (path, init) =>
@@ -207,42 +207,44 @@ const body = pageSeat.body;
       : null;
   const before = writes.length;
   await act(async () => {
-    btn("保存").props.onClick();
-    btn("保存").props.onClick();
+    btn("Save").props.onClick();
+    btn("Save").props.onClick();
     await flush();
   });
   assert.equal(writes.length, before + 1, "Duplicate save must be coalesced");
-  assert.equal(btn("保存").props.disabled, true);
+  assert.equal(btn("Save").props.disabled, true);
   await act(async () =>
-    area("提示词内容").props.onChange({ target: { value: "newer draft" } }),
+    area("Prompt content").props.onChange({ target: { value: "newer draft" } }),
   );
   await act(async () => {
     resolvePost(reply({ ok: true, content: "first draft" }));
     await flush();
   });
   assert.equal(
-    area("提示词内容").props.value,
+    area("Prompt content").props.value,
     "newer draft",
     "Slow save response must preserve newer edits",
   );
-  assert(JSON.stringify(tree.toJSON()).includes("当前修改尚未保存"));
+  assert(
+    JSON.stringify(tree.toJSON()).includes("current edits are still unsaved"),
+  );
   fetchHook = (path, init) =>
     init.method === "POST"
       ? reply({ ok: true, content: "bad response" }, 500)
       : null;
   await act(async () => {
-    btn("保存").props.onClick();
+    btn("Save").props.onClick();
     await flush();
   });
   assert.equal(
-    area("提示词内容").props.value,
+    area("Prompt content").props.value,
     "newer draft",
     "HTTP error must not apply response data",
   );
   assert(JSON.stringify(tree.toJSON()).includes("500 Error"));
   await act(async () => {
-    btn("更多").props.onClick();
-    area("服务器名单").props.onChange({
+    btn("More").props.onClick();
+    area("Server list").props.onChange({
       target: { value: "first.example.test" },
     });
   });
@@ -254,14 +256,14 @@ const body = pageSeat.body;
       : null;
   const beforeOwn = writes.length;
   await act(async () => {
-    btn("保存名单").props.onClick();
-    btn("保存名单").props.onClick();
+    btn("Save list").props.onClick();
+    btn("Save list").props.onClick();
     await flush();
   });
   assert.equal(writes.length, beforeOwn + 1);
-  assert.equal(btn("保存名单").props.disabled, true);
+  assert.equal(btn("Save list").props.disabled, true);
   await act(async () =>
-    area("服务器名单").props.onChange({
+    area("Server list").props.onChange({
       target: { value: "newer.example.test" },
     }),
   );
@@ -269,8 +271,8 @@ const body = pageSeat.body;
     resolvePost(reply({ ok: true, content: "first.example.test" }));
     await flush();
   });
-  assert.equal(area("服务器名单").props.value, "newer.example.test");
-  assert.equal(btn("保存名单").props.disabled, false);
+  assert.equal(area("Server list").props.value, "newer.example.test");
+  assert.equal(btn("Save list").props.disabled, false);
   // A controlled timer fires the actual AbortController timeout; no real waiting.
   fetchHook = (path, init) =>
     init.method === "POST"
@@ -288,7 +290,7 @@ const body = pageSeat.body;
         })
       : null;
   await act(async () => {
-    btn("保存名单").props.onClick();
+    btn("Save list").props.onClick();
     await flush();
   });
   await act(async () => {
@@ -296,11 +298,11 @@ const body = pageSeat.body;
     await flush();
   });
   assert.equal(
-    btn("保存名单").props.disabled,
+    btn("Save list").props.disabled,
     false,
     "Timeout must unlock save",
   );
-  assert.equal(area("服务器名单").props.value, "newer.example.test");
+  assert.equal(area("Server list").props.value, "newer.example.test");
   assert(JSON.stringify(tree.toJSON()).includes("timeout"));
   await act(async () => tree.unmount());
   disposers.reverse().forEach((d) => d());

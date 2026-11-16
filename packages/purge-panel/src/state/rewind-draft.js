@@ -404,7 +404,7 @@ export async function openRewoundSession(sessions, sessionId) {
         } else if (typeof sessions?.open === "function") {
           sessions.open(sessionId);
         } else {
-          throw new Error("打不开回退后的会话");
+          throw new Error("Cannot open the restored session");
         }
         const selected = workspace?.selection?.getSnapshot?.()?.sessionId;
         if (!workspace || selected === sessionId) {
@@ -421,5 +421,7 @@ export async function openRewoundSession(sessions, sessionId) {
     }
     await waitMs(120);
   }
-  throw new Error((lastError && lastError.message) || "回退后的会话没有打开");
+  throw new Error(
+    (lastError && lastError.message) || "The restored session did not open",
+  );
 }

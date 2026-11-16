@@ -1,12 +1,10 @@
 {
   "name": "dsh-breeze-voice",
   "title": {
-    "en": "Breeze Voice",
-    "zh": "Breeze 语音对话"
+    "en": "Breeze Voice"
   },
   "description": {
-    "en": "Talk in your current DSH conversation with speech recognition, streamed replies, and interruption.",
-    "zh": "在当前 DSH 会话内说话，识别语音、分句播放回答，随时打断。"
+    "en": "Talk in your current DSH conversation with speech recognition, streamed replies, and interruption."
   },
   "author": "kingcharleslzy-ai",
   "homepage": "https://github.com/kingcharleslzy-ai/dsh-breeze-voice#readme",

@@ -1,22 +1,22 @@
-# #38：默认预设的诊断状态
+# #38: Diagnostic State for the Default Preset
 
-## 根因
+## Root Cause
 
-1.6.30 的统计收紧是为了避免必需文件缺失却显示成功，但漏测了自带默认预设的实际状态。#76 没有匹配目标时，核心状态仍是 skipped；旧统计忽略可选项，新统计将其判为 broken。
+The stricter statistics in 1.6.30 were intended to avoid showing success when required files were missing, but they missed the actual state of the bundled default preset. When #76 did not match its target, the core state was still `skipped`; the old statistics ignored optional items, while the new statistics judged it as `broken`.
 
-## 修复边界
+## Fix Boundary
 
-不向 #76 添加宽泛的 settleWhenAbsent，不改变 core 的检查或写入逻辑。只在 selfCheck 内细化 #76 的 skipped：读取明确 DSH_HOME 下的 .agent-presets/unrestricted/agent.cordis.yml，通过 YAML AST 检查单一 persona 的字面 prefix。不执行 !!js，不解析别名或从其他 home 补读。
+Do not add a broad `settleWhenAbsent` to #76, and do not change core check or write logic. Only refine the `skipped` state of #76 inside `selfCheck`: read `.agent-presets/unrestricted/agent.cordis.yml` under an explicit `DSH_HOME`, and check the literal prefix of a single persona via YAML AST. Do not execute `!!js`, do not resolve aliases, and do not supplement reads from other homes.
 
-- 正文不含该项目标句：not_needed，仅从自检必需分母排除，保留说明。
-- 正文仍有目标句但当前锚点不匹配：保持 skipped/broken。
-- 无法读取、结构异常、动态或继承配置：unknown，不声称已完成，不建议通过反复应用或修改权限来消除。
-- pending/applied/na 与其他补丁状态不变。不要推广为所有 optional/skipped 都算成功。
+- If the body does not contain that target sentence: `not_needed`, excluded only from the selfcheck required denominator, with explanation retained.
+- If the body still has the target sentence but the current anchor does not match: keep `skipped/broken`.
+- If unreadable, structurally abnormal, or dynamically/inherited configuration: `unknown`; do not claim completion, and do not suggest eliminating it by repeated apply or permission changes.
+- `pending/applied/na` and other patch states remain unchanged. Do not generalize this to mean all optional/skipped items count as success.
 
-因此核心 status/diagnose 与 selfcheck 的原始状态可能不同；selfcheck 多了只读静态证据，not_needed 不是一次成功应用。
+Therefore, the raw states of core `status/diagnose` and `selfcheck` may differ; `selfcheck` adds read-only static evidence, and `not_needed` is not a successful application.
 
-## 测试与维护
+## Tests and Maintenance
 
-node --test test/selfcheck.test.mjs 覆盖真实默认预设、实际 patchStatus、selfCheck 汇总及异常边界。源码与发行包均测试。安装路径和备份/回滚实现未变，本版无用户配置迁移；回滚旧版本会恢复旧误报，但不需要恢复或覆盖用户预设文件。
+`node --test test/selfcheck.test.mjs` covers the real default preset, actual `patchStatus`, `selfCheck` summary, and abnormal boundaries. Both source and release packages are tested. Installation path and backup/rollback implementation are unchanged; this release has no user-configuration migration. Rolling back to an old version will restore the old false positive, but there is no need to restore or overwrite user preset files.
 
-实机验证：macOS 207/212 通过、5 项平台跳过；Windows 209/212 通过、3 项平台跳过（实际 TLS 与 Electron 交接均运行）。两端 Electron 44.7.0 与发行包 smoke 通过。测试脚本的 ASAR 文件需在 Electron 测试子进程退出后删除，Windows 的 npm.cmd 通过固定命令启动；这些均不修改实际安装器或宿主。三平台 CI 新增打包检查作为后续发布门禁。
+Live verification: macOS 207/212 passed, 5 platform skips; Windows 209/212 passed, 3 platform skips (real TLS and Electron handoff both ran). Electron 44.7.0 and release-package smoke on both sides passed. ASAR files used by test scripts must be deleted after the Electron test child process exits, and `npm.cmd` on Windows is started via a fixed command; neither modifies the actual installer or host. Three-platform CI added package checks as a subsequent release gate.

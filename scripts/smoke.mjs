@@ -1,6 +1,6 @@
 import { removeTreeNoFollowSync } from "../lib/remove-tree.js";
-// 发行包 smoke test：不依赖 DSH 真机，验证"打出来的 tgz 至少能导入、能解析"。
-// CI 在 npm pack 之后跑它；本地 `npm run smoke` 同理。
+// Release package smoke test: does not depend on a real DSH host, verifies "the built tgz can at least be imported and parsed".
+// CI runs it after npm pack; `npm run smoke` locally does the same.
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -14,7 +14,7 @@ const ok = (label) => console.log("  ✓ " + label);
 const sourceManifest = JSON.parse(fs.readFileSync(path.join(root,"package.json"),"utf8"));
 const tgz = process.env.SMOKE_TGZ || path.join(root, `${sourceManifest.name}-${sourceManifest.version}.tgz`);
 if (!tgz || !fs.existsSync(tgz)) {
-  console.error("✗ 找不到 tgz；先跑 npm pack");
+  console.error("✗ tgz not found; run npm pack first");
   process.exit(1);
 }
 
@@ -32,7 +32,7 @@ try {
   const bootEnv={...process.env,DSH_HOME:bootstrapHome,DSH_PROFILE:"desktop",PURGE_PROFILE_DIR:profile,PURGE_DSH_CLI:"",DSH_BASE:""};
   const boot = execFileSync(process.execPath,[path.join(pkgDir,"bin/community.js"),"status"],{env:bootEnv,encoding:"utf8",timeout:30000});
   if(JSON.parse(boot).package !== pkg.name) throw Error("Dependency-free bootstrap entry failed");
-  ok("未安装依赖的解压包可以启动引导 CLI");
+  ok("Unpacked archive without installed dependencies can start the bootstrap CLI");
 
   // Install the packed artifact's declared dependencies, not source-tree node_modules.
   const installArgs = ["install", "--ignore-scripts", "--legacy-peer-deps", "--omit=dev", "--no-audit", "--no-fund"];
@@ -44,56 +44,56 @@ try {
     execFileSync("npm", installArgs, {cwd:pkgDir,stdio:"pipe",timeout:120000});
   }
 
-  // 1) 导出映射指向的文件都存在
+  // 1) All files referenced by export mappings exist
   for (const [key, target] of Object.entries(pkg.exports || {})) {
     const rel = typeof target === "string" ? target : target && target.default;
     if (!rel) continue;
-    if (!fs.existsSync(path.join(pkgDir, rel))) problems.push(`exports["${key}"] -> ${rel} 不存在`);
+    if (!fs.existsSync(path.join(pkgDir, rel))) problems.push(`exports["${key}"] -> ${rel} does not exist`);
   }
-  if (!problems.length) ok(`${Object.keys(pkg.exports || {}).length} 个导出目标都存在`);
+  if (!problems.length) ok(`${Object.keys(pkg.exports || {}).length} export targets all exist`);
 
-  // 2) 每个入口都能 import
+  // 2) Every entry point can be imported
   for (const spec of ["./lib/index.js", "./lib/presets-plugin.js", "./lib/selfcheck.js", "./lib/probe.js", "./lib/audit.js"]) {
     const mod = await import(pathToFileURL(path.join(pkgDir, spec)).href);
-    if (!mod || typeof mod !== "object") problems.push(`${spec} 导入失败`);
+    if (!mod || typeof mod !== "object") problems.push(`${spec} import failed`);
   }
-  ok("核心模块可从发行包导入");
+  ok("Core modules can be imported from the release package");
 
-  // 3) 自带预设能被 registry 的解析器读成合法定义
+  // 3) Bundled preset can be parsed into a valid definition by the registry parser
   const composition = await import(pathToFileURL(path.join(pkgDir, "lib/redteam/preset-composition.js")).href);
   const def = composition.readPresetDefinition("unrestricted", path.join(pkgDir, "presets/unrestricted"));
   if (def.id !== "unrestricted" || !Array.isArray(def.plugins) || def.plugins.length < 15)
-    problems.push(`预设解析异常：${def.id} / ${def.plugins?.length} 行`);
-  else ok(`预设解析：${def.plugins.length} 行`);
+    problems.push(`Preset parse error: ${def.id} / ${def.plugins?.length} entries`);
+  else ok(`Preset parsed: ${def.plugins.length} entries`);
 
-  // 4) bundle patch 里的条目名与包名一致
+  // 4) Bundle patch entry names match the package name
   const yml = fs.readFileSync(path.join(pkgDir, "cordis.patch.yml"), "utf8");
   for (const needle of ["dsh-purge-community", "dsh-purge-community/presets-plugin", "dsh-purge-community/redteam"])
-    if (!yml.includes(needle)) problems.push(`cordis.patch.yml 缺少 ${needle}`);
-  if (!problems.length) ok("bundle patch 条目完整");
+    if (!yml.includes(needle)) problems.push(`cordis.patch.yml missing ${needle}`);
+  if (!problems.length) ok("Bundle patch entries complete");
 
-  // 5) CLI 在空目录里也能给出 status（不崩）
+  // 5) CLI can produce status in an empty directory without crashing
   const home = path.join(tmp, "home");
   fs.mkdirSync(home, { recursive: true });
   const out = execFileSync(process.execPath, [path.join(pkgDir, "bin/community.js"), "status"], {
     env: { ...process.env, DSH_HOME: home },
     encoding: "utf8",
   });
-  if (!out.includes("Purge")) problems.push("status 输出异常");
-  else ok("CLI status 可用");
+  if (!out.includes("Purge")) problems.push("status output unexpected");
+  else ok("CLI status available");
 
-  // 6) 自检在无宿主时给出 broken 而不是抛异常
+  // 6) Self-check returns broken (not an exception) when no host is present
   const selfcheck = await import(pathToFileURL(path.join(pkgDir, "lib/selfcheck.js")).href);
   const report = await selfcheck.selfCheck("", home);
-  if (report.state !== "broken") problems.push(`无宿主时 selfcheck 应为 broken，实际 ${report.state}`);
-  else ok("selfcheck 无宿主时安全降级");
+  if (report.state !== "broken") problems.push(`selfcheck without host should be broken, got ${report.state}`);
+  else ok("selfcheck degrades safely without host");
 } finally {
   removeTreeNoFollowSync(tmp);
 }
 
 if (problems.length) {
-  console.error("✗ smoke 失败：");
+  console.error("✗ smoke failed:");
   for (const p of problems) console.error("  - " + p);
   process.exit(1);
 }
-console.log("✓ 发行包 smoke 通过");
+console.log("✓ Release package smoke passed");

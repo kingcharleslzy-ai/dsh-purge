@@ -49,7 +49,7 @@ export function writeDrillAuth(ok) {
       setDrillAuthLocal(!!(saved && saved.granted));
     })
     .catch(() => {
-      /* 页面先记住，下次同步再写入当前安装目录 */
+      /* Remember locally until the next sync writes to this installation. */
     })
     .finally(() => {
       drillGrantPosting = Math.max(0, drillGrantPosting - 1);
@@ -68,7 +68,7 @@ export function startGrantSync() {
 export function syncDrillGrant(attempt) {
   const n = attempt || 0;
   const gen = drillGrantGen;
-  /* 复位上一次调度的重试 timer,避免多次 writeDrillAuth 叠加链条 */
+  /* Reset the previous retry timer to avoid overlapping writeDrillAuth chains. */
   if (drillSyncRetryTimer) {
     try {
       clearTimeout(drillSyncRetryTimer);
@@ -178,7 +178,7 @@ export function requestDrill(kind) {
     }
     return;
   }
-  /* 未授权：直接切到演练台页签并弹出授权窗（不再停在清洗页，避免像「没触发」） */
+  /* Open the drill tab and authorization dialog so the action is visibly acknowledged. */
   setDock({ open: true, tab: "drill", authOpen: true, pending: pending });
 }
 

@@ -1,29 +1,29 @@
-# 更新状态残留与待重启判断（1.6.41）
+# Update State Residue and Pending-Restart Determination (1.6.41)
 
-## 根因
+## Root Cause
 
-旧调度器只在 `pendingVersion === runningVersion` 时清理待重启记录。自动安装 1.6.33 后直接升级到 1.6.40，会永久留下 1.6.33；同一条旧记录还会阻止后续自动安装。一次元数据检查成功也曾在 `hasUpdate=false` 时隐藏安装失败提示。
+The old scheduler cleared pending-restart records only when `pendingVersion === runningVersion`. Automatically installing 1.6.33 and then upgrading directly to 1.6.40 would permanently leave 1.6.33 behind; the same stale record could also block subsequent auto-installs. A successful metadata check once hid install-failure prompts when `hasUpdate=false`.
 
-## 现在的证据
+## Current Evidence
 
-- 运行版本：模块首次加载时固定，进程运行期间不随磁盘换包而变化。
-- 磁盘版本：从当前 profile 的逻辑 `node_modules/dsh-purge-community/package.json` 读取；不把 pnpm 旧 store 中的包当成当前安装，不借用其他 profile。
-- 两者相同：清除旧 `pendingVersion/restartRequired`；保留 `lastPendingVersion`、`pendingResolution`、安装时间及失败目标记录。即使加载的是回滚后的低版本，也能解除已过时的等待状态。
-- 两者不同：显示实际磁盘版本和运行版本，继续等待手动重启。升级和回滚均适用。仅同一待加载版本的多 profile 部分失败可走既有修复重试路径；不会因此覆盖另一次手动回滚。
-- 版本未知、包身份错误、文件缺失或不可读：明确显示状态核对错误，暂停自动安装。不得当作“已恢复”或隐藏旧记录。
-- 安装失败与检查失败分开保留；网络检查成功、没有新版或重启本身，都不能证明失败目标已修复。成功的安装重试才清除安装错误。
+- Running version: fixed when the module first loads and does not change with disk package swaps during process runtime.
+- Disk version: read from the logical `node_modules/dsh-purge-community/package.json` in the current profile; packages in old pnpm stores are not treated as the current installation, and other profiles are not borrowed.
+- Same: clear old `pendingVersion/restartRequired`; preserve `lastPendingVersion`, `pendingResolution`, installation time, and failed-target records. Even if a rolled-back lower version is loaded, the stale waiting state can be cleared.
+- Different: show the actual disk version and running version and continue waiting for manual restart. Applies to both upgrades and rollbacks. Only partial multi-profile failures for the same pending version may take the existing repair-retry path; it does not overwrite another manual rollback because of this.
+- Version unknown, package identity wrong, file missing or unreadable: explicitly show a state-verification error and pause auto-install. Must not be treated as "recovered" or hide old records.
+- Install failures and check failures are preserved separately; a successful network check, no new version, or restart itself does not prove failed targets were fixed. Only a successful install retry clears install errors.
 
-启动和自动检查迁移状态；维护页 GET 只返回相同规则算出的视图，不写设置或安装。自动检查/安装开关、检查间隔、提示词、规则、权限和其他插件不变。不自动应用补丁或重启。
+Startup and automatic checks migrate state; maintenance-page GET returns only a view computed by the same rules and does not write settings or installations. Auto-check/install switches, check interval, prompts, rules, permissions, and other plugins are unchanged. No automatic patch apply or restart.
 
-## 已被旧版卡住的用户
+## Users Stuck by an Old Version
 
-旧进程无法自行获得新调度器。先使用维护页手动安装正式版 1.6.41（或独立安装器）；不要反复切换更新开关，不要删除整个状态目录。安装后仍需用户自行退出并重新打开 DSH 一次。旧记录在新版本加载后自动核对处理。回滚时原有自动更新开关不变；如需长期停留旧版，使用已有的版本锁定选项。
+An old process cannot obtain the new scheduler by itself. First use the maintenance page to manually install official 1.6.41 (or the standalone installer); do not repeatedly toggle update switches and do not delete the entire state directory. After installation, the user still needs to quit and reopen DSH once. Old records are automatically reconciled after the new version loads. When rolling back, original auto-update switches remain unchanged; if you need to stay on an old version long-term, use the existing version-lock option.
 
-## 回归入口
+## Regression Entry Points
 
-- `test/update-status.test.mjs`：跨版本、待重启、回滚、读取失败、安装失败和并发手动换包。
-- `test/update-policy.test.mjs` / `test/update-recovery.test.mjs`：独立开关、重试、多 profile 部分失败与失败恢复。
-- 面板 maintenance 测试：运行/磁盘版本提示、未知状态、网络与安装错误同时显示；不触发安装或重启。
-- `scripts/verify-rollback-runtime.mjs`：通过真实 DSH CLI 安装包、回滚、重新升级和注入失败恢复；保留已加载模块，同时核对 pnpm 逻辑安装路径及运行版本。
+- `test/update-status.test.mjs`: cross-version, pending restart, rollback, read failure, install failure, and concurrent manual package swap.
+- `test/update-policy.test.mjs` / `test/update-recovery.test.mjs`: independent switches, retry, multi-profile partial failure, and failure recovery.
+- Panel maintenance tests: running/disk version hints, unknown state, and simultaneous network and install errors; no install or restart triggered.
+- `scripts/verify-rollback-runtime.mjs`: installs package, rolls back, re-upgrades, and injects failure recovery via the real DSH CLI; preserves loaded modules while verifying pnpm logical install path and running version.
 
-验收仅使用临时 profile。不要为了验证修改用户的 update-preferences.json、提示词、代理或启动/退出用户的 DSH。
+Acceptance uses only temporary profiles. Do not modify the user's `update-preferences.json`, prompts, proxy, or start/quit the user's DSH for verification.

@@ -1,7 +1,7 @@
 {
   "name": "dsh-purge-panel",
   "version": "1.1.2",
-  "description": "Purge 界面：独立右侧入口与原生风格设置页，官方 Purge 可单独更新。",
+  "description": "Purge UI: a standalone sidebar entry and native-style settings page, with independent updates for the original Purge plugin.",
   "type": "module",
   "main": "index.js",
   "exports": {

@@ -86,7 +86,7 @@ export function apiTimeoutMs(p, init) {
   if (path.indexOf("/dsh-purge/uninstall") !== -1) return 90000;
   if (path.indexOf("/dsh-purge/skill") !== -1)
     return method === "POST" ? 120000 : 20000;
-  // status 会在"应用"期间被后端的同步落盘阻塞，默认 20s 必然被 abort，界面只会显示"读取失败: timeout"。
+  // Synchronous writes during Apply block status; the default 20s timeout is too short.
   if (path.indexOf("/dsh-purge/status") !== -1) return 60000;
   if (path.indexOf("/dsh-purge/apply") !== -1) return 240000;
   if (path.indexOf("/dsh-purge/revert") !== -1) return 120000;
@@ -157,7 +157,9 @@ async function requestJson(p, init) {
     if (isAbortError(e)) throw new Error("timeout");
     const msg = String((e && e.message) || e || "");
     if (!e?.status && /failed to fetch|networkerror|load failed/i.test(msg)) {
-      throw new Error("连不上接口，请确认 dsh 还在跑后 Ctrl+F5");
+      throw new Error(
+        "Cannot reach the API. Check that DSH is running, then press Ctrl+F5",
+      );
     }
     throw e;
   } finally {

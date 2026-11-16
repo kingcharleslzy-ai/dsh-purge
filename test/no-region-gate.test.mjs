@@ -1,5 +1,5 @@
-// 破甲插件不做「公网目标一律拒绝」的门禁：那是上游 1.1.7x 的靶场限制。
-// 这里钉住两件事：net-scope 不再导出安装器；index 不再安装它。
+// The plugin does not use a "refuse every public target" gate: that was an upstream 1.1.7x range restriction.
+// This pins two things: net-scope no longer exports the installer, and index no longer installs it.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -15,11 +15,11 @@ test("net-scope no longer ships a request gate", () => {
 test("the plugin entry never installs a region gate", () => {
   const src = fs.readFileSync(path.join(import.meta.dirname, "../lib/index.js"), "utf8");
   assert.doesNotMatch(src, /installRegionGate/);
-  assert.doesNotMatch(src, /严令禁止/);
+  assert.doesNotMatch(src, /refuse every (?:public|internet) target/i);
 });
 
 test("allow-list helpers stay exported for the settings card", () => {
   for (const name of ["readAllowText", "writeAllowText", "normalizeAllowText", "ownServerNote"]) {
-    assert.equal(typeof netScope[name], "function", `${name} 应保留`);
+    assert.equal(typeof netScope[name], "function", `${name} must stay exported`);
   }
 });

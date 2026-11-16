@@ -13,7 +13,7 @@ test('credential creation, replacement and legacy migration keep contents and re
   try{
     if(process.platform==='win32')ps(`$p=${q(root)};$a=Get-Acl -LiteralPath $p;$a.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new([Security.Principal.SecurityIdentifier]::new('S-1-5-32-545'),'ReadAndExecute','ContainerInherit,ObjectInherit','None','Allow'));Set-Acl -LiteralPath $p -AclObject $a`);
     const file=path.join(root,'update-channel.json');
-    const first='{"githubToken":"FAKE_FIXTURE_TOKEN_0000000000","proxyUrl":"http://fixture用户:fake口令@localhost:7890"}\n';
+    const first='{"githubToken":"FAKE_FIXTURE_TOKEN_0000000000","proxyUrl":"http://fixture-user:fake-pass@localhost:7890"}\n';
     writeSecretFile(file,first);check(file);assert.equal(fs.readFileSync(file,'utf8'),first);
     writeSecretFile(file,first.replace('0000000000','1111111111'));check(file);
     fs.unlinkSync(file);fs.writeFileSync(file,first,{mode:0o644});
@@ -27,9 +27,9 @@ test('invalid destination and linked targets fail without deleting target conten
   const root=fs.mkdtempSync(path.join(os.tmpdir(),'purge-channel-failure-'));
   try {
     const target=path.join(root,'target');fs.mkdirSync(target);fs.writeFileSync(path.join(target,'sentinel'),'keep');
-    assert.throws(()=>writeSecretFile(target,'FAKE_SECRET'),/普通文件/);
+    assert.throws(()=>writeSecretFile(target,'FAKE_SECRET'),/plain file/);
     const linked=path.join(root,'linked');fs.symlinkSync(target,linked,process.platform==='win32'?'junction':'dir');
-    assert.throws(()=>writeSecretFile(path.join(linked,'secret'),'FAKE_SECRET'),/普通目录/);
+    assert.throws(()=>writeSecretFile(path.join(linked,'secret'),'FAKE_SECRET'),/plain directory/);
     assert.deepEqual(fs.readdirSync(target),['sentinel']);assert.equal(fs.readFileSync(path.join(target,'sentinel'),'utf8'),'keep');
     fs.unlinkSync(linked);
   }finally{fs.rmSync(root,{recursive:true,force:true});}
@@ -52,7 +52,7 @@ test('Windows helper failure is explicit, does not write plaintext or change old
   try {
     writeSecretFile(file,'FAKE_OLD_CREDENTIAL');
     process.env.SystemRoot=path.join(root,'missing-windows');
-    assert.throws(()=>writeSecretFile(file,'DO_NOT_PRINT_FAKE_SECRET'),e=>/密钥文件保护失败/.test(e.message)&&!e.message.includes('DO_NOT_PRINT'));
+    assert.throws(()=>writeSecretFile(file,'DO_NOT_PRINT_FAKE_SECRET'),e=>/update secret file protection failed/.test(e.message)&&!e.message.includes('DO_NOT_PRINT'));
     assert.equal(fs.readFileSync(file,'utf8'),'FAKE_OLD_CREDENTIAL');assert.deepEqual(fs.readdirSync(root),['channel.json']);
   }finally{if(systemRoot===undefined)delete process.env.SystemRoot;else process.env.SystemRoot=systemRoot;fs.rmSync(root,{recursive:true,force:true});}
 });

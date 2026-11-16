@@ -1,44 +1,44 @@
-# #53：按预设隔离提示词注入
+# #53: Per-Preset Prompt Injection Isolation
 
-1.6.40 添加 `excludePresets`。默认 `[]`，不改变旧配置行为。
+1.6.40 added `excludePresets`. Default is `[]`, so existing configuration behavior is unchanged.
 
-## 配置
+## Configuration
 
-备份当前 profile 的 `cordis.patch.yml`，在已有 `id: dsh-purge`（`name: dsh-purge-community`）条目的 `config` 中合并：
+Back up the current profile's `cordis.patch.yml`, and merge into the `config` of the existing `id: dsh-purge` (`name: dsh-purge-community`) entry:
 
 ```yaml
 excludePresets: [roleplay, minimal]
 ```
 
-不要新增重复插件条目，不要覆盖其他字段。使用预设 ID，忽略大小写与首尾空格，精确匹配（`roleplay-extra` 不匹配 `roleplay`）。设回 `[]` 即恢复旧注入行为。
+Do not add duplicate plugin entries and do not overwrite other fields. Use preset IDs, ignoring case and leading/trailing spaces, with exact matching (`roleplay-extra` does not match `roleplay`). Setting it back to `[]` restores the old injection behavior.
 
-运行时优先读取当前挂载的预设，其次最新选择事件、投影和会话头。子 Agent 使用自己的有效预设；不会通过共享“最近预设”变量继承其他会话的状态。已配置排除列表、但宿主没有提供可解析预设时，暂停注入并记录 `assemble.excluded unknown=true`；应检查宿主上下文/重载，而不是无条件注入。
+At runtime, the currently mounted preset is preferred, followed by the latest selection event, projection, and session header. Sub-agents use their own effective preset; they do not inherit other sessions' state through a shared "recent preset" variable. When an exclusion list is configured but the host does not provide a resolvable preset, injection is paused and `assemble.excluded unknown=true` is recorded; check host context/reload rather than injecting unconditionally.
 
-## 覆盖范围
+## Coverage
 
-- 主提示、head/tail/both、能力协议、boost、probe、postPrompt；
-- assembly 重写和宿主兜底；可选 refusalRetry 按请求 sessionId 查询实际 Agent；无法识别会话时不追加提示；
-- 清理带 Purge 命名空间的段落；本版本产生的改写附带内存来源记录，用于恢复自身改写/删除/添加的原生段落；
-- 不改用户文本，不猜测删除历史纯文本中的内容。来源记录不持久化、不发送给模型；从旧版遗留的、已失去来源信息的纯文本应重新装配，不能承诺从历史聊天中抹掉。
+- Main prompt, head/tail/both, capability protocol, boost, probe, postPrompt;
+- Assembly rewrites and host fallback; optional `refusalRetry` queries the actual agent by request sessionId; if the session cannot be identified, no prompt is appended;
+- Cleans sections with Purge namespace; rewrites produced by this version carry in-memory source records used to restore native sections that it rewrote/deleted/added;
+- Does not modify user text and does not guess-delete content in historical plain text. Source records are not persisted and not sent to the model; plain text left over from old versions that has lost source information should be reassembled and cannot be promised to be erased from chat history.
 
-被排除的会话保留装配服务提供的人设、工作区规则、工具和变量，不再由 Purge 执行提示词身份改写。已安装的全局宿主补丁、部署配置（例如 `includeHarnessIdentity`）、网络/权限设置和历史聊天仍保持原样。此选项不是逐会话撤销权限补丁，也不关闭插件命令、面板或工具。
+Excluded sessions retain persona, workspace rules, tools, and variables provided by the assembly service, and are no longer subject to prompt-identity rewrites by Purge. Installed global host patches, deployment configuration (for example `includeHarnessIdentity`), network/permission settings, and chat history remain unchanged. This option is not per-session revocation of permission patches, and it does not disable plugin commands, panels, or tools.
 
-## 升级与回滚
+## Upgrade and Rollback
 
-安装包只更新插件。旧宿主 #87 无参兜底调用需在用户选择的时间应用新版补丁，再手动完整退出并重开；本修复会把现有调用迁移为传入当前 Agent，重复应用不重复插入。未迁移时，非空排除列表下的无参兜底返回空，正常具备上下文的 section/assembly 仍按预设处理。
+The installation package only updates the plugin. The old host #87 no-argument fallback call needs the new patch applied at a time chosen by the user, then a manual full quit and reopen; this fix migrates existing calls to pass the current agent and does not insert duplicates on reapply. If not migrated, the no-argument fallback under a non-empty exclusion list returns empty, while normal section/assembly with context is still handled by preset.
 
-修改前备份 profile；撤销配置可恢复 `excludePresets: []`。如需回退代码，使用现有备份/回滚命令，再安排手动重载。新宿主传入的额外参数会被旧 JS 函数忽略，回滚不会改提示词原文、图库或代理。不要自动重启用户正在使用的 DSH。
+Back up the profile before modifying; to revert configuration, restore `excludePresets: []`. If code rollback is needed, use the existing backup/rollback command and then schedule a manual reload. Extra arguments passed by newer hosts are ignored by old JS functions, and rollback does not change prompt text, gallery, or proxies. Do not automatically restart a DSH instance the user is using.
 
-## 测试
+## Tests
 
-`test/preset-injection.test.mjs` 覆盖默认兼容、当前预设解析、所有注入段、残留清理、下游内容保留、100 路交错会话、子 Agent，以及旧无参调用的 LF/CRLF 迁移与幂等运行。
+`test/preset-injection.test.mjs` covers default compatibility, current-preset resolution, all injection sections, residue cleanup, downstream-content preservation, 100-path interleaved sessions, sub-agents, and LF/CRLF migration and idempotent runs for old no-argument calls.
 
-`scripts/check-preset-runtime.mjs` 对明确指定的真实宿主进行只读验收，在临时 profile 中调用其 Cordis、SystemPrompt 和迁移后的 step 请求构建代码：standard/minimal/roleplay 切换、60 路并行与子 Agent、complete 预设。请求构建止于模型调用前，不涉及实际付费模型、账号或用户聊天。该脚本也加入三平台官方 npm 宿主安装/回滚 CI。
+`scripts/check-preset-runtime.mjs` performs read-only acceptance on an explicitly specified real host, calling its Cordis, SystemPrompt, and migrated step-request-building code in a temporary profile: standard/minimal/roleplay switching, 60 parallel paths with sub-agents, complete preset. Request building stops before the model call and does not involve actual paid models, accounts, or user chats. This script is also included in the three-platform official npm host install/rollback CI.
 
 ```sh
 PURGE_TEST_HOST=/path/to/isolated/node_modules/@deepseek-ai node scripts/check-preset-runtime.mjs
 ```
 
-被排除的会话不会返回 Purge 探针，不能据此认定插件故障；检查全局注入链路时使用未排除的预设。
+Excluded sessions do not return a Purge probe; this must not be taken as a plugin failure. Use a non-excluded preset when checking the global injection chain.
 
-这验证的是确定性的注入边界和实际宿主服务，不将它描述为真实模型回答质量测试。
+This verifies deterministic injection boundaries and actual host services; it must not be described as a real model-response-quality test.

@@ -62,9 +62,9 @@ test("real host: every literal anchor appears exactly once (pristine copy)", () 
         for (const rep of p.replacements || []) {
           if (!rep.pattern || rep.pattern instanceof RegExp) continue;
           const n = text.split(rep.pattern).length - 1;
-          // 这个锚点在原始宿主里就该出现多次（成对文案），不是漂移。
+          // this anchor should appear several times in the original host (paired wording), it is not drift.
           if (p.multiHit) continue;
-          // 声明了 expect 的锚点允许重复出现，只要数量被钉死（应用时会校验）。
+          // anchors declaring an expect may repeat, as long as the count is pinned (checked at apply time).
           if (typeof rep.expect === "number") {
             if (n !== rep.expect) {
               offenders.push(`#${p.id} ${path.basename(fp)} hits=${n} expected=${rep.expect}`);

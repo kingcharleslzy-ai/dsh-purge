@@ -1,33 +1,33 @@
-# #122：更新网络与密钥文件权限
+# #122: Update Network and Secret File Permissions
 
-本次只修改更新通道和凭据文件处理，不修改宿主补丁、提示词、权限选择或自动更新开关。不自动重启 DSH，也不改系统代理、TUN、Defender 或白名单。
+This change only modifies the update channel and credential-file handling. It does not modify host patch definitions, prompt content, permission choices, or auto-update switches. It does not auto-restart DSH, and it does not change system proxy, TUN, Defender, or allowlists.
 
-## 行为
+## Behavior
 
-- Windows 静态 WinINET 配置优先通过系统 `reg.exe` 只读获取；失败、编码或格式不明确时，使用系统 Windows PowerShell 5.1 以 UTF-8 读取。成功结果缓存 30 秒，失败不缓存；不执行 PAC/WPAD。两个 Windows 助手只在自己的子进程内使用 Windows PowerShell 5.1 系统模块，避免继承 PowerShell 7 模块路径导致 Get-Acl 等命令加载失败；父进程及系统环境不变。
-- 保留原有显式更新代理、环境变量和 `NO_PROXY` 优先级。代理探测失败明确标注 HTTP 尚未发送，不静默改走直连；发行列表降级也保留原原因，不再统称 GitHub API 不可用。
-- `ECONNRESET`、`ECONNREFUSED`、`EPIPE`、`ETIMEDOUT`、`EAI_AGAIN`、`ENETUNREACH`、`EHOSTUNREACH` 最多重试两次，退避 150/300 毫秒。重定向共用重试预算；探测、传输和退避都受原请求总超时约束。收到不完整正文后重试会丢弃该正文。
-- HTTP 错误、认证失败、证书错误、代理配置错误、来源限制、文件过大和 SHA256 不匹配不会被这层重试掩盖。既有 Atom/缓存/归档备用通道策略不变；token 仍仅发送到 GitHub API。
-- Windows 的 `update-channel.json` 在首次读取时收紧旧文件 DACL，但不修改内容；新文件先在受保护的暂存目录中以受保护 DACL 创建，再写入明文和原子替换。只允许当前进程用户、SYSTEM、Administrators，不继承普通 Users 权限。凭据经子进程 stdin 传递，不进命令参数、环境变量或报错输出。
-- macOS/Linux 保持文件 `0600` 和原子替换。行为偏好与凭据分开存储；只改检查间隔不重写 token。空 token 表示保留，显式清除才删除。异常 JSON 只报格式错误，不输出原文。
-- 文件被占用、只读、保护助手执行失败等情况明确失败并保留旧凭据。只清理本轮的精确暂存文件和目录，不递归清理链接目标。
+- On Windows, static WinINET configuration is obtained read-only through the system `reg.exe` first; if that fails or the encoding/format is unclear, system Windows PowerShell 5.1 is used to read it with UTF-8. Successful results are cached for 30 seconds; failures are not cached; PAC/WPAD is not executed. The two Windows helpers use the Windows PowerShell 5.1 system modules only inside their own child processes to avoid inheriting PowerShell 7 module paths that can cause commands such as `Get-Acl` to fail to load; the parent process and system environment remain unchanged.
+- Existing priority for explicit update proxy, environment variables, and `NO_PROXY` is preserved. Proxy-detection failures are explicitly marked as "HTTP not yet sent" and do not silently fall back to direct connection; release-list fallback also preserves the original reason and no longer uniformly reports "GitHub API unavailable."
+- `ECONNRESET`, `ECONNREFUSED`, `EPIPE`, `ETIMEDOUT`, `EAI_AGAIN`, `ENETUNREACH`, and `EHOSTUNREACH` are retried at most twice with 150/300 ms backoff. Redirects share the retry budget; probing, transfer, and backoff are all constrained by the original request's total timeout. If an incomplete body is received, that body is discarded before retry.
+- HTTP errors, authentication failures, certificate errors, proxy-configuration errors, source restrictions, oversized files, and SHA256 mismatches are not masked by this retry layer. Existing Atom/cache/archive fallback-channel strategy remains unchanged; tokens are still sent only to the GitHub API.
+- On Windows, `update-channel.json` tightens the DACL of old files on first read without modifying content; new files are first created with a protected DACL in a protected staging directory, then plaintext is written and atomically replaced. Only the current process user, SYSTEM, and Administrators are allowed; ordinary Users permissions are not inherited. Credentials are passed via child-process stdin, not command arguments, environment variables, or error output.
+- On macOS/Linux, file mode `0600` and atomic replacement are preserved. Behavior preferences and credentials are stored separately; changing only the check interval does not rewrite the token. An empty token means "keep," and only explicit clearing deletes it. Invalid JSON reports only a format error and does not output the original content.
+- Cases such as files being in use, read-only, or protected-helper execution failures fail explicitly and preserve old credentials. Only the exact staging files and directories from the current round are cleaned up; link targets are not cleaned recursively.
 
-## 测试入口
+## Test Entry Points
 
 ```sh
 node --test test/update-http.test.mjs test/update-resilience.test.mjs test/update-secrets.test.mjs test/update-policy.test.mjs test/update-proxy-runtime.test.mjs
-# 另行下载的 Electron，不能指向正式 DSH
+# Separately downloaded Electron; must not point to the official DSH
 PURGE_ELECTRON_EXEC=/path/to/isolated/Electron node scripts/check-update-runtime.mjs
-# 只读真实 WinINET 与公开 GitHub 发行信息，不输出代理或密钥值
+# Read-only real WinINET and public GitHub release information; does not output proxy or secret values
 node scripts/check-update-channel-runtime.mjs
 ```
 
-Windows 对应在当前测试进程设置 `PURGE_ELECTRON_EXEC` 后运行相同 Node 脚本。TLS 测试用临时自签 CA，仅通过子进程 `NODE_EXTRA_CA_CERTS` 信任；不关闭 TLS 校验、不改系统证书。没有 OpenSSL 时提供包含 `key.pem` / `cert.pem` 的 `PURGE_TEST_TLS_DIR`，否则该项明确跳过，不能声称已验收。
+On Windows, run the same Node scripts after setting `PURGE_ELECTRON_EXEC` in the current test process. TLS tests use a temporary self-signed CA trusted only through child-process `NODE_EXTRA_CA_CERTS`; TLS verification is not disabled and system certificates are not modified. If OpenSSL is unavailable, provide `PURGE_TEST_TLS_DIR` containing `key.pem` / `cert.pem`; otherwise that item is explicitly skipped and must not be claimed as accepted.
 
-## 实测范围与边界
+## Measured Scope and Boundaries
 
-- macOS、本机 Windows 11 4090：实际公开 GitHub 请求返回 HTTP 200；4090 三次真实 `reg.exe` 探测约 9–11 ms，实际 PowerShell 备用读取与之相符。这不是所有机器的性能保证。
-- 两平台隔离 Electron 44.7.0：真实 HTTPS → CONNECT / SOCKS、连接重置、半途断流、超时、凭据重定向隔离和下载 SHA256 校验；Windows 真实继承 ACL、旧文件迁移、只读文件失败、文件占用失败及释放后恢复。假 token 与所有修改均在临时目录内。
-- 4090 另用实际 PowerShell 7.6.5 模块路径重现：旧助手 Get-Acl 加载失败，修正子进程模块路径后成功；另覆盖实际 8.3 短路径和不兼容模块的自动回归。
-- 此次未在报告者 Windows 10 19041 / 特定 Clash TUN fakeIP 环境实机复测；仍请报告者更新后确认原来的失败是否消失。不要因此宣布其代理、DNS 或所有网络故障都已解决。
-- ACL 是本机访问控制，不是加密；不能保护凭据免受同一用户进程、SYSTEM 或管理员读取。共用 profile 的服务必须使用正确的运行账户；不要为了通过测试扩大 ACL。读取权限检查按文件身份和元数据缓存，不是持续文件监控。
+- macOS and local Windows 11 4090: actual public GitHub requests returned HTTP 200; on 4090, three real `reg.exe` probes took about 9–11 ms, consistent with actual PowerShell fallback reads. This is not a performance guarantee for all machines.
+- Isolated Electron 44.7.0 on both platforms: real HTTPS → CONNECT / SOCKS, connection reset, mid-stream disconnect, timeout, credential-redirect isolation, and download SHA256 verification; on Windows, real inherited ACL, old-file migration, read-only-file failure, file-in-use failure, and recovery after release. Fake tokens and all modifications were inside temporary directories.
+- On 4090, the old helper's `Get-Acl` load failure was reproduced with the actual PowerShell 7.6.5 module path and succeeded after fixing the child-process module path; actual 8.3 short paths and incompatible-module auto-regression were also covered.
+- This run did not perform live retesting on the reporter's Windows 10 19041 / specific Clash TUN fakeIP environment; reporters should still confirm after updating whether the original failure is gone. Do not declare that their proxy, DNS, or all network issues are resolved because of this.
+- ACL is local access control, not encryption; it cannot protect credentials from reads by same-user processes, SYSTEM, or administrators. Services sharing a profile must use the correct runtime account; do not widen ACLs just to pass tests. Permission checks are based on file identity and metadata caching, not continuous file monitoring.

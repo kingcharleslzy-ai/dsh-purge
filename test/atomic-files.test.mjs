@@ -9,7 +9,7 @@ import { repairOfficialCliAfterUnpack } from "../lib/desktop.js";
 import { PNPM_ENTRY } from "../lib/runtime-layout.js";
 import { hostFs } from "../lib/extract-asar.js";
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), "purge permissions 中文 "));
+const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), "purge permissions zh "));
 const mode = file => fs.statSync(file).mode & 0o777;
 
 test("sync and async replacement preserve executable/private modes and rollback bytes", async () => {

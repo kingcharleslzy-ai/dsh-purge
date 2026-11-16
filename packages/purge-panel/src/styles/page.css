@@ -1,4 +1,4 @@
-/* 整页（左侧栏入口）样式：沿用 DSH 自己的字体、间距与主题变量，不引入自定义字体。 */
+/* Full sidebar page uses DSH fonts, spacing, and theme variables. */
 .dshpp-page {
   --dshpp-line: var(--dsw-alias-border-l1, rgba(127, 127, 127, 0.22));
   --dshpp-line-strong: var(--dsw-alias-border-l2, rgba(127, 127, 127, 0.4));
@@ -76,7 +76,7 @@
   font-size: 0.92em;
 }
 
-/* 顶部一行状态摘要：不用卡片，跟 DSH 的 subtitle 行一致 */
+/* Compact status summary matches the host subtitle row. */
 .dshpp-strip {
   display: flex;
   flex-wrap: wrap;
@@ -114,7 +114,7 @@
   background: var(--dshpp-bad);
 }
 
-/* 页签：下划线式，跟 DSH 设置页的 tab 一致 */
+/* Underlined tabs match DSH settings. */
 .dshpp-page-tabs {
   display: flex;
   gap: 2px;
@@ -165,7 +165,7 @@
   display: none;
 }
 
-/* 卡片：DSH 的 layer-1 面板 */
+/* Cards use the DSH layer-1 panel. */
 .dshpp-page .dshpp-card,
 .dshpp-page section.dshpp-panel {
   border: 1px solid var(--dshpp-line);
@@ -187,7 +187,7 @@
   gap: 12px;
 }
 
-/* 字段行：左标题右控件；窄屏自动换行 */
+/* Labels sit beside controls and wrap on narrow screens. */
 .dshpp-page .dshpp-field {
   display: grid;
   grid-template-columns: minmax(120px, 190px) 1fr;
@@ -269,8 +269,8 @@
   opacity: 0.45;
   cursor: not-allowed;
 }
-/* 主按钮：不要用 brand-primary 当底色——深色模式下它是高亮文字色，
-   直接铺成背景就成了"白底白字"的方块。这里用固定的实心绿 + 白字。 */
+/* brand-primary is a bright text color in dark mode, so a background would
+   produce white-on-white controls. Use solid green with white text. */
 .dshpp-page {
   --dshpp-solid: #2f6b4f;
   --dshpp-solid-hover: #3a8260;
@@ -363,7 +363,7 @@
   font-size: 0.85em;
 }
 
-/* 演练台占满剩余高度 */
+/* Drill console fills the remaining height. */
 .dshpp-page-drill {
   min-height: 60vh;
 }
@@ -380,7 +380,7 @@
   color: var(--dshpp-mute);
 }
 
-/* 名词解释：标题后面的小问号 */
+/* Help buttons follow labels. */
 .dshpp-help {
   position: relative;
   display: inline-flex;
@@ -444,7 +444,7 @@
   font-size: 0.86em;
 }
 
-/* 操作条：最常用的「应用」固定在内容区顶部 */
+/* Keep Apply in the sticky action bar at the top of the content. */
 .dshpp-page .dshpp-actions {
   position: sticky;
   top: 0;
@@ -466,7 +466,7 @@
   margin-left: auto;
 }
 
-/* 指标：三列紧凑 */
+/* Compact three-column metrics. */
 .dshpp-page .dshpp-metrics {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
@@ -492,7 +492,7 @@
   font-size: 0.82em;
 }
 
-/* 折叠块：补丁明细 / 维护 / 自检 */
+/* Collapsible patch details, maintenance, and self-check. */
 .dshpp-page .dshpp-fold,
 .dshpp-page .dshpp-fold-inline {
   border: 1px solid var(--dshpp-line);
@@ -533,7 +533,7 @@
   margin-left: auto;
 }
 
-/* 状态行（自检 / 强化段） */
+/* Self-check and boost status rows. */
 .dshpp-page .dshpp-line {
   display: flex;
   align-items: center;
@@ -568,7 +568,7 @@
   flex-basis: 100%;
 }
 
-/* 逐层自检：两列/多列网格，不再一条一行 */
+/* Layer self-checks use a responsive multicolumn grid. */
 .dshpp-page .dshpp-checks {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -598,7 +598,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* 状态页 hero：一眼看到"现在什么状态、下一步点哪" */
+/* Status overview makes the current state and next action visible. */
 .dshpp-page .dshpp-hero {
   border: 1px solid var(--dshpp-line);
   border-radius: var(--dsw-radius-md, 10px);
@@ -700,7 +700,7 @@
   padding-inline: 0;
 }
 
-/* ── 状态页重排（1.7.18）：健康度 / 补丁组开关 / 过滤 / 写入流程 ───────── */
+/* Status layout (1.7.18): health, group switches, filters, and write flow. */
 
 .dshpp-scan {
   border: 0;
@@ -1024,7 +1024,7 @@
   color: var(--dshpp-mute);
 }
 
-/* 窄屏：两列 → 单列，四格 → 2×2，开关加大触摸目标 */
+/* Narrow screens: one-column groups, 2x2 tiles, larger switch targets. */
 @container purge-page (max-width: 640px) {
   .dshpp-health-big {
     font-size: 22px;
@@ -1055,7 +1055,7 @@
   .dshpp-group-notes {
     padding-left: 12px;
   }
-  /* 窄屏：组头允许换行，状态胶囊独占一行，否则只会露出第一个 */
+  /* Wrap group headings so all status pills remain visible. */
   .dshpp-group-h {
     flex-wrap: wrap;
     row-gap: 4px;
@@ -1072,7 +1072,7 @@
   .dshpp-group-h .dshpp-count {
     margin-left: auto;
   }
-  /* 三列表格在 360px 会顶破容器：固定列宽 + 允许状态词换行 */
+  /* Fixed columns and wrapping prevent overflow at 360px. */
   .dshpp-page .dshpp-table {
     width: 100%;
     table-layout: fixed;
@@ -1110,7 +1110,7 @@
   }
 }
 
-/* 补丁明细改成常显区块（不再是折叠壳） */
+/* Patch details remain visible rather than collapsing. */
 .dshpp-fold.is-open {
   display: block;
 }
@@ -1129,16 +1129,15 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ── 视觉对齐样稿（1.7.18）：数字、间距、圆角、颜色统一到同一套刻度 ──────
-   DSH 自身的 brand 色是单色黑白，样稿用的是品牌蓝/绿；这里只在本页范围内
-   覆盖，避免影响面板其它区块。 */
+/* Visual alignment (1.7.18): consistent typography, spacing, radii, and colors.
+   Scope blue/green overrides to this page to preserve other host panels. */
 .dshpp-page {
   --pg-accent: #2563eb;
   --pg-ok: #15803d;
   --pg-warn: #b45309;
 }
 
-/* 标题行：页面名 + 操作组 + 扫描时间 */
+/* Heading row: page name, actions, and scan time. */
 .dshpp-status-head {
   display: flex;
   align-items: flex-end;
@@ -1165,7 +1164,7 @@
   color: var(--dshpp-mute);
 }
 
-/* 按钮：样稿的 9px 圆角 / 13px 字 / 主按钮反色 */
+/* Buttons: 9px radius, 13px text, inverted primary action. */
 .dshpp-page .dshpp-btn {
   font-size: 13px;
   padding: 7px 13px;
@@ -1182,7 +1181,7 @@
   opacity: 0.88;
 }
 
-/* 健康度：主数字与四格 */
+/* Health summary and four tiles. */
 .dshpp-health {
   padding: 18px 20px;
   border-radius: 12px;
@@ -1205,7 +1204,7 @@
   font-weight: 640;
 }
 
-/* 开关：品牌蓝而不是单色黑 */
+/* Blue switches. */
 .dshpp-sw {
   padding: 15px 17px;
   border-radius: 12px;
@@ -1225,7 +1224,7 @@
   border-color: var(--pg-accent);
 }
 
-/* 过滤条：选中态用样稿的蓝色描边 + 浅底 */
+/* Selected filters use a blue outline and light background. */
 .dshpp-fbtn {
   font-size: 12.5px;
 }
@@ -1235,7 +1234,7 @@
   background: color-mix(in srgb, var(--pg-accent) 10%, transparent);
 }
 
-/* 明细表：13px 正文、11.5px 状态胶囊 */
+/* Detail table: 13px body text and 11.5px status pills. */
 .dshpp-page .dshpp-table {
   font-size: 13px;
 }
@@ -1258,7 +1257,7 @@
   font-size: 11.5px;
 }
 
-/* 写入流程 */
+/* Write flow. */
 .dshpp-flow {
   padding: 16px 18px;
   border-radius: 12px;
@@ -1273,7 +1272,7 @@
   font-size: 12.5px;
 }
 
-/* 维护区头部的版本号 */
+/* Version badge in the maintenance heading. */
 .dshpp-maint-head {
   display: flex;
   align-items: baseline;
@@ -1299,7 +1298,7 @@
   font-size: 11px;
 }
 
-/* 明细表第二行：英文标识符（对齐样稿的两行结构） */
+/* Secondary identifier line in the detail table. */
 .dshpp-row-en {
   display: block;
   margin-top: 1px;

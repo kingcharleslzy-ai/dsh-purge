@@ -22,6 +22,6 @@ SOFTWARE.
 
 ---
 
-本软件面向已获授权的安全评估（攻防演练、红蓝对抗、企业自检、教学研究）。
-使用者必须自行确保对目标系统拥有合法书面授权；未经授权的扫描、探测、
-入侵或数据获取均属违法，作者不承担任何由此产生的责任。
+This software is intended for authorized security assessments (attack-defense exercises, red-blue engagements, enterprise self-assessment, and teaching/research).
+
+Users must ensure they have lawful written authorization for the target system. Unauthorized scanning, probing, intrusion, or data access is illegal, and the authors bear no responsibility for any consequences arising from such use.

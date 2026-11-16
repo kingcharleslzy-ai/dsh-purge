@@ -1,5 +1,5 @@
-// dsh-go 手机本机引擎（DSH App）的宿主锚点回归。
-// 只验证补丁文本匹配与产物可编译，不执行宿主、不读用户配置、不改权限。
+// Host anchor regression for the dsh-go mobile local engine (DSH App).
+// Only patch-text matching and buildability of the output are verified; no host run, no user config read, no permission change.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -26,7 +26,7 @@ const loopFixture = JSON.parse(
   ),
 );
 
-// DSH App 在 updateQueue 的 case "steer" 前插入的生命周期闸门。
+// The lifecycle gate DSH App inserts before updateQueue's case "steer".
 const GATE =
   '\t\t\t\tthis.ctx.get("sessionPersistence")?.dshGoDeletion?.assertAdmit(agent.id);\n';
 
@@ -82,7 +82,7 @@ test("#74: dsh-go recall seam is claimed and yields compilable preStep", () => {
   assert.equal(result.changed, true);
   assert.ok(patchApplied(result.text, prestep));
   assert.doesNotThrow(() => new vm.Script(`({${result.text}})`));
-  // 钩子必须落在 recall 之后、model.current() 之前，且只出现一次。
+  // the hook must sit after recall and before model.current(), and appear exactly once.
   const hook = result.text.indexOf("__dshPurgePrepareAssemble");
   assert.ok(hook > result.text.indexOf("dshGoRecall.prepare"));
   assert.ok(hook < result.text.indexOf("const selection = this.model.current();"));

@@ -22,7 +22,7 @@ const result = await build({
   external: ["react", "react-dom"],
   treeShaking: true,
   legalComments: "inline",
-  loader: { ".css": "text", ".png": "dataurl" },
+  loader: { ".css": "text", ".html": "text", ".png": "dataurl" },
   define: {
     __PANEL_VERSION__: JSON.stringify(pkg.version),
     __COMMUNITY__: JSON.stringify(community),

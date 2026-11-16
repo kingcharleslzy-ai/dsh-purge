@@ -12,15 +12,15 @@ import { ALL_PATCHES, applyPatches, patchStatus } from "../lib/core.js";
 import { NATIVE_QUEUE_GUARD, OLD_QUEUE_FALLBACK } from "../lib/steering.js";
 import { removeTreeNoFollowSync } from "../lib/remove-tree.js";
 
-// 一条真能打上的补丁（单宿主、两个目标文件都在 fixture 里），用它的 applied
-// 结果证明"前一条目标缺失"没有把后面的补丁连坐。
+// A patch that can actually be applied (single host, both target files in the fixture), used to prove
+// with its applied result that "a missing target in the previous patch" does not block subsequent patches.
 const APPLIES = ALL_PATCHES.find((p) => p.id === 90);
-assert.ok(APPLIES, "补丁 90 必须存在于 ALL_PATCHES，否则下面全部断言失去意义");
+assert.ok(APPLIES, "patch 90 must exist in ALL_PATCHES, otherwise all assertions below lose their meaning");
 const fixtureSource = JSON.parse(
   fs.readFileSync(new URL("./fixtures/steering-rc2.json", import.meta.url), "utf8"),
 );
-// fixtures 里的 controller 是"已打补丁"的样式，还原成宿主原文才是待打状态；
-// replace 未命中时会静默返回原文，那样测试会得到莫名其妙的 already，所以先断言。
+// The controller in fixtures is in the "already patched" form; restoring it to the host original gives the unpatched state.
+// When replace does not match it silently returns the original, which would produce a confusing "already" result, so assert first.
 const RESTORED_CONTROLLER = fixtureSource.controller.replace(
   NATIVE_QUEUE_GUARD,
   OLD_QUEUE_FALLBACK,
@@ -28,7 +28,7 @@ const RESTORED_CONTROLLER = fixtureSource.controller.replace(
 assert.notEqual(
   RESTORED_CONTROLLER,
   fixtureSource.controller,
-  "fixture 里应含 NATIVE_QUEUE_GUARD，否则无法还原成待打补丁的宿主原文",
+  "fixture must contain NATIVE_QUEUE_GUARD, otherwise the host original for an unpatched state cannot be restored",
 );
 
 function fixture({ withHostFiles = false }) {
@@ -55,7 +55,7 @@ async function withFixture(options, fn) {
   const f = fixture(options);
   const prevHome = process.env.DSH_HOME;
   const prevSurface = process.env.DSH_SURFACE;
-  // 指向 fixture：apply 前的 profile 快照写到临时 home，绝不碰真实 ~/.dsh。
+  // Point to the fixture: pre-apply profile snapshots are written to the temporary home, never touching the real ~/.dsh.
   process.env.DSH_HOME = f.home;
   process.env.DSH_SURFACE = "desktop";
   try {
@@ -70,9 +70,9 @@ async function withFixture(options, fn) {
 }
 
 /**
- * 取一条"目标文件在本 fixture 里全都不存在"的补丁，用 patchStatus 实证，
- * 而不是按 ALL_PATCHES 的顺序假定第一条就缺——#74/#87 这类补丁的目标恰好是
- * fixture 里建出来的 agent-loop，靠顺序撞运气会在补丁重排后误判。
+ * Pick a patch whose "target files are all absent in this fixture", verified via patchStatus,
+ * rather than assuming the first one in ALL_PATCHES order is missing — patches like #74/#87 happen to target
+ * the agent-loop created in the fixture, so relying on order would misjudge after patch reordering.
  */
 async function absentPatch(f) {
   const opts = { dshHome: f.home, surface: "desktop" };
@@ -80,7 +80,7 @@ async function absentPatch(f) {
   const found = ALL_PATCHES.find(
     (p) => p.id !== APPLIES.id && status[p.id] === "missing_file",
   );
-  assert.ok(found, "本 fixture 里应至少有一条目标文件全缺的补丁");
+  assert.ok(found, "this fixture should have at least one patch whose target files are all missing");
   return found;
 }
 
@@ -93,7 +93,7 @@ test("a patch whose target files are all absent is reported, not thrown", async 
     assert.equal(
       report[0].status,
       "missing_file",
-      "目标文件全缺时记 missing_file，整次 apply 不能抛异常",
+      "when all target files are missing record missing_file; the entire apply must not throw",
     );
     assert.ok(report[0].missing > 0);
   });
@@ -103,15 +103,15 @@ test("a missing target does not stop the patches that follow it", async () => {
   await withFixture({ withHostFiles: true }, async (f) => {
     const absent = await absentPatch(f);
     const report = await applyPatches(f.aiBase, [absent, APPLIES]);
-    assert.equal(report.length, 2, "第二条补丁必须也被处理");
+    assert.equal(report.length, 2, "the second patch must also be processed");
     assert.equal(report[0].patch_id, absent.id);
     assert.equal(report[0].status, "missing_file");
     const applied = report[1];
     assert.equal(applied.patch_id, APPLIES.id);
-    assert.equal(applied.status, "applied", "后面的补丁不能被前一条的缺失连坐");
+    assert.equal(applied.status, "applied", "subsequent patches must not be blocked by the missing target of the previous patch");
     assert.ok(
       (fs.readFileSync(f.targets.controller, "utf8")).includes(NATIVE_QUEUE_GUARD),
-      "补丁内容必须真的写进磁盘",
+      "patch content must actually be written to disk",
     );
   });
 });
@@ -122,7 +122,7 @@ test("re-applying after a missing target stays idempotent", async () => {
     await applyPatches(f.aiBase, [absent, APPLIES]);
     const once = fs.readFileSync(f.targets.controller, "utf8");
     const report = await applyPatches(f.aiBase, [absent, APPLIES]);
-    assert.equal(report[1].status, "already", "第二次应判 already，不重复写");
+    assert.equal(report[1].status, "already", "the second run should be judged as already, without writing again");
     assert.equal(fs.readFileSync(f.targets.controller, "utf8"), once);
   });
 });

@@ -238,7 +238,7 @@
   font-size: 0.78em !important;
 }
 
-/* 演练台：旧版跑在可拖拽悬浮窗里，现在嵌在右侧栏，必须自己撑开并允许滚动 */
+/* The embedded drill console needs its own expansion and scrolling. */
 .dshpp-native-drill {
   width: 100%;
   min-width: 0;
@@ -257,7 +257,7 @@
   height: auto;
   overflow: visible;
 }
-/* 右侧栏很窄：内部所有 flex 行都得能换行，输入框不能把兄弟元素挤成 1ch 宽 */
+/* Wrap flex rows in the narrow sidebar; inputs must not squeeze siblings. */
 .dshpp-native-drill .rt-dock,
 .dshpp-native-drill .rt-dock * {
   box-sizing: border-box;
@@ -272,9 +272,8 @@
   max-width: 100%;
 }
 
-/* 「更新通道」与「自动检查更新 / 每 N 小时」同行并排：高度、圆角、字号对齐 select。
-   同一组件同时挂在插件设置页(.dshpp-native)和左侧 Purge 整页(.dshpp-page)，
-   两处根 class 不同，选择器必须都覆盖。 */
+/* Match the update-channel control to adjacent update settings.
+   Cover both plugin settings (.dshpp-native) and the full page (.dshpp-page). */
 :is(.dshpp-native, .dshpp-page) .dshpp-updch-open {
   min-height: 32px;
   padding: 4px 12px;
@@ -282,7 +281,7 @@
   font-size: 0.9em;
   white-space: nowrap;
 }
-/* 旧版标题行右对齐布局保留给可能的外部调用，但主入口已移到设置行。 */
+/* Retain legacy right-aligned headings for external consumers. */
 :is(.dshpp-native, .dshpp-page) .dshpp-updch-head {
   display: flex;
   align-items: center;
@@ -293,7 +292,7 @@
 :is(.dshpp-native, .dshpp-page) .dshpp-updch-head h3 {
   margin: 0;
 }
-/* 更新通道对话框：面板里没有可靠的 react-dom portal，用固定定位 + 遮罩自己实现 */
+/* Fixed-position update dialog avoids depending on host portal support. */
 :is(.dshpp-native, .dshpp-page) .dshpp-updch-mask {
   position: fixed;
   inset: 0;

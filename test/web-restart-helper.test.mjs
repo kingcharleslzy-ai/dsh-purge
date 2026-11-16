@@ -71,7 +71,7 @@ setTimeout(() => process.exit(0), 30000);
     const pid=Number(fs.readFileSync(pidFile,'utf8'));
     const alive=isAlive(pid);
     try{process.kill(pid);}catch{}
-    assert.equal(alive,true,'replacement server must survive the 重启助手 exits');
+    assert.equal(alive,true,'replacement server must survive the restart helper exit');
   }finally{
     for(let i=0;i<20;i++){
       try{fs.rmSync(root,{recursive:true,force:true});break;}

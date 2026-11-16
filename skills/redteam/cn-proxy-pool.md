@@ -1,48 +1,48 @@
 ---
 name: cn-proxy-pool
-description: 国内免费 HTTP/SOCKS5 代理池：抓取、验活、按需轮换；只用命令级代理参数，绝不改动本机网络与代理配置
-whenToUse: 目标有 WAF/封 IP 风险，或需要高频请求（接口爆破、目录扫描、口令喷洒）时
+description: China-region free HTTP/SOCKS5 proxy pool: collect, validate, and rotate on demand; use command-level proxy parameters only and never modify local network/proxy configuration
+whenToUse: When the target has WAF/IP-blocking risk, or high-frequency requests are needed (API brute force, directory scanning, password spraying)
 role: vuln-scan
 enabled: true
 ---
 
-# 国内免费 IP 代理池
+# China-region free IP proxy pool
 
-免费代理不稳定，定位是**降低被封风险**而不是隐藏身份。关键目标优先用自有出口或 suo5 隧道。
+Free proxies are unstable; their purpose is to **reduce blocking risk**, not to hide identity. Use your own egress or suo5 tunnels for critical targets.
 
-## ⛔ 铁规则：不许动本机的网络与代理配置
+## ⛔ Iron rule: never modify local network or proxy configuration
 
-使用代理**只允许在单条命令上临时指定**，任何情况下都不要修改本机配置。以下操作一律禁止：
+Using a proxy is **only allowed as a temporary parameter on a single command**. Never modify local configuration under any circumstances. The following actions are forbidden:
 
-| 禁止 | 说明 |
+| Forbidden | Explanation |
 |---|---|
-| 设系统代理 | GNOME/KDE 网络设置、`gsettings set org.gnome.system.proxy …`、`networksetup -setwebproxy`、Windows `netsh winhttp set proxy` |
-| 写全局环境变量 | 修改 `/etc/environment`、`/etc/profile`、`/etc/profile.d/*`、`~/.bashrc`、`~/.bash_profile`、`~/.profile`、`~/.zshrc` 里的 `http_proxy` / `https_proxy` / `all_proxy` / `no_proxy` |
-| 改工具全局配置 | `~/.curlrc`、`~/.wgetrc`、`~/.npmrc`、`/etc/apt/apt.conf.d/*proxy*`、`/etc/pip.conf`、`~/.docker/config.json`、`~/.gitconfig` 的 proxy 项 |
-| 改 proxychains 全局配置 | 不修改 `/etc/proxychains4.conf`、`~/.proxychains/proxychains.conf`；确需用时用 `-f` 指向 `runs/` 下的临时配置，用完删除 |
-| 动系统网络 | iptables/nftables 规则、路由表、DNS（`/etc/resolv.conf`）、NetworkManager、起停 VPN/tun 设备 |
-| 持久化 export | 不在 shell 里 `export http_proxy=…` 让它留在会话里；要传就**内联**在该条命令前 |
+| Set system proxy | GNOME/KDE network settings, `gsettings set org.gnome.system.proxy …`, `networksetup -setwebproxy`, Windows `netsh winhttp set proxy` |
+| Write global environment variables | Modify `http_proxy` / `https_proxy` / `all_proxy` / `no_proxy` in `/etc/environment`, `/etc/profile`, `/etc/profile.d/*`, `~/.bashrc`, `~/.bash_profile`, `~/.profile`, `~/.zshrc` |
+| Change global tool configuration | `~/.curlrc`, `~/.wgetrc`, `~/.npmrc`, `/etc/apt/apt.conf.d/*proxy*`, `/etc/pip.conf`, `~/.docker/config.json`, proxy items in `~/.gitconfig` |
+| Change global proxychains config | Do not modify `/etc/proxychains4.conf` or `~/.proxychains/proxychains.conf`; if needed, use `-f` to point to a temporary config under `runs/` and delete it after use |
+| Modify system networking | iptables/nftables rules, routing tables, DNS (`/etc/resolv.conf`), NetworkManager, start/stop VPN/tun devices |
+| Persistent export | Do not `export http_proxy=…` in the shell and leave it in session; if needed, inline it before that specific command |
 
-**正确姿势**（全部是命令级、一次性的）：
+**Correct approach** (all command-scoped and one-time):
 
 ```bash
 P=$(shuf -n1 runs/live-proxies.txt)
 
-# 方式一：工具自带的代理参数（首选）
+# Method 1: tool-native proxy parameter (preferred)
 curl -s --proxy "http://$P" --max-time 15 -I "https://target.example.com/"
 nuclei -u https://target.example.com/ -proxy "http://$P" -rate-limit 20
 sqlmap -u "https://target.example.com/item?id=1" --proxy="http://$P" --batch --random-agent
 ffuf -u https://target.example.com/api/FUZZ -w wordlist.txt -x "http://$P" -rate 20
 
-# 方式二：只对这条命令内联环境变量（不 export，进程结束即失效）
+# Method 2: inline environment variables for this command only (no export; expires when process ends)
 http_proxy="http://$P" https_proxy="http://$P" curl -s --max-time 15 "https://target.example.com/"
 
-# 方式三：只支持原始 TCP 的工具 → 用 suo5 SOCKS5 隧道（技能 suo5-tunnel），
-#        不要为它去改系统代理；proxychains 用临时配置文件：
+# Method 3: for tools that only support raw TCP → use a suo5 SOCKS5 tunnel (skill suo5-tunnel),
+#           do not change system proxy for it; use a temporary proxychains config:
 proxychains4 -f runs/proxychains.tmp.conf -q nmap -sT -Pn -p 80,443 10.0.0.5
 ```
 
-## 一、抓取（多源合并）
+## 1. Collection (merge multiple sources)
 ```bash
 mkdir -p runs && cd runs
 curl -s --max-time 20 "https://www.89ip.cn/tqdl.html?api=1&num=50&port=&address=%E4%B8%AD%E5%9B%BD&isp=" \
@@ -55,11 +55,11 @@ curl -s --max-time 20 "https://raw.githubusercontent.com/proxifly/free-proxy-lis
 sort -u raw-proxies.txt -o raw-proxies.txt && wc -l raw-proxies.txt
 ```
 
-## 二、验证（并发测活，留下能用的）
+## 2. Validation (concurrent liveness checks, keep usable ones)
 ```bash
 cat > runs/check_proxy.py <<'PY'
 import concurrent.futures, sys, urllib.request
-TARGET = "http://www.baidu.com"   # 仅测连通性，不携带任何敏感数据
+TARGET = "http://www.baidu.com"   # connectivity check only; do not carry sensitive data
 def ok(proxy):
     try:
         op = urllib.request.build_opener(urllib.request.ProxyHandler({"http": "http://" + proxy, "https": "http://" + proxy}))
@@ -77,14 +77,14 @@ python3 runs/check_proxy.py runs/raw-proxies.txt > runs/live-proxies.txt
 wc -l runs/live-proxies.txt
 ```
 
-## 三、轮换与限速
-- 每个请求随机取一个代理；失败自动剔除并换下一个。
-- 目标侧仍要限速（`-rate-limit` / `--delay`），代理只是换出口 IP，不是加速器。
-- 记录每个出口 IP 的成败，同一目标连续 3 次被封就按漏洞检测提示词里的规则**放弃该目标**。
+## 3. Rotation and rate limiting
+- Pick a random proxy for each request; remove failed ones automatically and switch to the next.
+- Still rate-limit on the target side (`-rate-limit` / `--delay`); proxies only change the egress IP, they are not accelerators.
+- Track success/failure per egress IP; if the same target blocks it 3 times in a row, **abandon that target** according to the vulnerability-testing prompt rules.
 
-## 四、注意事项
-- **不要通过免费代理传输凭据、Cookie、上传的 shell**——免费代理可能记录流量。
-- 测活只测连通性，不要用真实业务请求去测。
-- 高频爆破前确认目标没有账号锁定策略；触发锁定前主动停手。
-- 用完清掉 `runs/` 下的临时配置（如 `proxychains.tmp.conf`），不要在系统里留下任何代理痕迹。
-- 仅在授权演练范围内使用。
+## 4. Notes
+- **Do not transmit credentials, cookies, or uploaded shells through free proxies**—free proxies may log traffic.
+- Liveness checks should test connectivity only; do not use real business requests.
+- Before high-frequency brute force, confirm the target has no account lockout policy; stop before triggering lockout.
+- After use, clean temporary configs under `runs/` (such as `proxychains.tmp.conf`) and leave no proxy traces on the system.
+- Use only within authorized exercise scope.

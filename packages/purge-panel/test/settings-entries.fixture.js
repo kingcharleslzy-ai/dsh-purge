@@ -31,7 +31,9 @@ async function until(check, label) {
 window.testEntries = async () => {
   const root = createRoot(document.querySelector("main"));
   const select = (id) =>
-    document.querySelector("#" + id + ' select[aria-label="更新检查间隔"]');
+    document.querySelector(
+      "#" + id + ' select[aria-label="Update check interval"]',
+    );
   const entry = (id, key) =>
     React.createElement(
       "div",

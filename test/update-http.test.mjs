@@ -30,27 +30,27 @@ test('proxy precedence, bypass and read-only Windows static proxy parsing',async
 });
 
 test('rate limits, auth failures and missing resources are distinct',async()=>{
-  assert.match(httpFailure(403,{'x-ratelimit-remaining':'0','x-ratelimit-reset':'1790000000'}),/额度耗尽.*重置时间/);
-  assert.match(httpFailure(401),/认证失败/);
-  assert.match(httpFailure(404),/不存在或无访问权限/);
-  await assert.rejects(requestUpdate('https://api.github.com/x',{fetch:async()=>new Response('SECRET RESPONSE',{status:403,headers:{'x-ratelimit-remaining':'0'}})}),e=>e.message.includes('额度耗尽')&&!e.message.includes('SECRET'));
+  assert.match(httpFailure(403,{'x-ratelimit-remaining':'0','x-ratelimit-reset':'1790000000'}),/quota exhausted.*resets at/);
+  assert.match(httpFailure(401),/authentication failed/);
+  assert.match(httpFailure(404),/missing or not accessible/);
+  await assert.rejects(requestUpdate('https://api.github.com/x',{fetch:async()=>new Response('SECRET RESPONSE',{status:403,headers:{'x-ratelimit-remaining':'0'}})}),e=>e.message.includes('quota exhausted')&&!e.message.includes('SECRET'));
 });
 
 test('same transport enforces redirect allowlist, size cap, and total timeout',async()=>{
-  await assert.rejects(requestUpdate('https://github.com/x',{fetch:async()=>new Response(null,{status:302,headers:{location:'https://evil.example/x'}})}),/来源无效/);
-  await assert.rejects(requestUpdate('https://github.com/x',{maxBytes:2,fetch:async()=>new Response('large')}),/过大/);
-  await assert.rejects(requestUpdate('https://github.com/x',{timeout:20,fetch:async(_url,{signal})=>new Promise((_ok,no)=>{const timer=setTimeout(()=>no(Error('should abort first')),100);signal.addEventListener('abort',()=>{clearTimeout(timer);no(Error('aborted'));});})}),/超时/);
+  await assert.rejects(requestUpdate('https://github.com/x',{fetch:async()=>new Response(null,{status:302,headers:{location:'https://evil.example/x'}})}),/invalid update download source/);
+  await assert.rejects(requestUpdate('https://github.com/x',{maxBytes:2,fetch:async()=>new Response('large')}),/too large/);
+  await assert.rejects(requestUpdate('https://github.com/x',{timeout:20,fetch:async(_url,{signal})=>new Promise((_ok,no)=>{const timer=setTimeout(()=>no(Error('should abort first')),100);signal.addEventListener('abort',()=>{clearTimeout(timer);no(Error('aborted'));});})}),/timed out/);
 });
 
 test('API and Atom failures remain visible, including when a cached list is used',async()=>{
   const {listForkReleases}=await import('../lib/update.js');
-  const unavailable={releases:async()=>{throw Error('GitHub API 额度耗尽');},atom:async()=>({tags:[],error:'更新代理连接超时'})};
+  const unavailable={releases:async()=>{throw Error('GitHub API quota exhausted');},atom:async()=>({tags:[],error:'update proxy connection timed out'})};
   const failed=await listForkReleases({fresh:true,services:unavailable});
-  assert.match(failed.error,/额度耗尽/);assert.match(failed.degraded,/代理连接超时/);
+  assert.match(failed.error,/quota exhausted/);assert.match(failed.degraded,/proxy connection timed out/);
   const fallback=await listForkReleases({fresh:true,services:{...unavailable,atom:async()=>({tags:['v1.6.28'],error:''}),verify:async item=>item}});
   assert.match(fallback.degraded,/releases.atom/);
   const cached=await listForkReleases();assert(cached.cached);assert.match(cached.degraded,/releases.atom/);
-  const stale=await listForkReleases({fresh:true,services:unavailable});assert(stale.stale);assert.match(stale.degraded,/代理连接超时/);
+  const stale=await listForkReleases({fresh:true,services:unavailable});assert(stale.stale);assert.match(stale.degraded,/proxy connection timed out/);
 });
 
 test('concurrent update contexts keep independent credentials across awaits and redirects',async()=>{
@@ -72,13 +72,13 @@ test('SOCKS handshake rejects unoffered authentication, invalid versions, abort 
  for(const response of [[5,4],[4,0],[5,2]]) {
   const sockets=[];const server=net.createServer(socket=>{sockets.push(socket);socket.once('data',()=>socket.end(Buffer.from(response)));});
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
-  try {await assert.rejects(socksTunnel(new URL(`socks5://127.0.0.1:${server.address().port}`),'api.github.com',443,new AbortController().signal),/认证方式/);}
+  try {await assert.rejects(socksTunnel(new URL(`socks5://127.0.0.1:${server.address().port}`),'api.github.com',443,new AbortController().signal),/auth method/);}
   finally {sockets.forEach(s=>s.destroy());await new Promise(resolve=>server.close(resolve));}
  }
  const aborted=new AbortController();aborted.abort();
- await assert.rejects(socksTunnel(new URL('socks5://127.0.0.1:1'),'api.github.com',443,aborted.signal),/超时/);
- await assert.rejects(socksTunnel(new URL('socks5://'+ 'a'.repeat(256)+':p@127.0.0.1:1'),'api.github.com',443,new AbortController().signal),/长度/);
- await assert.rejects(socksTunnel(new URL('socks5://%zz:p@127.0.0.1:1'),'api.github.com',443,new AbortController().signal),/编码/);
+ await assert.rejects(socksTunnel(new URL('socks5://127.0.0.1:1'),'api.github.com',443,aborted.signal),/timed out/);
+ await assert.rejects(socksTunnel(new URL('socks5://'+ 'a'.repeat(256)+':p@127.0.0.1:1'),'api.github.com',443,new AbortController().signal),/length/);
+ await assert.rejects(socksTunnel(new URL('socks5://%zz:p@127.0.0.1:1'),'api.github.com',443,new AbortController().signal),/encoding/);
 });
 
 test("oversized and slow release lists retain both source errors and cannot confirm a version", async t => {
@@ -88,23 +88,23 @@ test("oversized and slow release lists retain both source errors and cannot conf
   const url = 'https://api.github.com/repos/example/test/releases?per_page=20';
   const primary = () => download(url, 2 * 1024 * 1024, async () =>
     new Response(Buffer.alloc(2 * 1024 * 1024 + 1))).then(() => []);
-  const atom = async () => ({ tags: [], error: '备用源超时' });
+  const atom = async () => ({ tags: [], error: 'fallback source timed out' });
   const large = await listForkReleases({fresh:true, services:{releases:primary, atom}});
-  assert.match([large.error, large.degraded].join(' '), /上限 2097152 B，响应至少 2097153 B/);
-  assert.match(large.degraded, /备用源超时/);
+  assert.match([large.error, large.degraded].join(' '), /limit 2097152 B, response at least 2097153 B/);
+  assert.match(large.degraded, /fallback source timed out/);
   t.mock.timers.enable({apis:['setTimeout']});
   const pending = listForkReleases({fresh:true, services:{releases:()=>new Promise(()=>{}), atom}});
   t.mock.timers.tick(LIST_BUDGET_MS);
   const slow = await pending;
-  assert.match([slow.error, slow.degraded].join(' '), /读取发行列表超时/);
-  assert.match(slow.degraded, /备用源超时/);
+  assert.match([slow.error, slow.degraded].join(' '), /timed out reading the release list/);
+  assert.match(slow.degraded, /fallback source timed out/);
   for (const listing of [large, slow]) {
     const result = await checkUpdate({listVersions:async()=>({
       versions:[], releases:[], error:listing.error, degraded:listing.degraded, stale:listing.stale,
     }), installSites:()=>[], readPublishedVersion:async()=>"1.7.11"});
     assert.equal(result.ok, false);
     assert.equal(result.hasUpdate, null);
-    assert.match(result.error, /备用源超时/);
+    assert.match(result.error, /fallback source timed out/);
     assert.equal(result.publishedVersion, "1.7.11");
     assert.deepEqual(result.releases, []);
   }
@@ -116,7 +116,7 @@ test('oversized Content-Length is reported before reading the release body', asy
   await assert.rejects(requestUpdate('https://api.github.com/x', {
     maxBytes: 2097152,
     fetch: async () => new Response('short fixture', { headers }),
-  }), /上限 2097152 B，响应至少 3000000 B/);
+  }), /limit 2097152 B, response at least 3000000 B/);
 });
 
 test('metadata-only version check requires the official published tag and never follows redirects', async () => {
@@ -129,7 +129,7 @@ test('metadata-only version check requires the official published tag and never 
   };
   assert.equal(await readPublishedVersion(fetch({})), '1.7.11');
   for (const override of [{draft:true},{prerelease:true},{html_url:'https://example.com/release'},{tag_name:'main'}])
-    await assert.rejects(readPublishedVersion(fetch(override)), /元数据不匹配/);
+    await assert.rejects(readPublishedVersion(fetch(override)), /metadata mismatch/);
   let calls=0;
   await assert.rejects(readPublishedVersion(async()=>{ calls++; return Response.redirect('https://example.com'); }));
   assert.equal(calls,1);

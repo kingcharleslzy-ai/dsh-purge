@@ -1,14 +1,14 @@
 import { removeTreeNoFollowSync } from "../lib/remove-tree.js";
 #!/usr/bin/env node
 /**
- * 把一个靶标的得分报告导出成可移动的交付包：`<outDir>/<靶标>-红队成果复现报告.md` + `<outDir>/shots/`。
+ * Export a target's scoring report as a portable deliverable: `<outDir>/<target>-red-team-repro-report.md` + `<outDir>/shots/`.
  *
- * 面板下载的 markdown 里，证据截图走绝对路径，发给别人会碎图。
- * 这里把 shots/ 一并拷到输出目录，markdown 用相对路径。
+ * In panel-downloaded markdown, evidence screenshots use absolute paths and break when shared.
+ * This copies shots/ into the output directory and uses relative paths in markdown.
  *
- * 跑法：
+ * Usage:
  *   node scripts/export-engagement-report.mjs
- *   node scripts/export-engagement-report.mjs --out ~/交付/靶标名
+ *   node scripts/export-engagement-report.mjs --out ~/delivery/target-name
  *   node scripts/export-engagement-report.mjs --engagement <id>
  */
 import { mkdirSync, writeFileSync, cpSync, rmSync, existsSync, readdirSync } from "node:fs";
@@ -26,7 +26,7 @@ const root = process.env.REDTEAM_HOME || join(process.env.DSH_HOME || join(homed
 const store = new RedteamStore(root);
 const id = argOf("engagement", store.activeEngagementId());
 if (!id) {
-  console.error("没有可用靶标：先用面板创建，或用 --engagement <id> 指定");
+  console.error("No available target: create one in the panel first, or specify with --engagement <id>");
   process.exit(1);
 }
 const outDir = resolve(argOf("out", process.cwd()));
@@ -41,11 +41,11 @@ if (existsSync(shotsSrc)) {
 
 const rep = store.scoreReport(id, { shotRef: "relative" });
 const name = String(rep.target || id).replace(/[/\\:*?"<>|]/g, "_");
-const outFile = join(outDir, name + "-红队成果复现报告.md");
+const outFile = join(outDir, name + "-red-team-repro-report.md");
 writeFileSync(outFile, rep.markdown, "utf8");
 store.close();
 
 const imgs = (rep.markdown.match(/!\[[^\]]*\]\([^)]+\)/g) || []).length;
-console.log("✓ 报告：" + outFile);
-console.log("  合计 " + rep.summary.points + " 分 · " + rep.items.length + " 条正文 · 嵌入截图 " + imgs + " 张"
-  + (existsSync(shotsDst) ? "（shots/ " + readdirSync(shotsDst).length + " 个文件，随报告一起拷走即可）" : ""));
+console.log("✓ Report: " + outFile);
+console.log("  Total " + rep.summary.points + " pts · " + rep.items.length + " body entries · " + imgs + " embedded screenshots"
+  + (existsSync(shotsDst) ? " (shots/ " + readdirSync(shotsDst).length + " files, copy together with the report)" : ""));

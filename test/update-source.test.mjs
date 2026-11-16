@@ -1,4 +1,4 @@
-// 上游仓库已被删除并换成无关项目：发布源必须指向本仓库，否则 beta/zip 通道 404。
+// The upstream repository was deleted and replaced with an unrelated project: the release source must point at this repo, or the beta/zip channels 404.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { SOURCE_REPO, UPSTREAM_REPO, archiveZipUrl, archiveTarballUrl } from "../lib/update-net.js";

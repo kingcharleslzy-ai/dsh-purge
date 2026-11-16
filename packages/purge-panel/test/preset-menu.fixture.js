@@ -4,20 +4,20 @@ export async function checkPresetMenu(doc) {
   const parent = doc.createElement("div");
   doc.body.append(parent);
   parent.innerHTML =
-    '<button aria-haspopup="menu" aria-expanded="false" class="scope_seat"><span class="scope_seatLabel">普通笔记</span></button>';
+    '<button aria-haspopup="menu" aria-expanded="false" class="scope_seat"><span class="scope_seatLabel">General Note</span></button>';
   const trigger = parent.firstChild;
-  const name = "笔记 · 子任务";
+  const name = "Note · Subtask";
   const rows = [
-    { id: "unrestricted-child-aaaaaaaaaa", name, description: "笔记" },
+    { id: "unrestricted-child-aaaaaaaaaa", name, description: "Note" },
     ...["bbbbbbbbbb", "cccccccccc", "dddddddddd"].map((hash) => ({
       id: "unrestricted-child-" + hash,
-      name: name + "（历史兼容 · " + hash + "）",
-      description: "笔记",
+      name: name + " (Legacy compatibility · " + hash + ")",
+      description: "Note",
     })),
     {
       id: "user-mode",
-      name: name + "（历史兼容 · eeeeeeeeee）",
-      description: "笔记",
+      name: name + " (Legacy compatibility · eeeeeeeeee)",
+      description: "Note",
     },
   ];
   rows[2].isDefault = true;

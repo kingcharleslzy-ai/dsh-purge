@@ -1,4 +1,4 @@
-// Session composer "回退" (rewind) button ported from YuJunZhiXue/dsh-purge
+// Session composer Undo button ported from YuJunZhiXue/dsh-purge
 // 1.1.71 (MIT). Original block: client.js 1.1.71 lines 2835-3474:
 // REWIND_CSS, RewindSafe/RewindFallback/RewindButton, installRewindUi,
 // installRewindWatch.
@@ -150,14 +150,14 @@ function rewindMenuNode(t, style, menuRef, runRewind) {
           runRewind("once");
         },
       },
-      h("b", null, rewindText(t, "rewind.once", "回退一次")),
+      h("b", null, rewindText(t, "rewind.once", "Undo once")),
       h(
         "span",
         null,
         rewindText(
           t,
           "rewind.once.hint",
-          "把这一轮发出去的那句放回输入框，并清掉这一轮",
+          "Restore this turn's message to the input and remove the turn",
         ),
       ),
     ),
@@ -176,14 +176,14 @@ function rewindMenuNode(t, style, menuRef, runRewind) {
           runRewind("round");
         },
       },
-      h("b", null, rewindText(t, "rewind.round", "回退上一轮")),
+      h("b", null, rewindText(t, "rewind.round", "Undo last round")),
       h(
         "span",
         null,
         rewindText(
           t,
           "rewind.round.hint",
-          "把这一轮发出去的那句放回输入框；子代理也只撤这一轮",
+          "Restore this turn's message to the input; undo only this turn for subagents too",
         ),
       ),
     ),
@@ -221,7 +221,10 @@ export class RewindFallback extends Component {
     })
       .then(async (data) => {
         if (!data || !data.ok || !data.sessionId || data.cleared === false) {
-          throw new Error((data && data.error) || "没有清掉之前发送的内容");
+          throw new Error(
+            (data && data.error) ||
+              "The previously sent content was not removed",
+          );
         }
         noteRewindAt(data.at);
         const text = isPluginDraft(data.text) ? "" : data.text || "";
@@ -233,7 +236,7 @@ export class RewindFallback extends Component {
       .catch((e) => {
         this.setState({
           busy: false,
-          notice: "回退失败: " + String((e && e.message) || e),
+          notice: "Undo failed: " + String((e && e.message) || e),
         });
       });
   }
@@ -244,10 +247,10 @@ export class RewindFallback extends Component {
     const sessionId = this.props.sessionId || currentSessionId(hostSessions());
     const t = this.props.t || null;
     const label = this.state.busy
-      ? "回退中…"
+      ? "Undoing…"
       : this.state.notice
         ? this.state.notice.slice(0, 18)
-        : "回退";
+        : "Undo";
     return h(
       "div",
       {
@@ -378,7 +381,9 @@ export function RewindButton(props) {
         body: JSON.stringify({ sessionId, mode }),
       });
       if (!data || !data.ok || !data.sessionId || data.cleared === false) {
-        throw new Error((data && data.error) || "没有清掉之前发送的内容");
+        throw new Error(
+          (data && data.error) || "The previously sent content was not removed",
+        );
       }
       noteRewindAt(data.at);
       const text = isPluginDraft(data.text) ? "" : data.text || "";
@@ -386,10 +391,11 @@ export function RewindButton(props) {
       await openRewoundSession(sessions, data.sessionId);
       scheduleComposerFill(data.sessionId, text);
     } catch (e) {
-      const message = rewindText(t, "rewind.fail", "回退失败: {error}").replace(
-        "{error}",
-        String((e && e.message) || e),
-      );
+      const message = rewindText(
+        t,
+        "rewind.fail",
+        "Undo failed: {error}",
+      ).replace("{error}", String((e && e.message) || e));
       setNotice(message);
     } finally {
       setBusy(false);
@@ -414,9 +420,9 @@ export function RewindButton(props) {
       : notice
     : "";
   const label = busy
-    ? rewindText(t, "rewind.busy", "回退中…")
-    : failLabel || rewindText(t, "rewind.label", "回退");
-  const title = notice || rewindText(t, "rewind.aria", "回退");
+    ? rewindText(t, "rewind.busy", "Undoing…")
+    : failLabel || rewindText(t, "rewind.label", "Undo");
+  const title = notice || rewindText(t, "rewind.aria", "Undo");
   return h(
     "div",
     { className: "dshp-rewind-wrap", ref: wrapRef },
@@ -427,7 +433,7 @@ export function RewindButton(props) {
         type: "button",
         className: "dshp-rewind",
         title,
-        "aria-label": rewindText(t, "rewind.aria", "回退"),
+        "aria-label": rewindText(t, "rewind.aria", "Undo"),
         "aria-expanded": menu ? "true" : "false",
         disabled: busy || !sessionId,
         onMouseDown: (e) => e.preventDefault(),

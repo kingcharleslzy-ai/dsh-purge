@@ -1,8 +1,8 @@
-// 回归：显式 DSH_BASE 指向归档时，必须落到同一实例的物理 app 目标。
-// 对应 PR #102 owner 2026-11-01 的 review 意见
-// （Mac installer 的 check-electron-diagnostic-target.mjs 失败）。
+// Regression: when explicit DSH_BASE points to an archive, it must resolve to the same instance's physical app target.
+// Corresponds to PR #102 owner 2026-11-01 review feedback
+// (Mac installer check-electron-diagnostic-target.mjs failure).
 //
-// 运行：node --test test/resolve-instance-target.test.mjs
+// Run: node --test test/resolve-instance-target.test.mjs
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -17,7 +17,7 @@ const norm = (p) => String(p).split(path.sep).join("/");
 const ai = (root) => path.join(root, "node_modules", "@deepseek-ai");
 const TMP = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "purge-resolve-")));
 
-/** 最小合法 ASAR：header 里放 package.json + main，满足 desktopIdentity 的包证据校验 */
+/** Minimal valid ASAR: put package.json + main in header to satisfy desktopIdentity's package evidence check */
 function buildAsar(target, entries) {
   const files = {};
   const blobs = [];
@@ -50,7 +50,7 @@ function buildAsar(target, entries) {
   );
 }
 
-/** 造一个「合法归档 + 可选已解包 app」的 NEXT 桌面布局 */
+/** Create a NEXT desktop layout with "valid archive + optional unpacked app" */
 function makeInstall(root, { withApp = true, complete = true } = {}) {
   const resources = path.join(root, "resources");
   const asar = path.join(resources, "app.asar");
@@ -73,19 +73,19 @@ function makeInstall(root, { withApp = true, complete = true } = {}) {
   return { resources, asar, app, base };
 }
 
-test("DSH_BASE 指向归档 + 磁盘已有 app：解析到物理 app，不留在 asar 内", () => {
+test("DSH_BASE points to archive + app exists on disk: resolves to physical app, does not stay inside asar", () => {
   const fx = makeInstall(path.join(TMP, "mapped"));
   const asarBase = path.join(fx.asar, "node_modules", "@deepseek-ai");
 
   const resolved = inst.resolveInstance({ env: { DSH_BASE: asarBase }, reader: fs, argv: [] });
-  assert.equal(resolved.resolved, true, "物理 app 完整时必须解析成功");
+  assert.equal(resolved.resolved, true, "must resolve successfully when physical app is complete");
   assert.equal(resolved.source, "DSH_BASE");
-  assert.equal(norm(resolved.host), norm(fx.base), "host 必须落在物理 app");
-  assert.ok(!norm(resolved.host).includes("app.asar/"), "host 不得留在归档内");
-  assert.notEqual(norm(resolved.host), norm(asarBase), "旧写法（直接 describe）就是这个值");
+  assert.equal(norm(resolved.host), norm(fx.base), "host must resolve to the physical app");
+  assert.ok(!norm(resolved.host).includes("app.asar/"), "host must not remain inside the archive");
+  assert.notEqual(norm(resolved.host), norm(asarBase), "old behavior (direct describe) would produce this value");
 });
 
-test("与 diagnosticHost 的目标一致：status / diagnose 与 selfcheck 同源", () => {
+test("consistent with diagnosticHost target: status / diagnose and selfcheck share the same source", () => {
   const fx = makeInstall(path.join(TMP, "agree"));
   const asarBase = path.join(fx.asar, "node_modules", "@deepseek-ai");
 
@@ -100,23 +100,23 @@ test("与 diagnosticHost 的目标一致：status / diagnose 与 selfcheck 同�
     argv: [],
   });
 
-  assert.equal(norm(viaInstance.host), norm(viaDiagnostic), "resolveInstance 与 diagnosticHost 必须同目标");
-  assert.equal(norm(viaDiagnostic), norm(viaProcess), "归档映射与进程入口解析必须同目标");
+  assert.equal(norm(viaInstance.host), norm(viaDiagnostic), "resolveInstance and diagnosticHost must target the same path");
+  assert.equal(norm(viaDiagnostic), norm(viaProcess), "archive mapping and process-entry resolution must target the same path");
   assert.equal(norm(viaInstance.host), norm(fx.base));
 });
 
-test("物理 app 缺失：给出本安装的预期路径且 resolved:false", () => {
+test("physical app missing: provides this installation's expected path and resolved:false", () => {
   const fx = makeInstall(path.join(TMP, "no-app"), { withApp: false });
   const asarBase = path.join(fx.asar, "node_modules", "@deepseek-ai");
 
   const resolved = inst.resolveInstance({ env: { DSH_BASE: asarBase }, reader: fs, argv: [] });
   assert.equal(resolved.resolved, false);
   assert.equal(resolved.host, "");
-  assert.equal(norm(resolved.candidate), norm(ai(fx.app)), "candidate 必须是预期物理路径");
+  assert.equal(norm(resolved.candidate), norm(ai(fx.app)), "candidate must be the expected physical path");
   assert.ok(!norm(resolved.candidate).includes("app.asar"));
 });
 
-test("app 目录存在但组件不全：识别为本安装目标，不换别的安装", () => {
+test("app directory exists but components are incomplete: identified as this installation's target, without switching to another installation", () => {
   const fx = makeInstall(path.join(TMP, "partial"), { complete: false });
   const asarBase = path.join(fx.asar, "node_modules", "@deepseek-ai");
 
@@ -126,27 +126,27 @@ test("app 目录存在但组件不全：识别为本安装目标，不换别的�
   assert.equal(norm(resolved.candidate), norm(ai(fx.app)));
 });
 
-test("指错实例仍然拒绝，不因映射而回落", () => {
+test("wrong instance is still rejected and does not fall back because of mapping", () => {
   const good = makeInstall(path.join(TMP, "good"));
   const decoy = path.join(TMP, "decoy-deep");
   fs.mkdirSync(decoy, { recursive: true });
 
   const resolved = inst.resolveInstance({ env: { DSH_BASE: decoy }, reader: fs, argv: [] });
-  assert.equal(resolved.resolved, false, "指错的实例必须判为不可用");
-  // source 保留用户的选择（告诉他是哪个选择器指错了），resolved 才是可用性结论
+  assert.equal(resolved.resolved, false, "a wrong instance must be judged unavailable");
+  // source preserves the user's selection (telling them which selector was wrong); resolved is the availability conclusion
   assert.equal(resolved.source, "DSH_BASE");
   assert.equal(resolved.probe.reason, "missing");
-  assert.ok(!norm(resolved.host).includes("good"), "不得回落到另一份安装");
+  assert.ok(!norm(resolved.host).includes("good"), "must not fall back to another installation");
 });
 
-test("物理路径直传（NEXT 解包后场景）保持原样", () => {
+test("physical path passed directly (NEXT unpacked scenario) remains unchanged", () => {
   const fx = makeInstall(path.join(TMP, "physical"));
   const resolved = inst.resolveInstance({ env: { DSH_BASE: fx.base }, reader: fs, argv: [] });
   assert.equal(resolved.resolved, true);
   assert.equal(norm(resolved.host), norm(fx.base));
 });
 
-test("PURGE_DSH_CLI 给出物理根时保持原样，不引入归档映射", () => {
+test("when PURGE_DSH_CLI provides a physical root it remains unchanged, without introducing archive mapping", () => {
   const fx = makeInstall(path.join(TMP, "cli"));
   const pkgRoot = path.join(fx.base, "dsh");
   fs.mkdirSync(path.join(pkgRoot, "lib"), { recursive: true });
@@ -166,7 +166,7 @@ test("PURGE_DSH_CLI 给出物理根时保持原样，不引入归档映射", () 
   assert.equal(norm(resolved.host), norm(fx.base));
 });
 
-test("PURGE_DSH_CLI 不存在时仍然抛错", () => {
+test("throws when PURGE_DSH_CLI does not exist", () => {
   assert.throws(
     () => inst.resolveInstance({ env: { PURGE_DSH_CLI: path.join(TMP, "nope", "dsh") }, reader: fs, argv: [] }),
     /PURGE_DSH_CLI/,

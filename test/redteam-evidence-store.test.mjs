@@ -1,4 +1,4 @@
-// 证据账本必须能挂在真实红队库上，路径导入必须挡住越界源文件。
+// The evidence ledger must mount on the real red-team store, and path import must block out-of-bounds source files.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -13,8 +13,8 @@ const withStore = (fn) => {
   try {
     return fn(store, root);
   } finally {
-    // Windows 上 SQLite 句柄没关时删目录会 EBUSY；先关库再清临时目录。
-    try { store.close?.(); } catch { /* 已关闭 */ }
+    // On Windows deleting the dir with an open SQLite handle gives EBUSY; close the store before clearing the temp dir.
+    try { store.close?.(); } catch { /* already closed */ }
     fs.rmSync(root, { recursive: true, force: true });
   }
 };
@@ -36,7 +36,7 @@ test("ledger reads and writes through the real store handle", () => {
 
 test("engagement ids cannot escape the engagements directory", () => {
   withStore((store) => {
-    assert.throws(() => store.dirOf("../../etc"), /outside allowed roots|允许的根|path/i);
+    assert.throws(() => store.dirOf("../../etc"), /outside allowed roots|path/i);
   });
 });
 

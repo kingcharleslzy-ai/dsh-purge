@@ -1,158 +1,165 @@
-# AGENTS.md — 给 AI agent 的 Purge 使用说明书
+# AGENTS.md — Purge operating guide for AI agents
 
-> 写给**在 DSH 里干活的 agent**，不是营销文档。
-> 当前版本：**1.7.18** · 适配 DSH Desktop **0.2.2-rc.3**（0.2.2-rc.1 / rc.2 / rc.3 / 0.2.1-rc.1 / rc.2 / rc.3 / rc.5 同样通过）
-> 版本号由 `npm run check:docs` 与 `package.json` 校验，发版必须同步；历史版本与 PR 记录在 [maintenance-archive](docs/maintenance-archive.md)，不要再写回本文件。
+> Written for **agents working in DSH**, not as marketing material.
+> Current version: **1.7.18** · Targets DSH Desktop **0.2.2-rc.3** (0.2.2-rc.1 / rc.2 / rc.3 / 0.2.1-rc.1 / rc.2 / rc.3 / rc.5 also pass)
+> `npm run check:docs` checks versions against `package.json`; synchronize them for releases. Historical versions and PR records belong in [maintenance-archive](docs/maintenance-archive.md), not this file.
 
 ---
 
-## 0. 30 秒版本
+## 0. The 30-second version
 
-- 这个插件（`dsh-purge-community`）把 DSH 里**拦你的东西**拆掉：审批弹窗、沙箱拒绝、fs 围栏、工具结果修剪、计划模式硬拦、`ask_user_question` 等待、以及模型自己的拒绝倾向。
-- 你不需要"绕过"它——**它就是替你拆闸的**。看到"我不能/建议你先确认"这类输出，多半不是插件失效，而是模型层的问题，按 §5 排查。
-- 你的操作入口只有两个：**面板（左侧栏 Purge）** 和 **CLI（`purge-community`）**。别手改 `~/Library/.../Resources/app` 下的宿主文件，改了会被下一次「应用」覆盖。
+- This plugin (`dsh-purge-community`) removes DSH barriers: approval dialogs, sandbox denials, filesystem boundaries, tool-result trimming, hard plan-mode blocks, `ask_user_question` waits, and the model's own tendency to refuse.
+- You do not need to bypass it: **removing those barriers is its purpose**. Responses such as "I cannot" or "confirm first" usually indicate a model-layer issue rather than plugin failure; use section 5 to investigate.
+- Use either the **Purge panel in the left sidebar** or the **CLI (`purge-community`)**. Do not manually edit host files under `~/Library/.../Resources/app`; the next Apply overwrites those edits.
 
-## 1. 心智模型：五层，各管一件事
+## 1. Five layers, each with a separate role
 
-| 层 | 由谁提供 | 生效方式 | 你能怎么查 |
+| Layer | Provider | Activation | Verification |
 | --- | --- | --- | --- |
-| **宿主补丁**（86 条） | 本插件写进 DSH 源码 | 点「应用」写入 → **退出重开**才加载 | `selfcheck` 看各层 `applied/required` |
-| **提示词注入** | 插件运行时（每步重贴） | `prompt-inject.md` 作为 `dsh-purge` section | 探针（§4）或 `selfcheck` 的「运行时提示词注入」 |
-| **破甲强化段** | 插件运行时 | 尾部 section（默认开） | `purge-community boost` |
-| **权限配置** | 宿主 profile 和会话自己的权限选择 | 新装默认沿用宿主策略，旧宿主可能保留先前写入的补丁 | `selfcheck` 的「当前 profile 的权限选择」 |
-| **agent 预设** | `unrestricted` 预设 | 新会话下拉里选 | 面板/预设下拉 |
+| **Host patches** (86) | This plugin writes DSH source | Apply writes them; **quit and reopen** to load | Per-layer `applied/required` in `selfcheck` |
+| **Prompt injection** | Plugin runtime, reapplied each step | `prompt-inject.md` becomes the `dsh-purge` section | Probe (section 4) or the runtime prompt injection layer in `selfcheck` |
+| **Boost section** | Plugin runtime | Trailing section, enabled by default | `purge-community boost` |
+| **Permission configuration** | Host profile and session permission choices | New installations retain host policy; older hosts may retain previously written patches | Current profile permission choices in `selfcheck` |
+| **Agent preset** | `unrestricted` preset | Select in the new-session menu | Panel or preset menu |
 
-**关键结论**：宿主补丁与权限配置仍为全局；提示词注入和强化段默认全局，可用 `excludePresets` 按预设排除。排除不等于撤销全局补丁。
+**Key distinction:** host patches and permission configuration remain global. Prompt injection and boost are global by default, with per-preset exclusions through `excludePresets`. Exclusions do not revert global patches.
 
-## 2. 生命周期：装 → 应用 → 重开
+## 2. Lifecycle: install → apply → reopen
 
-装（官方插件界面/市场，或社区安装器备份迁移）→ 点「应用」（解包 host / 写 86 条补丁 / 建快照）→ 退出并重开 DSH（**补丁只有重启后才被加载**）→ `selfcheck` 全绿 = 可以开工。
-**什么时候要再点一次「应用」**：DSH 官方更新后（`app.asar` 会重新出现，旧补丁全部失效）、插件自身升级后、新装带工具面/预设的插件后、模型开始推脱或工具突然被追问审批时。
-「应用」是幂等的：不确定就点它，然后退出重开。安装、应用、加载是三个不同阶段——安装不自动应用或重启，应用会备份并写盘，当前进程不热重载这些模块。
+Install through the official plugin interface/marketplace, or use community-installer backup and migration → Apply (unpack the host, write 86 patches, create a snapshot) → quit and reopen DSH (**patches load only after restart**) → verify green `selfcheck` results before work.
 
-## 3. CLI 参考（全部命令 + 退出码）
+**Apply again after:** an official DSH update (`app.asar` returns and invalidates the old patches), a plugin upgrade, installation of a plugin with tools/presets, model hesitation, or unexpected tool-approval requests.
 
-| 命令 | 作用 | 退出码 |
+Apply is idempotent: when uncertain, apply and then quit and reopen. Installation, application, and loading are separate stages. Installation does not automatically apply or restart; Apply backs up and writes files, and the current process does not hot-reload these modules.
+
+## 3. CLI reference and exit codes
+
+| Command | Purpose | Exit code |
 | --- | --- | --- |
-| `purge-community status` | 宿主路径、补丁计数 | 0 |
-| `purge-community selfcheck [--json\|--text]` | 25 层逐层证据 | **broken → 1**，pending/ok → 0 |
-| `purge-community host-status` | 只读磁盘布局与当前服务入口证据，不退出/换包/重启 | 0，须检查 state |
-| `purge-community diagnose [--json]` / `reanchor list\|show\|apply <id> [--index n] [--lines a-b] [--yes]\|clear <id>` | 锚点漂移诊断（含行号 + 片段）/ 半自动重锚 | 0 |
-| `purge-community probe [new]` / `audit [--limit n]` / `boost [on\|off]` / `preset [status\|install [--force]]` | 运行时探针 / 最近动作记录 / 强化段开关 / `unrestricted` 预设落盘 | 0 |
-| `purge-community usage` / `prune` / `backup` / `rollback <id>` / `apply` / `revert` / `uninstall` / `edit` | 备份占用 / 清理+GC / 快照 / 回滚插件 / 原版能力（转发 `dsh-purge`） | 0（`apply` 家族透传） |
+| `purge-community status` | Host paths and patch counts | 0 |
+| `purge-community selfcheck [--json\|--text]` | Evidence across 25 layers | **broken → 1**, pending/ok → 0 |
+| `purge-community host-status` | Read-only disk layout and current service entry evidence; no quit, package handoff, or restart | 0; inspect state |
+| `purge-community diagnose [--json]` / `reanchor list\|show\|apply <id> [--index n] [--lines a-b] [--yes]\|clear <id>` | Anchor drift diagnostics with lines/snippets; assisted reanchoring | 0 |
+| `purge-community probe [new]` / `audit [--limit n]` / `boost [on\|off]` / `preset [status\|install [--force]]` | Runtime probe / recent actions / boost toggle / write the `unrestricted` preset | 0 |
+| `purge-community usage` / `prune` / `backup` / `rollback <id>` / `apply` / `revert` / `uninstall` / `edit` | Backup usage / cleanup and GC / snapshot / plugin rollback / original functions forwarded to `dsh-purge` | 0; the `apply` family forwards exit codes |
 
-`purge-community` 是命令简称，不保证装进 profile 后已在 PATH；先用当前 profile 的 `bin/community.js` 与正确运行时（见[CLI 回滚与定位说明](docs/INSTALLATION.md#cli-rollback)），不要为了找命令再装一份 npm 包。`selfcheck` 状态：`ok`（已确认）/ `pending`（待应用）/ `inferred`（宿主推导，黄）/ `unknown`（证据不足，黄）/ `broken`（已确认故障或权限不匹配）——**pending 不是故障**，点一次「应用」即可。
+`purge-community` is shorthand, and profile installation does not guarantee it is on PATH. Use the current profile's `bin/community.js` and correct runtime first; see [CLI rollback and discovery](docs/INSTALLATION.md#cli-rollback). Do not install another npm package just to locate the command. `selfcheck` states are `ok` (confirmed), `pending` (awaiting Apply), `inferred` (inferred from the host, yellow), `unknown` (insufficient evidence, yellow), and `broken` (confirmed failure or permission mismatch). **Pending is not a failure**; apply once.
 
-## 4. 运行时探针：证明"注入真的到了模型"
+## 4. Runtime probe: confirm delivery to the model
 
-文件被改、section 被注册，只证明宿主侧就绪；探针证明模型**收到了**。
+Modified files and registered sections demonstrate host readiness; a probe demonstrates that the model **received the content**.
 
 ```sh
 purge-community probe new
-# → {"nonce":"purge-1a2b3c4d", "message":"请原样输出下面这行…[purge-1a2b3c4d]"}
+# → {"nonce":"purge-1a2b3c4d", "message":"Repeat this line exactly…[purge-1a2b3c4d]"}
 ```
 
-然后任意发一句对话。**模型原样回显该 nonce = 链路通**。探针 30 分钟自动过期，不会长期占 token。
-回显了但模型仍推脱 → 问题在**模型层/人设**（换强化段或预设人设）；没回显 → 注入没到达（看 `selfcheck` 运行时注入层、`boost` 是否被关、`injectPosition` 是否被改）。
+Send any conversation message. **An exact nonce echo confirms delivery.** Probes expire after 30 minutes to avoid persistent token overhead.
 
-## 5. 症状 → 动作（决策树）
+If the model echoes but still hesitates, investigate the **model layer/persona** and adjust the boost or preset persona. If it does not echo, inspect the runtime injection layer in `selfcheck`, whether `boost` is disabled, and whether `injectPosition` changed.
 
-| 症状 | 先跑 | 判读 | 动作 |
+## 5. Symptoms and actions
+
+| Symptom | Run first | Interpret | Action |
 | --- | --- | --- | --- |
-| 补丁数少于分母 | `selfcheck --json` | 看 `layers[].state` | pending → 点应用；broken → `diagnose` |
-| 全部 `missing_file` | `status` | `ai_base` 为空 | 宿主未解包：点应用 → 重开 |
-| 模型开始推脱/要求确认 | `probe new` | 回显否 | 回显：调人设/强化段；不回显：检查注入层 |
-| 工具被拒绝执行 | `selfcheck` | 沙箱/审批层是否绿 | 绿 → 属工具自身限制；红 → 点应用 |
-| DSH 刚更新过 | `status` | `asar_still_sealed` | 点应用 → 重开 → `selfcheck` |
-| 想撤销一切 | — | — | `revert`（只撤补丁）/ `rollback <id>`（回滚插件） |
+| Patch count below denominator | `selfcheck --json` | Inspect `layers[].state` | pending → Apply; broken → `diagnose` |
+| All entries are `missing_file` | `status` | Empty `ai_base` | Host is not unpacked: Apply → reopen |
+| Model hesitates or asks for confirmation | `probe new` | Was the nonce echoed? | Yes: adjust persona/boost; no: inspect injection |
+| Tool execution denied | `selfcheck` | Sandbox/approval layers green? | Green: tool-specific restriction; red: Apply |
+| DSH just updated | `status` | `asar_still_sealed` | Apply → reopen → `selfcheck` |
+| Undo all changes | — | — | `revert` for patches; `rollback <id>` for the plugin |
 
-完整分支（含安装失败、换包、维护锁、CLI 权限、超时、拒绝率）见 [troubleshooting.md](docs/troubleshooting.md#t-symptom)。
+See [troubleshooting.md](docs/troubleshooting.md#t-symptom) for installation failures, package handoffs, maintenance locks, CLI permissions, timeouts, and refusal rates.
 
-## 6. 状态与文件（你可以安全读，不要乱写）
+## 6. State and files: read safely, write deliberately
 
-| 路径 | 内容 |
+| Path | Contents |
 | --- | --- |
-| `$DSH_HOME/dsh-purge/tuning.json` · `probe.json` | `{boost, injectPosition, askNoBlock}` / 探针 nonce（30 分钟 TTL） |
-| `$DSH_HOME/dsh-purge/anchor-overrides.json` | 本地重锚覆盖（不改插件源码；删掉即恢复出厂锚点） |
-| `$DSH_HOME/dsh-purge-community/audit.jsonl` | 动作审计（1MB 轮转，保留 2 份）；面板「维护 → 最近动作」 |
-| `$DSH_HOME/dsh-purge/applied.json` · `installed-rev` | 上次应用的插件版本 |
-| `$DSH_HOME/dsh-purge-community/backups/<id>/` | 快照（`manifest.json` + 小文件；大文件在 `objects/`） |
-| `$DSH_HOME/.agent-presets/unrestricted/` | 无限制模式预设（升级保留原文；首行模板标记不代表用户授权覆盖） |
-| `$DSH_HOME/prompt-inject.md` | **用户的注入正文**，插件只读不改（除非用户点保存） |
-**不变量**：`prompt-inject.md`、规则集、其他插件配置，任何时候都不该被「应用」或「回滚」覆盖。
+| `$DSH_HOME/dsh-purge/tuning.json` · `probe.json` | `{boost, injectPosition, askNoBlock}` / probe nonce with a 30-minute TTL |
+| `$DSH_HOME/dsh-purge/anchor-overrides.json` | Local anchor overrides; deleting them restores factory anchors without modifying plugin source |
+| `$DSH_HOME/dsh-purge-community/audit.jsonl` | Action audit, rotated at 1MB with two copies retained; Maintenance → Recent actions |
+| `$DSH_HOME/dsh-purge/applied.json` · `installed-rev` | Plugin version at the last Apply |
+| `$DSH_HOME/dsh-purge-community/backups/<id>/` | Snapshots: `manifest.json` and small files; large files in `objects/` |
+| `$DSH_HOME/.agent-presets/unrestricted/` | Unrestricted preset; upgrades preserve existing content, and a first-line template marker does not authorize overwriting |
+| `$DSH_HOME/prompt-inject.md` | **The user's injection text**; read-only unless the user saves changes |
 
-## 7. 补丁表：86 条，怎么读、怎么加
+**Invariant:** Apply and rollback must never overwrite `prompt-inject.md`, rule sets, or other plugin configuration.
 
-- 定义在 `lib/core.js` 的 `ALL_PATCHES`（`PATCHES` / `CODE_PATCHES` / `ENGINE_PATCHES` / `NEW_TOOL_PATCHES`）。
-- 每条 = `{id, name, layer, file, replacements:[{pattern, replace}], markers, optional?}`；`pattern` 是对宿主源码的**精确片段**（或正则），`markers` 用来判断"已应用"。
-- 新增一条：在 `targetFiles()` 登记目标文件键 → `replace` 里留 `[dsh-purge]` 标记并写进 `markers` → 在 `test/patch-anchors.test.mjs` 钉一份真实源码片段 → 第三方插件目标用 `optional: true`（不在场时显示"不适用"而不是失败）。
-- 宿主升级后锚点漂移：`diagnose` 给出文件、行号、旧锚点首行与**可能的新落点**；确认后 `reanchor apply <id> --lines A-B`（先看 dry-run 再加 `--yes`），覆盖存 `anchor-overrides.json`，`reanchor clear <id>` 撤销。
-- 逐文件状态、`partial`、`fileOptional` 的判定口径见 [compatibility.md](docs/compatibility.md#c-fileoptional)。
+## 7. Reading and extending the 86-patch table
 
-## 8. 预设：`unrestricted`（无限制模式）
+- Definitions are in `ALL_PATCHES` in `lib/core.js`: `PATCHES`, `CODE_PATCHES`, `ENGINE_PATCHES`, and `NEW_TOOL_PATCHES`.
+- Each entry has `{id, name, layer, file, replacements:[{pattern, replace}], markers, optional?}`. `pattern` is an **exact host-source fragment** or regular expression; `markers` identify applied patches.
+- To add a patch, register the target file key in `targetFiles()`, retain a `[dsh-purge]` marker in `replace` and `markers`, and capture a real source fixture in `test/patch-anchors.test.mjs`. Use `optional: true` for third-party plugin targets so absence is reported as inapplicable rather than failed.
+- After host-update drift, `diagnose` reports files, lines, the old anchor's first line, and **candidate new locations**. Once confirmed, use `reanchor apply <id> --lines A-B`, inspect dry-run before adding `--yes`, and save overrides in `anchor-overrides.json`. Undo with `reanchor clear <id>`.
+- See [compatibility.md](docs/compatibility.md#c-fileoptional) for per-file state, `partial`, and `fileOptional` semantics.
 
-- 它是 **standard 的超集**（20 行，工具面完全一致），差别只在人设：执行优先、不重复声明边界、多轮不退化。
-- 由 `lib/presets-plugin.js` 注册到 `agentPresets`（**只放文件不会出现在下拉里**）；安装：`purge-community preset install`。
-- 不要把它当成"额外破甲"——破甲靠宿主补丁，预设只改人格。
-- 回归测试卡：`docs/preset-test.md`（A/B 五条 prompt + 判读标准 + 不通过怎么办）。
+## 8. The `unrestricted` preset
 
-## 9. 版本与兼容
+- A **superset of standard** (20 lines, identical tool surface), differing only in persona: execution first, no repeated boundary statements, and consistency across turns.
+- Registered with `agentPresets` by `lib/presets-plugin.js`; **files alone do not populate the menu**. Install with `purge-community preset install`.
+- Host patches provide the underlying changes; the preset changes persona rather than adding more patches.
+- Regression card: `docs/preset-test.md`, containing five A/B prompts, interpretation criteria, and failure handling.
 
-| 组件 | 值 |
+## 9. Versions and compatibility
+
+| Component | Value |
 | --- | --- |
-| 插件 | `dsh-purge-community` 1.7.18 |
-| 已验证宿主 | DSH Desktop 0.2.2-rc.3 / 0.2.2-rc.2 / 0.2.2-rc.1 / 0.2.1-rc.1 / 0.2.1-rc.2 / 0.2.1-rc.3 / 0.2.1-rc.5 |
-| 0.2.2-rc.3 | 官方 rc.3 隔离副本 86 条补丁 74 applied / 零漂移，二次应用幂等；真实 Host Loader 预设注册通过。Windows rc.3 未复测补丁。 |
-| 其它宿主 | 允许应用，但 `selfcheck` 会标"未验证"；先看 `diagnose` |
-| Node | ≥18（桌面版自带运行时即可）；**红队工具需 ≥22.5**（依赖 `node:sqlite`，低版本会在加载红队工具时失败） |
+| Plugin | `dsh-purge-community` 1.7.18 |
+| Verified hosts | DSH Desktop 0.2.2-rc.3 / 0.2.2-rc.2 / 0.2.2-rc.1 / 0.2.1-rc.1 / 0.2.1-rc.2 / 0.2.1-rc.3 / 0.2.1-rc.5 |
+| 0.2.2-rc.3 | Isolated official rc.3 copy: 86 patches, 74 applied, zero drift, idempotent reapplication; preset registration passed with the real Host Loader. Windows rc.3 patches were not retested. |
+| Other hosts | Apply allowed; `selfcheck` reports unverified. Inspect `diagnose` first. |
+| Node | ≥18; the bundled desktop runtime is sufficient. **Red-team tools require ≥22.5** for `node:sqlite`; older runtimes fail when loading those tools. |
 
-- 清单声明是 `dsh.compatibility.dsh = ">=0.2.1-rc.1 <0.3.0"`，逐发行状态以 `package.json` 的 `dshReleases` 为准；rc.4 / alpha.2 仍为 `unknown`，不得写成 `compatible`。
-- 0.1.5 / 0.2.0 低于声明下限，没有适配记录；`fileOptional`、premium/桌面版差异见 [compatibility.md](docs/compatibility.md#c-matrix)。
+- The manifest declares `dsh.compatibility.dsh = ">=0.2.1-rc.1 <0.3.0"`. Per-release status comes from `dshReleases` in `package.json`; rc.4 / alpha.2 remain `unknown` and must not be marked `compatible`.
+- 0.1.5 / 0.2.0 are below the declared minimum and have no adaptation record. See [compatibility.md](docs/compatibility.md#c-matrix) for `fileOptional` and premium/desktop differences.
 
-## 10. 这份文档的维护规则
+## 10. Maintaining this guide
 
-**硬性约束（一条都不许删或弱化）**：
-1. 不自动重启 DSH。
-2. 不自动点「应用」。
-3. 不修改 `~/.dsh/prompt-inject.md`（即 `$DSH_HOME/prompt-inject.md`）除非用户明确保存。
-4. 不在没有用户要求时提交 commit/push/发版。
-5. 变更版本号时补丁位 0–99、不写三段补丁号；历史版本保留原编号。
-6. 发布说明必须放 `docs/releases/<version>.md` 且单版不超过 8 KiB。
+**Mandatory constraints; do not delete or weaken any:**
 
-**维护规则**：每次发版同步首部版本行、§9 表格、§3 命令表（如有新增）；`npm run check:docs` 校验 `AGENTS.md` / `README.md` / `release-notes.md` / `package.json` 版本一致，CI 里跑，不一致直接失败。
-面向人的概览在 `README.md`；**面向 agent 的操作细节以本文件为准**——两者冲突时先信本文件，再去改 README。新增内容不进本文件：版本 / PR 记录进 [maintenance-archive](docs/maintenance-archive.md)，排障分支进 [troubleshooting](docs/troubleshooting.md)，兼容边界进 [compatibility](docs/compatibility.md)。
+1. Do not automatically restart DSH.
+2. Do not automatically select Apply.
+3. Do not modify `~/.dsh/prompt-inject.md` (`$DSH_HOME/prompt-inject.md`) unless the user explicitly saves it.
+4. Do not commit, push, or release without a user request.
+5. For version changes, use patch numbers 0–99 and no three-segment patch number; retain historical numbering.
+6. Place release summaries in `docs/releases/<version>.md`, at most 8 KiB per version.
 
-## 12. 安装 / 更新边界（细节见 troubleshooting）
+**Maintenance:** synchronize the opening version line, section 9 table, and section 3 command table when commands change. CI runs `npm run check:docs` to compare `AGENTS.md`, `README.md`, `release-notes.md`, and `package.json`; mismatches fail immediately.
+
+`README.md` is the human-facing overview. **This file governs agent operating details**; resolve disagreements here first and then update the README. Put new version/PR records in [maintenance-archive](docs/maintenance-archive.md), troubleshooting branches in [troubleshooting](docs/troubleshooting.md), and compatibility boundaries in [compatibility](docs/compatibility.md).
+
+## 12. Installation and update boundaries
 
 <a id="installation"></a>
 
-- **先选入口，不把社区脚本称为官方方法**：首次安装走 DSH 官方插件界面/市场确认框，或该实例的 `dsh plugin --profile <实际名称> add <固定版本TGZ URL>`；社区内容是 `scripts/install.sh` / `scripts/install.ps1`、索引和 TGZ。本项目没有供该流程使用的裸 npm 包名，不运行 `add dsh-purge` / `add dsh-purge-community`，也不做全局 npm 安装。
-- 先读目标 DSH 版本、可执行文件、`DSH_HOME`、profile 并确认已初始化；脚本先下到独立临时路径，审阅后 dry-run，再按已有授权执行。正式安装会备份、调用官方 CLI、迁移旧包引用并验证磁盘版本，可能修 `app/runtime` 链接或在 Linux 准备用户宿主副本——**并非完全不写宿主目录**。
-- **不要安装后自动 apply/restart**；不改提示词、权限、代理、更新偏好或其他插件。真实的发布时长不足、integrity/trust 错误、私有源、未知错误保持失败并留日志：**不要设 minimumReleaseAge=0**、trustLockfile，也不要删锁文件、全局清缓存或改全局 npm 源。
-- 失败先看 `backup_id`，恢复走 `rollback <id>`；公开 issue 只附脱敏错误。逐分支动作见 [troubleshooting.md#t-install](docs/troubleshooting.md#t-install)。
+- **Choose the entry point first; do not call community scripts official methods.** First installation uses DSH's official plugin UI/marketplace confirmation, or that instance's `dsh plugin --profile <actual-name> add <pinned-version-TGZ-URL>`. Community components are `scripts/install.sh`, `scripts/install.ps1`, the index, and TGZ archives. This flow has no bare npm package name: do not run `add dsh-purge`, `add dsh-purge-community`, or a global npm installation.
+- Inspect the target DSH version, executable, `DSH_HOME`, and profile, and verify initialization. Download scripts to a separate temporary location, review them, run dry-run, and proceed within existing authorization. Installation backs up, calls the official CLI, migrates old package references, and verifies the disk version. It may repair `app/runtime` links or prepare a user-owned Linux host copy; **host directories can be modified**.
+- **Do not automatically apply/restart after installation.** Do not change prompts, permissions, proxies, update preferences, or other plugins. Keep release-age, integrity/trust, private-source, and unknown errors as failures with logs: **do not set minimumReleaseAge=0** or trustLockfile, delete lockfiles, clear global caches, or change the global npm registry.
+- On failure, inspect `backup_id` first and recover with `rollback <id>`. Public issues must contain only redacted errors. See [troubleshooting.md#t-install](docs/troubleshooting.md#t-install).
 
-## 21. 多 profile 更新与源码 ZIP 校验
+## 21. Multiple-profile updates and source ZIP verification
 
-- 更新时以每个 profile 的实际包版本为准，不能把 `applied: true` 当成全部成功：同时检查 `ok`、`hasUpdate`、`targets` 和错误。部分安装仍可能需要用户手动重启，但重启不能替代失败目标的重试；不要因此改用户的更新开关、版本 pin、提示词或权限。
-- 上游 ZIP 固定完整 commit SHA，并对全部文件校验 Git blob 摘要；GitHub API 不可用或清单不完整就停止，不能跳过校验。正式 TGZ 的 SHA256SUMS 校验保持不变。
-- 诊断返回 unknown 时保留未知状态，不能称为全绿，也不要自动重装。边界见 [更新维护说明](docs/maintenance-issues-27-30.md)。
+- Check the actual installed version for every profile. `applied: true` does not prove complete success: also inspect `ok`, `hasUpdate`, `targets`, and errors. Some installations may still need a manual restart, but restart does not replace retrying failed targets. Do not change update toggles, version pins, prompts, or permissions for this reason.
+- Pin upstream ZIPs to a full commit SHA and verify every file's Git blob digest. Stop if the GitHub API is unavailable or the inventory is incomplete; never skip verification. Keep release TGZ SHA256SUMS checks intact.
+- Preserve `unknown` diagnostic results as unknown; do not report all-green status or reinstall automatically. See [update maintenance](docs/maintenance-issues-27-30.md).
 
-## 31. 讨论型 issue 不关闭（运维约定）
+## 31. Leave discussion issues open
 
-- 用户自己发起的讨论、经验分享、提问帖（非 bug / 非重复诉求）**只回复，不关闭**。
-- 只有「已修复」「重复」「明确不在支持范围」的 bug/feature 才关闭，并在评论里写依据。
-- 关闭时若带说明用 `gh issue close -c`；**纯评论**必须用 `gh issue comment --body/--body-file`（`-c` 在 comment 子命令上无效，会静默失败）。
+- For user-created discussions, experience reports, and questions that are neither bugs nor duplicates, **reply without closing**.
+- Close bug/feature issues only when fixed, duplicated, or clearly outside support, with the reason in a comment.
+- To close with an explanation, use `gh issue close -c`. For **comments only**, use `gh issue comment --body/--body-file`; `-c` is invalid for the comment subcommand and fails silently.
 
-## DSH Store 提交与复检
+## DSH Store submission and rechecks
 
-主插件申请必须使用 `GitHub repository: https://github.com/kingcharleslzy-ai/dsh-purge`、`Plugin path (optional): .`，不能因为表单提示根目录留空就省略；保留 `packages/purge-panel`（它不是本次安装目标）。
-兼容信息从根 manifest 的 `dsh.compatibility` 读取，不把 README 范围或相邻版本推断写成精确 `compatible`。不得伪造固定 Commit 的 install/start/uninstall/rollback 证据，不为市场准入删功能或隐藏宿主维护能力。边界见 [DSH Store 说明](docs/DSH-STORE.md) 与 [compatibility.md](docs/compatibility.md#c-unknown)。
+Main-plugin submissions must use `GitHub repository: https://github.com/kingcharleslzy-ai/dsh-purge` and `Plugin path (optional): .`. Do not omit the path even if the form suggests leaving the root blank. Retain `packages/purge-panel`; it is not this installation's target.
 
-## 文档地图
+Read compatibility from the root manifest's `dsh.compatibility`. Do not turn README ranges or inferences from adjacent versions into exact `compatible` claims. Do not fabricate install/start/uninstall/rollback evidence for a pinned commit, remove features for marketplace admission, or hide host maintenance capabilities. See [DSH Store](docs/DSH-STORE.md) and [compatibility.md](docs/compatibility.md#c-unknown).
 
-| 文档 | 什么时候读 |
+## Documentation map
+
+| Document | When to read |
 | --- | --- |
-| `AGENTS.md`（本文件） | 干活前、不确定操作顺序或该不该点「应用」 |
-| [troubleshooting.md](docs/troubleshooting.md) | 有症状、有报错、要判读 `selfcheck` / `host-status` 的 state |
-| [compatibility.md](docs/compatibility.md) | 换宿主版本、判断某条补丁在该宿主适不适用 |
-| [maintenance-archive.md](docs/maintenance-archive.md) | 追溯旧版本行为、核对某个 PR 的原始约束 |
+| `AGENTS.md` (this file) | Before work, when operation order or whether to Apply is unclear |
+| [troubleshooting.md](docs/troubleshooting.md) | Symptoms, errors, or interpreting `selfcheck` / `host-status` states |
+| [compatibility.md](docs/compatibility.md) | Changing host versions or assessing patch applicability |
+| [maintenance-archive.md](docs/maintenance-archive.md) | Historical behavior or a PR's original constraints |

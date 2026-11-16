@@ -1,5 +1,5 @@
-// 1.7.18：权限补丁与上下文管理从"逐条 opt-in"改成"两个组开关"。
-// 默认值：权限补丁开、上下文管理关；旧 tuning 里手写的 #18/#19 要迁移成开关为真。
+// 1.7.18: permission patches and context management moved from per-patch opt-in to two group switches.
+// Defaults: permission patches on, context management off; handwritten #18/#19 in old tuning migrate to the switch being true.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -21,7 +21,7 @@ function home() {
   return { root, close: () => removeTreeNoFollowSync(root) };
 }
 
-test("默认：权限补丁开、上下文管理关", () => {
+test("defaults: permission patches on, context management off", () => {
   assert.equal(TUNING_DEFAULTS.permissionPatches, true);
   assert.equal(TUNING_DEFAULTS.contextManagement, false);
   assert.equal(patchEnabled(patch(6), { extraPatches: [] }), true);
@@ -30,10 +30,10 @@ test("默认：权限补丁开、上下文管理关", () => {
   assert.equal(patchEnabled(patch(19), { contextManagement: false }), false);
 });
 
-test("两个开关各自独立生效，互不影响", () => {
+test("the two switches act independently", () => {
   const permOff = { permissionPatches: false, contextManagement: false };
   assert.equal(patchEnabled(patch(6), permOff), false);
-  assert.equal(patchEnabled(patch(17), permOff), true, "非权限补丁不受影响");
+  assert.equal(patchEnabled(patch(17), permOff), true, "non-permission patches are unaffected");
   const permOnCtxOff = { permissionPatches: true, contextManagement: false };
   assert.equal(patchEnabled(patch(9), permOnCtxOff), true);
   assert.equal(patchEnabled(patch(18), permOnCtxOff), false);
@@ -42,14 +42,14 @@ test("两个开关各自独立生效，互不影响", () => {
   assert.equal(patchEnabled(patch(19), both), true);
 });
 
-test("旧口径（数组清单）语义保持不变，CLI 与老测试仍可用", () => {
+test("legacy shape (array list) keeps its semantics; CLI and old tests still work", () => {
   assert.equal(patchEnabled(patch(18), []), false);
   assert.equal(patchEnabled(patch(18), [18]), true);
-  assert.equal(patchEnabled(patch(6), []), false, "数组口径下权限补丁仍算未启用");
+  assert.equal(patchEnabled(patch(6), []), false, "under the array shape permission patches still count as off");
   assert.equal(patchEnabled(patch(6), [6]), true);
 });
 
-test("readTuning 把旧的 extraPatches #18/#19 迁移成 contextManagement=true", () => {
+test("readTuning migrates legacy extraPatches #18/#19 to contextManagement=true", () => {
   const h = home();
   try {
     fs.writeFileSync(
@@ -58,14 +58,14 @@ test("readTuning 把旧的 extraPatches #18/#19 迁移成 contextManagement=true
     );
     const tuning = readTuning(h.root);
     assert.equal(tuning.contextManagement, true);
-    assert.equal(tuning.permissionPatches, true, "缺字段按默认开");
-    assert.deepEqual(tuning.extraPatches, [19], "清单本身不清空，CLI 仍可读");
+    assert.equal(tuning.permissionPatches, true, "a missing field defaults to on");
+    assert.deepEqual(tuning.extraPatches, [19], "the list itself stays populated, the CLI can still read it");
   } finally {
     h.close();
   }
 });
 
-test("permissionPatches:false 写入后能读回，且不污染其它字段", () => {
+test("permissionPatches:false round-trips without polluting other fields", () => {
   const h = home();
   try {
     writeTuning({ permissionPatches: false, contextManagement: true }, h.root);
@@ -76,13 +76,13 @@ test("permissionPatches:false 写入后能读回，且不污染其它字段", ()
     writeTuning({ permissionPatches: true }, h.root);
     const back = readTuning(h.root);
     assert.equal(back.permissionPatches, true);
-    assert.equal(back.contextManagement, true, "没传的字段保持原值");
+    assert.equal(back.contextManagement, true, "unpassed fields keep their previous value");
   } finally {
     h.close();
   }
 });
 
-test("patchStatus 按 tuning 判定：关掉权限补丁后这些补丁报 disabled 而不是失败", async () => {
+test("patchStatus follows tuning: with permission patches off they report disabled, not failed", async () => {
   const h = home();
   try {
     const aiBase = path.join(h.root, "ai");
@@ -100,7 +100,7 @@ test("patchStatus 按 tuning 判定：关掉权限补丁后这些补丁报 disab
       surface: "desktop",
       tuning: { permissionPatches: true, contextManagement: false },
     });
-    assert.notEqual(on[6], "disabled", "开关打开后不再归到 disabled");
+    assert.notEqual(on[6], "disabled", "once the switch is on they are no longer classified as disabled");
   } finally {
     h.close();
   }

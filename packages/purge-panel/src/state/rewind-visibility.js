@@ -19,7 +19,7 @@ function publish(value) {
 
 function valueFrom(reply) {
   if (reply?.ok !== true || typeof reply.rewind !== "boolean")
-    throw new Error(reply?.error || "无法读取回退按钮设置");
+    throw new Error(reply?.error || "Cannot read rewind button settings");
   return reply.rewind;
 }
 

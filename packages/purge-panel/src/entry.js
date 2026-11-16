@@ -3,7 +3,7 @@ import { h, react } from "./shared/react.js";
 import { PURGE_CSS } from "./styles/index.js";
 import { useDock, startGrantSync } from "./state/dock.js";
 import { AuthGate } from "./components/auth.js";
-import { NS, setTranslate, zh, en } from "./shared/locale.js";
+import { NS, setTranslate, en, englishText } from "./shared/locale.js";
 import { PurgePage } from "./components/page.js";
 // Sidebar rows are single-colour icons that follow the label colour, so the row
 // gets the package artwork's outline as a mask over currentColor: same shield and
@@ -98,8 +98,9 @@ export function apply(ctx) {
   ctx.inject(["sessions", "uiWorkspace", "conversation"], (host) =>
     installRewindUi(host),
   );
-  ctx.effect(() => ctx.locale.register(NS, { zh, en }), "panel locale");
-  const t = ctx.locale.bind(NS);
+  ctx.effect(() => ctx.locale.register(NS, { en }), "panel locale");
+  // Render English even when the host selects a locale this plugin no longer ships.
+  const t = englishText;
   setTranslate(t);
   ctx.slots.inject("shell.overlay", () =>
     ctx.slots.register(
@@ -111,7 +112,8 @@ export function apply(ctx) {
       PanelOverlays,
     ),
   );
-  // 左侧栏入口：图标 + 整页。右侧抽屉不再注册，避免两处重复。
+  // Sidebar entry: glyph plus full page. The right-hand drawer is no longer
+  // registered so the two do not duplicate each other.
   ctx.slots.inject("sidebar.panellist", () =>
     ctx.slots.register(
       {

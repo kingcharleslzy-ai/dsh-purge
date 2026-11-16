@@ -26,9 +26,9 @@ test("preferences default to check-only and preserve legacy automatic-install in
     savePreferences(f.home, { intervalHours: 12 }, { autoUpdateOnStart: true });
     assert.equal(preferences(f.home).autoInstall, true);
     assert.equal(fs.readFileSync(path.join(f.home, "cordis.patch.yml"), "utf8"), "CURRENT SETTINGS");
-    assert.throws(() => savePreferences(f.home, { autoApplyOnStart: true }), /未知字段/);
-    assert.throws(() => savePreferences(f.home, { intervalHours: 0 }), /1–168/);
-    assert.throws(() => savePreferences(f.home, { autoInstall: "true" }), /开关/);
+    assert.throws(() => savePreferences(f.home, { autoApplyOnStart: true }), /unknown fields/);
+    assert.throws(() => savePreferences(f.home, { intervalHours: 0 }), /1 to 168/);
+    assert.throws(() => savePreferences(f.home, { autoInstall: "true" }), /boolean/);
   } finally { f.close(); }
 });
 test("checking runs independently from autoApplyOnStart and never installs by default", async () => {
@@ -105,8 +105,8 @@ test("all updater results suppress automatic restart and client reload requests"
 });
 
 test("an uninstalled file: dependency is reported as skipped, not silently ignored", async () => {
-  // issue #118 的真实症状：profile 里有 file:<tgz> 依赖但没落地时，
-  // 旧 planUpdates() 直接 continue，面板看起来"更新成功但什么都没变"。
+  // issue #118 real symptom: a profile has a file:<tgz> dependency that never landed,
+  // and the old planUpdates() just continued; the panel looked like "update succeeded but nothing changed".
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "purge-plan-"));
   const prev = process.env.DSH_HOME;
   try {
@@ -128,7 +128,7 @@ test("an uninstalled file: dependency is reported as skipped, not silently ignor
     assert(Array.isArray(plan.skipped), "plan exposes skipped sites");
     const hit = plan.skipped.find((s) => s.package === "dsh-purge-community");
     assert(hit, "the file: dependency is surfaced");
-    assert.match(hit.reason, /没有安装目录/);
+    assert.match(hit.reason, /no install dir/);
     assert(hit.spec.startsWith("file:"), "the offending spec is included");
   } finally {
     if (prev === undefined) delete process.env.DSH_HOME;
@@ -149,7 +149,7 @@ function tempHome() {
   };
 }
 const readRaw = (f) => JSON.parse(fs.readFileSync(f.prefs, "utf8"));
-// 通道凭据单独落盘，密钥相关断言必须读这个文件。
+// Channel credentials are stored in their own file; secret-related assertions must read this file.
 const readChannel = (f) => JSON.parse(fs.readFileSync(f.channel, "utf8"));
 
 test("updateEnv exposes only the channel proxy and token, never the host environment", () => {
@@ -175,20 +175,20 @@ test("updateEnv preserves inherited proxies and fails visibly on damaged setting
     savePreferences(f.home,{githubToken:TOKEN});
     assert.deepEqual(updateEnv(f.home,{},inherited),{...inherited,GITHUB_TOKEN:TOKEN});
     assert.equal(inherited.GITHUB_TOKEN,undefined);
-    fs.writeFileSync(f.channel,'broken json');assert.throws(()=>updateEnv(f.home),/无法读取/);
+    fs.writeFileSync(f.channel,'broken json');assert.throws(()=>updateEnv(f.home),/cannot read/);
   } finally {f.done();}
 });
 
 test("savePreferences rejects unsupported proxies, missing hosts and malformed tokens", () => {
   const f = tempHome(); try {
-    assert.throws(() => savePreferences(f.home, { proxyUrl: "ftp://127.0.0.1:21" }), /仅支持 http \/ https \/ socks5 协议/);
-    assert.throws(() => savePreferences(f.home, { proxyUrl: "socks5://" }), /缺少主机名/);
-    assert.throws(() => savePreferences(f.home, { proxyUrl: "127.0.0.1:7890" }), /地址无效/);
-    assert.throws(() => savePreferences(f.home, { proxyUrl: 7890 }), /必须为字符串/);
-    assert.throws(() => savePreferences(f.home, { githubToken: TOKEN.slice(0, 10) }), /密钥格式无效/);
-    assert.throws(() => savePreferences(f.home, { githubToken: TOKEN + " b" }), /密钥格式无效/);
-    assert.throws(() => savePreferences(f.home, { githubToken: "x".repeat(256) }), /密钥格式无效/);
-    assert.throws(() => savePreferences(f.home, { githubToken: null }), /必须为字符串/);
+    assert.throws(() => savePreferences(f.home, { proxyUrl: "ftp://127.0.0.1:21" }), /http \/ https \/ socks5 only/);
+    assert.throws(() => savePreferences(f.home, { proxyUrl: "socks5://" }), /no hostname/);
+    assert.throws(() => savePreferences(f.home, { proxyUrl: "127.0.0.1:7890" }), /invalid update proxy address/);
+    assert.throws(() => savePreferences(f.home, { proxyUrl: 7890 }), /must be a string/);
+    assert.throws(() => savePreferences(f.home, { githubToken: TOKEN.slice(0, 10) }), /invalid GitHub token format/);
+    assert.throws(() => savePreferences(f.home, { githubToken: TOKEN + " b" }), /invalid GitHub token format/);
+    assert.throws(() => savePreferences(f.home, { githubToken: "x".repeat(256) }), /invalid GitHub token format/);
+    assert.throws(() => savePreferences(f.home, { githubToken: null }), /must be a string/);
     assert.equal(fs.existsSync(f.prefs), false, "a rejected patch writes nothing");
     for (const proxyUrl of ["http://127.0.0.1:7890", "https://proxy.example:8443", "socks5://127.0.0.1:1080", "socks5h://user:pw@127.0.0.1:1080", "socks://127.0.0.1:1080"]) {
       assert.equal(savePreferences(f.home, { proxyUrl }).proxyUrl, proxyUrl, `${proxyUrl} is accepted`);
@@ -222,9 +222,9 @@ test("an empty githubToken keeps the stored secret; clearGithubToken is the only
     assert.deepEqual(updateEnv(f.home, {}, {}), { GITHUB_TOKEN: TOKEN }, "a new token can be set again afterwards");
     // A non-boolean clear flag is rejected outright instead of being silently
     // ignored: otherwise the panel could show "cleared" while the token survives.
-    assert.throws(() => savePreferences(f.home, { githubToken: TOKEN, clearGithubToken: "yes" }), /布尔/,
+    assert.throws(() => savePreferences(f.home, { githubToken: TOKEN, clearGithubToken: "yes" }), /boolean/,
       "a non-boolean clearGithubToken is rejected");
-    assert.throws(() => savePreferences(f.home, { clearGithubToken: 1 }), /布尔/,
+    assert.throws(() => savePreferences(f.home, { clearGithubToken: 1 }), /boolean/,
       "a numeric clearGithubToken is rejected");
     assert.equal(updateEnv(f.home, {}, {}).GITHUB_TOKEN, TOKEN, "a rejected patch leaves the stored token untouched");
     assert.equal(savePreferences(f.home, { clearGithubToken: true }).githubToken, "");
@@ -264,16 +264,16 @@ test("an unsuccessful or stale check cannot replace last confirmed metadata or t
     await f.c.run();
     savePreferences(f.home, { autoInstall: true });
     for (const failure of [
-      { ok: false, error: "发行列表过大；备用源失败" },
-      { ok: true, stale: true, hasUpdate: true, remoteVersion: "1.6.99", degraded: "备用源超时，只有缓存" },
-      new Error("读取发行列表超时"),
+      { ok: false, error: "release list too large; fallback source failed" },
+      { ok: true, stale: true, hasUpdate: true, remoteVersion: "1.6.99", degraded: "fallback source timed out, cache only" },
+      new Error("timed out reading the release list"),
     ]) {
       result = failure;
       await f.c.run();
       const state = updateStatus(f.home);
       assert.equal(state.hasUpdate, null);
       assert.equal(state.availableVersion, "1.7.11");
-      assert.match(state.error, /过大|超时/);
+      assert.match(state.error, /too large|timed out/);
       assert.equal(f.counts().installs, 0);
     }
     result = { ok: true, hasUpdate: false, remoteVersion: "1.7.11" };

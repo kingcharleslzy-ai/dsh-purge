@@ -38,7 +38,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git add README.md README.zh-CN.md docs/README.en.md .github/contributors.json
+          git add README.md docs/README.en.md .github/contributors.json
           if git diff --cached --quiet; then exit 0; fi
           git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'docs: refresh contributor avatars'
           # A concurrent human push must win: never force-push or overwrite it.

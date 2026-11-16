@@ -29,13 +29,13 @@ for(const alias of [name,'dsh-purge'])test('resolve installed metadata and YAML 
 test('selected alias beats stale inactive canonical package; ambiguous bundles fail',t=>{
   const f=fixture(t);f.add(name,'1.6.40');f.add('dsh-purge');f.manifest(['dsh-purge']);
   assert.equal(installedCommunityPackage(f.profile).package.version,'1.6.47');
-  f.manifest([name,'dsh-purge']);assert.throws(()=>installedCommunityPackage(f.profile),/多个/);
+  f.manifest([name,'dsh-purge']);assert.throws(()=>installedCommunityPackage(f.profile),/multiple/);
 });
 test('missing, wrong identity, damaged metadata and absent selected package stay errors',t=>{
   const f=fixture(t);f.manifest(['dsh-purge']);
   assert.throws(()=>installedCommunityPackage(f.profile),{code:'ENOENT'});
   f.add(name);const root=f.add('dsh-purge','1.6.47','impostor');
-  assert.throws(()=>installedCommunityPackage(f.profile),/标识/);
+  assert.throws(()=>installedCommunityPackage(f.profile),/identity/);
   fs.writeFileSync(path.join(root,'package.json'),'{broken');assert.throws(()=>installedCommunityPackage(f.profile),SyntaxError);
 });
 test('alias backup records actual package identity and preserves user files',async t=>{

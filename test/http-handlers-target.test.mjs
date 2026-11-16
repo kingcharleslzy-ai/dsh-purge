@@ -1,12 +1,12 @@
-// 对应 PR #102 owner 2026-11-01「Changes requested」第 5 条与 CI 失败日志（1.txt）：
-//   脚本先把 DSH_BASE 设成归档路径，再要求 status / diagnose / selfcheck 三个
-//   实际 handler 都落到物理 app；旧实现在这里返回 app.asar。
+// Corresponds to PR #102 owner 2026-11-01 "Changes requested" item 5 and CI failure log (1.txt):
+//   The script first sets DSH_BASE to the archive path, then requires the actual handlers for
+//   status / diagnose / selfcheck to all resolve to the physical app; the old implementation returned app.asar here.
 //
-// 这里不用 mock status：真的起 Cordis、真的 installWebServer、真的走路由 handler。
-// 与 scripts/check-electron-diagnostic-target.mjs 的 eval 段同语义，
-// 差别只是不需要 Electron —— 归档/物理映射走的是路径正则 + 物理目录 stat。
+// No mock status is used here: Cordis is started for real, installWebServer runs for real, and route handlers run for real.
+// Semantics match the eval section in scripts/check-electron-diagnostic-target.mjs,
+// except Electron is not needed — archive/physical mapping uses path regex + physical directory stat.
 //
-// 运行：node --test test/http-handlers-target.test.mjs
+// Run: node --test test/http-handlers-target.test.mjs
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { diskFs } from "../lib/extract-asar.js";
@@ -43,7 +43,7 @@ function write(file, text = "") {
   return file;
 }
 
-/** 造 asar：header 里写入与磁盘相同的条目，让 desktopIdentity 能认包证据 */
+/** Build an asar: write the same entries in the header as on disk so desktopIdentity can recognize package evidence */
 function buildAsar(target, entries) {
   fs.mkdirSync(path.dirname(target), { recursive: true });
   const files = {};
@@ -70,7 +70,7 @@ function buildAsar(target, entries) {
 }
 
 /**
- * 造一台桌面安装。
+ * Create a desktop installation.
  * layout: "next"  → resources/app/node_modules/@deepseek-ai
  *         "official" → resources/app/dsh/node_modules/@deepseek-ai
  */
@@ -97,8 +97,8 @@ function makeInstall(root, { layout = "next", complete = true, identity = null }
   if (complete) {
     write(path.join(physicalHost, "dsh-agent-instructions", "lib", "index.js"), "// diagnostic fixture");
   } else {
-    // 「scope 存在但不完整」：目录和 package.json 都在，只缺 lib。
-    // 注意 asar 条目也写进了 app 目录，这里必须把 lib 删掉，否则夹具其实并不缺件。
+    // "scope exists but is incomplete": directory and package.json are present, only lib is missing.
+    // Note that asar entries were also written into the app directory, so lib must be removed here or the fixture would not actually be missing parts.
     fs.rmSync(path.join(physicalHost, "dsh-agent-instructions", "lib"), { recursive: true, force: true });
   }
 
@@ -116,7 +116,7 @@ async function boot(fx, { maintenanceOnly = false } = {}) {
     DSH_SURFACE: process.env.DSH_SURFACE,
   };
   process.env.DSH_HOME = fx.home;
-  process.env.DSH_BASE = fx.sealedHost; // CI 的触发条件：显式指向归档里的宿主
+  process.env.DSH_BASE = fx.sealedHost; // CI trigger condition: explicitly point to the host inside the archive
   process.env.DSH_PROFILE = "desktop";
   process.env.DSH_SURFACE = maintenanceOnly ? "web" : "desktop";
 
@@ -138,7 +138,7 @@ async function boot(fx, { maintenanceOnly = false } = {}) {
 
   const read = async (name) => {
     const spec = ctx.webServer.routes.get("/dsh-purge/" + name);
-    assert.ok(spec, `路由 /dsh-purge/${name} 未注册`);
+    assert.ok(spec, `route /dsh-purge/${name} is not registered`);
     const response = {
       headers: {},
       setHeader() {},
@@ -164,7 +164,7 @@ async function boot(fx, { maintenanceOnly = false } = {}) {
   return { read, dispose };
 }
 
-test("NEXT 布局：DSH_BASE 指向归档时，三个 handler 都落到物理 app", async () => {
+test("NEXT layout: when DSH_BASE points to the archive, all three handlers resolve to the physical app", async () => {
   const fx = makeInstall(path.join(TMP, "next"));
   const { read, dispose } = await boot(fx);
   try {
@@ -172,22 +172,22 @@ test("NEXT 布局：DSH_BASE 指向归档时，三个 handler 都落到物理 ap
     const check = await read("selfcheck");
     const diagnose = await read("diagnose");
 
-    assert.equal(same(status.ai_base, fx.physicalHost), true, "status 必须读物理 app");
-    assert.equal(same(check.host, fx.physicalHost), true, "selfcheck 必须读物理 app");
-    assert.equal(same(diagnose.ai_base, fx.physicalHost), true, "diagnose 必须读物理 app");
+    assert.equal(same(status.ai_base, fx.physicalHost), true, "status must read the physical app");
+    assert.equal(same(check.host, fx.physicalHost), true, "selfcheck must read the physical app");
+    assert.equal(same(diagnose.ai_base, fx.physicalHost), true, "diagnose must read the physical app");
 
-    // 三者彼此一致，而不是各读各的
+    // All three must be consistent, not each reading its own path
     assert.equal(same(status.ai_base, check.host), true);
     assert.equal(same(check.host, diagnose.ai_base), true);
 
-    // 归档仍在磁盘上：这个证据要留着，不能因为落到物理 app 就消失
-    assert.equal(status.asar_still_sealed, true, "归档仍在时必须如实呈现");
+    // The archive is still on disk: this evidence must remain, not disappear because we resolved to the physical app
+    assert.equal(status.asar_still_sealed, true, "must accurately report when the archive is still present");
   } finally {
     await dispose();
   }
 });
 
-test("官方布局（dsh/node_modules）：同样落到物理 app", async () => {
+test("official layout (dsh/node_modules): also resolves to the physical app", async () => {
   const fx = makeInstall(path.join(TMP, "official"), { layout: "official", identity: "@deepseek-ai/dsh-desktop-host" });
   const { read, dispose } = await boot(fx);
   try {
@@ -202,7 +202,7 @@ test("官方布局（dsh/node_modules）：同样落到物理 app", async () => 
   }
 });
 
-test("物理 app 缺组件：三个 handler 报同一个缺失目标，不偷偷退回归档", async () => {
+test("physical app missing components: all three handlers report the same missing target, without silently falling back to the archive", async () => {
   const fx = makeInstall(path.join(TMP, "missing"), { complete: false });
   const { read, dispose } = await boot(fx);
   try {
@@ -210,40 +210,40 @@ test("物理 app 缺组件：三个 handler 报同一个缺失目标，不偷偷
     const check = await read("selfcheck");
     const diagnose = await read("diagnose");
 
-    assert.equal(same(status.ai_base, fx.physicalHost), true, "缺失诊断也要落在物理 app 上");
+    assert.equal(same(status.ai_base, fx.physicalHost), true, "missing-component diagnosis must still resolve to the physical app");
     assert.equal(same(check.host, fx.physicalHost), true);
     assert.equal(same(diagnose.ai_base, fx.physicalHost), true);
 
-    // 缺失必须是可见的 broken，而不是被当成 no-host 或静默通过
+    // Missing state must be visibly broken, not treated as no-host or silently passing
     const layoutLayer = (check.layers || []).find((layer) => layer.kind === "layout");
-    assert.ok(layoutLayer, "selfcheck 必须给出 layout 层");
-    assert.notEqual(layoutLayer.state, "ok", "缺组件的夹具不得报 ok");
+    assert.ok(layoutLayer, "selfcheck must provide a layout layer");
+    assert.notEqual(layoutLayer.state, "ok", "a fixture with missing components must not report ok");
 
-    // 缺件时仍要交出目标（不是「未定位」），缺件结论由 compatibility 表达
-    assert.notEqual(status.ai_base, "", "缺件时仍应给出目标");
-    assert.equal(status.compatibility.layout_found, false, "缺件必须被承认");
+    // When parts are missing the target must still be returned (not "unlocated"); the missing conclusion is expressed by compatibility
+    assert.notEqual(status.ai_base, "", "target must still be provided when components are missing");
+    assert.equal(status.compatibility.layout_found, false, "missing components must be acknowledged");
   } finally {
     await dispose();
   }
 });
 
-test("status 接口的资格结论来自真实判定，不是常量", async () => {
-  // 夹具内层是 0.2.1-rc.2（在内核清单里），宿主家族是 next
+test("status endpoint qualification comes from real evaluation, not a constant", async () => {
+  // Fixture inner version is 0.2.1-rc.2 (in kernel list), host family is next
   const fx = makeInstall(path.join(TMP, "compat"));
   const { read, dispose } = await boot(fx);
   try {
     const status = await read("status");
     const compat = status.compatibility;
-    assert.ok(compat, "status 必须返回 compatibility");
+    assert.ok(compat, "status must return compatibility");
 
     assert.equal(compat.kernel.version, "0.2.1-rc.2");
-    assert.equal(compat.kernel.qualified, true, "rc.2 命中内核清单");
+    assert.equal(compat.kernel.qualified, true, "rc.2 matches the kernel list");
     assert.equal(compat.host_family, "next");
-    assert.equal(compat.family_qualified, false, "NEXT 家族整体未验证");
-    assert.equal(compat.qualified, false, "两层都过才算 qualified");
-    assert.equal(compat.level, "kernel-verified", "不能报 qualified，也不能笼统报 unverified");
+    assert.equal(compat.family_qualified, false, "NEXT family as a whole is unverified");
+    assert.equal(compat.qualified, false, "qualified only when both layers pass");
+    assert.equal(compat.level, "kernel-verified", "must not report qualified, and must not broadly report unverified");
 
-    // diagnose 用同一套判定，不能各算各的
+    // diagnose must use the same evaluation, not compute separately
     const diagnose = await read("diagnose");
     assert.equal(diagnose.compatibility.qualified, compat.qualified);
     assert.equal(diagnose.compatibility.level, compat.level);
@@ -253,7 +253,7 @@ test("status 接口的资格结论来自真实判定，不是常量", async () =
   }
 });
 
-test("缺失诊断在三个 handler 之间交叉一致", async () => {
+test("missing-component diagnosis is cross-consistent across all three handlers", async () => {
   const fx = makeInstall(path.join(TMP, "cross"), { complete: false });
   const { read, dispose } = await boot(fx);
   try {
@@ -261,31 +261,31 @@ test("缺失诊断在三个 handler 之间交叉一致", async () => {
     const check = await read("selfcheck");
     const diagnose = await read("diagnose");
 
-    // 1) 目标一致
+    // 1) Targets are consistent
     assert.equal(same(status.ai_base, check.host), true);
     assert.equal(same(check.host, diagnose.ai_base), true);
 
-    // 2) 缺件结论一致：宿主是定位到的，只是不完整 —— 该由 layout 层报缺，
-    //    而不是退回「未定位」（missing_ai_base 表示的是后者）。
-    assert.notEqual(status.ai_base, "", "缺件时仍应给出目标，而不是当成未定位");
-    assert.equal(status.compatibility.layout_found, false, "status 必须承认缺件");
+    // 2) Missing conclusion is consistent: the host is located but incomplete — the layout layer should report missing,
+    //    rather than falling back to "unlocated" (missing_ai_base means the latter).
+    assert.notEqual(status.ai_base, "", "target must still be provided when components are missing, not treated as unlocated");
+    assert.equal(status.compatibility.layout_found, false, "status must acknowledge missing components");
     const layout = (check.layers || []).find((l) => l.kind === "layout");
-    assert.ok(layout, "selfcheck 必须给出 layout 层");
-    assert.notEqual(layout.state, "ok", "selfcheck 不得把缺件报成 ok");
+    assert.ok(layout, "selfcheck must provide a layout layer");
+    assert.notEqual(layout.state, "ok", "selfcheck must not report missing components as ok");
 
-    // 3) 三方对「缺件」的判断必须一致：都认这个物理目标，也都认它不完整
+    // 3) All three must agree on "missing components": all recognize this physical target and all recognize it is incomplete
     const diag = await read("diagnose");
-    assert.equal(same(diag.ai_base, status.ai_base), true, "diagnose 必须与 status 同目标");
+    assert.equal(same(diag.ai_base, status.ai_base), true, "diagnose must target the same path as status");
     assert.equal(
       diag.compatibility.layout_found,
       status.compatibility.layout_found,
-      "diagnose 与 status 的缺件判断必须一致",
+      "diagnose and status must agree on missing components",
     );
-    assert.equal(diag.compatibility.layout_found, false, "缺件夹具必须被判为 layout 缺失");
+    assert.equal(diag.compatibility.layout_found, false, "fixture with missing components must be judged as layout missing");
     assert.equal(
       diag.compatibility.level,
       status.compatibility.level,
-      "diagnose 与 status 的兼容级别必须一致",
+      "diagnose and status must agree on compatibility level",
     );
   } finally {
     await dispose();

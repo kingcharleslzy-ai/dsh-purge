@@ -46,7 +46,7 @@ try {
  await m.rollback(snapshot.id);await verifyInstalledPackage(profile,metadata);
  const manifest=fs.readFileSync(path.join(profile,'package.json')),lock=fs.readFileSync(path.join(profile,'pnpm-lock.yaml'));
  m.verifier=async()=>{throw Error('injected verification failure');};
- await assert.rejects(m.rollback(snapshot.id),/回滚前依赖、安装与清单已恢复/);
+ await assert.rejects(m.rollback(snapshot.id),/pre-rollback dependencies, install, and manifest restored/);
  assert.deepEqual(fs.readFileSync(path.join(profile,'package.json')),manifest);
  assert.deepEqual(fs.readFileSync(path.join(profile,'pnpm-lock.yaml')),lock);
  await verifyInstalledPackage(profile,metadata);

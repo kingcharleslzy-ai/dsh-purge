@@ -56,7 +56,7 @@ test('current installation instructions reject an appended unquoted legacy entry
 });
 
 test('both archives retain a real warned example and fail if it is removed', () => {
-  for (const file of ['README.md', 'README.zh-CN.md']) {
+  for (const file of ['README.md']) {
     const doc = fs.readFileSync(new URL(`../docs/upstream/${file}`, import.meta.url), 'utf8');
     for (const newline of ['\n', '\r\n']) {
       const text = doc.replace(/\r?\n/g, newline);
@@ -92,5 +92,5 @@ test('source installation identifies a missing yaml dependency and preserves oth
   const broken = run();
   assert.equal(broken.status, 1);
   assert.match(broken.stderr, /missing-internal/);
-  assert.doesNotMatch(broken.stderr, /源码安装缺少 yaml/);
+  assert.doesNotMatch(broken.stderr, /source installation is missing yaml/);
 });

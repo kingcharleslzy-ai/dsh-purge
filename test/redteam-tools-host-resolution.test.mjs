@@ -1,8 +1,8 @@
-// 桌面版宿主启动（out/main/host.js）时 loadDefineTool() 必须仍能找到 @deepseek-ai/dsh-tools。
-// 回归背景：1.7.14 的候选路径只覆盖 CLI 启动（argv[1] = node_modules/@deepseek-ai/dsh 内的 bin）。
-// DSH Desktop 0.2.2 的 Electron 宿主用 ELECTRON_RUN_AS_NODE 启动 <app>/out/main/host.js，
-// considerBin 的全部候选落空 → 模块加载抛错 → 预设行 redteam-tools never started
-// → 整份「红队模式」被模式下拉过滤（无限制模式等不含本插件行的预设不受影响）。
+// When the desktop host starts (out/main/host.js), loadDefineTool() must still find @deepseek-ai/dsh-tools.
+// Regression background: 1.7.14 candidates covered only CLI launch (argv[1] = bin inside node_modules/@deepseek-ai/dsh).
+// DSH Desktop 0.2.2's Electron host starts <app>/out/main/host.js with ELECTRON_RUN_AS_NODE,
+// every considerBin candidate missed → module load threw → preset row redteam-tools never started
+// → the whole "Red Team Mode" was filtered out of the mode dropdown (presets without this plugin row, such as Unrestricted Mode, were unaffected).
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -14,7 +14,7 @@ const repoRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const toolsModule = path.join(repoRoot, "lib", "redteam", "tools.js");
 
 
-/** 复刻 DSH Desktop 解包布局：<app>/out/main/host.js + <app>/node_modules/@deepseek-ai/{dsh,dsh-tools}。 */
+/** Recreate the DSH Desktop unpacked layout: <app>/out/main/host.js + <app>/node_modules/@deepseek-ai/{dsh,dsh-tools}. */
 function buildDesktopHostTree(root, withPackages) {
   const app = path.join(root, "app");
   fs.mkdirSync(path.join(app, "out", "main"), { recursive: true });
@@ -39,7 +39,7 @@ function buildDesktopHostTree(root, withPackages) {
   return path.join(app, "out", "main", "host.js");
 }
 
-/** 固定其它候选输入，让结果只由 argv 决定。 */
+/** Pin the other candidate inputs so the result depends on argv only. */
 function isolateCandidateInputs(envBackup) {
   envBackup.PURGE_DSH_CLI = process.env.PURGE_DSH_CLI;
   envBackup.DSH_HOME = process.env.DSH_HOME;

@@ -18,7 +18,7 @@ import { removeTreeNoFollowSync } from "../lib/remove-tree.js";
 const patches = ALL_PATCHES.filter((p) => [82, 83, 84].includes(p.id));
 function fixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "purge-entry-"));
-  const app = path.join(root, "选定 Desktop", "resources", "app"),
+  const app = path.join(root, "Chosen Desktop", "resources", "app"),
     host = path.join(app, "node_modules/@deepseek-ai"),
     home = path.join(root, "home");
   fs.mkdirSync(host, { recursive: true });
@@ -50,7 +50,7 @@ for (const layout of SHELL_MAIN_CANDIDATES)
       const status = await patchStatus(f.host, patches, opts);
       assert.deepEqual(status, { 82: "applied", 83: "applied", 84: "applied" });
       const layer = rollupLayers(status, true, { patches }).find(
-        (l) => l.title === "桌面宿主启动兜底",
+        (l) => l.title === "desktop host startup fallback",
       );
       assert.equal(layer.state, "ok");
       assert.equal(layer.applied, 3);

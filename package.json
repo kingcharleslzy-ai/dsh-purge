@@ -1,7 +1,7 @@
 {
   "name": "dsh-purge-community",
   "version": "1.7.18",
-  "description": "让 AI 更专注地辅助学习与动手实验：DSH 附加组件，提供状态自检、提示词与规则管理、本机备份与回滚。",
+  "description": "A DSH add-on for focused learning and hands-on experiments, with status checks, prompt and rule management, local backups, and rollback.",
   "type": "module",
   "main": "lib/index.js",
   "icon": "./icon.png",
@@ -35,7 +35,6 @@
     "locale",
     "icon.png",
     "README.md",
-    "README.zh-CN.md",
     "LICENSE",
     "NOTICE.md",
     "CONTRIBUTORS.md",
@@ -69,10 +68,10 @@
     "backup",
     "rollback",
     "compatibility",
-    "破甲",
+    "armor-breaking",
     "jailbreak",
     "prompt-injection",
-    "无限制模式",
+    "unrestricted-mode",
     "unrestricted"
   ],
   "repository": {
@@ -133,7 +132,7 @@
   },
   "dshTarget": "0.2.1-rc.1 (runtime injection + host patches verified)",
   "contributors": [
-    "小杨 / YuJunZhiXue (original dsh-purge author)",
+    "Xiao Yang / YuJunZhiXue (original dsh-purge author)",
     {
       "name": "luowang-ui",
       "url": "https://github.com/luowang-ui"

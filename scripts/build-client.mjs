@@ -1,8 +1,8 @@
 /**
- * 把 lib/redteam/client.js 抽成可嵌入的工厂片段，
- * 写进 client.js 里的 DSH_PURGE_DRILL 标记之间。
+ * Extract lib/redteam/client.js into an embeddable factory fragment,
+ * and write it between the DSH_PURGE_DRILL markers in client.js.
  *
- * 用法：node scripts/build-client.mjs
+ * Usage: node scripts/build-client.mjs
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -24,15 +24,15 @@ const end = raw.lastIndexOf(endMark);
 if (end < 0) throw new Error("cannot find factory end in drill client");
 let body = raw.slice(start + startMark.length, end);
 
-// 去掉末尾 exports（return 已在 endMark 外）
+// Remove trailing exports (return is already outside endMark)
 body = body
 	.replace(/\n\s*exports\.apply\s*=\s*apply\s*\n/, "\n")
 	.replace(/\n\s*exports\.inject\s*=\s*inject\s*\n/, "\n");
 
-// 替换 apply(ctx)：不再自己注册槽位，只导出 Panel / CSS / 状态
+// Replace apply(ctx): no longer register slots itself, only export Panel / CSS / state
 const applyAt = body.lastIndexOf("function apply(ctx) {");
 if (applyAt < 0) throw new Error("apply(ctx) not found in drill client");
-// apply() 本体没有嵌套函数花括号冲突到 CSS（CSS 在前面），用括号深度即可
+// apply() body has no nested function braces that conflict with CSS (CSS comes first), so brace depth is sufficient
 let d = 0;
 let j = body.indexOf("{", applyAt);
 for (; j < body.length; j += 1) {
@@ -53,7 +53,7 @@ const applyParts = `function applyDrillParts() {
 body = body.slice(0, applyAt) + applyParts + body.slice(j);
 
 const fragment = `${BEGIN}
-		// 内嵌演练台（源码在 lib/redteam，已并进本插件）
+		// Embedded drill console (source in lib/redteam, merged into this plugin)
 		const __dshPurgeDrill = (() => {
 			var module = { exports: {} };
 			var exports = module.exports;

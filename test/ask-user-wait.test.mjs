@@ -1,5 +1,5 @@
-// #89：尊重模型给的等待时间，只把 -1（无限等）收成 300 秒。
-// 同时覆盖旧版「硬写 1 秒」的迁移：升级后必须不再出现 timeout = 1。
+// #89: Respect the wait time provided by the model, capping only -1 (wait forever) to 300 seconds.
+// Also covers migration from the old "hardcoded 1 second" behavior: after upgrade timeout = 1 must no longer appear.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { ALL_PATCHES, applyReplacementsToText } from "../lib/core.js";

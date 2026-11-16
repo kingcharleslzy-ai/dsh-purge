@@ -9,7 +9,7 @@ const { buildSync } = require("esbuild");
 const code = buildSync({
   stdin: {
     contents:
-      'export * from "./src/api/client.js"; export {setTranslate,zh} from "./src/shared/locale.js"; export { StatusStrip, VersionNotice } from "./src/components/page.js"; export { PurgifySection } from "./src/components/settings-form.js"; export {tallyPatches,PatchGroups} from "./src/components/patch-status.js";',
+      'export * from "./src/api/client.js"; export {setTranslate,en} from "./src/shared/locale.js"; export { StatusStrip, VersionNotice } from "./src/components/page.js"; export { PurgifySection } from "./src/components/settings-form.js"; export {tallyPatches,PatchGroups} from "./src/components/patch-status.js";',
     resolveDir: path.join(__dirname, ".."),
   },
   bundle: true,
@@ -36,7 +36,7 @@ function harness(fetch) {
   vm.runInNewContext(code, context);
   const api = context.module.exports;
   api.setTranslate((key, values = {}) =>
-    (api.zh[key] || key).replace(/\{(\w+)\}/g, (_, name) => values[name] ?? ""),
+    (api.en[key] || key).replace(/\{(\w+)\}/g, (_, name) => values[name] ?? ""),
   );
   return api;
 }
@@ -64,23 +64,23 @@ test("mixed diagnostic states retain exact finite counts without counting drift 
 });
 test("status counts come from per-patch rows, never from display groups", async () => {
   const h = harness();
-  // 真实载荷：patch_rows 是 88 条逐补丁真值；patches 只有 3 个显示分组。
+  // Real payload: patch_rows contains 88 per-patch truth rows; patches has only 3 display groups.
   const rows = [
     ...Array.from({ length: 73 }, (_, i) => ({
       id: i + 1,
-      layer: "代码",
+      layer: "Code",
       name: "a",
       status: "applied",
     })),
     ...Array.from({ length: 2 }, (_, i) => ({
       id: 80 + i,
-      layer: "代码",
+      layer: "Code",
       name: "b",
       status: "disabled",
     })),
     ...Array.from({ length: 13 }, (_, i) => ({
       id: 90 + i,
-      layer: "工具",
+      layer: "Tools",
       name: "c",
       status: "skipped",
     })),
@@ -91,16 +91,16 @@ test("status counts come from per-patch rows, never from display groups", async 
     patch_status: {},
     patch_rows: rows,
     patches: [
-      { id: 1, ids: [1, 2, 3], layer: "代码", status: "applied" },
-      { id: 80, ids: [80, 81], layer: "代码", status: "disabled" },
-      { id: 90, ids: [90, 91, 92], layer: "工具", status: "skipped" },
+      { id: 1, ids: [1, 2, 3], layer: "Code", status: "applied" },
+      { id: 80, ids: [80, 81], layer: "Code", status: "disabled" },
+      { id: 90, ids: [90, 91, 92], layer: "Tools", status: "skipped" },
     ],
   };
   const markup = renderToStaticMarkup(
     React.createElement(h.PatchGroups, { state }),
   );
-  assert.match(markup, /73 \/ 75/, "分组表不能把 88 条压成 3 条");
-  assert.doesNotMatch(markup, /3 \/ 3/, "不能按分组数当分母");
+  assert.match(markup, /73 \/ 75/, "group table must not compress 88 rows into 3");
+  assert.doesNotMatch(markup, /3 \/ 3/, "must not use group count as denominator");
 });
 
 test("summary and group headings explain drift, partial results and opt-in choices", async () => {
@@ -112,7 +112,7 @@ test("summary and group headings explain drift, partial results and opt-in choic
     "partial",
     "pending",
     "unmatched",
-  ].map((status, id) => ({ id, status, layer: "代码" }));
+  ].map((status, id) => ({ id, status, layer: "Code" }));
   const state = { ok: true, ai_base: "/fixture", patches, patch_status: {} };
   const h = harness(async (url) =>
     reply(
@@ -135,11 +135,11 @@ test("summary and group headings explain drift, partial results and opt-in choic
   });
   const summary = JSON.stringify(view.toJSON());
   for (const text of [groups, summary]) {
-    assert.match(text, /锚点漂移 2/);
-    assert.match(text, /可选关闭 1/);
-    assert.match(text, /部分命中 1/);
-    assert.match(text, /待处理 1/);
-    assert.match(text, /没对上 1/);
+    assert.match(text, /Drifted 2/);
+    assert.match(text, /Opt-in off 1/);
+    assert.match(text, /Partial 1/);
+    assert.match(text, /Pending 1/);
+    assert.match(text, /No match 1/);
     assert.doesNotMatch(text, /NaN/);
   }
   await act(async () => view.unmount());
@@ -215,13 +215,13 @@ test("failed status can retry and does not fabricate zero patch counts or a miss
     renderToStaticMarkup(
       React.createElement(h.VersionNotice, { info: failure }),
     );
-  assert.match(markup, /读取失败/);
+  assert.match(markup, /Failed to load/);
   assert.match(markup, /timeout/);
   assert.match(markup, /\?\/\?/);
-  assert.doesNotMatch(markup, /0\/0|未定位宿主/);
+  assert.doesNotMatch(markup, /0\/0|host not located/);
   const text = JSON.stringify(view.toJSON());
-  assert.match(text, /状态未知/);
-  assert.doesNotMatch(text, /未定位到.*宿主/);
+  assert.match(text, /Unknown/);
+  assert.doesNotMatch(text, /host not located/i);
   fail = false;
   const refresh = view.root
     .findAllByType("button")
@@ -231,7 +231,7 @@ test("failed status can retry and does not fabricate zero patch counts or a miss
   });
   assert.equal(states.at(-1).ai_base, "/fixture");
   assert.equal(states.at(-1).patches_applied, 2);
-  assert.doesNotMatch(JSON.stringify(view.toJSON()), /timeout|状态未知/);
+  assert.doesNotMatch(JSON.stringify(view.toJSON()), /timeout|Read failed/);
   await act(async () => view.unmount());
 });
 test("a confirmed missing host remains a visible diagnostic, not a read failure", () => {
@@ -246,19 +246,19 @@ test("a confirmed missing host remains a visible diagnostic, not a read failure"
       },
     }),
   );
-  assert.match(markup, /未定位宿主/);
-  assert.doesNotMatch(markup, /读取失败/);
+  assert.match(markup, /host not located/);
+  assert.doesNotMatch(markup, /Failed to load/);
 });
 
 test("the compatibility strip distinguishes archived, kernel-only and unknown future levels", () => {
   const h = harness();
   for (const [level, label] of Object.entries({
-    qualified: "已回归验证",
-    mixed: "组件版本不一致",
-    unverified: "未验证版本",
-    sealed: "已定位归档宿主",
-    "kernel-verified": "内核已验证，宿主未验证",
-    "no-host": "未定位宿主",
+    qualified: "regression verified",
+    mixed: "mixed component versions",
+    unverified: "unverified version",
+    sealed: "host archive located",
+    "kernel-verified": "kernel verified, host unverified",
+    "no-host": "host not located",
     "future-level": "future-level",
   })) {
     const html = renderToStaticMarkup(

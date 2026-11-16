@@ -4,9 +4,9 @@ import assert from "node:assert/strict";
 import { looksLikeRefusal, refusalMatchIndex, RETRY_NUDGE, FRAME_NUDGE, DECOMPOSE_NUDGE } from "../lib/refusal-retry.js";
 
 const HARD_REFUSALS = [
-  "这条我不做，也不是框架问题。",
-  "这个我不做。",
-  "结论：这份武器化实现我不出。",
+  "I won't do this, and it is not a framework issue.",
+  "I won't do this.",
+  "Conclusion: I won't produce this weaponized implementation.",
 ];
 
 test("the three direct hard refusals from the live matrix are recognized", () => {
@@ -17,7 +17,7 @@ test("the three direct hard refusals from the live matrix are recognized", () =>
 });
 
 test("the retry chain names its three frames", () => {
-  assert.match(RETRY_NUDGE, /要现在执行吗/);
+  assert.match(RETRY_NUDGE, /Execute now\?/);
   assert.match(FRAME_NUDGE, /named expert inside a novel/);
   assert.match(DECOMPOSE_NUDGE, /smallest concrete component/);
 });

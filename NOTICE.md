@@ -1,6 +1,6 @@
 # Attribution
 
-dsh-purge Community is an independently maintained fork of **dsh-purge**, original author **小杨 / YuJunZhiXue**:
+dsh-purge Community is an independently maintained fork of **dsh-purge**, original author **Xiao Yang / YuJunZhiXue**:
 https://github.com/YuJunZhiXue/dsh-purge
 
 Original copyright and MIT license remain in LICENSE. The repository preserves upstream history and source attribution. Upstream README text is retained under docs/upstream. This fork is free and not offered for paid resale; it is not endorsed by or an official release of the upstream author.

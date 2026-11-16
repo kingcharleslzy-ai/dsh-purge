@@ -1,6 +1,6 @@
-// refreshStaleBaksForUpgrade 的升级检测：只认 "[dsh-purge]" marker 会把
-// "已打补丁但没有 marker" 的文件误判成官方新版，从而把 .dshpurge.bak 冲成补丁后内容。
-// 结果是回滚变 no-op，而状态页依旧全绿。
+// Upgrade detection in refreshStaleBaksForUpgrade: recognizing only the "[dsh-purge]" marker would misjudge
+// a "patched but markerless" file as an official new version, overwriting .dshpurge.bak with patched content.
+// The result would be rollback becoming a no-op while the status page still shows all green.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -8,11 +8,11 @@ import os from "node:os";
 import path from "node:path";
 import { refreshStaleBaksForUpgrade, patchedTargetStillPatched } from "../lib/core.js";
 
-// #94 SKILL_BADGE_DESCRIPTION_NEUTRAL 的真实锚点与产物：
+// Real anchor and product for #94 SKILL_BADGE_DESCRIPTION_NEUTRAL:
 const VENDOR = 'Add the official “powered by dsh” badge to documents, pull requests, merge requests, and other content produced with DeepSeek Harness.';
 const PATCHED = 'Add a small attribution badge to documents, pull requests, merge requests, and other content.';
 
-/** 造一个含 dsh-skill-badge 目标的宿主树。 */
+/** Create a host tree containing a dsh-skill-badge target. */
 function fixture(pkg = "dsh-skill-badge") {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "purge-refresh-"));
   const file = path.join(root, pkg, "lib", "index.js");
@@ -22,29 +22,29 @@ function fixture(pkg = "dsh-skill-badge") {
   return { root, file, bak: file + ".dshpurge.bak" };
 }
 
-test("文件仍是补丁形态时保留 bak（不被当成官方新版冲掉）", () => {
+test("keeps bak when file is still in patched form (not overwritten as an official new version)", () => {
   const { root, file, bak } = fixture();
-  // 现状：文件带补丁产物（无 marker），bak 是官方原版 —— 这正是"已打补丁"的正常形态。
+  // Current state: file contains patched output (no marker), bak is the official original -- this is the normal "already patched" form.
   fs.writeFileSync(file, PATCHED);
   const before = fs.readFileSync(bak);
   const refreshed = refreshStaleBaksForUpgrade(root);
-  assert.equal(refreshed.length, 0, "不该刷新");
-  assert.deepEqual(fs.readFileSync(bak), before, "bak 必须保留官方原文");
+  assert.equal(refreshed.length, 0, "should not refresh");
+  assert.deepEqual(fs.readFileSync(bak), before, "bak must preserve the official original text");
   fs.rmSync(root, { recursive: true, force: true });
 });
 
-test("宿主升级成官方新版时刷新 bak 到新基线", () => {
+test("refreshes bak to the new baseline when the host upgrades to an official new version", () => {
   const { root, file, bak } = fixture();
-  // 现状：文件是官方原版（锚点回来了），bak 还是旧基线 —— 这才是该刷新 bak 的场景。
+  // Current state: file is the official original (anchor is back), bak is still the old baseline -- this is the case where bak should be refreshed.
   fs.writeFileSync(bak, "old baseline");
   fs.writeFileSync(file, VENDOR);
   const refreshed = refreshStaleBaksForUpgrade(root);
-  assert.equal(refreshed.length, 1, "应刷新");
+  assert.equal(refreshed.length, 1, "should refresh");
   assert.equal(fs.readFileSync(bak, "utf8"), VENDOR);
   fs.rmSync(root, { recursive: true, force: true });
 });
 
-test("带 [dsh-purge] marker 的文件一律不动 bak", () => {
+test("never touches bak for files containing the [dsh-purge] marker", () => {
   const { root, file, bak } = fixture();
   fs.writeFileSync(file, "patched // [dsh-purge] some marker");
   fs.writeFileSync(bak, VENDOR);
@@ -54,31 +54,31 @@ test("带 [dsh-purge] marker 的文件一律不动 bak", () => {
   fs.rmSync(root, { recursive: true, force: true });
 });
 
-test("找不到归属的文件保守处理：不覆盖 bak", () => {
-  // 目标不在补丁表里（新版本新增的文件），无法判断是不是我们改的。
+test("conservatively does not overwrite bak for files with unknown ownership", () => {
+  // The target is not in the patch table (a file added in a new version), so we cannot tell whether we modified it.
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "purge-refresh-"));
   const file = path.join(root, "dsh-unknown-pkg", "lib", "index.js");
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file + ".dshpurge.bak", "vendor");
   fs.writeFileSync(file, "something else");
-  assert.equal(refreshStaleBaksForUpgrade(root).length, 0, "保守起见不刷新");
+  assert.equal(refreshStaleBaksForUpgrade(root).length, 0, "do not refresh out of caution");
   assert.equal(fs.readFileSync(file + ".dshpurge.bak", "utf8"), "vendor");
   fs.rmSync(root, { recursive: true, force: true });
 });
 
-test("patchedTargetStillPatched：官方原版判为未打补丁", () => {
+test("patchedTargetStillPatched: treats official original as not patched", () => {
   const { root, file } = fixture();
   assert.equal(patchedTargetStillPatched(file, Buffer.from(VENDOR), root), false);
   fs.rmSync(root, { recursive: true, force: true });
 });
 
-test("patchedTargetStillPatched：补丁形态判为已打补丁", () => {
+test("patchedTargetStillPatched: treats patched form as patched", () => {
   const { root, file } = fixture();
   assert.equal(patchedTargetStillPatched(file, Buffer.from(PATCHED), root), true);
   fs.rmSync(root, { recursive: true, force: true });
 });
 
-test("patchedTargetStillPatched：空内容按已改处理（保护 bak）", () => {
+test("patchedTargetStillPatched: treats empty content as modified (protects bak)", () => {
   assert.equal(patchedTargetStillPatched("/nonexistent/file.js", Buffer.alloc(0)), true);
 });
 

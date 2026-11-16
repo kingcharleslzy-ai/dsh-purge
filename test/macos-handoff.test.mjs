@@ -23,7 +23,7 @@ function fixture() {
   const root = fs.realpathSync(
       fs.mkdtempSync(path.join(os.tmpdir(), "purge-mac-")),
     ),
-    bundle = path.join(root, "空 格.app"),
+    bundle = path.join(root, "spaced.app"),
     resources = path.join(bundle, "Contents/Resources");
   const exe = path.join(bundle, "Contents/MacOS/holder"),
     asar = path.join(resources, "app.asar");
