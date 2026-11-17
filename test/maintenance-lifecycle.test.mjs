@@ -82,3 +82,32 @@ test('installAssembleGuard returns identical disposer across fresh Cordis proxie
   await root.fiber.dispose();
  }
 });
+
+test('installAssembleGuard keeps disposers bounded under alternating rewrites and cross-object wrapped assignment',async()=>{
+ const root=new Context();await root.plugin(Prompt);
+ try {
+  const rewriteA=value=>({...value,marker:'A'});
+  const rewriteB=value=>({...value,marker:'B'});
+  const seen=new Set();
+  for(let i=0;i<50;i++){
+   seen.add(installAssembleGuard(root.systemPrompt,rewriteA));
+   seen.add(installAssembleGuard(root.systemPrompt,rewriteB));
+  }
+  assert.equal(seen.size,2);
+  for(const d of seen)d();
+  assert.deepEqual(await root.systemPrompt.assemble(),native());
+
+  const a={assemble:async()=>native()};
+  const b={assemble:async()=>native()};
+  const disposeA=installAssembleGuard(a,rewriteA);
+  installAssembleGuard(b,rewriteB);
+  b.assemble=a.assemble;
+  const disposeB=installAssembleGuard(a,rewriteB);
+  assert.notEqual(disposeB,disposeA);
+  assert.equal((await a.assemble()).marker,'B');
+  disposeB();
+  assert.deepEqual(await a.assemble(),native());
+ } finally {
+  await root.fiber.dispose();
+ }
+});
