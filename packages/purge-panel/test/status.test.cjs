@@ -273,3 +273,22 @@ test("the compatibility strip distinguishes archived, kernel-only and unknown fu
     assert.equal(html.includes("is-ok"), level === "qualified");
   }
 });
+
+test("#71 missing and unreadable files remain visible in patch detail", () => {
+  const h = harness();
+  const state = {
+    ai_base: "/fixture",
+    patch_status: { 71: "missing_file" },
+    patch_files: {
+      71: [{ path: "/fixture/local/agent.cordis.yml", status: "missing_file" }],
+    },
+  };
+  const render = () =>
+    renderToStaticMarkup(React.createElement(h.PatchGroups, { state }));
+  assert.match(render(), /0 \/ 1/);
+  assert.match(render(), /缺少预设文件/);
+  assert.match(render(), /fixture\/local\/agent.cordis.yml/);
+  state.patch_status[71] = "unknown";
+  state.patch_files[71][0].status = "unreadable";
+  assert.match(render(), /无法读取/);
+});

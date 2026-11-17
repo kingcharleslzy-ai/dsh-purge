@@ -3,7 +3,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { spawnSync } from "node:child_process";
 import { Maintenance, compatibility, ROOT, PACKAGE } from "../lib/community.js";
-import { findDshHome, patchDrift } from "../lib/core.js";
+import { findDshHome, liangshenStatusForHost, patchDrift } from "../lib/core.js";
 import { currentHost, diagnosticHost, hostSurface } from "../lib/instance.js";
 import { readOverrides, writeOverride, clearOverride } from "../lib/anchors.js";
 import { logAudit, readAudit } from "../lib/audit.js";
@@ -229,6 +229,8 @@ if (LEGACY[op]) {
           || (layer.broken.length ? JSON.stringify(layer.broken) : "")
           || (layer.pending && layer.pending.length ? `待应用 #${layer.pending.join("/#")}` : "");
         lines.push(`  ${mark} ${layer.title}  ${layer.applied}/${layer.required ?? layer.total}${tail ? "  " + tail : ""}`);
+        for (const file of layer.patch_evidence?.[71]?.files || [])
+          lines.push(`    #71 ${file.status}  ${file.path}`);
       }
       const pendingCount = (report.summary && report.summary.pending && report.summary.pending.patches) || 0;
       lines.push(
@@ -263,6 +265,7 @@ if (LEGACY[op]) {
       name: "Purge Community",
       package: PACKAGE,
       compatibility: compatibility(target),
+      ...(target ? {patch_evidence:{71:await liangshenStatusForHost(home, hostSurface(target))}} : {}),
       host_selection: target ? "explicit-or-running" : "unresolved",
       ...(target ? {} : { hint: "未取得当前实例入口；请指定 DSH_BASE / PURGE_DSH_CLI，或查看正在运行宿主的面板诊断。这不是插件未安装的证明。" }),
       backups: (() => { try { return maintenance().list(); } catch { return []; } })(),

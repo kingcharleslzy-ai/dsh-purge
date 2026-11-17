@@ -122,7 +122,11 @@ export function patchRowsAll(state) {
 }
 
 function isNaRow(row) {
-  return row.st === "na" || row.st === "skipped" || row.st === "missing_file";
+  return (
+    row.st === "na" ||
+    row.st === "skipped" ||
+    (row.st === "missing_file" && row.id !== 71)
+  );
 }
 
 /** 四态计数：已应用 / 待应用 / 未启用 / 本端不适用，后两者互斥且不计入分母。 */
@@ -158,6 +162,8 @@ export function tallyPatches(rows) {
     else if (row.st === "partial") out.partial += 1;
     else if (row.st === "drifted") out.drifted += 1;
     else if (row.st === "disabled") out.disabled += 1;
+    else if (row.id === 71 && ["unknown", "missing_file"].includes(row.st))
+      out.unverified = (out.unverified || 0) + 1;
     else out.skipped += 1;
   }
   return out;
@@ -482,6 +488,8 @@ export function PatchGroups({ state }) {
         notes.push(t("metric.unmatchedShort", { n: tally.unmatched }));
       if (tally.partial)
         notes.push(t("metric.partialShort", { n: tally.partial }));
+      if (tally.unverified)
+        notes.push(t("metric.unverifiedShort", { n: tally.unverified }));
       if (tally.drifted)
         notes.push(t("metric.driftedShort", { n: tally.drifted }));
       if (tally.disabled)
@@ -582,13 +590,39 @@ export function PatchGroups({ state }) {
                         : h(
                             "span",
                             { className: "dshpp-row-note" },
-                            t("hint." + (r.st || "unknown")),
+                            r.id === 71 && r.st === "missing_file"
+                              ? t("file.missing_file")
+                              : t("hint." + (r.st || "unknown")),
                           ),
                     ),
                     h(
                       "td",
                       null,
-                      h(Pill, { value: r.st }),
+                      r.id === 71 && r.st === "missing_file"
+                        ? h(Pill, {
+                            value: "unmatched",
+                            label: t("file.missing_file"),
+                          })
+                        : h(Pill, { value: r.st }),
+                      r.id === 71 &&
+                        (state.patch_files?.[71] || []).map((file) =>
+                          h(
+                            "div",
+                            {
+                              key: file.path,
+                              className: "dshpp-row-note",
+                              style: { overflowWrap: "anywhere" },
+                            },
+                            (["missing_file", "unreadable", "unknown"].includes(
+                              file.status,
+                            )
+                              ? t("file." + file.status)
+                              : statusLabel(file.status, t)) +
+                              " · " +
+                              file.path,
+                          ),
+                        ),
+
                       r.st === "partial"
                         ? h(
                             "span",
