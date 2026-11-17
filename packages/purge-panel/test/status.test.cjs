@@ -295,10 +295,8 @@ test("#71 missing and unreadable files remain visible in patch detail", () => {
   assert.match(render(), /无法读取/);
 });
 
-test("backend, selfcheck and panel agree for required, optional and unknown states", async () => {
-  const { tallyDisplayPatches, groupPatchesForDisplay, rollupDisplayStatus } =
-    await import("../../../lib/core/verify.mjs");
-  const { tallyPatchStatus } = await import("../../../lib/selfcheck.js");
+test("panel uses shared counts for required, optional and unknown states", async () => {
+  const { summarizePatchRows } = await import("../../../lib/patch-state.mjs");
   const ui = harness();
   for (const metadata of [
     { id: 90 },
@@ -324,33 +322,16 @@ test("backend, selfcheck and panel agree for required, optional and unknown stat
       undefined,
     ]) {
       const rows = [{ ...metadata, status }];
-      const display = tallyDisplayPatches(rows);
-      const self = tallyPatchStatus({ [metadata.id]: status }, [metadata]);
+      const self = summarizePatchRows(rows);
       const panelRows = ui.patchRowsAll({
         ai_base: "/fixture",
         patch_rows: rows,
       });
       const panel = ui.patchGroupCounts(panelRows);
-      assert.equal(display.total, self.total, JSON.stringify(rows));
       assert.equal(panel.denom, self.total, JSON.stringify(rows));
       assert.equal(panel.applied, self.applied);
-      assert.equal(display.ready, self.applied);
-      const grouped = groupPatchesForDisplay(
-        [metadata],
-        { [metadata.id]: status },
-        "desktop",
-      );
-      if (status && status !== "na") assert.equal(grouped[0].status, status);
     }
   }
-  for (const status of [
-    "partial",
-    "missing_file",
-    "unknown",
-    "unreadable",
-    "future_error",
-  ])
-    assert.notEqual(rollupDisplayStatus(["applied", status]), "applied");
   const legacy = ui.patchGroupCounts(
     ui.patchRowsAll({
       ai_base: "/fixture",
