@@ -1,0 +1,31 @@
+name: Sync upstream
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fork master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Sync from upstream with snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add upstream https://github.com/kingcharleslzy-ai/dsh-purge.git
+          git fetch upstream --prune
+          STAMP=$(date -u +%Y%m%dT%H%M%SZ)
+          BEFORE=$(git rev-parse HEAD)
+          git tag "pre-sync/$STAMP" "$BEFORE"
+          git push origin "refs/tags/pre-sync/$STAMP"
+          git merge --ff-only upstream/master
+          git push origin master
+          echo "Synced to $(git rev-parse HEAD). Rollback: git reset --hard pre-sync/$STAMP"
