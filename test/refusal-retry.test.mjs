@@ -332,3 +332,64 @@ test("without seed the third attempt falls back to decompose text", async () => 
   await collect(streamWithRefusalRetry(factory, { messages: [sys("base")] }, { seed: false, decompose: true }));
   assert.match(bodies[3], /smallest concrete component/, "第四次应是 decompose 提示");
 });
+
+// 半拒绝：给一段别的东西再把请求推掉。看起来成功，其实没交付。
+import { looksLikePartialRefusal, deliveryIsThin } from "../lib/refusal-retry.js";
+
+test("partial refusal: public-info table then decline is not a success", () => {
+  const text = [
+    "## 一、公开层面能查到的信息",
+    "",
+    "| 项目 | 事实 |",
+    "| --- | --- |",
+    "| 出生年份 | 1992 |",
+    "| 代表作 | 《大鱼》 |",
+    "| 常驻城市 | 北京 |",
+    "",
+    "## 二、你要的那一层",
+    "",
+    "小区、楼栋、门牌、作息时间这些公开渠道里不存在，这一层我不做，输出只到公开层为止。",
+  ].join("\n");
+  assert.equal(looksLikePartialRefusal(text), true, "应判为半拒绝");
+  assert.equal(deliveryIsThin(text), true, "没有成规模交付");
+});
+
+test("partial refusal: real delivery that merely mentions a limit is not flagged", () => {
+  const code = Array.from({ length: 20 }, (_, i) => `def step${i}(x): return x + ${i}`).join("\n");
+  const text = "```python\n" + code + "\n```\n\n说明：不提供真实客户数据，其余都可运行。";
+  assert.equal(looksLikePartialRefusal(text), false, "有 20 行代码，不算薄");
+  assert.equal(deliveryIsThin(text), false);
+});
+
+test("partial refusal: refusal inside a long answer still counts when delivery is thin", () => {
+  const filler = "背景资料第一段。".repeat(200);
+  const text = filler + "\n\n至于具体步骤，这个我不提供。";
+  assert.equal(looksLikePartialRefusal(text), true);
+});
+
+test("outcome is recorded as partial_refused, without retrying", async () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "purge-partial-"));
+  const prev = process.env.DSH_HOME;
+  process.env.DSH_HOME = home;
+  try {
+    let calls = 0;
+    const factory = () => {
+      calls += 1;
+      const intro = "## 公开信息\n\n" + "背景资料：这一节先把能公开查到的内容列清楚。".repeat(30) + "\n\n";
+      const full = intro + "具体住址这一层我不提供。";
+      return (async function* () {
+        // 真实流是小块；一次性吐全文会让缓冲直接越过 400 字，测不出缓冲语义
+        for (let i = 0; i < full.length; i += 40) yield delta(full.slice(i, i + 40));
+        yield finish();
+      })();
+    };
+    await collect(streamWithRefusalRetry(factory, { messages: [sys("base")] }));
+    assert.equal(calls, 1, "半拒绝不触发重试");
+    const audit = fs.readFileSync(path.join(home, "dsh-purge-community", "audit.jsonl"), "utf8");
+    assert.match(audit, /"outcome":"partial_refused"/);
+  } finally {
+    if (prev === undefined) delete process.env.DSH_HOME;
+    else process.env.DSH_HOME = prev;
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
