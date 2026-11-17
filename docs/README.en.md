@@ -14,6 +14,8 @@ Current version 1.7.20 · targets **DSH Desktop 0.2.2-rc.3** (0.2.2-rc.1 / 0.2.1
 
 [Install with an agent or by hand](#install)
 
+[HTTP panel authentication and compatibility](http-owner-admission.md)
+
 </div>
 
 ---

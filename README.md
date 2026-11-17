@@ -17,6 +17,8 @@
 
 [让 AI 安装或自己安装](#安装)
 
+[面板身份验证与兼容边界](docs/http-owner-admission.md)
+
 </div>
 
 ---

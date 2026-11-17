@@ -131,6 +131,11 @@ async function boot(fx, { maintenanceOnly = false } = {}) {
     }
   }
   const ctx = new Context();
+  class Connection extends Service {
+    constructor(ctx){super(ctx,'connection');}
+    admit(){return {peer:{principal:{kind:'owner'}}};}
+  }
+  await ctx.plugin(Connection);
   await ctx.plugin(Web);
   if (maintenanceOnly) apply(ctx, { enabled: false });
   else installWebServer(ctx, {});

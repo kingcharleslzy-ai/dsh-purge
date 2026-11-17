@@ -81,6 +81,10 @@ async function bootRoutes(t, hostEntries = []) {
       super(ctx, "connection");
       this.trustedHosts = hostEntries;
     }
+    admit(request) {
+      return request.headers.cookie === 'fixture-owner'
+        ? {peer:{principal:{kind:'owner'}}} : {rejection:401};
+    }
   }
   await ctx.plugin(Connection);
   await ctx.plugin(Web);
@@ -97,7 +101,7 @@ async function bootRoutes(t, hostEntries = []) {
     else process.env.PURGE_TRUSTED_HOSTS = savedTrusted;
   });
 
-  const call = async (routePath, headers) => {
+  const call = async (routePath, headers, authenticated = true) => {
     const spec = ctx.webServer.routes.get(routePath);
     if (!spec) return { registered: false };
     const res = {
@@ -106,7 +110,9 @@ async function bootRoutes(t, hostEntries = []) {
       writeHead(code) { this.code = code; },
       end(body) { this.body = body; },
     };
-    const request = Object.assign(Readable.from([]), { method: "GET", headers });
+    const request = Object.assign(Readable.from([]), {
+      method: "GET", headers: {...(authenticated ? {cookie:'fixture-owner'} : {}), ...headers},
+    });
     try {
       await spec.handler(request, res);
     } catch (error) {
@@ -140,6 +146,18 @@ test("/dsh-purge/community 仍然拒绝 DNS rebinding", async (t) => {
     "sec-fetch-site": "same-origin",
   });
   assert.equal(result.code, 403);
+});
+
+test('the independent community route also requires an authenticated owner',async t=>{
+  const {ctx,call}=await bootRoutes(t);
+  const headers={host:`${BIND}:43120`};
+  assert.equal((await call('/dsh-purge/community',headers,false)).code,401);
+  ctx.get('connection').admit=()=>({peer:{principal:{kind:'operator'}}});
+  assert.equal((await call('/dsh-purge/community',headers)).code,403);
+  ctx.get('connection').admit=()=>{throw Error('PRIVATE_FIXTURE');};
+  const unavailable=await call('/dsh-purge/community',headers);
+  assert.equal(unavailable.code,503);
+  assert.doesNotMatch(unavailable.body,/PRIVATE_FIXTURE/);
 });
 
 test("registered routes use the same host and environment allowlists", async (t) => {
