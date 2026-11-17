@@ -1,6 +1,12 @@
 # 从插件市场安装或迁移 Purge
 
-首次安装可在 dsh-market 搜索 `kingcharleslzy-ai/dsh-purge`。确认仓库作者和包名 `dsh-purge-community`；同名镜像不是同一发行来源。不要运行 `dsh plugin add dsh-purge` 或裸包名 `dsh-purge-community`：本项目通过 GitHub Releases 发行，不依赖这两个 npm 名称。
+首次安装时，在 DSH「插件 → 发现 → 添加索引源」中填入 `https://kingcharleslzy-ai.github.io/dsh-purge/index.json`，搜索 `dsh-purge-community`，核对作者为 `kingcharleslzy-ai`。如果从第三方市场进入，先核对卡片给出的版本和安装来源。卡片过时或搜索不到时，可以直接添加上述索引。[安装窗口填写示例](INSTALLATION.md#install-addresses)
+
+## 第三方市场如何跟随稳定发行
+
+- **对接 DSH 索引**：每次刷新时，从上述索引的 `plugins` 中按完整包名 `dsh-purge-community` 和 `repository.url` 匹配。选择目标宿主兼容的稳定版本，保留**同一条**版本记录的 `source.url`、完整 `source.commit` 和 `engines`。目录还有其他插件，不能取首条作为社区版。
+- **展示 TGZ 安装按钮**：刷新时从 [GitHub 最新稳定发行](https://github.com/kingcharleslzy-ai/dsh-purge/releases/latest) 读取 tag，选择该发行中名称含相同版本号的 TGZ，将它的完整下载地址交给 DSH。用户指定版本时使用对应 tag。长期收录请链接发行页，或在刷新时重新解析；复制 README 某一版的命令作为永久条目会安装旧包。
+- **保留可复现的安装来源**：将固定版本 TGZ 或固定提交传给 DSH。直接把 `releases/latest/download/…` 写进 profile 会留下浮动依赖，后续离线安装其他插件时 pnpm 也可能重新请求它。[已有浮动依赖的迁移说明](INSTALLATION.md#旧-profile-的浮动下载地址阻塞其他插件164)
 
 ## 已装旧版：直接迁移，不先卸载
 

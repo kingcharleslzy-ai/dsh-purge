@@ -1,8 +1,8 @@
 # DSH 自定义市场索引
 
-正式源地址：**https://kingcharleslzy-ai.github.io/dsh-purge/index.json**
+在 DSH「添加索引源」中填写这个市场目录地址：**https://kingcharleslzy-ai.github.io/dsh-purge/index.json**
 
-DSH「插件 → 实验性插件 → 更多 → 自定义插件市场」开启后，在「发现 → 添加索引源」粘贴该地址。没有这个功能的旧宿主仍可通过 GitHub Release 安装。
+DSH「插件 → 实验性插件 → 更多 → 自定义插件市场」开启后，在「发现 → 添加索引源」粘贴该地址。「安装源」是下载 npm 依赖用的另一个字段，通常沿用已有设置。没有这个功能的旧宿主仍可通过 GitHub Release 安装。
 
 索引遵循官方 format 1，收录 Purge（从 1.6.5 起）、DSH-Spicy 和 Breeze Voice 的正式版本；源码安装固定到完整 Git 提交，不指向可变分支。发布工作流成功后生成并部署 GitHub Pages，不需要手改索引。
 

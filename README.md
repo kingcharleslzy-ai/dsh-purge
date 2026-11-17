@@ -15,6 +15,8 @@
 
 **原项目与作者**：小杨 / YuJunZhiXue 是历史上游 dsh-purge 的作者署名。本仓库独立维护社区版，保留上游版权和 MIT 许可证。历史署名不代表对当前同名 GitHub 账号身份的核实。详见[署名记录](NOTICE.md)与[许可证](LICENSE)。
 
+[让 AI 安装或自己安装](#安装)
+
 </div>
 
 ---
@@ -67,17 +69,26 @@ dsh-purge Community 是一个跑在你自己机器上的 Harness 附加组件。
 
 ## 安装
 
-手动选择 GitHub 源码文件夹时，先在含 `package-lock.json` 的插件根目录运行 `npm ci --omit=dev --ignore-scripts`，再选择该目录。发行 TGZ 走下方官方安装流程。
+**让 AI 安装**，把下面这句话发给能操作本机的 Agent：
 
-**DSH 官方入口负责安装插件；下面的社区安装器由本仓库维护，不是 DeepSeek 官方脚本。** 首次安装可用官方界面或 CLI；已经装过 `dsh-purge` / 旧独立面板时，用社区安装器原地迁移，不要先卸载。安装、应用宿主补丁、手动重启是独立动作。
+> 帮我把 https://github.com/kingcharleslzy-ai/dsh-purge 的最新稳定版装到我正在用的 DSH。先读仓库 AGENTS.md 的安装章节，检查有没有旧版，有就保留设置原地迁移。装好告诉我实际版本和 profile，重启由我自己操作。
 
 ### 方式一：DSH 官方界面（首次安装）
 
-1. 先打开 DSH 完成初始化。按当前官方文档，进入「插件」，点击「实验性插件」旁的「更多」，启用「自定义插件市场」；然后进入「发现 → 添加索引源」。
-2. 本项目的**社区索引**：`https://kingcharleslzy-ai.github.io/dsh-purge/index.json`。
-3. 选择 dsh-purge Community，核对来源为 `kingcharleslzy-ai/dsh-purge`、包名为 `dsh-purge-community`，确认后安装。
+1. 打开 DSH 的「插件 → 发现 → 添加索引源」。如果没有「发现」，先到「插件 → 实验性插件 → 更多」启用「自定义插件市场」。
+2. 在「添加索引源」粘贴这一行，保存后找到 **dsh-purge Community**。
 
-界面和安装协议由 DSH 提供，索引与插件由社区维护。不同 DSH 版本的入口文字可能不同；第三方 `dsh-market` 也可能有额外的筛选与迁移限制。已有旧包时请使用方式三。[官方市场说明](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/user/guide/plugin-market.zh.md)
+   ```text
+   https://kingcharleslzy-ai.github.io/dsh-purge/index.json
+   ```
+
+3. 核对仓库为 `kingcharleslzy-ai/dsh-purge`，点「安装」。完成后，到已安装插件列表查看 `dsh-purge-community` 的版本。
+
+**「安装源」通常保持原值即可。** 这个字段用来下载 `yaml` 等 npm 依赖。若详情里出现 `GET https://github.com/…/yaml` 和 404，请在「插件 → 添加插件 → 安装源」选择「npm 官方源」或你平时可用的私有 npm 源，然后重试。[查看三个地址各填哪里](docs/INSTALLATION.md#install-addresses)
+
+**已经装过旧版 Purge 或独立面板？** 直接用下方方式三备份并原地迁移。手动下载了源码 ZIP 的用户请看[从源码目录安装](docs/INSTALLATION.md#手动选择插件源码目录)。
+
+市场维护者可按[索引与安装按钮的接入说明](docs/MARKET-MIGRATION.md)同步稳定发行。
 
 ### 方式二：DSH 官方 CLI（首次安装）
 
