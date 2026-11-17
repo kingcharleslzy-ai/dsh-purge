@@ -9,7 +9,7 @@ const { buildSync } = require("esbuild");
 const code = buildSync({
   stdin: {
     contents:
-      'export * from "./src/api/client.js"; export {setTranslate,zh} from "./src/shared/locale.js"; export { StatusStrip, VersionNotice } from "./src/components/page.js"; export { PurgifySection } from "./src/components/settings-form.js"; export {tallyPatches,patchGroupCounts,patchRowsAll,PatchGroups} from "./src/components/patch-status.js";',
+      'export * from "./src/api/client.js"; export {setTranslate,zh} from "./src/shared/locale.js"; export { StatusStrip, VersionNotice } from "./src/components/page.js"; export { PurgifySection } from "./src/components/settings-form.js"; export {tallyPatches,patchGroupCounts,patchRowsAll,PatchGroups,PatchHealth} from "./src/components/patch-status.js";',
     resolveDir: path.join(__dirname, ".."),
   },
   bundle: true,
@@ -115,7 +115,12 @@ test("summary and group headings explain drift, partial results and opt-in choic
     "pending",
     "unmatched",
   ].map((status, id) => ({ id, status, layer: "代码" }));
-  const state = { ok: true, ai_base: "/fixture", patches, patch_status: {} };
+  const state = {
+    ok: true,
+    ai_base: "/fixture",
+    patch_rows: patches,
+    patch_status: {},
+  };
   const h = harness(async (url) =>
     reply(
       String(url).endsWith("/status")
@@ -219,7 +224,7 @@ test("failed status can retry and does not fabricate zero patch counts or a miss
     );
   assert.match(markup, /读取失败/);
   assert.match(markup, /timeout/);
-  assert.match(markup, /\?\/\?/);
+  assert.match(markup, /无法核实/);
   assert.doesNotMatch(markup, /0\/0|未定位宿主/);
   const text = JSON.stringify(view.toJSON());
   assert.match(text, /状态未知/);
@@ -414,5 +419,54 @@ test("filter membership matches inactive and required counts", async () => {
     }
   } finally {
     await act(async () => view.unmount());
+  }
+});
+
+test("same two patches: details count once, legacy summaries keep errors without counts, absent evidence stays unknown", () => {
+  const api = harness();
+  const rows = [
+    { id: 41, status: "applied" },
+    { id: 42, status: "drifted" },
+  ];
+  const groups = [
+    { id: 41, ids: [41, 42], status: "partial", layer: "代码", members: rows },
+  ];
+  for (const [kind, payload] of [
+    ["detail", { patch_rows: rows, patches: groups }],
+    [
+      "detail",
+      { patch_status: { 41: "applied", 42: "drifted" }, patches: groups },
+    ],
+    ["summary", { patches: groups }],
+    ["summary", { patch_rows: [], patch_status: {}, patches: groups }],
+    ["summary", { patches: groups.map(({ members, ...g }) => g) }],
+    ["unknown", {}],
+    ["unknown", { patch_rows: [], patch_status: {}, patches: [] }],
+  ]) {
+    const state = {
+      ok: true,
+      ai_base: "fixture",
+      patches_applied: 1,
+      patches_total: 1,
+      ...payload,
+    };
+    const render = (component, prop) =>
+      renderToStaticMarkup(React.createElement(component, { [prop]: state }));
+    const markup =
+      render(api.PatchGroups, "state") +
+      render(api.StatusStrip, "info") +
+      render(api.PatchHealth, "state");
+    if (kind === "detail") {
+      assert.match(markup, /1 \/ 2/);
+      assert.match(markup, /锚点漂移/);
+    } else {
+      assert.match(markup, kind === "summary" ? /仅有分组摘要/ : /无法核实/);
+      assert.doesNotMatch(
+        markup,
+        /\d\s*\/\s*\d|宿主补丁全部就位|dshpp-fbtn|dshpp-skel/,
+      );
+      if (kind === "summary") assert.match(markup, /部分命中/);
+      if (payload.patches?.[0]?.members) assert.match(markup, /#42：锚点漂移/);
+    }
   }
 });
