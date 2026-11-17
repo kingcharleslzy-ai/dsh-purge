@@ -1,3 +1,4 @@
+import { patchNotApplicable, patchStateCategory, summarizePatchRows } from "../../../../lib/patch-state.mjs";
 // UI derived from YuJunZhiXue/dsh-purge 1.1.71 (MIT). See LICENSE.
 import { h, useEffect, useState } from "../shared/react.js";
 import { useT } from "../shared/locale.js";
@@ -31,7 +32,8 @@ export function statusLabel(st, t) {
   if (st === "drifted") return t("status.drifted");
   if (st === "disabled") return t("status.disabled");
   if (st === "skipped") return t("health.na");
-  if (st === "missing_file") return t("health.na");
+  if (st === "missing_file") return t("file.missing_file");
+  if (st === "unknown" || st === "unreadable") return t("file." + st);
   if (st === "unlocated") return t("status.unlocated");
   if (st === "na") return t("health.na");
   return st || t("unknown");
@@ -83,9 +85,11 @@ function rowsFromState(state) {
     return source
       .map((p) => ({
         id: Number(p.id),
-        st: p.status || "na",
+        st: p.status || "unknown",
         layer: p.layer || "",
         name: p.name || "",
+        optional: p.optional === true,
+        settleWhenAbsent: p.settleWhenAbsent === true,
       }))
       .filter((r) => r.st && Number.isFinite(r.id));
   }
@@ -95,7 +99,7 @@ function rowsFromState(state) {
     return Object.keys(statusMap)
       .map((id) => ({
         id: Number(id),
-        st: statusMap[id],
+        st: statusMap[id] || "unknown",
         layer: "",
         name: names[id] || "",
       }))
@@ -105,9 +109,11 @@ function rowsFromState(state) {
   return (Array.isArray(state.patches) ? state.patches : [])
     .map((p) => ({
       id: Number(p.id),
-      st: p.status || "na",
+      st: p.status || "unknown",
       layer: p.layer || "",
       name: "",
+      optional: p.optional === true,
+      settleWhenAbsent: p.settleWhenAbsent === true,
     }))
     .filter((r) => r.st && Number.isFinite(r.id));
 }
@@ -122,51 +128,31 @@ export function patchRowsAll(state) {
 }
 
 function isNaRow(row) {
-  return (
-    row.st === "na" ||
-    row.st === "skipped" ||
-    (row.st === "missing_file" && row.id !== 71)
-  );
+  return row.st !== "disabled" && row.st !== "off" && patchNotApplicable(row, row.st);
 }
 
-/** 四态计数：已应用 / 待应用 / 未启用 / 本端不适用，后两者互斥且不计入分母。 */
 export function patchGroupCounts(rows) {
-  const out = { applied: 0, pending: 0, off: 0, na: 0, total: 0, denom: 0 };
-  for (const row of rows || []) {
-    out.total += 1;
-    if (isNaRow(row)) out.na += 1;
-    else if (row.st === "disabled") out.off += 1;
-    else if (row.st === "applied" || row.st === "already") out.applied += 1;
-    else out.pending += 1;
-  }
-  out.denom = out.total - out.na;
-  return out;
+  const counts = summarizePatchRows(rows);
+  return {
+    applied: counts.applied,
+    pending: counts.pending + counts.broken + counts.unknown,
+    off: counts.disabled + counts.off,
+    na: counts.not_applicable - counts.disabled - counts.off,
+    total: counts.all,
+    denom: counts.total,
+  };
 }
 
 export function tallyPatches(rows) {
-  const out = {
-    applied: 0,
-    pending: 0,
-    unmatched: 0,
-    partial: 0,
-    drifted: 0,
-    disabled: 0,
-    skipped: 0,
-    total: 0,
+  const counts = summarizePatchRows(rows);
+  return {
+    applied: counts.applied, pending: counts.pending,
+    unmatched: counts.unmatched, partial: counts.partial, drifted: counts.drifted,
+    disabled: counts.disabled + counts.off, skipped: counts.skipped,
+    unverified: counts.unknown + (rows || []).filter(row =>
+      row.st === "missing_file" && !patchNotApplicable(row, row.st)).length,
+    total: counts.all,
   };
-  for (const row of rows || []) {
-    out.total += 1;
-    if (row.st === "applied" || row.st === "already") out.applied += 1;
-    else if (row.st === "pending") out.pending += 1;
-    else if (row.st === "unmatched") out.unmatched += 1;
-    else if (row.st === "partial") out.partial += 1;
-    else if (row.st === "drifted") out.drifted += 1;
-    else if (row.st === "disabled") out.disabled += 1;
-    else if (row.id === 71 && ["unknown", "missing_file"].includes(row.st))
-      out.unverified = (out.unverified || 0) + 1;
-    else out.skipped += 1;
-  }
-  return out;
 }
 
 function Tile({ kind, label, value, title, text }) {
@@ -435,13 +421,8 @@ export function PatchGroups({ state }) {
   };
   const kept = allRows.filter((row) => {
     if (filter === "pending")
-      return (
-        !isNaRow(row) &&
-        row.st !== "disabled" &&
-        row.st !== "applied" &&
-        row.st !== "already"
-      );
-    if (filter === "off") return row.st === "disabled";
+      return ["pending", "unknown", "broken"].includes(patchStateCategory(row, row.st));
+    if (filter === "off") return row.st === "disabled" || row.st === "off";
     if (filter === "na") return isNaRow(row);
     return true;
   });
@@ -590,7 +571,7 @@ export function PatchGroups({ state }) {
                         : h(
                             "span",
                             { className: "dshpp-row-note" },
-                            r.id === 71 && r.st === "missing_file"
+                            r.st === "missing_file" && !isNaRow(r)
                               ? t("file.missing_file")
                               : t("hint." + (r.st || "unknown")),
                           ),
@@ -598,14 +579,14 @@ export function PatchGroups({ state }) {
                     h(
                       "td",
                       null,
-                      r.id === 71 && r.st === "missing_file"
+                      r.st === "missing_file" && !isNaRow(r)
                         ? h(Pill, {
                             value: "unmatched",
                             label: t("file.missing_file"),
                           })
                         : h(Pill, { value: r.st }),
-                      r.id === 71 &&
-                        (state.patch_files?.[71] || []).map((file) =>
+                      (r.id === 71 || !["applied", "already"].includes(r.st)) &&
+                        (state.patch_files?.[r.id] || []).map((file) =>
                           h(
                             "div",
                             {
