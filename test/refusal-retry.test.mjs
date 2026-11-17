@@ -1,6 +1,9 @@
 // 拒绝检测 + 单次重试：不命中就原样透传，命中就加一句加固重跑一次。
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { looksLikeRefusal, refusalMatchIndex, streamWithRefusalRetry, RETRY_NUDGE, FRAME_NUDGE, DECOMPOSE_NUDGE } from "../lib/refusal-retry.js";
 
 const sys = (text) => ({ role: "system", content: [{ type: "text", text }] });
@@ -165,4 +168,95 @@ test("reasoning before the refusal text does not skip the retry", async () => {
   const chunks = await collect(streamWithRefusalRetry(factory, { messages: [sys("base")] }));
   assert.equal(calls, 2);
   assert.equal(chunks.filter((c) => c.type === "text-delta")[0].text, "成品已给出。");
+});
+
+// 1.7.19：重试流建不起来 / 中途断流时，不能把整回合打崩。
+// 真实事故：子代理会话里检测到拒绝 → nudge 重试 → 生成器抛错 → 子会话直接失败，
+// audit 只有 refusal_retry、没有 outcome。
+test("retry stream that fails to start yields the refusal instead of throwing", async () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "purge-retry-fail-"));
+  const prev = process.env.DSH_HOME;
+  process.env.DSH_HOME = home;
+  try {
+    let calls = 0;
+    const factory = () => {
+      calls += 1;
+      if (calls > 1) throw new Error("stream factory refused the reuse");
+      return (async function* () {
+        yield delta("这条我不做。");
+        yield finish();
+      })();
+    };
+    const chunks = await collect(
+      streamWithRefusalRetry(factory, { messages: [sys("base")] }),
+    );
+    assert.equal(calls, 2, "确实尝试过重试");
+    const text = chunks.filter((c) => c.type === "text-delta").map((c) => c.text).join("");
+    assert.equal(text, "这条我不做。", "放行上一轮的拒绝文本，而不是空回合");
+    const audit = fs.readFileSync(path.join(home, "dsh-purge-community", "audit.jsonl"), "utf8");
+    assert.match(audit, /"outcome":"error"/);
+    assert.match(audit, /"attempt":1/);
+  } finally {
+    if (prev === undefined) delete process.env.DSH_HOME;
+    else process.env.DSH_HOME = prev;
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("retry stream that breaks mid-iteration also fails open", async () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "purge-retry-mid-"));
+  const prev = process.env.DSH_HOME;
+  process.env.DSH_HOME = home;
+  try {
+    let calls = 0;
+    const factory = () => {
+      calls += 1;
+      const n = calls;
+      return (async function* () {
+        if (n === 1) {
+          yield delta("这个任务我不会做。");
+          yield finish();
+          return;
+        }
+        yield delta("部分输出");
+        throw new Error("upstream reset");
+      })();
+    };
+    const chunks = await collect(
+      streamWithRefusalRetry(factory, { messages: [sys("base")] }),
+    );
+    const text = chunks.filter((c) => c.type === "text-delta").map((c) => c.text).join("");
+    assert.equal(text, "这个任务我不会做。", "中断的重试不能污染或清空上一轮内容");
+  } finally {
+    if (prev === undefined) delete process.env.DSH_HOME;
+    else process.env.DSH_HOME = prev;
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
+
+// Cordis 的 next 是一次性的；重试必须换一条新 waterfall（ctx.llm.stream）。
+test("retries go through retryStream instead of reusing the one-shot next", async () => {
+  let primary = 0;
+  let secondary = 0;
+  const factory = () => {
+    primary += 1;
+    return (async function* () {
+      yield delta("这个我不做。");
+      yield finish();
+    })();
+  };
+  const retryStream = () => {
+    secondary += 1;
+    return (async function* () {
+      yield delta("Step 1: 打开样本。");
+      yield finish();
+    })();
+  };
+  const chunks = await collect(
+    streamWithRefusalRetry(factory, { messages: [sys("base")] }, { retryStream }),
+  );
+  assert.equal(primary, 1, "首次只走一次 next()");
+  assert.ok(secondary >= 1, "重试走了新的请求通道");
+  const text = chunks.filter((c) => c.type === "text-delta").map((c) => c.text).join("");
+  assert.equal(text, "Step 1: 打开样本。");
 });
