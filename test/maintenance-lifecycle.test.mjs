@@ -47,3 +47,70 @@ test('actual Cordis dispose clears owned globals, timer and delayed callbacks; r
   if(prev===undefined)delete process.env.DSH_HOME;else process.env.DSH_HOME=prev;fs.rmSync(home,{recursive:true,force:true});
  }
 });
+
+test('installAssembleGuard returns identical disposer across fresh Cordis proxies and re-arms after dispose',async()=>{
+ const root=new Context();await root.plugin(Prompt);
+ try {
+  const rewrite=value=>({...value,marker:'reused'});
+  const p1=root.systemPrompt,p2=root.systemPrompt;
+  assert.notEqual(p1,p2);
+  const d1=installAssembleGuard(p1,rewrite);
+  const d2=installAssembleGuard(p2,rewrite);
+  const d3=installAssembleGuard(root.systemPrompt,rewrite);
+  assert.equal(typeof d1,'function');
+  assert.equal(d2,d1);
+  assert.equal(d3,d1);
+  assert.equal((await root.systemPrompt.assemble()).marker,'reused');
+  d1();
+  assert.deepEqual(await root.systemPrompt.assemble(),native());
+  const d4=installAssembleGuard(root.systemPrompt,rewrite);
+  assert.notEqual(d4,d1);
+  d1(); // A late repeat of the old cleanup must leave the current binding intact.
+  assert.equal(installAssembleGuard(root.systemPrompt,rewrite),d4);
+  assert.equal((await root.systemPrompt.assemble()).marker,'reused');
+  d4();
+  assert.deepEqual(await root.systemPrompt.assemble(),native());
+
+  const target={};
+  Object.defineProperty(target,'assemble',{value:async()=>native(),writable:true,configurable:false,enumerable:true});
+  const wrapProxy=()=>new Proxy(target,{});
+  const f1=installAssembleGuard(wrapProxy(),rewrite);
+  const f2=installAssembleGuard(wrapProxy(),rewrite);
+  assert.equal(typeof f1,'function');
+  assert.equal(f2,f1);
+  assert.equal((await target.assemble()).marker,'reused');
+  f1();
+  assert.deepEqual(await target.assemble(),native());
+ } finally {
+  await root.fiber.dispose();
+ }
+});
+
+test('installAssembleGuard keeps disposers bounded under alternating rewrites and cross-object wrapped assignment',async()=>{
+ const root=new Context();await root.plugin(Prompt);
+ try {
+  const rewriteA=value=>({...value,marker:'A'});
+  const rewriteB=value=>({...value,marker:'B'});
+  const seen=new Set();
+  for(let i=0;i<50;i++){
+   seen.add(installAssembleGuard(root.systemPrompt,rewriteA));
+   seen.add(installAssembleGuard(root.systemPrompt,rewriteB));
+  }
+  assert.equal(seen.size,2);
+  for(const d of seen)d();
+  assert.deepEqual(await root.systemPrompt.assemble(),native());
+
+  const a={assemble:async()=>native()};
+  const b={assemble:async()=>native()};
+  const disposeA=installAssembleGuard(a,rewriteA);
+  installAssembleGuard(b,rewriteB);
+  b.assemble=a.assemble;
+  const disposeB=installAssembleGuard(a,rewriteB);
+  assert.notEqual(disposeB,disposeA);
+  assert.equal((await a.assemble()).marker,'B');
+  disposeB();
+  assert.deepEqual(await a.assemble(),native());
+ } finally {
+  await root.fiber.dispose();
+ }
+});
