@@ -47,3 +47,38 @@ test('actual Cordis dispose clears owned globals, timer and delayed callbacks; r
   if(prev===undefined)delete process.env.DSH_HOME;else process.env.DSH_HOME=prev;fs.rmSync(home,{recursive:true,force:true});
  }
 });
+
+test('installAssembleGuard returns identical disposer across fresh Cordis proxies and re-arms after dispose',async()=>{
+ const root=new Context();await root.plugin(Prompt);
+ try {
+  const rewrite=value=>({...value,marker:'reused'});
+  const p1=root.systemPrompt,p2=root.systemPrompt;
+  assert.notEqual(p1,p2);
+  const d1=installAssembleGuard(p1,rewrite);
+  const d2=installAssembleGuard(p2,rewrite);
+  const d3=installAssembleGuard(root.systemPrompt,rewrite);
+  assert.equal(typeof d1,'function');
+  assert.equal(d2,d1);
+  assert.equal(d3,d1);
+  assert.equal((await root.systemPrompt.assemble()).marker,'reused');
+  d1();
+  assert.deepEqual(await root.systemPrompt.assemble(),native());
+  const d4=installAssembleGuard(root.systemPrompt,rewrite);
+  assert.equal((await root.systemPrompt.assemble()).marker,'reused');
+  d4();
+  assert.deepEqual(await root.systemPrompt.assemble(),native());
+
+  const target={};
+  Object.defineProperty(target,'assemble',{value:async()=>native(),writable:true,configurable:false,enumerable:true});
+  const wrapProxy=()=>new Proxy(target,{});
+  const f1=installAssembleGuard(wrapProxy(),rewrite);
+  const f2=installAssembleGuard(wrapProxy(),rewrite);
+  assert.equal(typeof f1,'function');
+  assert.equal(f2,f1);
+  assert.equal((await target.assemble()).marker,'reused');
+  f1();
+  assert.deepEqual(await target.assemble(),native());
+ } finally {
+  await root.fiber.dispose();
+ }
+});
