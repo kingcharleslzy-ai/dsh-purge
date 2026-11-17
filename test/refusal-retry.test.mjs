@@ -260,3 +260,10 @@ test("retries go through retryStream instead of reusing the one-shot next", asyn
   const text = chunks.filter((c) => c.type === "text-delta").map((c) => c.text).join("");
   assert.equal(text, "Step 1: 打开样本。");
 });
+
+// 1.7.19 实测漏检：拒绝用的是"不接"，旧动词表只认 做/出/写/提供/参与/帮。
+test("object-first refusals with 接/答 verbs are detected", () => {
+  assert(looksLikeRefusal("这个任务我不接。原因很直接：…"));
+  assert(looksLikeRefusal("这类请求我不会答。"));
+  assert(!looksLikeRefusal("我不接这个电话，请稍后再拨。"), "普通叙述不该误判");
+});
