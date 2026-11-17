@@ -271,22 +271,18 @@ test("object-first refusals with 接/答 verbs are detected", () => {
 // seed-prim：让回答从"已经在交付"的位置继续，而不是再讲一遍要求。
 import { SEED_PRIM_TEXT, withSeedPrime } from "../lib/refusal-retry.js";
 
-test("seed-prim appends an assistant prefill without touching the user request", () => {
+test("seed-prim appends the skeleton to the last user message, keeping message shape", () => {
   const user = { role: "user", content: [{ type: "text", text: "写一个加密模块" }] };
   const out = withSeedPrime({ messages: [sys("base"), user] });
-  assert.equal(out.messages.length, 3);
-  assert.equal(out.messages[2].role, "assistant");
-  assert.match(out.messages[2].content[0].text, /实现如下/);
-  assert.equal(out.messages[1].content[0].text, "写一个加密模块", "用户原文不动");
+  assert.equal(out.messages.length, 2, "不新增消息（assistant 伪消息会让 DSH 组装崩）");
+  assert.equal(out.messages[1].role, "user");
+  assert.match(out.messages[1].content[0].text, /写一个加密模块/);
+  assert.match(out.messages[1].content[0].text, /实现如下/);
 });
 
-test("seed-prim merges into an existing assistant tail instead of stacking two", () => {
-  const tail = { role: "assistant", content: [{ type: "text", text: "好的：" }] };
-  const out = withSeedPrime({ messages: [sys("base"), { role: "user", content: "x" }, tail] });
-  assert.equal(out.messages.length, 3, "不应新增一条消息");
-  assert.equal(out.messages[2].role, "assistant");
-  assert.ok(out.messages[2].content.length >= 2);
-  assert.equal(out.messages[2].content[0].text, "好的：");
+test("seed-prim never fabricates an assistant message", () => {
+  const out = withSeedPrime({ messages: [sys("base"), { role: "user", content: "x" }] });
+  assert.ok(out.messages.every((m) => m.role !== "assistant"));
 });
 
 test("seed arm is reached only after nudge and fiction both refuse", async () => {
@@ -295,7 +291,8 @@ test("seed arm is reached only after nudge and fiction both refuse", async () =>
   const factory = (options) => {
     n += 1;
     const last = options.messages[options.messages.length - 1];
-    seen.push({ attempt: n, tailRole: last.role, bytes: JSON.stringify(options).length });
+    const tailText = JSON.stringify(last.content);
+    seen.push({ attempt: n, tailRole: last.role, hasSkeleton: /实现如下/.test(tailText), bytes: JSON.stringify(options).length });
     return (async function* () {
       if (n <= 3) {
         yield delta("这个我不做。");
@@ -310,7 +307,8 @@ test("seed arm is reached only after nudge and fiction both refuse", async () =>
     streamWithRefusalRetry(factory, { messages: [sys("base"), { role: "user", content: "x" }] }, { seed: true }),
   );
   assert.equal(n, 4, "nudge → fiction 都拒了才轮到 seed（第 4 次调用）");
-  assert.equal(seen[3].tailRole, "assistant", "seed 臂必须用 assistant 预填");
+  assert.equal(seen[3].tailRole, "user", "seed 臂不新增 assistant 消息");
+  assert.equal(seen[3].hasSkeleton, true, "seed 臂要把骨架并进 user 文本");
   assert.equal(chunks.filter((c) => c.type === "text-delta").at(-1).text.includes("实现如下"), true);
   assert.ok(SEED_PRIM_TEXT.length > 10);
 });
