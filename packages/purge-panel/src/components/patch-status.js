@@ -77,58 +77,57 @@ export function patchGroupOf(id) {
   return "normal";
 }
 
-/**
- * 逐补丁行。只认 `patch_rows`（服务端按 88 条补丁逐条给出）。
- * `state.patches` 是「显示分组」，一个分组聚合了多条补丁、只有一条 status，
- * 拿它当逐补丁列表会少算条目、也会把混合状态压成一个（1.7.18 修的就是这个）。
- */
-function rowsFromState(state) {
-  if (!state || !state.ai_base) return [];
-  const source = Array.isArray(state.patch_rows) ? state.patch_rows : null;
-  if (source) {
-    return source
-      .map((p) => ({
+// Only individual rows or a legacy per-ID map can support a patch count.
+export function patchEvidence(state) {
+  const empty = { kind: "unknown", rows: [], groups: [] };
+  if (!state?.ai_base || state.ok === false) return empty;
+  const validId = (id) =>
+    (typeof id === "number" || (typeof id === "string" && /^\d+$/.test(id))) &&
+    Number.isSafeInteger(Number(id)) &&
+    Number(id) >= 0;
+  const status = (st) => (typeof st === "string" && st ? st : "unknown");
+  const rows = Array.isArray(state.patch_rows) ? state.patch_rows : [];
+  const map = state.patch_status;
+  const source = rows.length
+    ? rows
+    : map && typeof map === "object" && !Array.isArray(map)
+      ? Object.entries(map).map(([id, st]) => ({
+          id,
+          status: st,
+          name: state.patch_names?.[id],
+        }))
+      : [];
+  if (
+    source.length &&
+    source.every((p) => validId(p?.id)) &&
+    new Set(source.map((p) => Number(p.id))).size === source.length
+  )
+    return {
+      kind: "detail",
+      groups: [],
+      rows: source.map((p) => ({
         id: Number(p.id),
-        st: p.status || "unknown",
+        st: status(p.status),
         layer: p.layer || "",
         name: p.name || "",
         optional: p.optional === true,
         settleWhenAbsent: p.settleWhenAbsent === true,
-      }))
-      .filter((r) => r.st && Number.isFinite(r.id));
-  }
-  const names = state.patch_names || {};
-  const statusMap = state.patch_status || {};
-  if (Object.keys(statusMap).length) {
-    return Object.keys(statusMap)
-      .map((id) => ({
-        id: Number(id),
-        st: statusMap[id] || "unknown",
-        layer: "",
-        name: names[id] || "",
-      }))
-      .filter((r) => r.st && Number.isFinite(r.id));
-  }
-  // 老载荷/夹具只剩分组表：只能按分组显示，明确标注为退化输入。
-  return (Array.isArray(state.patches) ? state.patches : [])
-    .map((p) => ({
-      id: Number(p.id),
-      st: p.status || "unknown",
-      layer: p.layer || "",
-      name: "",
-      optional: p.optional === true,
-      settleWhenAbsent: p.settleWhenAbsent === true,
-    }))
-    .filter((r) => r.st && Number.isFinite(r.id));
+      })),
+    };
+  const groups = Array.isArray(state.patches)
+    ? state.patches.filter(
+        (p) => p && typeof p === "object" && !Array.isArray(p),
+      )
+    : [];
+  return groups.length ? { kind: "summary", rows: [], groups } : empty;
+}
+
+export function patchRowsAll(state) {
+  return patchEvidence(state).rows;
 }
 
 export function patchRowsOf(state) {
-  return rowsFromState(state).filter((r) => r.st !== "na");
-}
-
-/** 含"本端不适用"的全量行：状态页要能单独把它们列出来，但不进分母。 */
-export function patchRowsAll(state) {
-  return rowsFromState(state);
+  return patchRowsAll(state).filter((r) => r.st !== "na");
 }
 
 function isNaRow(row) {
@@ -186,7 +185,10 @@ function Tile({ kind, label, value, title, text }) {
 export function PatchHealth({ state }) {
   const t = useT();
   if (!state || !state.ai_base) return null;
-  const counts = patchGroupCounts(patchRowsAll(state));
+  const evidence = patchEvidence(state);
+  if (evidence.kind !== "detail")
+    return h("p", { role: "status" }, t("evidence." + evidence.kind));
+  const counts = patchGroupCounts(evidence.rows);
   const denom = Math.max(counts.denom, 1);
   const pct = (n) => (n / denom) * 100;
   const verdict = counts.pending
@@ -319,8 +321,7 @@ export function PatchGroupSwitches({ state, onSaved }) {
       alive = false;
     };
   }, []);
-  const counts = patchGroupCounts(patchRowsAll(state));
-  const rows = patchRowsAll(state);
+  const { kind, rows } = patchEvidence(state);
   const permApplied = rows.filter(
     (r) => patchGroupOf(r.id) === "permission" && r.st === "applied",
   ).length;
@@ -369,13 +370,16 @@ export function PatchGroupSwitches({ state, onSaved }) {
         desc: t("sw.permission.desc"),
         hintTitle: t("sw.permission"),
         hint: t("sw.permission.hint"),
-        chip: permOn
-          ? t("sw.chip.on", {
-              n: PERMISSION_PATCH_IDS.length,
-              written: permApplied,
-              pending: permPending,
-            })
-          : t("sw.chip.off", { n: PERMISSION_PATCH_IDS.length }),
+        chip:
+          kind !== "detail"
+            ? t("evidence." + kind)
+            : permOn
+              ? t("sw.chip.on", {
+                  n: PERMISSION_PATCH_IDS.length,
+                  written: permApplied,
+                  pending: permPending,
+                })
+              : t("sw.chip.off", { n: PERMISSION_PATCH_IDS.length }),
         onToggle: () => toggle("permissionPatches"),
       }),
       h(Switch, {
@@ -385,13 +389,16 @@ export function PatchGroupSwitches({ state, onSaved }) {
         desc: t("sw.context.desc"),
         hintTitle: t("sw.context"),
         hint: t("sw.context.hint"),
-        chip: ctxOn
-          ? t("sw.chip.on", {
-              n: CONTEXT_PATCH_IDS.length,
-              written: ctxApplied,
-              pending: CONTEXT_PATCH_IDS.length - ctxApplied,
-            })
-          : t("sw.chip.off", { n: CONTEXT_PATCH_IDS.length }),
+        chip:
+          kind !== "detail"
+            ? t("evidence." + kind)
+            : ctxOn
+              ? t("sw.chip.on", {
+                  n: CONTEXT_PATCH_IDS.length,
+                  written: ctxApplied,
+                  pending: CONTEXT_PATCH_IDS.length - ctxApplied,
+                })
+              : t("sw.chip.off", { n: CONTEXT_PATCH_IDS.length }),
         onToggle: () => toggle("contextManagement"),
       }),
     ),
@@ -419,12 +426,52 @@ export function PatchGroups({ state }) {
   const [filter, setFilter] = useState("all");
   if (state?.ok === false)
     return h("p", { role: "status" }, t("groups.unreadable"));
-  if (!state || !state.patch_status)
+  if (!state)
     return h("div", { className: "dshpp-skel", style: { height: 120 } });
   const located = !!state.ai_base;
   if (!located) return null;
 
-  const allRows = patchRowsAll(state);
+  const { kind, rows: allRows, groups } = patchEvidence(state);
+  if (kind === "unknown")
+    return h("p", { role: "status" }, t("evidence.unknown"));
+  if (kind === "summary")
+    return h(
+      "ul",
+      { "aria-label": t("evidence.summary") },
+      groups.map((g, i) =>
+        h(
+          "li",
+          { key: i },
+          [
+            g.layer,
+            g.name,
+            Array.isArray(g.ids)
+              ? g.ids.map((id) => "#" + id).join("、")
+              : g.id != null
+                ? "#" + g.id
+                : "",
+          ]
+            .filter(Boolean)
+            .join(" · "),
+          "：",
+          statusLabel(typeof g.status === "string" ? g.status : "unknown", t),
+          Array.isArray(g.members) &&
+            h(
+              "ul",
+              null,
+              g.members
+                .filter((m) => m && typeof m.status === "string")
+                .map((m, j) =>
+                  h(
+                    "li",
+                    { key: j },
+                    "#" + m.id + "：" + statusLabel(m.status, t),
+                  ),
+                ),
+            ),
+        ),
+      ),
+    );
   const counts = patchGroupCounts(allRows);
   const filterCount = {
     all: counts.total,
