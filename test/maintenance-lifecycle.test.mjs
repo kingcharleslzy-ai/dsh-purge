@@ -64,6 +64,9 @@ test('installAssembleGuard returns identical disposer across fresh Cordis proxie
   d1();
   assert.deepEqual(await root.systemPrompt.assemble(),native());
   const d4=installAssembleGuard(root.systemPrompt,rewrite);
+  assert.notEqual(d4,d1);
+  d1(); // A late repeat of the old cleanup must leave the current binding intact.
+  assert.equal(installAssembleGuard(root.systemPrompt,rewrite),d4);
   assert.equal((await root.systemPrompt.assemble()).marker,'reused');
   d4();
   assert.deepEqual(await root.systemPrompt.assemble(),native());
