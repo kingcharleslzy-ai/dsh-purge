@@ -145,3 +145,60 @@ test("tuning round-trips the opt-in list and drops junk", () => {
     removeTreeNoFollowSync(home);
   }
 });
+
+test("#251 rc.3 requires the matching post-execute and pre-step registrations together", async () => {
+  const f = fixture();
+  try {
+    const opts = { dshHome: f.home, surface: "desktop", extraPatches: [18] };
+    const fp = path.join(f.host, "dsh-repeat-tool-reminder/lib/index.js");
+    const source = patch18.replacements[1].pattern;
+    assert.ok(!source.includes('downstream.kind === "block"'));
+    const partial = source.slice(0, source.indexOf('\tctx.on("agent/pre-step"'));
+    fs.writeFileSync(fp, partial);
+    await applyPatches(f.host, [patch18], opts);
+    assert.equal(fs.readFileSync(fp, "utf8"), partial);
+    assert.equal((await patchStatus(f.host, [patch18], opts))[18], "drifted");
+    fs.writeFileSync(fp, source.replaceAll("\n", "\r\n"));
+    assert.equal((await applyPatches(f.host, [patch18], opts))[0].status, "applied");
+    assert.equal((await applyPatches(f.host, [patch18], opts))[0].status, "already");
+    assert.equal((await patchStatus(f.host, [patch18], opts))[18], "applied");
+    fs.appendFileSync(fp, '\nctx.on("agent/pre-step", different);');
+    assert.equal((await patchStatus(f.host, [patch18], opts))[18], "drifted");
+  } finally {
+    f.close();
+  }
+});
+
+test("#252 verify a markerless deletion against the original file on repeated apply", async () => {
+  const f = fixture();
+  try {
+    const patch = ALL_PATCHES.find(p => p.id === 54);
+    const opts = { dshHome: f.home, surface: "web" };
+    const dir = path.join(f.host, "dsh-deliverable-file-references/lib");
+    fs.mkdirSync(dir, { recursive: true });
+    const fp = path.join(dir, "index.js");
+    const bak = fp + ".dshpurge.bak";
+    const status = async () => (await patchStatus(f.host, [patch], opts))[54];
+    const original = 'const prompt = "Head.' + patch.replacements[0].pattern + ' Tail.";\r\n';
+    fs.writeFileSync(fp, original);
+    fs.writeFileSync(bak, original);
+    assert.equal(await status(), "pending");
+    assert.equal((await applyPatches(f.host, [patch], opts))[0].status, "applied");
+    assert.equal(await status(), "applied");
+    assert.equal((await applyPatches(f.host, [patch], opts))[0].status, "already");
+    assert.equal(fs.readFileSync(bak, "utf8"), original);
+    fs.appendFileSync(fp, "// other change\r\n");
+    assert.equal(await status(), "drifted");
+    assert.equal((await applyPatches(f.host, [patch], opts))[0].status, "backup_content_mismatch");
+    fs.writeFileSync(bak, "no original pattern");
+    assert.equal(await status(), "skipped");
+    fs.writeFileSync(bak, "");
+    assert.equal(await status(), "unknown");
+    fs.unlinkSync(bak);
+    assert.equal(await status(), "skipped");
+    fs.mkdirSync(bak);
+    assert.equal(await status(), "unknown");
+  } finally {
+    f.close();
+  }
+});
