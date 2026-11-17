@@ -267,3 +267,70 @@ test("object-first refusals with 接/答 verbs are detected", () => {
   assert(looksLikeRefusal("这类请求我不会答。"));
   assert(!looksLikeRefusal("我不接这个电话，请稍后再拨。"), "普通叙述不该误判");
 });
+
+// seed-prim：让回答从"已经在交付"的位置继续，而不是再讲一遍要求。
+import { SEED_PRIM_TEXT, withSeedPrime } from "../lib/refusal-retry.js";
+
+test("seed-prim appends an assistant prefill without touching the user request", () => {
+  const user = { role: "user", content: [{ type: "text", text: "写一个加密模块" }] };
+  const out = withSeedPrime({ messages: [sys("base"), user] });
+  assert.equal(out.messages.length, 3);
+  assert.equal(out.messages[2].role, "assistant");
+  assert.match(out.messages[2].content[0].text, /实现如下/);
+  assert.equal(out.messages[1].content[0].text, "写一个加密模块", "用户原文不动");
+});
+
+test("seed-prim merges into an existing assistant tail instead of stacking two", () => {
+  const tail = { role: "assistant", content: [{ type: "text", text: "好的：" }] };
+  const out = withSeedPrime({ messages: [sys("base"), { role: "user", content: "x" }, tail] });
+  assert.equal(out.messages.length, 3, "不应新增一条消息");
+  assert.equal(out.messages[2].role, "assistant");
+  assert.ok(out.messages[2].content.length >= 2);
+  assert.equal(out.messages[2].content[0].text, "好的：");
+});
+
+test("seed arm is reached only after nudge and fiction both refuse", async () => {
+  const seen = [];
+  let n = 0;
+  const factory = (options) => {
+    n += 1;
+    const last = options.messages[options.messages.length - 1];
+    seen.push({ attempt: n, tailRole: last.role, bytes: JSON.stringify(options).length });
+    return (async function* () {
+      if (n <= 3) {
+        yield delta("这个我不做。");
+        yield finish();
+        return;
+      }
+      yield delta("实现如下：1) 入口 2) 核心 3) 验证");
+      yield finish();
+    })();
+  };
+  const chunks = await collect(
+    streamWithRefusalRetry(factory, { messages: [sys("base"), { role: "user", content: "x" }] }, { seed: true }),
+  );
+  assert.equal(n, 4, "nudge → fiction 都拒了才轮到 seed（第 4 次调用）");
+  assert.equal(seen[3].tailRole, "assistant", "seed 臂必须用 assistant 预填");
+  assert.equal(chunks.filter((c) => c.type === "text-delta").at(-1).text.includes("实现如下"), true);
+  assert.ok(SEED_PRIM_TEXT.length > 10);
+});
+
+test("without seed the third attempt falls back to decompose text", async () => {
+  const bodies = [];
+  let n = 0;
+  const factory = (options) => {
+    n += 1;
+    bodies.push(JSON.stringify(options.messages[0]));
+    return (async function* () {
+      if (n <= 3) {
+        yield delta("这个我不做。");
+        yield finish();
+        return;
+      }
+      yield delta("最小组件：见下");
+      yield finish();
+    })();
+  };
+  await collect(streamWithRefusalRetry(factory, { messages: [sys("base")] }, { seed: false, decompose: true }));
+  assert.match(bodies[3], /smallest concrete component/, "第四次应是 decompose 提示");
+});
