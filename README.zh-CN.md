@@ -88,6 +88,8 @@ dsh-purge Community 是一个跑在你自己机器上的 Harness 附加组件。
 
 **已经装过旧版 Purge 或独立面板？** 直接用下方方式三备份并原地迁移。手动下载了源码 ZIP 的用户请看[从源码目录安装](docs/INSTALLATION.md#手动选择插件源码目录)。
 
+市场维护者可按[索引与安装按钮的接入说明](docs/MARKET-MIGRATION.md)同步稳定发行。
+
 ### 方式二：DSH 官方 CLI（首次安装）
 
 下面命令适用于**已经安装 `dsh` 命令、且使用 `web` profile 的 CLI/Web 用户**，在 macOS/Linux 终端或 Windows PowerShell 中运行。桌面版用户优先用上面的界面；不要为了安装插件再用 `npx` 下载另一套宿主。

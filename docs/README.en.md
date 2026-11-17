@@ -60,6 +60,8 @@ Local learning, personal projects, automation experiments and maintenance work. 
 2. Paste `https://kingcharleslzy-ai.github.io/dsh-purge/index.json`, save, and select **dsh-purge Community**.
 3. Verify the repository is `kingcharleslzy-ai/dsh-purge`, click Install, then check the version in the installed plugins list.
 
+Catalog maintainers can synchronize versioned install targets from the [community index](https://kingcharleslzy-ai.github.io/dsh-purge/index.json). Match the package name and repository, and keep the version and commit from the same entry.
+
 Leave the npm registry at its working value. If pnpm requests `github.com/…/yaml` and gets a 404, open Add plugin, paste the versioned TGZ link from the [latest stable release](https://github.com/kingcharleslzy-ai/dsh-purge/releases/latest) into the package field, select the official npm registry (or your working private registry), and retry.
 
 - Existing legacy Purge or standalone panel installations: use the community installer below for an in-place migration that preserves settings.
