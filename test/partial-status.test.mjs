@@ -181,3 +181,29 @@ test("fileOptional keeps a knowingly stale target from turning the patch red", a
     f.close();
   }
 });
+
+
+test("shared counters preserve required errors and explicit applicability", async () => {
+  const {tallyDisplayPatches, groupPatchesForDisplay, rollupDisplayStatus} = await import("../lib/core/verify.mjs");
+  for (const patch of [{id:90},{id:71},{id:3,optional:true},{id:4,settleWhenAbsent:true},{id:76}]) {
+    for (const status of ["applied","already","partial","pending","missing_file","unreadable","unknown","skipped","disabled","off","na","not_needed","future_error",undefined]) {
+      const rows=[{...patch,status}];
+      const display=tallyDisplayPatches(rows);
+      const self=tallyPatchStatus({[patch.id]:status},[patch]);
+      const inactive = ["disabled","off","na"].includes(status) ||
+        (status==="missing_file" && patch.optional===true) ||
+        (status==="skipped" && patch.settleWhenAbsent===true) ||
+        (status==="not_needed" && patch.id===76);
+      const applied = status==="applied" || status==="already";
+      assert.equal(display.total,inactive?0:1,JSON.stringify(rows));
+      assert.equal(display.ready,applied?1:0,JSON.stringify(rows));
+      assert.equal(display.total,self.total);
+      assert.equal(display.ready,self.applied);
+      assert.equal(display.skipped,self.skipped);
+      const grouped=groupPatchesForDisplay([patch],{[patch.id]:status},"desktop");
+      if(status && status!=="na")assert.equal(grouped[0].status,status);
+    }
+  }
+  for(const status of ["partial","missing_file","unknown","unreadable","future_error"])
+    assert.notEqual(rollupDisplayStatus(["applied",status]),"applied");
+});

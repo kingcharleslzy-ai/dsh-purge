@@ -191,7 +191,7 @@ test("#38 shipped default preset with comments and unrelated JS tags needs no wo
   const text=fs.readFileSync(new URL("../presets/unrestricted/agent.cordis.yml",import.meta.url),"utf8").replace(/\r\n/g,"\n");
   for (const value of [text,text.replace(/\n/g,"\r\n")]) {
     const {actual,report,layer}=await presetReport(value);
-    assert.equal(actual[76],"skipped");
+    assert.equal(actual[76],"not_needed", "core and selfcheck share the existing read-only preset verdict");
     assert.equal(layer.state,"ok");
     assert.equal(layer.applied,4);
     assert.equal(layer.required,4);

@@ -366,3 +366,59 @@ test("#71 reports identical per-file evidence through CLI, selfcheck and panel s
     assert.equal(fs.readFileSync(local,"utf8"), clean);
   } finally { await dispose(); }
 });
+
+test("#90 real file diagnostics keep partial, missing and unreadable targets out of ready counts", async () => {
+  const fx = makeInstall(path.join(TMP, "patch90"));
+  const {read, dispose} = await boot(fx);
+  const {ALL_PATCHES, gatherState} = await import("../lib/core.js");
+  const {tallyPatchStatus} = await import("../lib/selfcheck.js");
+  const source = JSON.parse(fs.readFileSync(new URL("./fixtures/steering-rc2.json", import.meta.url),"utf8"));
+  const controller = path.join(fx.physicalHost,"dsh-api-session-controller/lib/index.js");
+  const loop = path.join(fx.physicalHost,"dsh-agent-loop/lib/index.js");
+  const before = fs.readFileSync(path.join(fx.home,"prompt-inject.md"),"utf8");
+  async function check(expected) {
+    const panel = await read("status");
+    const self = await read("selfcheck");
+    const core = await gatherState({aiBase:fx.physicalHost,dshHome:fx.home,surface:"desktop"});
+    assert.equal(panel.patch_status[90],expected);
+    assert.equal(panel.patches.find(p=>p.id===90).status,expected);
+    const counts = tallyPatchStatus(panel.patch_status,ALL_PATCHES);
+    for (const result of [panel,core]) {
+      assert.equal(result.patches_total,counts.total);
+      assert.equal(result.patches_applied,counts.applied);
+      assert.equal(result.patches_ready,counts.applied);
+      assert.equal(result.patches_skipped,counts.skipped);
+      assert.equal(result.patches_na,counts.not_applicable);
+    }
+    assert.equal(core.display_ready,counts.applied);
+    assert.equal(core.display_total,counts.total);
+    assert.equal(core.display_skipped,counts.skipped);
+    assert.equal(self.patch.applied,counts.applied);
+    assert.equal(self.patch.total,counts.total);
+    const layer=self.layers.find(row=>row.ids.includes(90));
+    if(expected!=="applied") assert.equal(layer.ok,false);
+  }
+  try {
+    write(controller, source.controller);
+    write(loop, "// unrecognized existing target");
+    await check("partial");
+    write(loop, source.agentMethods);
+    await check("applied");
+    fs.unlinkSync(loop);
+    await check("partial");
+    fs.unlinkSync(controller);
+    await check("missing_file");
+    write(controller,source.controller);
+    fs.mkdirSync(loop);
+    await check("unknown");
+    fs.rmdirSync(loop);
+    write(loop,source.agentMethods);
+    await check("applied");
+    const preset=path.join(fx.home,".agent-presets/unrestricted/agent.cordis.yml");
+    write(preset, "- id: persona\n  name: '@deepseek-ai/dsh-persona'\n  config:\n    prefix: 'User owned plain instructions.'\n");
+    await check("applied");
+    write(preset, "invalid: [");
+    await check("applied");
+    assert.equal(fs.readFileSync(path.join(fx.home,"prompt-inject.md"),"utf8"),before);
+  } finally { await dispose(); }
+});

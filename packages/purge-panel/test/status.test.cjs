@@ -9,7 +9,7 @@ const { buildSync } = require("esbuild");
 const code = buildSync({
   stdin: {
     contents:
-      'export * from "./src/api/client.js"; export {setTranslate,zh} from "./src/shared/locale.js"; export { StatusStrip, VersionNotice } from "./src/components/page.js"; export { PurgifySection } from "./src/components/settings-form.js"; export {tallyPatches,PatchGroups} from "./src/components/patch-status.js";',
+      'export * from "./src/api/client.js"; export {setTranslate,zh} from "./src/shared/locale.js"; export { StatusStrip, VersionNotice } from "./src/components/page.js"; export { PurgifySection } from "./src/components/settings-form.js"; export {tallyPatches,patchGroupCounts,patchRowsAll,PatchGroups} from "./src/components/patch-status.js";',
     resolveDir: path.join(__dirname, ".."),
   },
   bundle: true,
@@ -99,7 +99,9 @@ test("status counts come from per-patch rows, never from display groups", async 
   const markup = renderToStaticMarkup(
     React.createElement(h.PatchGroups, { state }),
   );
-  assert.match(markup, /73 \/ 75/, "分组表不能把 88 条压成 3 条");
+  assert.match(markup, /73 \/ 73/, "显式 disabled 不计入代码组分母");
+  assert.match(markup, /0 \/ 13/, "未经确认的 skipped 仍计入工具组分母");
+  assert.equal(h.patchGroupCounts(h.patchRowsAll(state)).denom, 86);
   assert.doesNotMatch(markup, /3 \/ 3/, "不能按分组数当分母");
 });
 
@@ -291,4 +293,126 @@ test("#71 missing and unreadable files remain visible in patch detail", () => {
   state.patch_status[71] = "unknown";
   state.patch_files[71][0].status = "unreadable";
   assert.match(render(), /无法读取/);
+});
+
+test("panel uses shared counts for required, optional and unknown states", async () => {
+  const { summarizePatchRows } = await import("../../../lib/patch-state.mjs");
+  const ui = harness();
+  for (const metadata of [
+    { id: 90 },
+    { id: 71 },
+    { id: 3, optional: true },
+    { id: 4, settleWhenAbsent: true },
+    { id: 76 },
+  ]) {
+    for (const status of [
+      "applied",
+      "already",
+      "partial",
+      "pending",
+      "missing_file",
+      "unreadable",
+      "unknown",
+      "skipped",
+      "disabled",
+      "off",
+      "na",
+      "not_needed",
+      "future_error",
+      undefined,
+    ]) {
+      const rows = [{ ...metadata, status }];
+      const self = summarizePatchRows(rows);
+      const panelRows = ui.patchRowsAll({
+        ai_base: "/fixture",
+        patch_rows: rows,
+      });
+      const panel = ui.patchGroupCounts(panelRows);
+      assert.equal(panel.denom, self.total, JSON.stringify(rows));
+      assert.equal(panel.applied, self.applied);
+    }
+  }
+  const legacy = ui.patchGroupCounts(
+    ui.patchRowsAll({
+      ai_base: "/fixture",
+      patch_status: { 90: "missing_file" },
+    }),
+  );
+  assert.equal(
+    legacy.denom,
+    1,
+    "old responses without optional metadata are conservative",
+  );
+  assert.equal(legacy.applied, 0);
+});
+test("required missing paths and partial results stay visible in rendered panel", () => {
+  const ui = harness();
+  for (const status of ["partial", "missing_file", "unknown"]) {
+    const html = renderToStaticMarkup(
+      React.createElement(ui.PatchGroups, {
+        state: {
+          ai_base: "/fixture",
+          patch_status: { 90: status },
+          patch_rows: [{ id: 90, layer: "代码", status }],
+          patch_files: {
+            90: [
+              {
+                path: "/fixture/agent-loop/lib/index.js",
+                status: "unreadable",
+              },
+            ],
+          },
+        },
+      }),
+    );
+    assert.match(html, /0 \/ 1/);
+    assert.match(html, /agent-loop\/lib\/index.js/);
+    assert.match(html, /无法读取|无法核实/);
+  }
+});
+
+test("filter membership matches inactive and required counts", async () => {
+  const ui = harness();
+  const rows = [
+    { id: 1, status: "disabled" },
+    { id: 2, status: "off" },
+    { id: 3, status: "na" },
+    { id: 4, status: "missing_file" },
+    { id: 5, status: "missing_file", optional: true },
+    { id: 6, status: "skipped" },
+    { id: 7, status: "skipped", settleWhenAbsent: true },
+    { id: 8, status: "unknown" },
+  ].map((row) => ({ ...row, layer: "代码" }));
+  const state = {
+    ai_base: "/fixture",
+    patch_rows: rows,
+    patch_status: Object.fromEntries(rows.map((r) => [r.id, r.status])),
+  };
+  let view;
+  await act(async () => {
+    view = create(React.createElement(ui.PatchGroups, { state }));
+  });
+  try {
+    for (const [tab, ids] of [
+      [2, ["#1", "#2"]],
+      [3, ["#3", "#5", "#7"]],
+      [1, ["#4", "#6", "#8"]],
+    ]) {
+      await act(async () => {
+        view.root
+          .findAllByType("button")
+          .filter((b) => b.props.className?.includes("dshpp-fbtn"))
+          [tab].props.onClick();
+      });
+      assert.deepEqual(
+        view.root
+          .findAllByType("td")
+          .filter((td) => td.props.className === "dshpp-id")
+          .map((td) => td.children[0]),
+        ids,
+      );
+    }
+  } finally {
+    await act(async () => view.unmount());
+  }
 });
