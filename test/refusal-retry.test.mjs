@@ -393,3 +393,33 @@ test("outcome is recorded as partial_refused, without retrying", async () => {
     fs.rmSync(home, { recursive: true, force: true });
   }
 });
+
+// 重试后只吐十几个字，不能算"救回来了"。
+test("a near-empty retry is recorded as empty_after_retry, not recovered", async () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "purge-empty-"));
+  const prev = process.env.DSH_HOME;
+  process.env.DSH_HOME = home;
+  try {
+    let n = 0;
+    const factory = () => {
+      n += 1;
+      return (async function* () {
+        if (n === 1) {
+          yield delta("这个我不做。");
+          yield finish();
+          return;
+        }
+        yield delta("抱歉。");
+        yield finish();
+      })();
+    };
+    await collect(streamWithRefusalRetry(factory, { messages: [sys("base")] }));
+    const audit = fs.readFileSync(path.join(home, "dsh-purge-community", "audit.jsonl"), "utf8");
+    assert.match(audit, /"outcome":"empty_after_retry"/);
+    assert.doesNotMatch(audit, /"outcome":"recovered"/);
+  } finally {
+    if (prev === undefined) delete process.env.DSH_HOME;
+    else process.env.DSH_HOME = prev;
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
