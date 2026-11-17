@@ -10371,7 +10371,9 @@ function tallyPatches(rows) {
     drifted: counts.drifted,
     disabled: counts.disabled + counts.off,
     skipped: counts.skipped,
-    unverified: counts.unknown + (rows || []).filter((row) => row.st === "missing_file" && !patchNotApplicable(row, row.st)).length,
+    unverified: counts.unknown + (rows || []).filter(
+      (row) => row.st === "missing_file" && !patchNotApplicable(row, row.st)
+    ).length,
     total: counts.all
   };
 }
@@ -10616,7 +10618,9 @@ function PatchGroups({ state }) {
   };
   const kept = allRows.filter((row) => {
     if (filter === "pending")
-      return ["pending", "unknown", "broken"].includes(patchStateCategory(row, row.st));
+      return ["pending", "unknown", "broken"].includes(
+        patchStateCategory(row, row.st)
+      );
     if (filter === "off") return row.st === "disabled" || row.st === "off";
     if (filter === "na") return isNaRow(row);
     return true;

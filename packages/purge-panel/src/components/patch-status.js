@@ -1,4 +1,8 @@
-import { patchNotApplicable, patchStateCategory, summarizePatchRows } from "../../../../lib/patch-state.mjs";
+import {
+  patchNotApplicable,
+  patchStateCategory,
+  summarizePatchRows,
+} from "../../../../lib/patch-state.mjs";
 // UI derived from YuJunZhiXue/dsh-purge 1.1.71 (MIT). See LICENSE.
 import { h, useEffect, useState } from "../shared/react.js";
 import { useT } from "../shared/locale.js";
@@ -128,7 +132,9 @@ export function patchRowsAll(state) {
 }
 
 function isNaRow(row) {
-  return row.st !== "disabled" && row.st !== "off" && patchNotApplicable(row, row.st);
+  return (
+    row.st !== "disabled" && row.st !== "off" && patchNotApplicable(row, row.st)
+  );
 }
 
 export function patchGroupCounts(rows) {
@@ -146,11 +152,18 @@ export function patchGroupCounts(rows) {
 export function tallyPatches(rows) {
   const counts = summarizePatchRows(rows);
   return {
-    applied: counts.applied, pending: counts.pending,
-    unmatched: counts.unmatched, partial: counts.partial, drifted: counts.drifted,
-    disabled: counts.disabled + counts.off, skipped: counts.skipped,
-    unverified: counts.unknown + (rows || []).filter(row =>
-      row.st === "missing_file" && !patchNotApplicable(row, row.st)).length,
+    applied: counts.applied,
+    pending: counts.pending,
+    unmatched: counts.unmatched,
+    partial: counts.partial,
+    drifted: counts.drifted,
+    disabled: counts.disabled + counts.off,
+    skipped: counts.skipped,
+    unverified:
+      counts.unknown +
+      (rows || []).filter(
+        (row) => row.st === "missing_file" && !patchNotApplicable(row, row.st),
+      ).length,
     total: counts.all,
   };
 }
@@ -421,7 +434,9 @@ export function PatchGroups({ state }) {
   };
   const kept = allRows.filter((row) => {
     if (filter === "pending")
-      return ["pending", "unknown", "broken"].includes(patchStateCategory(row, row.st));
+      return ["pending", "unknown", "broken"].includes(
+        patchStateCategory(row, row.st),
+      );
     if (filter === "off") return row.st === "disabled" || row.st === "off";
     if (filter === "na") return isNaRow(row);
     return true;
