@@ -387,9 +387,12 @@ test("#90 real file diagnostics keep partial, missing and unreadable targets out
       assert.equal(result.patches_total,counts.total);
       assert.equal(result.patches_applied,counts.applied);
       assert.equal(result.patches_ready,counts.applied);
+      assert.equal(result.patches_skipped,counts.skipped);
+      assert.equal(result.patches_na,counts.not_applicable);
     }
     assert.equal(core.display_ready,counts.applied);
     assert.equal(core.display_total,counts.total);
+    assert.equal(core.display_skipped,counts.skipped);
     assert.equal(self.patch.applied,counts.applied);
     assert.equal(self.patch.total,counts.total);
     const layer=self.layers.find(row=>row.ids.includes(90));

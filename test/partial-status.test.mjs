@@ -199,6 +199,7 @@ test("shared counters preserve required errors and explicit applicability", asyn
       assert.equal(display.ready,applied?1:0,JSON.stringify(rows));
       assert.equal(display.total,self.total);
       assert.equal(display.ready,self.applied);
+      assert.equal(display.skipped,self.skipped);
       const grouped=groupPatchesForDisplay([patch],{[patch.id]:status},"desktop");
       if(status && status!=="na")assert.equal(grouped[0].status,status);
     }
