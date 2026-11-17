@@ -130,6 +130,7 @@ purge-community probe new
 
 - 收到仓库链接时，用它确认项目身份并查最新稳定 Release。首装从市场工具取得 Git 目标时，原样传入固定提交的 `spec`；条目未返回 `registry` 就省略该参数。使用 CLI 时选择该稳定 Release 已上传的版本化 TGZ。沿用目标 profile 原有的 npm 配置。
 - 若日志显示 pnpm 在 GitHub 仓库路径下请求 `/yaml`，核对本次安装的 registry、DSH 记住的「安装源」和宿主首选源。只纠正有误的 npm 地址，保留有效私有源、代理和全局配置。[字段对照与重试步骤](docs/INSTALLATION.md#install-addresses)
+- 市场卡片显示旧版本时，先核对[社区索引](https://kingcharleslzy-ai.github.io/dsh-purge/index.json)中的包名、仓库和固定提交；用户指定了版本就沿用该版本。给市场生成安装按钮时遵循[收录说明](docs/MARKET-MIGRATION.md)，将目标版本和安装来源一起更新。
 - **先选入口，不把社区脚本称为官方方法**：首次安装走 DSH 官方插件界面/市场确认框，或该实例的 `dsh plugin --profile <实际名称> add <固定版本TGZ URL>`；社区内容是 `scripts/install.sh` / `scripts/install.ps1`、索引和 TGZ。本项目没有供该流程使用的裸 npm 包名，不运行 `add dsh-purge` / `add dsh-purge-community`，也不做全局 npm 安装。
 - 先读目标 DSH 版本、可执行文件、`DSH_HOME`、profile 并确认已初始化；脚本先下到独立临时路径，审阅后 dry-run，再按已有授权执行。正式安装会备份、调用官方 CLI、迁移旧包引用并验证磁盘版本，可能修 `app/runtime` 链接或在 Linux 准备用户宿主副本——**并非完全不写宿主目录**。
 - **不要安装后自动 apply/restart**；不改提示词、权限、代理、更新偏好或其他插件。真实的发布时长不足、integrity/trust 错误、私有源、未知错误保持失败并留日志：**不要设 minimumReleaseAge=0**、trustLockfile，也不要删锁文件、全局清缓存或改全局 npm 源。
