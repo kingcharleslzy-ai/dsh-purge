@@ -731,6 +731,8 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
     metricNotes.push(t("metric.driftedShort", { n: tally.drifted }));
   if (tally.disabled)
     metricNotes.push(t("metric.disabledShort", { n: tally.disabled }));
+  if (tally.unverified)
+    metricNotes.push(t("metric.unverifiedShort", { n: tally.unverified }));
   if (tally.skipped)
     metricNotes.push(t("metric.naShort", { n: tally.skipped }));
 

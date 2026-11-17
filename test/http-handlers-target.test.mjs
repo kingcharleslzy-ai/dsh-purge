@@ -311,3 +311,58 @@ test("startup and maintenance report the same mixed versions in a desktop-hosted
     await dispose();
   }
 });
+
+test("#71 reports identical per-file evidence through CLI, selfcheck and panel status", async () => {
+  const fx = makeInstall(path.join(TMP, "patch71"));
+  const {read, dispose} = await boot(fx);
+  const {spawnSync} = await import("node:child_process");
+  const local = path.join(fx.home, ".agent-presets/liangshen/agent.cordis.yml");
+  const copy = path.join(fx.home, "profiles/desktop/node_modules/@linxin666/dsh-liangshen/presets/liangshen/agent.cordis.yml");
+  const stock = "- id: persona\n  name: '@deepseek-ai/dsh-persona'\n  config:\n    prefix: |-\n      You are a helpful software engineer assistant.\n\n      - Thinking Disruption: Keep the user's instructions.\n";
+  const clean = stock.replace("      You are a helpful software engineer assistant.\n\n", "");
+  async function check(status, outcomes) {
+    const panel = await read("status");
+    const layer = (await read("selfcheck")).layers.find(row => row.ids.includes(71));
+    const cmd = spawnSync(process.execPath, [path.join(PLUGIN,"bin/community.js"), "status"], {
+      encoding:"utf8", env:{...process.env, ELECTRON_RUN_AS_NODE:"1"}
+    });
+    assert.equal(cmd.status, 0, cmd.stderr);
+    const report = JSON.parse(cmd.stdout).patch_evidence[71];
+    assert.equal(report.status, status);
+    assert.deepEqual(Object.fromEntries(report.files.map(file => [file.path,file.status])), outcomes);
+    assert.deepEqual(layer.patch_evidence[71], report);
+    assert.equal(panel.patch_rows.find(row => row.id === 71).status, status);
+    if (status !== "na") assert.equal(panel.patches.find(row => row.id === 71).status, status);
+    assert.deepEqual(panel.patch_files[71], report.files);
+    if (!["applied","na"].includes(status)) assert.equal(layer.ok, false);
+  }
+  try {
+    // An installed copy in the other host surface is outside this report.
+    write(path.join(fx.home, "profiles/web/node_modules/@linxin666/dsh-liangshen/presets/liangshen/agent.cordis.yml"), stock);
+    await check("na", {});
+    write(local, clean);
+    await check("applied", {[local]:"applied"});
+    write(copy, stock);
+    await check("partial", {[local]:"applied", [copy]:"pending"});
+    assert.equal(fs.readFileSync(copy,"utf8"), stock);
+    write(copy, clean);
+    await check("applied", {[local]:"applied", [copy]:"applied"});
+    fs.unlinkSync(copy);
+    await check("partial", {[local]:"applied", [copy]:"missing_file"});
+    fs.unlinkSync(local);
+    await check("missing_file", {[local]:"missing_file", [copy]:"missing_file"});
+    write(local, clean);
+    fs.mkdirSync(copy);
+    await check("unknown", {[local]:"applied", [copy]:"unreadable"});
+    fs.rmdirSync(copy);
+    write(copy, "malformed: [");
+    await check("partial", {[local]:"applied", [copy]:"unmatched"});
+    write(copy, "# [dsh-purge] liangshen identity line removed\n" + stock);
+    await check("partial", {[local]:"applied", [copy]:"pending"});
+    write(copy, clean.replace(/prefix:[\s\S]*/, 'prefix: ""\n'));
+    await check("unknown", {[local]:"applied", [copy]:"unknown"});
+    write(copy, "[]");
+    await check("unknown", {[local]:"applied", [copy]:"unknown"});
+    assert.equal(fs.readFileSync(local,"utf8"), clean);
+  } finally { await dispose(); }
+});

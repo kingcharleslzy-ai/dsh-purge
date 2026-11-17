@@ -9267,6 +9267,10 @@ var zh = {
   "hint.unmatched": "\u951A\u70B9\u6CA1\u5BF9\u4E0A\uFF1A\u5BBF\u4E3B\u7248\u672C\u4E0D\u5339\u914D\u3002",
   "hint.partial": "\u90E8\u5206\u76EE\u6807\u6587\u4EF6\u547D\u4E2D\uFF0C\u53E6\u4E00\u4E2A\u5B58\u5728\u4F46\u6CA1\u5BF9\u4E0A\u3002",
   "hint.off": "\u5DF2\u5173\u95ED\u3002",
+  "metric.unverifiedShort": "{n} \u9879\u672A\u6838\u5B9E",
+  "file.missing_file": "\u7F3A\u5C11\u9884\u8BBE\u6587\u4EF6",
+  "file.unreadable": "\u65E0\u6CD5\u8BFB\u53D6",
+  "file.unknown": "\u65E0\u6CD5\u9759\u6001\u6838\u5B9E",
   "hint.unknown": "\u72B6\u6001\u672A\u77E5\u3002",
   "status.applied": "\u5DF2\u5E94\u7528",
   "status.off": "\u5DF2\u5173\u95ED",
@@ -9709,6 +9713,10 @@ var en = {
   "hint.unmatched": "No match: host version mismatch.",
   "hint.partial": "Some targets matched, another existed but did not match.",
   "hint.off": "Off.",
+  "metric.unverifiedShort": "{n} unverified",
+  "file.missing_file": "Missing preset file",
+  "file.unreadable": "Unreadable",
+  "file.unknown": "Cannot verify statically",
   "hint.unknown": "Unknown state.",
   "status.applied": "Applied",
   "status.off": "Off",
@@ -10291,7 +10299,7 @@ function patchRowsAll(state) {
   return rowsFromState(state);
 }
 function isNaRow(row) {
-  return row.st === "na" || row.st === "skipped" || row.st === "missing_file";
+  return row.st === "na" || row.st === "skipped" || row.st === "missing_file" && row.id !== 71;
 }
 function patchGroupCounts(rows) {
   const out = { applied: 0, pending: 0, off: 0, na: 0, total: 0, denom: 0 };
@@ -10324,6 +10332,8 @@ function tallyPatches(rows) {
     else if (row.st === "partial") out.partial += 1;
     else if (row.st === "drifted") out.drifted += 1;
     else if (row.st === "disabled") out.disabled += 1;
+    else if (row.id === 71 && ["unknown", "missing_file"].includes(row.st))
+      out.unverified = (out.unverified || 0) + 1;
     else out.skipped += 1;
   }
   return out;
@@ -10612,6 +10622,8 @@ function PatchGroups({ state }) {
         notes.push(t("metric.unmatchedShort", { n: tally.unmatched }));
       if (tally.partial)
         notes.push(t("metric.partialShort", { n: tally.partial }));
+      if (tally.unverified)
+        notes.push(t("metric.unverifiedShort", { n: tally.unverified }));
       if (tally.drifted)
         notes.push(t("metric.driftedShort", { n: tally.drifted }));
       if (tally.disabled)
@@ -10693,13 +10705,29 @@ function PatchGroups({ state }) {
                   r.st === "applied" || r.st === "already" ? null : h(
                     "span",
                     { className: "dshpp-row-note" },
-                    t("hint." + (r.st || "unknown"))
+                    r.id === 71 && r.st === "missing_file" ? t("file.missing_file") : t("hint." + (r.st || "unknown"))
                   )
                 ),
                 h(
                   "td",
                   null,
-                  h(Pill, { value: r.st }),
+                  r.id === 71 && r.st === "missing_file" ? h(Pill, {
+                    value: "unmatched",
+                    label: t("file.missing_file")
+                  }) : h(Pill, { value: r.st }),
+                  r.id === 71 && (state.patch_files?.[71] || []).map(
+                    (file) => h(
+                      "div",
+                      {
+                        key: file.path,
+                        className: "dshpp-row-note",
+                        style: { overflowWrap: "anywhere" }
+                      },
+                      (["missing_file", "unreadable", "unknown"].includes(
+                        file.status
+                      ) ? t("file." + file.status) : statusLabel(file.status, t)) + " \xB7 " + file.path
+                    )
+                  ),
                   r.st === "partial" ? h(
                     "span",
                     { className: "dshpp-sub" },
@@ -11742,6 +11770,8 @@ function PurgifySection({ page = "status", onStatus } = {}) {
     metricNotes.push(t("metric.driftedShort", { n: tally.drifted }));
   if (tally.disabled)
     metricNotes.push(t("metric.disabledShort", { n: tally.disabled }));
+  if (tally.unverified)
+    metricNotes.push(t("metric.unverifiedShort", { n: tally.unverified }));
   if (tally.skipped)
     metricNotes.push(t("metric.naShort", { n: tally.skipped }));
   const versions = updateInfo && updateInfo.versions || [];
