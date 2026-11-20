@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { hostSurface, resolveInstance } from "../lib/instance.js";
+import { hostSurface, resolveInstance, resolveProfile } from "../lib/instance.js";
 import { ensureAppRuntimeLink } from "../lib/runtime-layout.js";
 
 const TMP = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "purge-rc5-")));
@@ -148,6 +148,27 @@ test("rc.5 空 resources/runtime：跳过链接而不是 missing_runtime", t => 
   assert.equal(r.ok, true);
   assert.equal(r.skipped, "no_official_runtime");
   assert.equal(fs.existsSync(path.join(fx.app, "runtime")), false);
+});
+
+test("desktop 与 web 两个 profile 并存：桌面宿主自动选 desktop，纯 node 仍报歧义", t => {
+  const home = path.join(TMP, "home-ambiguous");
+  for (const name of ["desktop", "web"]) {
+    fs.mkdirSync(path.join(home, "profiles", name), { recursive: true });
+    fs.writeFileSync(path.join(home, "profiles", name, "package.json"), "{}");
+  }
+  const picked = resolveProfile(home, {
+    env: {},
+    argv: [],
+    electron: "44.7.0",
+    resourcesPath: path.join(TMP, "resources"),
+    reader: fs,
+  });
+  assert.equal(picked.name, "desktop");
+  assert.match(picked.source, /运行环境/);
+  assert.throws(
+    () => resolveProfile(home, { env: {}, argv: [], electron: undefined, resourcesPath: undefined, reader: fs }),
+    /无法唯一确定/,
+  );
 });
 
 test("runtime 目录缺失与空目录同语义；破坏的 runtime 仍然失败", t => {
