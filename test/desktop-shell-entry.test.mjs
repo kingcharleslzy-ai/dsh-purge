@@ -102,6 +102,24 @@ test("进程入口在 rc.5 解包副本内：仍解析到同一实例，不退�
   assert.equal(r.resolved, true);
 });
 
+test("壳自带 node_modules 缺 dsh-agent-instructions：继续找 dsh 作用域而不是钉死它", t => {
+  const fx = makeShell(t, "shell-node-modules");
+  // 壳自己的依赖目录：只有 @deepseek-ai/* 兄弟包，没有 dsh-agent-instructions/lib。
+  const shellScope = path.join(fx.app, "node_modules", "@deepseek-ai", "stdlib");
+  fs.mkdirSync(shellScope, { recursive: true });
+  fs.writeFileSync(path.join(shellScope, "package.json"), JSON.stringify({ name: "@deepseek-ai/stdlib" }));
+  const r = resolveInstance({
+    env: {},
+    argv: ["electron", path.join(TMP, "outside-script.mjs")],
+    electron: "44.7.0",
+    resourcesPath: fx.resources,
+    reader: fs,
+  });
+  assert.equal(r.resolved, true);
+  assert.equal(r.host, fx.base);
+  assert.equal(r.candidate, fx.base);
+});
+
 test("DSH_BASE 指向壳自己的 package.json 安装根：落回 dsh 作用域", t => {
   const fx = makeShell(t, "shell-root");
   const r = resolveInstance({ env: { DSH_BASE: fx.app }, reader: fs, argv: [] });
