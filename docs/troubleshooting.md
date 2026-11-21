@@ -65,6 +65,7 @@ Linux CLI/Web 先按 README 下载脚本；只有已在仓库根目录才可用 
 
 - 密封宿主的「应用」只写磁盘补丁并启动等待助手：**不定时退出 host、不杀 Electron、不自动重开**。要提醒用户从系统托盘完整退出，确认换包完成后再手动打开；关闭窗口不等于退出，也不要执行旧版重启脚本。
 - `/dsh-purge/status` 的 `asar_handoff.phase`：`starting` 只是启动请求；`ready` / `waiting_for_quit` 才证明助手运行过；`complete` 才表示保留原归档并完成换包。`failed` / `expired` / `helper_stopped` 要读 `resources/app.asar.purge-handoff.json` 及同名 `.log`；**`.rename-pending` 不是成功**。
+- `helper_stopped` 另带 `helper_ran`：`false` 表示助手一行都没执行（同名 `.log` 不存在，启动器只回了 PID，`Win32_Process.Create` 返回 0 不代表脚本跑过），先查 `.json.broker.log` 与被防护软件拦下的 WMI 派生 PowerShell；`true` 表示助手执行过但停在 `starting`，重点看 `.log` 首条记录。仅 `helper_ran:false` 的 `failed.detail` 会附一条可自行执行的完整命令行；`helper_ran:true` 时手动再跑会引入第二个助手抢同一归档，不要照做。
 - 助手启动异常时再加看 `.json.broker.log`、`.json.launch.log`、`.json.launch.log.error`。Windows Electron 的 detached PowerShell 可静默退出：不能改回直接 detached spawn，也不能把 broker 退出码 0 当作助手已就绪。设 `PURGE_ELECTRON_EXEC` 后跑 `node --test test/windows-electron-handoff.test.mjs`，验证父进程退出后的真实交接。
 - 归档备份为 `app.asar.purge-<token>.bak`，独立于 profile 快照，不覆盖已有备份；等待期间归档被官方更新替换会停止，必须重新应用新宿主。
 - 只对真实共享/锁冲突继续等待；其他错误保留 `detail`、HRESULT 和可用 Win32 错误码。**不要关 Defender、不要覆盖原备份、不要用自动重启掩盖失败**。
