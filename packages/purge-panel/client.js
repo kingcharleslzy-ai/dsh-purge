@@ -10291,22 +10291,7 @@ var LAYER_GROUP = {
   "0.2.0 \u517C\u5BB9": "dsh20"
 };
 var GROUP_ORDER = ["prompt", "code", "tools", "compat", "dsh20"];
-var PERMISSION_PATCH_IDS = [
-  6,
-  7,
-  8,
-  9,
-  10,
-  13,
-  14,
-  15,
-  16,
-  35,
-  51,
-  59,
-  60,
-  62
-];
+var PERMISSION_PATCH_IDS = [];
 var CONTEXT_PATCH_IDS = [18, 19];
 var PERMISSION_SET = new Set(PERMISSION_PATCH_IDS);
 var CONTEXT_SET = new Set(CONTEXT_PATCH_IDS);

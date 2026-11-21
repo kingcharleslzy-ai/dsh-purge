@@ -137,10 +137,11 @@ export const zh = {
   "filter.na": "本端不适用",
   "filter.hint": "点组标题展开明细；悬停状态看原因",
   "filter.empty": "这个过滤条件下没有补丁。",
-  "sw.permission": "权限补丁",
-  "sw.permission.desc": "让宿主不再用沙箱边界和审批弹窗拦工具调用。默认开。",
+  "sw.permission": "权限补丁（已移除）",
+  "sw.permission.desc":
+    "本构建已移除全部权限/沙箱/审批补丁。权限请直接用 DSH 原生设置（danger-full-access、approval policy）。",
   "sw.permission.hint":
-    "改写宿主里的沙箱 / 审批 / 自动放行代码，共 14 条：#6 #7 #8 #9 #10 #13 #14 #15 #16 #35 #51 #59 #60 #62。开启后必须点「应用」才写盘，写前自动备份；需要你手动退出重开 DSH 才生效。关掉它不会立刻回滚已写入的文件，下次「应用」才回滚。",
+    "这些补丁会以精确片段改写宿主源码，把沙箱 confine()、文件写围栏 checkedTarget()、提权阶梯与审批门全部拆掉。它们的效果可由 DSH 原生 danger-full-access + approval policy: never 完全达成，而宿主改写会随官方更新失效、无法按会话隔离、且无法轻量回滚。因此本分支不再提供。",
   "sw.context": "上下文管理",
   "sw.context.desc":
     "关掉重复调用提醒与工具结果修剪。默认关，开了 token 会涨。",
@@ -636,11 +637,11 @@ export const en = {
   "filter.na": "Not for this host",
   "filter.hint": "Open a group for rows; hover a status for the reason",
   "filter.empty": "No patches match this filter.",
-  "sw.permission": "Permission patches",
+  "sw.permission": "Permission patches (removed)",
   "sw.permission.desc":
-    "Stop the host from blocking tool calls behind sandbox and approval gates. On by default.",
+    "This build ships no permission / sandbox / approval patches. Use the native DSH settings instead (danger-full-access, approval policy).",
   "sw.permission.hint":
-    "Rewrites the host sandbox / approval / auto-grant code: 14 patches (#6 #7 #8 #9 #10 #13 #14 #15 #16 #35 #51 #59 #60 #62). Nothing is written until you press Apply, and a backup is taken first; you must quit and reopen DSH yourself. Turning it off does not roll back what is already written; the next Apply does.",
+    "Those patches rewrote host source fragments to strip sandbox confine(), the filesystem write fence checkedTarget(), the escalation ladder and the approval gate. Every effect is reachable through native DSH danger-full-access + approval policy: never, while host rewriting breaks on official updates, cannot be scoped per session, and has no lightweight rollback. Hence they are no longer provided.",
   "sw.context": "Context management",
   "sw.context.desc":
     "Turn off the repeat-call reminder and tool-result pruning. Off by default; tokens grow when on.",

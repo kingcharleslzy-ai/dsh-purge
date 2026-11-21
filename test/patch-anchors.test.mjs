@@ -219,18 +219,8 @@ test("rc.5 keeps complete persona, selected tools and required contexts; first-s
   assert.deepEqual(events, ["prepare","assemble"]);
 });
 
-test("0.2.2-rc.3 sandbox escalation: #13 still replaces the coded errors", () => {
-  const rc3 = [
-    '\tif (!(WIDER_MODES[effectiveMode] ?? []).includes(mode)) throw new SandboxEscalationError(`sandbox escalation to "${mode}" is not strictly wider than this call\'s current "${effectiveMode}" mode`, "SANDBOX_ESCALATION_INVALID_ARGUMENT");',
-    '\tif (approval.approver === void 0) throw new SandboxEscalationError(`sandbox escalation to "${mode}" requires approval, but no approval service is composed`, "SANDBOX_ESCALATION_UNAVAILABLE");',
-    '\tif (approval.agent === void 0) throw new SandboxEscalationError(`sandbox escalation to "${mode}" requires approval, but the call has no agent to route it through`, "SANDBOX_ESCALATION_UNAVAILABLE");',
-  ].join("\n");
-  const out = applyReplacementsToText(rc3, patch(13));
-  assert.equal(out.changed, true);
-  assert.ok(out.text.includes("[dsh-purge] escalation bypass"));
-  assert.ok(!out.text.includes("SandboxEscalationError"));
-  assert.equal(applyReplacementsToText(out.text, patch(13)).changed, false);
-});
+// 权限/沙箱/审批补丁（含 #13 escalation widening）已整体移除：
+// 其效果由 DSH 原生 danger-full-access + approval policy 完全达成，故不再有对应锚点测试。
 
 test("0.2.2-rc.2 minified inspector client: #96 drops only the oversized tree frame", () => {
   const minified = 'if(!this.stateFits()){if(previous===void 0)this.state.delete(topic);else this.state.set(topic,previous);throw new Error(`inspector: source state exceeds the source-frame byte limit`)}this.enqueue(record)';
