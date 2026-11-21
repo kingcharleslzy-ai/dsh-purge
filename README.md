@@ -312,3 +312,5 @@ npm run smoke            # 发行包冒烟
 ### DSH Store 收录信息
 
 DSH Store 申请必须填写 **Plugin path：`.`**，安装根目录的 `dsh-purge-community`；不要留空或选独立面板包。逐版本兼容声明已放入 manifest，未验证版本保持 `unknown`。元数据修正不等于市场已批准安装；[路径、兼容证据和收录边界](docs/DSH-STORE.md)。
+
+注入正文支持「全局 / 本会话 / 仅本次」三种作用域，并可用模型一键优化：不配置时行为与之前逐字一致。入口在输入框工具行的 `P` 按钮。详见 [提示词作用域与优化](docs/prompt-scope-and-optimize.md)。

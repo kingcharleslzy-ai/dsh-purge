@@ -15,6 +15,7 @@ import { bindPresetMenu } from "./state/preset-menu.js";
 import { installLegacyVisibility } from "./state/legacy-visibility.js";
 import { installRewindUi } from "./components/rewind.js";
 import { WelcomeNotice } from "./components/welcome.js";
+import { PromptDockButton } from "./components/prompt-dock.js";
 import { EnvAdaptSendGate } from "./components/env-gate.js";
 
 export const name = __COMMUNITY__ ? "dsh-purge-community" : "dsh-purge-panel";
@@ -109,6 +110,21 @@ export function apply(ctx) {
         order: 60,
       },
       PanelOverlays,
+    ),
+  );
+  // 提示词快捷编辑入口：输入框工具行按钮 + 浮层。
+  // conversation.input.right 是 session 作用域，组件可据此取得当前会话 id，
+  // 用来提供「会话级 / 一次性」覆盖；全局入口仍在左侧栏面板。
+  ctx.slots.inject("conversation.input.right", () =>
+    ctx.slots.register(
+      {
+        name: "conversation.input.right",
+        id: "dsh-purge-prompt",
+        order: 60,
+        label: "Prompt",
+        inject: () => ({ t }),
+      },
+      PromptDockButton,
     ),
   );
   // 左侧栏入口：图标 + 整页。右侧抽屉不再注册，避免两处重复。
