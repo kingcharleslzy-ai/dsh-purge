@@ -51,19 +51,39 @@ function fingerprint(patch) {
   return crypto.createHash("sha256").update(shape).digest("hex").slice(0, 16);
 }
 
-test("all 25 bypass gates exist with unchanged semantics", () => {
+// 权限 / 沙箱 / 审批补丁已从本构建整体移除（其效果由 DSH 原生 danger-full-access +
+// approval policy: never 完全达成），对应指纹一并移除，不再断言它们存在。
+const REMOVED_PERMISSION_IDS = new Set([6, 7, 8, 9, 10, 13, 14, 15, 16, 35, 51, 59, 60, 62]);
+
+test("remaining bypass gates exist with unchanged semantics", () => {
   const byId = new Map(ALL_PATCHES.map((p) => [p.id, p]));
   const problems = [];
+  let asserted = 0;
   for (const [id, expected] of Object.entries(GATE_FINGERPRINTS)) {
+    if (REMOVED_PERMISSION_IDS.has(Number(id))) continue;
     const patch = byId.get(Number(id));
     if (!patch) {
       problems.push(`#${id} missing`);
       continue;
     }
+    asserted += 1;
     const actual = fingerprint(patch);
     if (actual !== expected) problems.push(`#${id} ${patch.name} changed (${expected} -> ${actual})`);
   }
   assert.deepEqual(problems, [], problems.join("; "));
+  assert.equal(asserted, 13, "删除 12 条权限补丁后，指纹表应只剩 13 条仍在断言");
+});
+
+test("removed permission patches are really gone", () => {
+  const byId = new Map(ALL_PATCHES.map((p) => [p.id, p]));
+  for (const id of REMOVED_PERMISSION_IDS) {
+    assert.equal(byId.has(id), false, `#${id} 应已从 ALL_PATCHES 移除`);
+  }
+  assert.equal(
+    ALL_PATCHES.filter((p) => p && p.permissionOverride).length,
+    0,
+    "不应残留 permissionOverride 补丁",
+  );
 });
 
 test("quality-reducing patches stay opt-in and off by default", () => {

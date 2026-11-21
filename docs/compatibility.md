@@ -16,7 +16,7 @@
 
 | 宿主发行 | 状态 | 依据 / 备注 |
 | --- | --- | --- |
-| 0.2.2-rc.3 | `compatible` | 官方 rc.3 隔离副本 86 条补丁 74 applied / 零漂移，二次应用幂等；真实 Host Loader 预设注册通过。**Windows rc.3 未复测补丁。** |
+| 0.2.2-rc.3 | `compatible` | 官方 rc.3 隔离副本 74 条补丁（本分支已移除 14 条权限补丁）/ 二次应用幂等；真实 Host Loader 预设注册通过。**Windows rc.3 未复测补丁。** |
 | 0.2.2-rc.2 | `compatible` | 同上批次验证 |
 | 0.2.2-rc.1 | `compatible` | 仍未完整适配：六项旧补丁 #14/#17/#60/#62/#67/#74 保持原定义未修（见 [§2](#c-boundary)） |
 | 0.2.2-alpha.2 | `unknown` | manifest 未声明，不得写成 compatible |

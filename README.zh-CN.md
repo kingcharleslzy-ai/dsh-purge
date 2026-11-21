@@ -4,7 +4,7 @@
 
 **让 AI 更专注地辅助你的学习与动手实验。**
 
-给 DeepSeek Harness 的自托管控件（俗称「破甲」插件）· 86 条宿主补丁 · 25 层状态自检 · 左侧栏整页设置
+给 DeepSeek Harness 的自托管控件（俗称「破甲」插件）· 74 条宿主补丁 · 25 层状态自检 · 左侧栏整页设置
 
 [![Release](https://img.shields.io/github/v/release/kingcharleslzy-ai/dsh-purge?label=release)](https://github.com/kingcharleslzy-ai/dsh-purge/releases)
 [![Checks](https://github.com/kingcharleslzy-ai/dsh-purge/actions/workflows/community.yml/badge.svg)](https://github.com/kingcharleslzy-ai/dsh-purge/actions/workflows/community.yml)
