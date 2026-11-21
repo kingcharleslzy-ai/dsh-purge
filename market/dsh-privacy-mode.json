@@ -1,0 +1,41 @@
+{
+  "name": "dsh-privacy-mode",
+  "title": {
+    "en": "Privacy Mode",
+    "zh": "隐私模式"
+  },
+  "description": {
+    "en": "Asymmetric visibility: mark plugins, workspaces and chats private, and they are absent in NORMAL (not composed, no tools, no prompt text) while PRIVATE brings the whole profile back behind a password or Windows Hello / Touch ID.",
+    "zh": "非对称可见性：把插件、工作区、对话标记为隐私，常规模式下它们不存在（不参与组合、没有工具、没有提示词），隐私模式输密码或用系统指纹后整份 profile 恢复。"
+  },
+  "author": "huiyaoxingkong",
+  "homepage": "https://github.com/huiyaoxingkong/dsh-privacy-mode#readme",
+  "repository": {
+    "url": "https://github.com/huiyaoxingkong/dsh-privacy-mode",
+    "directory": "dsh-privacy-mode"
+  },
+  "metadata": {
+    "keywords": [
+      "privacy",
+      "visibility",
+      "workspaces",
+      "sessions",
+      "webauthn"
+    ]
+  },
+  "versions": [
+    {
+      "version": "0.2.0",
+      "publishTimestamp": 1795258332,
+      "source": {
+        "type": "git",
+        "url": "https://github.com/huiyaoxingkong/dsh-privacy-mode",
+        "commit": "80a550c581b7b186a1eae3ed1b1dd24590213505",
+        "path": "dsh-privacy-mode"
+      },
+      "engines": {
+        "dsh": ">=0.2.2-rc.5 <0.3.0"
+      }
+    }
+  ]
+}
