@@ -81,10 +81,59 @@ excludePresets 命中          → 不注入
 - 被排除的会话保留装配服务提供的人设、工作区规则、工具与变量，
   只清理 Purge 自己的段落（沿用 `withoutPurgeInjection` 的既有逻辑）。
 
-## 6. 回归
+## 6. 面板 UI
+
+注入层此前在面板里**完全没有界面**——连 `excludePresets` 都只能手改 profile。
+
+本改动在「提示词」页新增「注入与分层」区块，可编辑：
+
+| 控件 | 写入字段 |
+| --- | --- |
+| 启用注入 | `enabled` |
+| 主注入 / 尾部强化段 / 能力协议说明 | `layers.main` / `layers.boost` / `layers.protocol` |
+| 按预设排除 | `excludePresets` |
+| 按会话排除 | `excludeSessions` |
+
+### 写入路径
+
+面板请求 `POST /dsh-purge/inject-config`，host 侧调用**宿主官方服务**
+`ctx.get("configEditor").edit(entry, change)`：
+
+- 校验、持久化、Loader 协调全部交给宿主，不手写 profile 文件；
+- 拿不到 `configEditor` 或定位不到 entry 时返回 `503` 并在界面提示，
+  **不设置文件直写的后备方案**；
+- 只写白名单字段（`excludePresets` / `excludeSessions` / `layers` / `enabled`），
+  其余配置原样保留，避免 UI 覆盖用户手写的其它项。
+
+### 重载安全性
+
+`configEditor.edit` 会让 Loader 重新协调该 entry。宿主契约中
+`systemPrompt.section(section)` 返回 disposer（`() => void`），而 `addPromptSection`
+已通过 `ctx.effect` 登记清理，因此重载时旧 section 会被正确撤销，不会重复注册。
+
+### 构建产物
+
+`client.js` 用仓库自带脚本重新生成，并通过上游的校验模式确认一致：
 
 ```sh
-node --test test/preset-injection-granular.test.mjs
+node packages/purge-panel/scripts/build.mjs --community --check
+# PASS: checked-in bundle matches source
 ```
 
-新增 11 项，全部通过；全量测试失败数与改动前一致（均为本机缺 `yaml` 导致的既有失败）。
+## 7. 回归
+
+```sh
+node --test test/preset-injection-granular.test.mjs test/inject-config.test.mjs
+```
+
+新增 23 项（11 项判定等价性 + 12 项配置读写），全部通过。
+
+全量对照上游 master：
+
+| | tests | pass | fail |
+| --- | --- | --- | --- |
+| 上游 master | 792 | 757 | 4 |
+| 本改动 | 815 | 780 | 4 |
+
+失败项完全相同（`cwd-compat`、`desktop-presets`、`desktop-registration` 与一项并发状态读取，
+均为本机环境所限），**无新增失败**。
