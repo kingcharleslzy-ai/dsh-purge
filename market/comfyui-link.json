@@ -1,0 +1,31 @@
+{
+  "name": "dsh-comfyui-link",
+  "title": {
+    "en": "ComfyUI Link",
+    "zh": "ComfyUI 桥"
+  },
+  "description": {
+    "en": "A ComfyUI bridge for DSH: talk to a local ComfyUI, generate images, and inspect or edit workflows in a conversation view.",
+    "zh": "DSH 的 ComfyUI 桥：直连本机 ComfyUI 生图，并在会话视图里查看与编辑工作流。"
+  },
+  "author": "dsh-comfyui-link contributors",
+  "homepage": "https://github.com/jx70/dsh-comfyui-link#readme",
+  "repository": {
+    "url": "https://github.com/jx70/dsh-comfyui-link"
+  },
+  "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCI+PHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTQiIGZpbGw9IiM3YzNhZWQiLz48Y2lyY2xlIGN4PSIyMSIgY3k9IjE5IiByPSI2IiBmaWxsPSJ3aGl0ZSIvPjxjaXJjbGUgY3g9IjQ1IiBjeT0iMTkiIHI9IjYiIGZpbGw9IndoaXRlIi8+PGNpcmNsZSBjeD0iMzMiIGN5PSI0NiIgcj0iNiIgZmlsbD0id2hpdGUiLz48cGF0aCBkPSJNMjQgMjMgTDMwIDQxIE00MiAyMyBMMzYgNDEgTTI3IDE5IEgzOSIgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSIyLjQiIGZpbGw9Im5vbmUiLz48L3N2Zz4=",
+  "versions": [
+    {
+      "version": "1.11.1",
+      "publishTimestamp": 1795330021,
+      "source": {
+        "type": "git",
+        "url": "https://github.com/jx70/dsh-comfyui-link",
+        "commit": "0e0a0d1a7f3b988d5cf94cb1bb18639b60f320e0"
+      },
+      "engines": {
+        "dsh": ">=0.2.0-rc.1"
+      }
+    }
+  ]
+}
