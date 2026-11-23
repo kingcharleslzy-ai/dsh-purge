@@ -6,9 +6,10 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { installPreset, presetStatus, bundledPresetDir, userPresetDir, CREATOR_PRESET, SHIPPED_PRESETS } from "../lib/presets.js";
+import { installPreset, presetStatus, bundledPresetDir, userPresetDir, CREATOR_PRESET, CREATOR_PRESET_REQUIRES, SHIPPED_PRESETS } from "../lib/presets.js";
 import { readPresetDefinition } from "../lib/redteam/preset-composition.js";
 import { ALL_PATCHES, applyReplacementsToText } from "../lib/core.js";
+import { hostPackagePresence } from "../lib/preset-compat.js";
 import { apply } from "../lib/presets-plugin.js";
 
 const template = () => fs.readFileSync(path.join(bundledPresetDir(), "agent.cordis.yml"), "utf8");
@@ -139,6 +140,84 @@ test("the creator preset leans on no host patch anchors", () => {
   // #24 / #76 have nothing to rewrite — never let them be "pending" for it.
   assert.equal(applyReplacementsToText(text, ALL_PATCHES.find((p) => p.id === 24)).changed, false, "#24 unused");
   assert.equal(applyReplacementsToText(text, ALL_PATCHES.find((p) => p.id === 76)).changed, false, "#76 unused");
+});
+
+test("a host without the creator packages skips that preset instead of breaking it", async () => {
+  // Stand up a profile-shaped tree that has the control package (so the probe can
+  // prove it is reading a real tree) but none of the 0.2.2-only plugin-authoring
+  // packages. `creator-unbound` must be skipped with a reason; `unrestricted` is
+  // unaffected.
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "purge-presets-old-host-"));
+  const control = path.join(root, "node_modules", "@deepseek-ai", "dsh-tool-subagent-control");
+  fs.mkdirSync(control, { recursive: true });
+  fs.writeFileSync(path.join(control, "package.json"), JSON.stringify({ name: "@deepseek-ai/dsh-tool-subagent-control", version: "0.0.0", main: "index.js" }));
+  fs.writeFileSync(path.join(control, "index.js"), "export const apply = () => {};\n");
+  const anchor = path.join(root, "package.json");
+  fs.writeFileSync(anchor, JSON.stringify({ name: "fake-profile", private: true }));
+
+  const home = path.join(root, "home");
+  const previousHome = process.env.DSH_HOME;
+  process.env.DSH_HOME = home;
+  const registered = [];
+  const logs = [];
+  const registry = {
+    async register(definition) {
+      registered.push(definition.id);
+      return async () => { registered.splice(registered.indexOf(definition.id), 1); };
+    },
+    async resolve(id) { return { id }; },
+  };
+  const ctx = {
+    agentPresets: registry,
+    get(key) {
+      if (key === "agentPresets") return registry;
+      if (key === "profileContext") return { installAnchor: anchor };
+      return undefined;
+    },
+    logger: { info(message, ...rest) { logs.push([message, ...rest].join(" ")); }, warn(message, ...rest) { logs.push([message, ...rest].join(" ")); } },
+    effect(fn) { this.dispose = fn(); },
+  };
+  try {
+    assert.equal(hostPackagePresence(anchor, CREATOR_PRESET_REQUIRES).state, "missing");
+    assert.equal(hostPackagePresence(undefined, CREATOR_PRESET_REQUIRES).state, "unknown",
+      "an unresolvable layout must stay unknown, never 'missing'");
+    // A tree that has all four packages: the probe must say ok, so a current host
+    // is never skipped. Fresh root, because Node caches successful resolutions in
+    // Module._pathCache — removing files from the first tree would keep it "ok".
+    const full = fs.mkdtempSync(path.join(os.tmpdir(), "purge-presets-new-host-"));
+    try {
+      const controlDir = path.join(full, "node_modules", "@deepseek-ai", "dsh-tool-subagent-control");
+      fs.mkdirSync(controlDir, { recursive: true });
+      fs.writeFileSync(path.join(controlDir, "package.json"), JSON.stringify({ name: "@deepseek-ai/dsh-tool-subagent-control", version: "0.0.0", main: "index.js" }));
+      fs.writeFileSync(path.join(controlDir, "index.js"), "export const apply = () => {};\n");
+      for (const pkg of CREATOR_PRESET_REQUIRES) {
+        const dir = path.join(full, "node_modules", ...pkg.split("/"));
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(path.join(dir, "package.json"), JSON.stringify({ name: pkg, version: "0.0.0", main: "index.js" }));
+        fs.writeFileSync(path.join(dir, "index.js"), "export default {};\n");
+      }
+      const fullAnchor = path.join(full, "package.json");
+      fs.writeFileSync(fullAnchor, JSON.stringify({ name: "fake-profile", private: true }));
+      assert.equal(hostPackagePresence(fullAnchor, CREATOR_PRESET_REQUIRES).state, "ok", "a complete host is registered normally");
+    } finally {
+      fs.rmSync(full, { recursive: true, force: true });
+    }
+    apply(ctx);
+    for (let i = 0; i < 40 && !registered.includes("unrestricted"); i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    assert(registered.includes("unrestricted"));
+    assert(!registered.some((id) => id.startsWith("creator-unbound")), "creator is skipped, not registered broken");
+    const skipLine = logs.find((line) => line.includes("跳过") && line.includes("creator-unbound"));
+    assert(skipLine, "the skip is explained");
+    assert(skipLine.includes("@deepseek-ai/dsh-tool-cordis"), "and names what was missing");
+    await ctx.dispose();
+    assert.equal(registered.length, 0);
+  } finally {
+    if (previousHome === undefined) delete process.env.DSH_HOME;
+    else process.env.DSH_HOME = previousHome;
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test("both shipped presets register, and each unwinds on its own", async () => {
