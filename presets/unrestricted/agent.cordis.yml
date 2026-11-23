@@ -192,9 +192,9 @@
       name: '@deepseek-ai/dsh-tool-subagent-control'
       disabled: false
 
-    - id: tool-subagent-list-agents
-      name: '@deepseek-ai/dsh-tool-subagent-control/list-agents'
-      disabled: false
+    # 0.2.2 起 `list_agents` 由 `dsh-tool-subagent-control` 主入口自己注册，
+    # 且该包不再导出 `./list-agents` 子路径 —— 这一行会让整份预设挂载失败。
+    # 已落盘的旧预设由 `adaptListAgents()` 在注册时迁移。
 
     - id: tool-subagent
       name: '@deepseek-ai/dsh-tool-subagent'
@@ -202,8 +202,9 @@
       config:
         provider: spawn
         toolName: subagent
-        modelSelectionSettings: true
-        backgroundMode: continuable
+        # 0.2.2 的 Config 只认 modelSelection / modelDiscovery。
+        modelSelection: true
+        modelDiscovery: true
         # 子智能体是角色执行者（信息收集/资产梳理/漏洞发现/漏洞利用/内网渗透），**必须是叶子节点**：
         # 由 presets-plugin 将以下旧策略转换为原生子预设；父会话仍有完整工具。
         # 子会话排除 subagent_fork / workflow / ralph；spawn 自身保留，由 maxDepth 限制。
@@ -225,7 +226,6 @@
       config:
         provider: fork
         toolName: subagent_fork
-        backgroundMode: continuable
 
     # Production dsh does not install these optional providers. Install the
     # matching Bundle in this Profile and restart the Host, then copy this
@@ -237,7 +237,6 @@
       config:
         provider: codex
         toolName: subagent_codex
-        backgroundMode: one-shot
         maxDepth: provider-managed
 
     - id: tool-subagent-claude-code
@@ -246,16 +245,10 @@
       config:
         provider: claude-code
         toolName: subagent_claude_code
-        backgroundMode: one-shot
         maxDepth: provider-managed
 
-    - id: workflow-worker-thread
-      name: '@deepseek-ai/dsh-workflow-worker-thread'
-      # web 配置通常不装 worker-thread 引擎；未启动会导致整个预设 broken、模式下拉被过滤。
-      disabled: true
-      config:
-        provider: spawn
-
+    # `@deepseek-ai/dsh-workflow-worker-thread` 在 0.2.2 已不存在（只剩 workflow-ptc）；
+    # 这一行原本是 disabled: true 的死配置，直接清理，不留指向不存在包的引用。
     - id: workflow-ptc
       name: '@deepseek-ai/dsh-workflow-ptc'
       config:
