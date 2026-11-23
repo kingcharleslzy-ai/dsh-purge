@@ -242,3 +242,22 @@ test("0.2.2-rc.2 minified inspector client: #96 drops only the oversized tree fr
   assert.equal(again.changed, false);
   assert.equal(again.hitMismatch, undefined);
 });
+
+// DSH 0.2.2+ 把 complete 段改成装配 presentation：early-return 分支没了，complete 段用一行
+// 把 presentation.sections 整个替换掉，注入段会跟着丢。这里钉住新形态的落点。
+const SYSTEM_PROMPT_PRESENTATION = "\t\tconst transformed = await this.ctx.waterfall(scopeTarget(this, scope), \"system-prompt/assemble\", assembly, context, () => Promise.resolve(assembly));\n\t\tconst presentation = {\n\t\t\t...transformed,\n\t\t\tsections: [...transformed.sections].sort(comparePromptSections)\n\t\t};\n\t\tif (completeSection !== void 0) presentation.sections = [completeSection];\n\t\tif (runtimeContextSuppressed) {\n";
+
+test("0.2.2+ complete preset: #40 rebuilds presentation.sections and keeps the inject", () => {
+  const out = applyReplacementsToText(SYSTEM_PROMPT_PRESENTATION, patch(40));
+  assert.equal(out.changed, true);
+  // 只收已渲染字符串、排除 complete 同名、同名去重、complete 段在前、注入段按 order 排。
+  assert.ok(out.text.includes("const dshPurgeKept = [];"));
+  assert.ok(out.text.includes("typeof section.text !== \"string\""));
+  assert.ok(out.text.includes("section.name === completeSection.name"));
+  assert.ok(out.text.includes("dshPurgeNames.has(section.name)"));
+  assert.ok(out.text.includes("dshPurgeKept.sort(comparePromptSections)"));
+  assert.ok(out.text.includes("presentation.sections = [completeSection, ...dshPurgeKept]"));
+  assert.ok(out.text.includes("[dsh-purge] complete preset still keeps the inject"));
+  // 二次应用不得再改（宿主里已经没有那条单行锚点）
+  assert.equal(applyReplacementsToText(out.text, patch(40)).changed, false);
+});
