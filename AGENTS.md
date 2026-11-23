@@ -94,6 +94,7 @@ purge-community probe new
 ## 8. 预设：`unrestricted`（无限制模式）
 
 - 它是 **standard 的超集**（20 行，工具面完全一致），差别只在人设：执行优先、不重复声明边界、多轮不退化。
+- 同目录还有一个「无限制创造模式」`creator-unbound`（order 21）：工具面换成宿主的创造模式（`tool-cordis`、`plugin-manager`、`plugin-market`、`@deepseek-ai/dsh-agent-preset` 的 skills），人设沿用上面这套纪律再加一段"造插件的固定顺序"。它不依赖宿主补丁，加载即注册、不落用户目录；你在 `.agent-presets/creator-unbound/` 放了文件就以你那份为准。
 - 由 `lib/presets-plugin.js` 注册到 `agentPresets`（**只放文件不会出现在下拉里**）；安装：`purge-community preset install`。
 - 不要把它当成"额外破甲"——破甲靠宿主补丁，预设只改人格。
 - 回归测试卡：`docs/preset-test.md`（A/B 五条 prompt + 判读标准 + 不通过怎么办）。

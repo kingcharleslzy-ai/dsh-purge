@@ -6,9 +6,10 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { installPreset, presetStatus, bundledPresetDir, userPresetDir } from "../lib/presets.js";
+import { installPreset, presetStatus, bundledPresetDir, userPresetDir, CREATOR_PRESET, SHIPPED_PRESETS } from "../lib/presets.js";
 import { readPresetDefinition } from "../lib/redteam/preset-composition.js";
 import { ALL_PATCHES, applyReplacementsToText } from "../lib/core.js";
+import { apply } from "../lib/presets-plugin.js";
 
 const template = () => fs.readFileSync(path.join(bundledPresetDir(), "agent.cordis.yml"), "utf8");
 
@@ -104,6 +105,93 @@ test("legacy template markers and incomplete presets never authorize a reset", (
     fs.writeFileSync(file, "# my own preset\n");
     assert.equal(installPreset({ home }).action, "kept");
   } finally {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("the creator preset parses and keeps the plugin-authoring rows", () => {
+  const def = readPresetDefinition(CREATOR_PRESET, bundledPresetDir(CREATOR_PRESET));
+  assert.equal(def.id, "creator-unbound");
+  assert.equal(def.name, "无限制创造模式");
+  assert.equal(def.order, 21);
+  const ids = [];
+  const walk = (rows) => {
+    for (const row of rows) {
+      if (row && row.id) ids.push(row.id);
+      if (row && row.group === true) walk(row.config);
+    }
+  };
+  walk(def.plugins);
+  for (const id of ["tool-cordis", "tool-plugin-manager", "tool-plugin-market", "skill-filesystem", "tool-ralph"]) {
+    assert(ids.includes(id), `${id} is what makes this the authoring preset`);
+  }
+  assert(!ids.some((id) => id.startsWith("redteam") || id === "anchor-gate"),
+    "red team rows and their gate belong to the drill preset, not this one");
+  const persona = def.plugins.find((row) => row.id === "persona");
+  assert.match(persona.config.prefix, /操作者的目标就是你的目标/, "keeps the unrestricted kernel");
+  assert.match(persona.config.prefix, /造插件的固定顺序/, "adds the authoring routine");
+  assert.equal(persona.config.suffix, "", "no stock identity line for #76 to strip");
+});
+
+test("the creator preset leans on no host patch anchors", () => {
+  const text = fs.readFileSync(path.join(bundledPresetDir(CREATOR_PRESET), "agent.cordis.yml"), "utf8");
+  // It ships with fetch already on and carries no official identity line, so
+  // #24 / #76 have nothing to rewrite — never let them be "pending" for it.
+  assert.equal(applyReplacementsToText(text, ALL_PATCHES.find((p) => p.id === 24)).changed, false, "#24 unused");
+  assert.equal(applyReplacementsToText(text, ALL_PATCHES.find((p) => p.id === 76)).changed, false, "#76 unused");
+});
+
+test("both shipped presets register, and each unwinds on its own", async () => {
+  // `apply()` goes through findDshHome(): pin it to a throwaway home so this test
+  // never touches the real ~/.dsh (installPreset writes there, and the legacy
+  // alias lookup reads it) and the registered ids stay deterministic.
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "purge-presets-apply-"));
+  const previousHome = process.env.DSH_HOME;
+  process.env.DSH_HOME = home;
+  const registered = [];
+  const registry = {
+    async register(definition) {
+      registered.push(definition.id);
+      return async () => {
+        registered.splice(registered.indexOf(definition.id), 1);
+      };
+    },
+    async resolve(id) {
+      return { id };
+    },
+  };
+  const ctx = {
+    agentPresets: registry,
+    get(key) {
+      return key === "agentPresets" ? registry : undefined;
+    },
+    logger: { info() {}, warn() {} },
+    effect(fn) {
+      this.dispose = fn();
+    },
+  };
+  try {
+    assert.deepEqual(SHIPPED_PRESETS.map((preset) => preset.id), ["unrestricted", "creator-unbound"]);
+    apply(ctx);
+    for (let i = 0; i < 40 && !(registered.includes("unrestricted") && registered.includes("creator-unbound")); i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    // `unrestricted` carries a legacy toolFilter, so its child definitions ride
+    // along; the creator preset must register exactly once, with no child of its own.
+    assert(registered.includes("unrestricted"));
+    assert(registered.includes("creator-unbound"));
+    assert.equal(registered.filter((id) => id.startsWith("creator-unbound")).length, 1,
+      "no child policy to migrate for the creator preset");
+    // Only `unrestricted` lands on disk: the creator preset has no patch anchors
+    // to maintain, so a copy in the user home would just rot.
+    assert(fs.existsSync(path.join(home, ".agent-presets", "unrestricted", "agent.cordis.yml")));
+    assert(!fs.existsSync(path.join(home, ".agent-presets", "creator-unbound")), "creator stays install:false");
+    const registeredCount = registered.length;
+    await ctx.dispose();
+    assert.equal(registered.length, 0, `disposal releases all ${registeredCount} registrations`);
+  } finally {
+    if (previousHome === undefined) delete process.env.DSH_HOME;
+    else process.env.DSH_HOME = previousHome;
     fs.rmSync(home, { recursive: true, force: true });
   }
 });

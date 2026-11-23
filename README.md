@@ -202,6 +202,7 @@ Web 面板默认接受回环地址和宿主配置的监听地址。通过自有�
 | `purge-community audit [--limit n]` | 最近动作记录 |
 | `purge-community boost [on\|off]` | 尾部强化段开关 |
 | `purge-community preset [status\|install]` | 「无限制模式」预设落盘 |
+| —（自动注册） | 「无限制创造模式」`creator-unbound`：造插件用；加载即出现在下拉，不写用户目录 |
 | `purge-community retry [on\|off]` | 回答被中断时的单次重试开关 |
 | `purge-community usage` / `prune` | 备份占用与清理 |
 | `purge-community backup` / `rollback <id>` | 快照 / 回滚插件 |
