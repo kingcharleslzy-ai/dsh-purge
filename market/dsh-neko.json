@@ -1,0 +1,42 @@
+{
+  "name": "dsh-neko",
+  "title": {
+    "en": "Neko Endings",
+    "zh": "句尾喵"
+  },
+  "description": {
+    "en": "Replace sentence endings in assistant replies with 喵~, 鲸~, or a custom suffix. High or low frequency; code is left untouched.",
+    "zh": "把 AI 回复的句尾换成 喵~、鲸~ 或自定义后缀，可选高频逐句或低频仅末尾，代码不改动。"
+  },
+  "author": "linxi1945",
+  "homepage": "https://github.com/linxi1945/dsh-neko#readme",
+  "repository": {
+    "url": "https://github.com/linxi1945/dsh-neko"
+  },
+  "versions": [
+    {
+      "version": "0.1.1",
+      "publishTimestamp": 1795621078,
+      "source": {
+        "type": "git",
+        "url": "https://github.com/linxi1945/dsh-neko",
+        "commit": "a2a9a5dff21302917340daf390b1edcb4886057c"
+      },
+      "engines": {
+        "dsh": ">=0.2.0-rc.2 <0.2.2-0 || >=0.2.2-rc.1"
+      }
+    },
+    {
+      "version": "0.1.0",
+      "publishTimestamp": 1795620543,
+      "source": {
+        "type": "git",
+        "url": "https://github.com/linxi1945/dsh-neko",
+        "commit": "e35c93daf52405d5003ded83e13f950fed337810"
+      },
+      "engines": {
+        "dsh": ">=0.2.0-rc.2 <0.2.2-0 || >=0.2.2-rc.1"
+      }
+    }
+  ]
+}

@@ -13,3 +13,5 @@ DSH「插件 → 实验性插件 → 更多 → 自定义插件市场」开启�
 官方规范：https://deepseek-harness.github.io/deepseek-harness/en/guide/plugin-market
 
 发布新版 Breeze Voice 后，将发行包的预编译 Git 快照提交、发布时间和宿主兼容范围登记在 `market/breeze-voice.json`，验证后部署索引。
+
+发布 dsh-neko 新版后，把对应提交、发布时间和宿主兼容范围登记在 `market/dsh-neko.json`，验证后部署索引。
