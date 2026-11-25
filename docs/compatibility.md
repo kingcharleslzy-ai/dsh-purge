@@ -16,6 +16,7 @@
 
 | 宿主发行 | 状态 | 依据 / 备注 |
 | --- | --- | --- |
+| 0.2.2-rc.5 | `compatible` | Windows 桌面实战（宿主已解包、直接写源码目录）：`diagnose` 88 条锚点零漂移（`drifted: []` / `missing: []` / `optionalDrift: []`），`selfcheck --text` 宿主补丁 77/77、22 层无红；`probe new` 的 nonce 在模型 system prompt 中可见。**二次应用幂等与 Host Loader 预设注册未在 rc.5 复测。** |
 | 0.2.2-rc.3 | `compatible` | 官方 rc.3 隔离副本 86 条补丁 74 applied / 零漂移，二次应用幂等；真实 Host Loader 预设注册通过。**Windows rc.3 未复测补丁。** |
 | 0.2.2-rc.2 | `compatible` | 同上批次验证 |
 | 0.2.2-rc.1 | `compatible` | 仍未完整适配：六项旧补丁 #14/#17/#60/#62/#67/#74 保持原定义未修（见 [§2](#c-boundary)） |
@@ -36,6 +37,7 @@
 - **0.2.1 系列**：`tool-subagent` 不再接受 `toolFilter`——旧 deny 清单要先转成原生子预设与父工具 `agentPreset` 引用（机制与停止条件见 [troubleshooting §13](troubleshooting.md#t-preset)）。rc.4 未声明；rc.1 / rc.2 / rc.3 / rc.5 已声明 `compatible`。
 - **0.2.2-rc.1**：仍未完整适配。六项旧补丁 #14/#17/#60/#62/#67/#74 保持原定义、尚未修复；原生消息回合契约测试通过，但回调缺少 messages 的异常仍应暴露，不可吞掉错误或丢弃输入。测试范围与未确认事项见 [诊断记录](maintenance-022-diagnostics.md)。
 - **0.2.2-rc.2 / rc.3**：rc.3 是当前首部声明的主验证目标（见 [§1](#c-matrix)）。Windows 上的 rc.3 只做了部分验证——不要写成"Windows 全量通过"。
+- **0.2.2-rc.5**：Windows 桌面补入（见 [§1](#c-matrix)）。该次取证只覆盖写盘、`selfcheck` 分层与运行时注入，未跑完整契约测试，也未复测二次应用幂等；据此外推"Windows 全量通过"仍然无效。
 - **0.2.2-alpha.2、rc.4**：`unknown`。`unknown` 不是"大概可以"，是"没有证据"。
 - **NEXT 宿主家族**：独立、未验证。包名识别或磁盘写入成功都不构成完整运行兼容证明；#102 的 NEXT 桌面发行版完整兼容仍未确认。
 - 隔离安装测试（含 `scripts/check-architecture-runtime.mjs` 调整测试副本布局的那类）只代表安装路径，不代表模型行为、GUI 功能或宿主补丁全量验收。

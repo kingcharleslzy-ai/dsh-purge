@@ -118,7 +118,8 @@
         "0.2.2-alpha.2": "unknown",
         "0.2.2-rc.1": "compatible",
         "0.2.2-rc.2": "compatible",
-        "0.2.2-rc.3": "compatible"
+        "0.2.2-rc.3": "compatible",
+        "0.2.2-rc.5": "compatible"
       }
     }
   },
