@@ -73,3 +73,65 @@ test("real Cordis late service, replacement and parent reload retain commands an
     fs.rmSync(tmp,{recursive:true,force:true});
   }
 });
+
+test("installCommands registers purge-rewind directly without claiming host /rewind", async () => {
+  class EmptyCommands extends Service {
+    constructor(ctx) { super(ctx, "commands"); this.entries = new Map(); }
+    register(def) {
+      if (this.entries.has(def.name)) throw Error(`command "${def.name}" is already registered`);
+      return this.ctx.effect(() => {
+        this.entries.set(def.name, def);
+        return () => this.entries.delete(def.name);
+      });
+    }
+  }
+  class StubSessions extends Service {
+    constructor(ctx) { super(ctx, "sessions"); }
+    get(id) {
+      return id === "main-1" ? { header: { id: "main-1" }, snapshotEvents: () => [] } : undefined;
+    }
+  }
+
+  const root = new Context();
+  try {
+    await root.plugin(EmptyCommands);
+    await root.plugin(StubSessions);
+    await root.plugin({
+      name: "purge-commands-only",
+      apply(ctx) { installCommands(ctx, {}); },
+    });
+    await tick();
+
+    assert.equal(root.commands.entries.has("rewind"), false);
+    const entry = root.commands.entries.get("purge-rewind");
+    assert(entry, "expected purge-rewind command to be registered");
+    assert.match(entry.description, /\/purge-rewind once/);
+    assert.doesNotMatch(entry.description, /\/rewind\b/);
+    const reply = await entry.handler({ rawInput: "", agent: { session: { id: "main-1" } } });
+    assert.equal(reply.kind, "success");
+    assert.match(reply.text, /\/purge-rewind once.*\/purge-rewind round/);
+
+    const fallbackRoot = new Context();
+    try {
+      await fallbackRoot.plugin(EmptyCommands);
+      await fallbackRoot.plugin(StubSessions);
+      fallbackRoot.commands.entries.set("purge-rewind", { name: "purge-rewind", owner: "external" });
+      await fallbackRoot.plugin({
+        name: "purge-commands-fallback",
+        apply(ctx) { installCommands(ctx, {}); },
+      });
+      await tick();
+
+      assert.equal(fallbackRoot.commands.entries.has("rewind"), false);
+      const fallbackEntry = fallbackRoot.commands.entries.get("purge-rewind-community");
+      assert(fallbackEntry, "expected purge-rewind-community fallback command");
+      const fallbackReply = await fallbackEntry.handler({ rawInput: "", agent: { session: { id: "main-1" } } });
+      assert.equal(fallbackReply.kind, "success");
+      assert.match(fallbackReply.text, /\/purge-rewind-community once.*\/purge-rewind-community round/);
+    } finally {
+      await fallbackRoot.fiber.dispose();
+    }
+  } finally {
+    await root.fiber.dispose();
+  }
+});
