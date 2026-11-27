@@ -31,7 +31,7 @@ try {
     $argsText = '-NoProfile -File "' + $Helper + '" -ExePath "' + (Join-Path $root 'fixture.exe') + '" -AsarPath "' + $asar + '" -StatePath "' + $state + '" -Token ' + $token + ' -TimeoutSeconds 20 -PollMilliseconds 40'
     $process = Start-Process powershell.exe -ArgumentList $argsText -PassThru -WindowStyle Hidden
     $timer = [Diagnostics.Stopwatch]::StartNew()
-    while (!(Test-Path -LiteralPath ($state + '.' + $token + '.tmp'))) {
+    while ([IO.Directory]::GetFiles($root, ('*.json.' + $token + '.*.tmp')).Length -eq 0) {
         if ($process.HasExited -or $timer.Elapsed.TotalSeconds -gt 8) { throw 'Helper did not stage its first state' }
         Start-Sleep -Milliseconds 5
     }
@@ -79,7 +79,8 @@ try {
     if ($row.phase -ne 'complete' -or $row.archive_sha256 -ne $hash -or (Test-Path -LiteralPath $asar) -or (FixtureHash $backup) -ne $hash) {
         throw 'Handoff did not preserve the archive'
     }
-    if ([IO.File]::GetAccessControl($state).GetSecurityDescriptorSddlForm($section) -ne $expectedDacl) { throw 'Status DACL changed' }
+    $actualDacl = [IO.File]::GetAccessControl($state).GetSecurityDescriptorSddlForm($section)
+    if ($actualDacl -cne $expectedDacl) { throw "Status DACL changed from $expectedDacl to $actualDacl" }
     [IO.File]::Move($backup, $asar)
     if ((FixtureHash $asar) -ne $hash) { throw 'Offline rollback did not restore original archive' }
     @{reads=$reads; lockCycles=$cycles; rollback=$true} | ConvertTo-Json -Compress
