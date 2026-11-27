@@ -1,0 +1,73 @@
+name: Standalone Windows JSON replacement probe
+on:
+  push:
+    branches: [diag/165-state-publish]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: windows-2025
+    timeout-minutes: 5
+    steps:
+      - name: Compare static and replaced JSON with concurrent readers on the same volume
+        shell: powershell
+        run: |
+          Add-Type -TypeDefinition @'
+          using System;
+          using System.Collections.Concurrent;
+          using System.Diagnostics;
+          using System.IO;
+          using System.Threading;
+          using System.Threading.Tasks;
+          public static class StateProbe {
+            [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet=System.Runtime.InteropServices.CharSet.Unicode, SetLastError=true)]
+            static extern bool MoveFileEx(string source,string destination,int flags);
+            public static void Run(int mode) {
+              string dir = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())).FullName;
+              string file = Path.Combine(dir,"state.json"), stage=file+".tmp";
+              string json="{\"phase\":\"ready\"}";
+              File.WriteAllText(file,json);
+              var errors=new ConcurrentDictionary<string,int>();
+              long reads=0, writes=0, retries=0;
+              var stop=new CancellationTokenSource();
+              var workers=new Task[4];
+              for(int i=0;i<workers.Length;i++){
+                workers[i]=Task.Factory.StartNew(delegate {
+                  while(!stop.IsCancellationRequested){
+                    try {
+                      using(var stream=File.Open(file,FileMode.Open,FileAccess.Read,FileShare.ReadWrite|FileShare.Delete))
+                      using(var reader=new StreamReader(stream)){
+                        if(reader.ReadToEnd()!=json) throw new InvalidDataException("incomplete JSON");
+                        Interlocked.Increment(ref reads);
+                      }
+                    } catch(Exception e){errors.AddOrUpdate(e.GetType().Name+"/"+(e.HResult&65535),1,(k,n)=>n+1);}
+                  }
+                },TaskCreationOptions.LongRunning);
+              }
+              try {
+                var clock=Stopwatch.StartNew();
+                while(clock.Elapsed.TotalSeconds<10){
+                  if(mode==0){Thread.Sleep(10); continue;}
+                  File.WriteAllText(stage,json);
+                  try{
+                    if(mode==1)File.Replace(stage,file,null);
+                    else if(!MoveFileEx(stage,file,1)){
+                      int error=System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+                      errors.AddOrUpdate("writer/"+error,1,(k,n)=>n+1);continue;
+                    }
+                    writes++;
+                  }
+                  catch(IOException e){if((e.HResult&65535)!=32)throw;retries++;}
+                }
+              } finally {
+                stop.Cancel();Task.WaitAll(workers);Directory.Delete(dir,true);
+              }
+              Console.WriteLine("mode="+mode+" read="+reads+" published="+writes+" sharingRetries="+retries);
+              foreach(var e in errors)Console.WriteLine(e.Key+" = "+e.Value);
+              if(reads==0 || (mode==0 && !errors.IsEmpty) || (mode!=0 && writes==0))throw new Exception("invalid control run");
+            }
+          }
+          '@
+          [StateProbe]::Run(0)
+          [StateProbe]::Run(1)
+          [StateProbe]::Run(2)
