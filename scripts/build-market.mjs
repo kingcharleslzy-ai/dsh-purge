@@ -28,6 +28,24 @@ export function buildMarket(releases, git = (args) => execFileSync("git", args, 
       icon: "data:image/svg+xml;base64," + Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#166534"/><text x="32" y="45" text-anchor="middle" fill="white" font-size="44" font-family="sans-serif">P</text></svg>').toString("base64"),
       versions }] };
 }
+export function addProfilePlugins(index, qwen) {
+  const plugin = qwen.plugins?.find(p => p.name === "dsh-qwen-studio");
+  if (qwen.format !== 1 || !plugin || plugin.repository?.url !== "https://github.com/kingcharleslzy-ai/DSH-Spicy" ||
+    !plugin.versions?.length || plugin.versions.some(v => v.source?.type !== "git" || v.source?.url !== plugin.repository.url || !/^[a-f0-9]{40}$/.test(v.source.commit)))
+    throw Error("Qwen market identity or pinned sources invalid");
+  index.title = { en: "Charles DSH plugins", zh: "Charles DSH 插件源" };
+  index.description = { en: "Verified dsh-purge Community, DSH-Spicy and Breeze Voice releases.", zh: "Purge 社区版、DSH-Spicy以及 Breeze 语音的已校验发行版本。" };
+  index.metadata = qwen.metadata;
+  const voice = JSON.parse(fs.readFileSync(new URL("../market/breeze-voice.json", import.meta.url), "utf8"));
+  const privacy = JSON.parse(fs.readFileSync(new URL("../market/dsh-privacy-mode.json", import.meta.url), "utf8"));
+  const repository = "https://github.com/huiyaoxingkong/dsh-privacy-mode";
+  if (privacy.name !== "dsh-privacy-mode" || privacy.repository?.url !== repository ||
+      privacy.repository.directory !== "dsh-privacy-mode" || !privacy.versions?.length ||
+      privacy.versions.some(({source}) => source?.type !== "git" || source.url !== repository ||
+        source.path !== privacy.repository.directory || !/^[a-f0-9]{40}$/.test(source.commit)))
+    throw Error("Invalid privacy-mode repository, package directory or commit");
+  index.plugins.push(plugin, voice, privacy);
+}
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   const input = process.argv.indexOf("--releases");
   let releases;
@@ -45,15 +63,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
   const qwenResponse = await fetch(qwenURL, { signal: AbortSignal.timeout(30000), redirect: "error" });
   if (!qwenResponse.ok) throw Error(`Qwen market HTTP ${qwenResponse.status}; existing published index remains intact`);
   const qwen = await qwenResponse.json();
-  const plugin = qwen.plugins?.find(p => p.name === "dsh-qwen-studio");
-  if (qwen.format !== 1 || !plugin || plugin.repository?.url !== "https://github.com/kingcharleslzy-ai/DSH-Spicy" ||
-    !plugin.versions?.length || plugin.versions.some(v => v.source?.type !== "git" || v.source?.url !== plugin.repository.url || !/^[a-f0-9]{40}$/.test(v.source.commit)))
-    throw Error("Qwen market identity or pinned sources invalid");
-  index.title = { en: "Charles DSH plugins", zh: "Charles DSH 插件源" };
-  index.description = { en: "Verified dsh-purge Community, DSH-Spicy and Breeze Voice releases.", zh: "Purge 社区版、DSH-Spicy以及 Breeze 语音的已校验发行版本。" };
-  index.metadata = qwen.metadata;
-  const voice = JSON.parse(fs.readFileSync(new URL("../market/breeze-voice.json", import.meta.url), "utf8"));
-  index.plugins.push(plugin, voice);
+  addProfilePlugins(index, qwen);
   fs.mkdirSync(out, { recursive: true });
   fs.writeFileSync(path.join(out, "index.json"), JSON.stringify(index, null, 2) + "\n");
   fs.writeFileSync(path.join(out, "index.html"), '<!doctype html><html lang="zh"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Charles DSH 插件源</title><main><h1>Charles DSH 插件源</h1><p>DSH → 插件 → 实验性插件 → 自定义插件市场 → 发现 → 添加索引源。</p><p>索引：<a href="index.json">index.json</a>，复制此链接的完整地址添加。</p><p>包含 dsh-purge Community、<a href="https://github.com/kingcharleslzy-ai/DSH-Spicy">DSH-Spicy</a>（完美适配 purge 的 nsfw content creation 插件）、<a href="https://github.com/kingcharleslzy-ai/dsh-breeze-voice">Breeze 语音对话</a>。<a href="https://github.com/kingcharleslzy-ai/DSH-Spicy">图像、视频与长片安装指南</a>。</p><p>宿主策略补丁、提示词管理、诊断、更新与备份回滚。安装会修改本机插件；应用宿主补丁是单独的操作。插件升级后手动重启 DSH。</p><p><a href="https://github.com/kingcharleslzy-ai/dsh-purge">源码与安装说明</a> · <a href="https://github.com/kingcharleslzy-ai/dsh-purge/releases/latest">最新发行包</a></p></main></html>\n');

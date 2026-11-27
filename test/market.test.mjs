@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { buildMarket } from "../scripts/build-market.mjs";
+import { buildMarket, addProfilePlugins } from "../scripts/build-market.mjs";
 const release = (version, extra = {}) => ({ tag_name: `v${version}`, published_at: "2026-10-18T00:00:00Z", assets: [{ name: `dsh-purge-community-${version}.tgz` }], ...extra });
 const git = (args) => args[0] === "show" ? JSON.stringify({ name: "dsh-purge-community", version: args[1].split(":")[0].slice(1), dsh: { bundle: { patch: "./cordis.patch.yml" } } }) : "a".repeat(40);
 test("market includes only published stable qualified bundles, pinned to complete commits", () => {
@@ -27,4 +27,17 @@ test("the install manifest pins the package archive to its own release tag", asy
   const pkg = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
   assert.equal(pkg.dsh.install.tarball,
     `https://github.com/kingcharleslzy-ai/dsh-purge/releases/download/v${pkg.version}/${pkg.name}-${pkg.version}.tgz`);
+});
+
+test("final market includes the pinned privacy-mode package in its repository subdirectory", () => {
+  const index = buildMarket([release("1.6.5")], git);
+  const url = "https://github.com/kingcharleslzy-ai/DSH-Spicy";
+  addProfilePlugins(index, {format:1, plugins:[{name:"dsh-qwen-studio", repository:{url},
+    versions:[{source:{type:"git", url, commit:"f".repeat(40)}}]}]});
+  const matches = index.plugins.filter(p => p.name === "dsh-privacy-mode");
+  assert.equal(matches.length, 1);
+  for (const {source} of matches[0].versions) {
+    assert.equal(source.path, "dsh-privacy-mode");
+    assert.match(source.commit, /^[a-f0-9]{40}$/);
+  }
 });
