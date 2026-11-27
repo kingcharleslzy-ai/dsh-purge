@@ -89,3 +89,26 @@ jobs:
           [StateProbe]::Run(1)
           [StateProbe]::Run(2)
           [StateProbe]::Run(3)
+
+  acceptance:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022, windows-2025]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: c990b98
+      - name: Run the shipped handoff helper against isolated archives and status files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $helper = Join-Path $env:RUNNER_TEMP 'state-helper.ps1'
+          node --input-type=module -e "import {writeFileSync} from 'node:fs'; import {WINDOWS_ASAR_HANDOFF_PS1 as script} from './lib/windows-asar-handoff.js'; writeFileSync(process.argv[1],script)" $helper
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          for ($round = 1; $round -le 5; $round++) {
+            Write-Host "Testing isolated swap and rollback, round $round"
+            powershell.exe -NoProfile -ExecutionPolicy Bypass -File test/fixtures/windows-handoff-state-reader.ps1 -Helper $helper
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
