@@ -23,6 +23,10 @@ class Web extends Service {
     return () => this.routes.delete(spec.path);
   }
 }
+class Connection extends Service {
+  constructor(ctx){super(ctx,'connection');}
+  admit(){return {peer:{principal:{kind:'owner'}}};}
+}
 test("real Cordis late service, replacement and parent reload retain commands and routes without global polling", async () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "purge-lifecycle-"));
   const previous = process.env.DSH_HOME;
@@ -37,12 +41,16 @@ test("real Cordis late service, replacement and parent reload retain commands an
     let web = root.plugin(Web);await web;await tick();
     const routes = root.webServer.routes;
     assert(routes.has("/dsh-purge/status"));
-    // The diagnostic route reads disk state only and must not wait forever for connection/loader.
+    // Routes and CLI commands still register without Connection, but HTTP fails closed.
     assert(!root.get("connection"));
     const response = {writeHead(code) {this.code=code;},end(body) {this.body=body;}};
     await routes.get("/dsh-purge/status").handler({method:"GET",headers:{host:"127.0.0.1:3080"}},response);
-    assert.equal(response.code,200);
-    assert.equal(JSON.parse(response.body).ready,true);
+    assert.equal(response.code,503);
+    const connection=root.plugin(Connection);await connection;await tick();
+    const authenticated={writeHead(code){this.code=code;},end(body){this.body=body;}};
+    await routes.get("/dsh-purge/status").handler({method:"GET",headers:{host:"127.0.0.1:3080"}},authenticated);
+    assert.equal(authenticated.code,200);
+    assert.equal(JSON.parse(authenticated.body).ready,true);
     // Both independently registered update handlers must use their own scoped
     // settings reader; malformed channel config must never become direct traffic.
     fs.mkdirSync(path.join(tmp,"dsh-purge"),{recursive:true});
@@ -51,7 +59,11 @@ test("real Cordis late service, replacement and parent reload retain commands an
       const req=Object.assign(Readable.from(["{}"]),{method,headers:{host:"127.0.0.1:3080"}});
       const res={writeHead(code){this.code=code;},end(body){this.body=body;}};
       await routes.get("/dsh-purge/update").handler(req,res);
-      assert.equal(res.code,500);assert.match(JSON.parse(res.body).error,/无法读取更新密钥设置.*JSON/);assert(!res.body.includes("FAKE_SECRET"));
+      assert.equal(res.code,500);
+      // Windows can reject this plaintext fixture at file protection before JSON parsing.
+      assert.match(JSON.parse(res.body).error,/无法读取更新密钥设置.*JSON|Windows 更新密钥文件保护失败/);
+      assert(!res.body.includes("FAKE_SECRET"));
+      assert.equal(fs.readFileSync(path.join(tmp,"dsh-purge/update-channel.json"),'utf8'),"FAKE_SECRET_broken_json");
     }
     fs.unlinkSync(path.join(tmp,"dsh-purge/update-channel.json"));
     await web.dispose();await tick();assert.equal(routes.size,0);
@@ -71,5 +83,67 @@ test("real Cordis late service, replacement and parent reload retain commands an
     await root.fiber.dispose();
     if(previous === undefined) delete process.env.DSH_HOME; else process.env.DSH_HOME = previous;
     fs.rmSync(tmp,{recursive:true,force:true});
+  }
+});
+
+test("installCommands registers purge-rewind directly without claiming host /rewind", async () => {
+  class EmptyCommands extends Service {
+    constructor(ctx) { super(ctx, "commands"); this.entries = new Map(); }
+    register(def) {
+      if (this.entries.has(def.name)) throw Error(`command "${def.name}" is already registered`);
+      return this.ctx.effect(() => {
+        this.entries.set(def.name, def);
+        return () => this.entries.delete(def.name);
+      });
+    }
+  }
+  class StubSessions extends Service {
+    constructor(ctx) { super(ctx, "sessions"); }
+    get(id) {
+      return id === "main-1" ? { header: { id: "main-1" }, snapshotEvents: () => [] } : undefined;
+    }
+  }
+
+  const root = new Context();
+  try {
+    await root.plugin(EmptyCommands);
+    await root.plugin(StubSessions);
+    await root.plugin({
+      name: "purge-commands-only",
+      apply(ctx) { installCommands(ctx, {}); },
+    });
+    await tick();
+
+    assert.equal(root.commands.entries.has("rewind"), false);
+    const entry = root.commands.entries.get("purge-rewind");
+    assert(entry, "expected purge-rewind command to be registered");
+    assert.match(entry.description, /\/purge-rewind once/);
+    assert.doesNotMatch(entry.description, /\/rewind\b/);
+    const reply = await entry.handler({ rawInput: "", agent: { session: { id: "main-1" } } });
+    assert.equal(reply.kind, "success");
+    assert.match(reply.text, /\/purge-rewind once.*\/purge-rewind round/);
+
+    const fallbackRoot = new Context();
+    try {
+      await fallbackRoot.plugin(EmptyCommands);
+      await fallbackRoot.plugin(StubSessions);
+      fallbackRoot.commands.entries.set("purge-rewind", { name: "purge-rewind", owner: "external" });
+      await fallbackRoot.plugin({
+        name: "purge-commands-fallback",
+        apply(ctx) { installCommands(ctx, {}); },
+      });
+      await tick();
+
+      assert.equal(fallbackRoot.commands.entries.has("rewind"), false);
+      const fallbackEntry = fallbackRoot.commands.entries.get("purge-rewind-community");
+      assert(fallbackEntry, "expected purge-rewind-community fallback command");
+      const fallbackReply = await fallbackEntry.handler({ rawInput: "", agent: { session: { id: "main-1" } } });
+      assert.equal(fallbackReply.kind, "success");
+      assert.match(fallbackReply.text, /\/purge-rewind-community once.*\/purge-rewind-community round/);
+    } finally {
+      await fallbackRoot.fiber.dispose();
+    }
+  } finally {
+    await root.fiber.dispose();
   }
 });

@@ -11315,7 +11315,11 @@ function versionChoiceLabel(item, tr) {
 }
 
 // src/components/settings-form.js
-function PurgifySection({ page = "status", onStatus } = {}) {
+function PurgifySection({
+  page = "status",
+  active = true,
+  onStatus
+} = {}) {
   const t = useT();
   const tRef = useRef(t);
   tRef.current = t;
@@ -11541,9 +11545,12 @@ function PurgifySection({ page = "status", onStatus } = {}) {
     },
     [channel, pick, postUpdate, updateInfo]
   );
-  const loadAll = useCallback(() => {
+  const generation = useRef(0);
+  const refreshStatus = useCallback(() => {
+    const ticket = ++generation.current;
     const tr = tRef.current;
     apiJson("/dsh-purge/status").then((d) => {
+      if (ticket !== generation.current) return;
       if (d && d.ok) {
         setState(d);
         try {
@@ -11573,6 +11580,7 @@ function PurgifySection({ page = "status", onStatus } = {}) {
         });
       }
     }).catch((e) => {
+      if (ticket !== generation.current) return;
       setState(unavailableStatus(e));
       setNotice({
         kind: "error",
@@ -11580,6 +11588,28 @@ function PurgifySection({ page = "status", onStatus } = {}) {
         text: tr("err.status", { error: e.message })
       });
     });
+  }, []);
+  useEffect(() => {
+    if (active) refreshStatus();
+    return () => {
+      generation.current++;
+    };
+  }, [active, refreshStatus]);
+  const phase = state?.asar_handoff?.phase;
+  useEffect(() => {
+    if (page !== "status" || !active || ![
+      "starting",
+      "ready",
+      "waiting_for_quit",
+      "waiting_for_unlock",
+      "moving"
+    ].includes(phase))
+      return;
+    const timer = setInterval(refreshStatus, 2e3);
+    return () => clearInterval(timer);
+  }, [page, active, phase, refreshStatus]);
+  useEffect(() => {
+    const tr = tRef.current;
     apiJson("/dsh-purge/update").then((d) => {
       if (!d) return;
       if (d.channel) setChannel(d.channel);
@@ -11619,9 +11649,6 @@ function PurgifySection({ page = "status", onStatus } = {}) {
     }).catch(() => {
     });
   }, []);
-  useEffect(() => {
-    loadAll();
-  }, [loadAll]);
   const rejectNeedPrompt = useCallback((tr) => {
     setAskRestart(false);
     setNotice({ kind: "error", text: tr("need.prompt") });
@@ -11677,7 +11704,7 @@ function PurgifySection({ page = "status", onStatus } = {}) {
                 detail: incompleteApplyDetail(d, tr)
               })
             });
-            loadAll();
+            refreshStatus();
             if (d.restarting || d.needs_full_quit) {
               suppressRestartAsk.current = false;
               setAskRestart(true);
@@ -11691,11 +11718,11 @@ function PurgifySection({ page = "status", onStatus } = {}) {
                 text: "\u8865\u4E01\u5DF2\u5199\u5165\u78C1\u76D8\uFF0C\u5F53\u524D\u8FDB\u7A0B\u5C1A\u672A\u52A0\u8F7D\u3002\u6362\u5305\u52A9\u624B\u7B49\u5F85\u4F60\u5B8C\u6574\u9000\u51FA\uFF08macOS \u7528 \u2318Q\uFF0CWindows \u4ECE\u7CFB\u7EDF\u6258\u76D8\u9000\u51FA\uFF09\u3002\u786E\u8BA4\u6362\u5305\u5B8C\u6210\u540E\u518D\u624B\u52A8\u6253\u5F00 DSH\uFF0C\u4E0D\u4F1A\u81EA\u52A8\u91CD\u542F\u3002"
               });
               setAskRestart(false);
-              loadAll();
+              refreshStatus();
               return;
             }
             setNotice({ kind: "ok", text: tr("ok.done") });
-            loadAll();
+            refreshStatus();
             if (d.restarting || d.needs_full_quit) {
               suppressRestartAsk.current = false;
               setAskRestart(true);
@@ -11705,7 +11732,7 @@ function PurgifySection({ page = "status", onStatus } = {}) {
             return;
           }
           setNotice({ kind: "ok", text: tr("ok.done") });
-          loadAll();
+          refreshStatus();
         }).catch((e) => {
           if (ticket !== actionTicket.current) return;
           setNotice({
@@ -11718,7 +11745,7 @@ function PurgifySection({ page = "status", onStatus } = {}) {
       };
       run();
     },
-    [loadAll, rejectNeedPrompt, state]
+    [refreshStatus, rejectNeedPrompt, state]
   );
   const saveOverride = useCallback(async () => {
     if (promptPending.current) return;
@@ -12040,7 +12067,7 @@ function PurgifySection({ page = "status", onStatus } = {}) {
             {
               type: "button",
               className: "dshpp-scan",
-              onClick: loadAll,
+              onClick: refreshStatus,
               disabled: patchBusy || uninstallBusy,
               title: t("scan.hint")
             },
@@ -12055,7 +12082,7 @@ function PurgifySection({ page = "status", onStatus } = {}) {
       ) : null,
       noticeNode(notice),
       h(PatchHealth, { state: s }),
-      h(PatchGroupSwitches, { state: s, onSaved: loadAll }),
+      h(PatchGroupSwitches, { state: s, onSaved: refreshStatus }),
       h(
         "section",
         { className: "dshpp-fold is-open" },
@@ -12076,7 +12103,7 @@ function PurgifySection({ page = "status", onStatus } = {}) {
         "details",
         null,
         h("summary", null, "\u9AD8\u7EA7\u9009\u9879"),
-        h(HooksDenySection, { onSaved: loadAll })
+        h(HooksDenySection, { onSaved: refreshStatus })
       ),
       askUninstall ? h(
         "div",
@@ -14032,24 +14059,7 @@ function PurgePage() {
     setTab(id);
     setVisited((v) => Object.assign({}, v, { [id]: true }));
   };
-  const loadInfo = () => apiJson("/dsh-purge/status").then(setInfo).catch((error) => setInfo(unavailableStatus(error)));
   const mergeInfo = useCallback((s) => s && setInfo(s), []);
-  useEffect(() => {
-    if (tab === "status") loadInfo();
-  }, [tab]);
-  useEffect(() => {
-    const phase = info?.asar_handoff?.phase;
-    if (![
-      "starting",
-      "ready",
-      "waiting_for_quit",
-      "waiting_for_unlock",
-      "moving"
-    ].includes(phase))
-      return;
-    const timer = setInterval(loadInfo, 2e3);
-    return () => clearInterval(timer);
-  }, [info?.asar_handoff?.phase]);
   const active = TABS.find((row) => row[0] === tab) || TABS[0];
   return h(
     "div",
@@ -14102,7 +14112,11 @@ function PurgePage() {
         "div",
         { hidden: tab !== "status", className: "dshpp-sec" },
         h(StatusStrip, { info }),
-        h(PurgifySection, { page: "status", onStatus: mergeInfo }),
+        h(PurgifySection, {
+          page: "status",
+          active: tab === "status",
+          onStatus: mergeInfo
+        }),
         h(StatusExtras),
         h(CommunityMaintenance, { localVersion: info?.plugin_version || "" })
       ),

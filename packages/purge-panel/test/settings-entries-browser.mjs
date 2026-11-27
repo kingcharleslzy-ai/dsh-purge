@@ -66,6 +66,10 @@ const server = createServer(async (req, res) => {
         }),
       );
     }
+    if (req.url === "/dsh-purge/rules" && req.method === "POST") {
+      assert.equal(JSON.parse(body).op, "status");
+      return send("application/json", JSON.stringify({ ok: true, rules: [] }));
+    }
     assert.equal(req.method, "GET");
     send("application/json", JSON.stringify({ ok: true }));
   } catch (err) {
