@@ -31,9 +31,9 @@ public static class WindowProbe {
     public static extern bool IsWindowVisible(IntPtr handle);
 }
 '@
-foreach ($mode in 'normal','updated') {
+function Test-Window([string]$mode, [switch]$Updated) {
     $launch = @{ FilePath = $exe; PassThru = $true }
-    if ($mode -eq 'updated') { $launch.ArgumentList = '--updated' }
+    if ($Updated) { $launch.ArgumentList = '--updated' }
     $p = Start-Process @launch
     $deadline = [DateTime]::UtcNow.AddSeconds(90)
     $visibleSamples = 0
@@ -51,4 +51,37 @@ foreach ($mode in 'normal','updated') {
     # On the disposable runner isolate the second launch from tray/single-instance reuse.
     taskkill.exe /T /F /PID $p.Id | Out-Null
     if ($LASTEXITCODE -or !$p.WaitForExit(15000)) { throw "Unable to end the $mode test process" }
+}
+
+Test-Window 'sealed-normal'
+Test-Window 'sealed-updated' -Updated
+
+# Use only the original vendor bytes. This isolates layout from all plugin hooks.
+$resources = Join-Path $target 'resources'
+$archive = Join-Path $resources 'app.asar'
+$backup = "$archive.qa-backup"
+$previousHash = (Get-FileHash $archive).Hash
+$stage = Join-Path $root 'stage.mjs'
+@'
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+const [source, resources] = process.argv.slice(2);
+const { extractAsarToSide, overlayAsarUnpacked, verifyStagedAsar, commitExtractedDir } = await import(pathToFileURL(source));
+const archive = path.join(resources, 'app.asar');
+const dest = path.join(resources, 'app');
+const { next } = extractAsarToSide(archive, dest);
+overlayAsarUnpacked(archive, next);
+verifyStagedAsar(archive, next);
+commitExtractedDir(dest, next);
+'@ | Set-Content -LiteralPath $stage -Encoding utf8
+& node $stage (Resolve-Path lib/extract-asar.js).Path $resources
+if ($LASTEXITCODE) { throw 'Archive staging or verification failed' }
+Move-Item -LiteralPath $archive -Destination $backup
+try {
+    Test-Window 'unpacked-updated' -Updated
+} finally {
+    Move-Item -LiteralPath (Join-Path $resources 'app') -Destination (Join-Path $root 'tested-app')
+    Move-Item -LiteralPath $backup -Destination $archive
+    if ((Get-FileHash $archive).Hash -ne $previousHash) { throw 'Rollback archive checksum mismatch' }
+    Test-Window 'rollback-normal'
 }
