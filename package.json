@@ -26,6 +26,7 @@
     "!lib/default-prompt-inject.md",
     "bin",
     "docs",
+    "!docs/preview/next-host",
     "presets",
     "skills",
     "scripts",
