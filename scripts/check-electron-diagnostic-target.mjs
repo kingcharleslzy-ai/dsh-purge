@@ -80,18 +80,23 @@ try {
       process.env.DSH_SURFACE='desktop';
       const {Context,Service}=await import(${JSON.stringify(pathToFileURL(path.join(root, "node_modules/@deepseek-ai/cordis/lib/index.js")).href)});
       const {installWebServer}=await import(${JSON.stringify(pathToFileURL(path.join(root, "lib/index.js")).href)});
+      class TestConnection extends Service {
+        constructor(ctx){super(ctx,'connection');}
+        admit(req){return req.headers.authorization === 'Bearer fixture-owner' ? {peer:{principal:{kind:'owner'}}} : {rejection:401};}
+      }
       class Web extends Service {
         constructor(ctx){super(ctx,'webServer');this.routes=new Map();}
         register(spec){this.routes.set(spec.path,spec);return ()=>this.routes.delete(spec.path);}
       }
       const ctx=new Context();
       try {
+        await ctx.plugin(TestConnection);
         await ctx.plugin(Web);
         installWebServer(ctx,{});
         await new Promise(resolve=>setImmediate(resolve));
         const read=async name=>{
           const response={writeHead(code){this.code=code;},end(body){this.body=body;}};
-          await ctx.webServer.routes.get('/dsh-purge/'+name).handler({method:'GET',headers:{host:'127.0.0.1:3080'}},response);
+          await ctx.webServer.routes.get('/dsh-purge/'+name).handler({method:'GET',headers:{host:'127.0.0.1:3080',authorization:'Bearer fixture-owner'}},response);
           assert.equal(response.code,200,response.body);
           return JSON.parse(response.body);
         };
