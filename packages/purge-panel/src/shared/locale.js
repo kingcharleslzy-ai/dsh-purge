@@ -140,6 +140,25 @@ export const zh = {
   "filter.hint": "点组标题展开明细；悬停状态看原因",
   "filter.empty": "这个过滤条件下没有补丁。",
   "sw.permission": "权限补丁（已移除）",
+  "inject.title": "注入与分层",
+  "inject.desc":
+    "控制 Purge 提示词注入进入哪些会话。以下设置都不改变默认行为：不填就按原来的方式工作。",
+  "inject.enabled": "启用注入",
+  "inject.layers": "分层开关",
+  "inject.layersHint": "已分层配置。未写入的层保持开启。",
+  "inject.layersUnset":
+    "当前未分层配置：三层都跟随上面的总开关。改动任意一层后生效。",
+  "inject.layer.main": "主注入（prompt-inject.md）",
+  "inject.layer.boost": "尾部强化段",
+  "inject.layer.protocol": "能力协议说明",
+  "inject.presets": "按预设排除",
+  "inject.presetsHint": "填预设 ID（不是显示名），逗号分隔。留空表示不排除。",
+  "inject.sessions": "按会话排除",
+  "inject.sessionsHint": "填会话 ID，逗号分隔。留空表示不排除。",
+  "inject.sessionsPlaceholder": "会话 ID",
+  "inject.saved": "已保存",
+  "inject.retry": "重试",
+  "inject.noHost": "宿主未提供 configEditor，无法从界面写入。",
   "sw.permission.desc":
     "本构建已移除全部权限/沙箱/审批补丁。权限请直接用 DSH 原生设置（danger-full-access、approval policy）。",
   "sw.permission.hint":
@@ -630,6 +649,29 @@ export const en = {
   "filter.hint": "Open a group for rows; hover a status for the reason",
   "filter.empty": "No patches match this filter.",
   "sw.permission": "Permission patches (removed)",
+  "inject.title": "Injection & layers",
+  "inject.desc":
+    "Control which sessions receive the Purge prompt injection. Nothing here changes default behaviour: leave it empty and it works exactly as before.",
+  "inject.enabled": "Enable injection",
+  "inject.layers": "Per-layer switches",
+  "inject.layersHint":
+    "Layers are configured explicitly. Omitted layers stay on.",
+  "inject.layersUnset":
+    "Not layer-configured yet: all three layers follow the master switch above. Changing any layer switches to per-layer mode.",
+  "inject.layer.main": "Main inject (prompt-inject.md)",
+  "inject.layer.boost": "Boost tail",
+  "inject.layer.protocol": "Capability protocol",
+  "inject.presets": "Exclude by preset",
+  "inject.presetsHint":
+    "Preset IDs (not display names), comma separated. Empty means no exclusion.",
+  "inject.sessions": "Exclude by session",
+  "inject.sessionsHint":
+    "Session IDs, comma separated. Empty means no exclusion.",
+  "inject.sessionsPlaceholder": "session id",
+  "inject.saved": "Saved",
+  "inject.retry": "Retry",
+  "inject.noHost":
+    "The host does not provide configEditor, so this cannot be written from the UI.",
   "sw.permission.desc":
     "This build ships no permission / sandbox / approval patches. Use the native DSH settings instead (danger-full-access, approval policy).",
   "sw.permission.hint":

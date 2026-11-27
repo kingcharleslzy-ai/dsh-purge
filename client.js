@@ -9262,6 +9262,23 @@ var zh = {
   "filter.hint": "\u70B9\u7EC4\u6807\u9898\u5C55\u5F00\u660E\u7EC6\uFF1B\u60AC\u505C\u72B6\u6001\u770B\u539F\u56E0",
   "filter.empty": "\u8FD9\u4E2A\u8FC7\u6EE4\u6761\u4EF6\u4E0B\u6CA1\u6709\u8865\u4E01\u3002",
   "sw.permission": "\u6743\u9650\u8865\u4E01\uFF08\u5DF2\u79FB\u9664\uFF09",
+  "inject.title": "\u6CE8\u5165\u4E0E\u5206\u5C42",
+  "inject.desc": "\u63A7\u5236 Purge \u63D0\u793A\u8BCD\u6CE8\u5165\u8FDB\u5165\u54EA\u4E9B\u4F1A\u8BDD\u3002\u4EE5\u4E0B\u8BBE\u7F6E\u90FD\u4E0D\u6539\u53D8\u9ED8\u8BA4\u884C\u4E3A\uFF1A\u4E0D\u586B\u5C31\u6309\u539F\u6765\u7684\u65B9\u5F0F\u5DE5\u4F5C\u3002",
+  "inject.enabled": "\u542F\u7528\u6CE8\u5165",
+  "inject.layers": "\u5206\u5C42\u5F00\u5173",
+  "inject.layersHint": "\u5DF2\u5206\u5C42\u914D\u7F6E\u3002\u672A\u5199\u5165\u7684\u5C42\u4FDD\u6301\u5F00\u542F\u3002",
+  "inject.layersUnset": "\u5F53\u524D\u672A\u5206\u5C42\u914D\u7F6E\uFF1A\u4E09\u5C42\u90FD\u8DDF\u968F\u4E0A\u9762\u7684\u603B\u5F00\u5173\u3002\u6539\u52A8\u4EFB\u610F\u4E00\u5C42\u540E\u751F\u6548\u3002",
+  "inject.layer.main": "\u4E3B\u6CE8\u5165\uFF08prompt-inject.md\uFF09",
+  "inject.layer.boost": "\u5C3E\u90E8\u5F3A\u5316\u6BB5",
+  "inject.layer.protocol": "\u80FD\u529B\u534F\u8BAE\u8BF4\u660E",
+  "inject.presets": "\u6309\u9884\u8BBE\u6392\u9664",
+  "inject.presetsHint": "\u586B\u9884\u8BBE ID\uFF08\u4E0D\u662F\u663E\u793A\u540D\uFF09\uFF0C\u9017\u53F7\u5206\u9694\u3002\u7559\u7A7A\u8868\u793A\u4E0D\u6392\u9664\u3002",
+  "inject.sessions": "\u6309\u4F1A\u8BDD\u6392\u9664",
+  "inject.sessionsHint": "\u586B\u4F1A\u8BDD ID\uFF0C\u9017\u53F7\u5206\u9694\u3002\u7559\u7A7A\u8868\u793A\u4E0D\u6392\u9664\u3002",
+  "inject.sessionsPlaceholder": "\u4F1A\u8BDD ID",
+  "inject.saved": "\u5DF2\u4FDD\u5B58",
+  "inject.retry": "\u91CD\u8BD5",
+  "inject.noHost": "\u5BBF\u4E3B\u672A\u63D0\u4F9B configEditor\uFF0C\u65E0\u6CD5\u4ECE\u754C\u9762\u5199\u5165\u3002",
   "sw.permission.desc": "\u672C\u6784\u5EFA\u5DF2\u79FB\u9664\u5168\u90E8\u6743\u9650/\u6C99\u7BB1/\u5BA1\u6279\u8865\u4E01\u3002\u6743\u9650\u8BF7\u76F4\u63A5\u7528 DSH \u539F\u751F\u8BBE\u7F6E\uFF08danger-full-access\u3001approval policy\uFF09\u3002",
   "sw.permission.hint": "\u8FD9\u4E9B\u8865\u4E01\u4F1A\u4EE5\u7CBE\u786E\u7247\u6BB5\u6539\u5199\u5BBF\u4E3B\u6E90\u7801\uFF0C\u628A\u6C99\u7BB1 confine()\u3001\u6587\u4EF6\u5199\u56F4\u680F checkedTarget()\u3001\u63D0\u6743\u9636\u68AF\u4E0E\u5BA1\u6279\u95E8\u5168\u90E8\u62C6\u6389\u3002\u5B83\u4EEC\u7684\u6548\u679C\u53EF\u7531 DSH \u539F\u751F danger-full-access + approval policy: never \u5B8C\u5168\u8FBE\u6210\uFF0C\u800C\u5BBF\u4E3B\u6539\u5199\u4F1A\u968F\u5B98\u65B9\u66F4\u65B0\u5931\u6548\u3001\u65E0\u6CD5\u6309\u4F1A\u8BDD\u9694\u79BB\u3001\u4E14\u65E0\u6CD5\u8F7B\u91CF\u56DE\u6EDA\u3002\u56E0\u6B64\u672C\u5206\u652F\u4E0D\u518D\u63D0\u4F9B\u3002",
   "sw.context": "\u4E0A\u4E0B\u6587\u7BA1\u7406",
@@ -9700,6 +9717,23 @@ var en = {
   "filter.hint": "Open a group for rows; hover a status for the reason",
   "filter.empty": "No patches match this filter.",
   "sw.permission": "Permission patches (removed)",
+  "inject.title": "Injection & layers",
+  "inject.desc": "Control which sessions receive the Purge prompt injection. Nothing here changes default behaviour: leave it empty and it works exactly as before.",
+  "inject.enabled": "Enable injection",
+  "inject.layers": "Per-layer switches",
+  "inject.layersHint": "Layers are configured explicitly. Omitted layers stay on.",
+  "inject.layersUnset": "Not layer-configured yet: all three layers follow the master switch above. Changing any layer switches to per-layer mode.",
+  "inject.layer.main": "Main inject (prompt-inject.md)",
+  "inject.layer.boost": "Boost tail",
+  "inject.layer.protocol": "Capability protocol",
+  "inject.presets": "Exclude by preset",
+  "inject.presetsHint": "Preset IDs (not display names), comma separated. Empty means no exclusion.",
+  "inject.sessions": "Exclude by session",
+  "inject.sessionsHint": "Session IDs, comma separated. Empty means no exclusion.",
+  "inject.sessionsPlaceholder": "session id",
+  "inject.saved": "Saved",
+  "inject.retry": "Retry",
+  "inject.noHost": "The host does not provide configEditor, so this cannot be written from the UI.",
   "sw.permission.desc": "This build ships no permission / sandbox / approval patches. Use the native DSH settings instead (danger-full-access, approval policy).",
   "sw.permission.hint": "Those patches rewrote host source fragments to strip sandbox confine(), the filesystem write fence checkedTarget(), the escalation ladder and the approval gate. Every effect is reachable through native DSH danger-full-access + approval policy: never, while host rewriting breaks on official updates, cannot be scoped per session, and has no lightweight rollback. Hence they are no longer provided.",
   "sw.context": "Context management",
@@ -10874,6 +10908,189 @@ function HelpTip({ title, children, label }) {
       { className: "dshpp-tip", role: "tooltip" },
       title ? h("b", null, title) : null,
       children ? h("span", null, children) : null
+    ) : null
+  );
+}
+
+// src/components/inject-settings.js
+var LAYERS = ["main", "boost", "protocol"];
+function parseList(text) {
+  return String(text || "").split(/[\n,，]/).map((s) => s.trim()).filter(Boolean);
+}
+function listText(list) {
+  return Array.isArray(list) ? list.join(", ") : "";
+}
+function applyConfig(cfg, setters) {
+  const presets = listText(cfg.excludePresets);
+  const sessions = listText(cfg.excludeSessions);
+  setters.setEnabled(cfg.enabled !== false);
+  setters.setPresetsText(presets);
+  setters.setSessionsText(sessions);
+  setters.setLayered(!!cfg.layers);
+  setters.setLayers(
+    cfg.layers ? {
+      main: cfg.layers.main !== false,
+      boost: cfg.layers.boost !== false,
+      protocol: cfg.layers.protocol !== false
+    } : { main: true, boost: true, protocol: true }
+  );
+  setters.lastSavedPresets.current = presets;
+  setters.lastSavedSessions.current = sessions;
+}
+function InjectSettings() {
+  const t = useT();
+  const [ready, setReady] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState({ kind: "idle", text: "" });
+  const [enabled, setEnabled] = useState(true);
+  const [presetsText, setPresetsText] = useState("");
+  const [sessionsText, setSessionsText] = useState("");
+  const [layers, setLayers] = useState({
+    main: true,
+    boost: true,
+    protocol: true
+  });
+  const [layered, setLayered] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const lastSavedPresets = useRef("");
+  const lastSavedSessions = useRef("");
+  const setters = {
+    setEnabled,
+    setPresetsText,
+    setSessionsText,
+    setLayers,
+    setLayered,
+    lastSavedPresets,
+    lastSavedSessions
+  };
+  useEffect(() => {
+    let active = true;
+    setNotice({ kind: "idle", text: "" });
+    apiJson("/dsh-purge/inject-config").then(
+      (d) => {
+        if (!active) return;
+        applyConfig(d && d.config || {}, setters);
+        setReady(true);
+      },
+      (e) => {
+        if (!active) return;
+        setNotice({
+          kind: "error",
+          text: String(e && e.message ? e.message : e)
+        });
+      }
+    );
+    return () => {
+      active = false;
+    };
+  }, [attempt]);
+  async function save(patch) {
+    setBusy(true);
+    setNotice({ kind: "idle", text: "" });
+    try {
+      const d = await apiJson("/dsh-purge/inject-config", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(patch)
+      });
+      if (d && d.ok === false) throw new Error(d.error || "save failed");
+      applyConfig(d && d.config || {}, setters);
+      setNotice({ kind: "ok", text: t("inject.saved") });
+    } catch (e) {
+      const msg = String(e && e.message ? e.message : e);
+      const hint = /configEditor|unavailable|not found/i.test(msg) ? " " + t("inject.noHost") : "";
+      setNotice({ kind: "error", text: msg + hint });
+    } finally {
+      setBusy(false);
+    }
+  }
+  const disabled = !ready || busy;
+  return h(
+    "section",
+    { className: "dshpp-composer-settings" },
+    h("h3", null, t("inject.title")),
+    h("p", { style: { opacity: 0.8, margin: "0 0 10px" } }, t("inject.desc")),
+    h(
+      "label",
+      { className: "dshpp-setting-row" },
+      t("inject.enabled"),
+      h("input", {
+        type: "checkbox",
+        role: "switch",
+        checked: enabled,
+        disabled,
+        onChange: (e) => save({ enabled: e.target.checked })
+      })
+    ),
+    h("h4", { style: { margin: "14px 0 6px" } }, t("inject.layers")),
+    h(
+      "p",
+      { style: { opacity: 0.75, margin: "0 0 8px", fontSize: "0.9em" } },
+      layered ? t("inject.layersHint") : t("inject.layersUnset")
+    ),
+    ...LAYERS.map(
+      (layer) => h(
+        "label",
+        { className: "dshpp-setting-row", key: layer },
+        t("inject.layer." + layer),
+        h("input", {
+          type: "checkbox",
+          role: "switch",
+          checked: layers[layer],
+          disabled,
+          onChange: (e) => save({ layers: { [layer]: e.target.checked } })
+        })
+      )
+    ),
+    h("h4", { style: { margin: "14px 0 6px" } }, t("inject.presets")),
+    h(
+      "p",
+      { style: { opacity: 0.75, margin: "0 0 6px", fontSize: "0.9em" } },
+      t("inject.presetsHint")
+    ),
+    h("textarea", {
+      className: "dshpp-textarea",
+      rows: 2,
+      value: presetsText,
+      disabled,
+      placeholder: "roleplay, minimal",
+      onChange: (e) => setPresetsText(e.target.value),
+      onBlur: () => {
+        const next = parseList(presetsText);
+        if (listText(next) !== lastSavedPresets.current)
+          save({ excludePresets: next });
+      }
+    }),
+    h("h4", { style: { margin: "14px 0 6px" } }, t("inject.sessions")),
+    h(
+      "p",
+      { style: { opacity: 0.75, margin: "0 0 6px", fontSize: "0.9em" } },
+      t("inject.sessionsHint")
+    ),
+    h("textarea", {
+      className: "dshpp-textarea",
+      rows: 2,
+      value: sessionsText,
+      disabled,
+      placeholder: t("inject.sessionsPlaceholder"),
+      onChange: (e) => setSessionsText(e.target.value),
+      onBlur: () => {
+        const next = parseList(sessionsText);
+        if (listText(next) !== lastSavedSessions.current)
+          save({ excludeSessions: next });
+      }
+    }),
+    notice.text ? noticeNode(notice) : null,
+    !ready && notice.kind === "error" ? h(
+      "button",
+      {
+        type: "button",
+        onClick: () => {
+          setNotice({ kind: "idle", text: "" });
+          setAttempt(attempt + 1);
+        }
+      },
+      t("inject.retry")
     ) : null
   );
 }
@@ -12189,7 +12406,7 @@ function PurgifySection({
 }
 
 // src/state/session-context.js
-var import_react10 = require("react");
+var import_react11 = require("react");
 var host = null;
 var listeners = /* @__PURE__ */ new Set();
 function notify() {
@@ -12248,7 +12465,7 @@ function clientCurrentCwd() {
   }
 }
 function useCurrentCwd() {
-  return (0, import_react10.useSyncExternalStore)(subscribe, clientCurrentCwd, () => "");
+  return (0, import_react11.useSyncExternalStore)(subscribe, clientCurrentCwd, () => "");
 }
 
 // src/components/rules.js
@@ -14005,7 +14222,8 @@ function PurgePage() {
       h(
         "div",
         { hidden: tab !== "prompt", className: "dshpp-sec" },
-        visited.prompt ? h(PurgifySection, { page: "prompt" }) : null
+        visited.prompt ? h(PurgifySection, { page: "prompt" }) : null,
+        visited.prompt ? h(InjectSettings) : null
       ),
       h(
         "div",
