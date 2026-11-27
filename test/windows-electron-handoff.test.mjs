@@ -159,3 +159,26 @@ test('concurrent state readers see complete JSON through archive lock retries an
   assert.equal(result.lockCycles, 3);
   assert.equal(result.rollback, true);
 });
+
+test('Job membership query reports its native failure before choosing a launcher', {
+  skip: process.platform !== 'win32',
+}, async t => {
+  const { WINDOWS_JOB_QUERY_PS1 } = await import('../lib/windows-asar-handoff.js');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'purge-job-query-'));
+  t.after(() => fs.rmSync(root, {recursive: true, force: true}));
+  const file = path.join(root, 'query.ps1');
+  fs.writeFileSync(file, WINDOWS_JOB_QUERY_PS1 + `
+$ErrorActionPreference = 'Stop'
+if ([PurgeJob]::Membership([Diagnostics.Process]::GetCurrentProcess().Handle) -isnot [bool]) { throw 'Expected a bool' }
+try { $null = [PurgeJob]::Membership([IntPtr]::Zero) }
+catch {
+  $cause = $_.Exception.GetBaseException()
+  if ($cause.NativeErrorCode -ne 6) { throw }
+  Write-Output $cause.Message
+  exit 0
+}
+throw 'Unexpected success for an invalid process handle'
+`);
+  const output = execFileSync('powershell.exe', ['-NoProfile','-File',file], {encoding:'utf8'});
+  assert.match(output, /IsProcessInJob win32_code=6/);
+});
