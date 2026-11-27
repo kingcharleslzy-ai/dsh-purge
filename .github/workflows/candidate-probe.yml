@@ -1,0 +1,21 @@
+name: Isolated market candidate install
+on:
+  push:
+    branches: [diag/nov27-market-candidates]
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - shell: bash
+        run: |
+          set -eu
+          npm install --prefix "$RUNNER_TEMP/candidate-host" --no-audit --no-fund --ignore-scripts @deepseek-ai/dsh@0.2.2-rc.5 @deepseek-ai/dsh-plugin-market-index@0.2.2-rc.5 pnpm@10.32.1
+          node qa/candidates.mjs "$RUNNER_TEMP/candidate-host"
