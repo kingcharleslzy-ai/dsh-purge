@@ -99,7 +99,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 1fb44fe5c8188e6fa3d5e6ad15a581e82e8ae094
+          ref: 45746775a7f64f06ffdd33205339daf697e10ad4
       - name: Run the shipped handoff helper against isolated archives and status files
         shell: pwsh
         run: |
