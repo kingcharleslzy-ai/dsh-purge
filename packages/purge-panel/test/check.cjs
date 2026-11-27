@@ -145,12 +145,7 @@ assert(
 );
 if (process.env.PANEL_CLIENT) {
   assert.equal(plugin.name, "dsh-purge-panel");
-  const rewindSeat = seats.find(
-    (x) => x.spec.name === "conversation.input.right",
-  );
-  assert(rewindSeat, "rewind slot is registered");
-  assert.equal(rewindSeat.spec.id, "dsh-purge-rewind");
-  assert.equal(rewindSeat.spec.order, 20);
+  assert(!seats.some((seat) => seat.spec.id === "dsh-purge-rewind"));
 }
 const railSeat = seats.find((x) => x.spec.name === "sidebar.panellist");
 assert(railSeat, "left rail entry is registered");
@@ -286,7 +281,7 @@ const test = async () => {
     await act(async () => tree.unmount());
     assert.equal(writes.length, 0);
     console.log(
-      "PASS: isolated overlay, first-run welcome notice, upstream version warning, unavailable service warning, restored composer rewind slot",
+      "PASS: isolated overlay, first-run welcome notice, upstream version warning, unavailable service warning, retired composer slot absent",
     );
   }
   console.log(

@@ -28,8 +28,8 @@ jobs:
       - run: npm --prefix packages/purge-panel test
       - name: Settings saved from sidebar and detail in Chrome
         run: node packages/purge-panel/test/settings-entries-browser.mjs
-      - name: Rewind menu geometry in Chrome
-        run: node packages/purge-panel/test/rewind-browser.mjs
+      - name: Preset menu and environment dialog in Chrome
+        run: node packages/purge-panel/test/panel-dialog-browser.mjs
       - run: node --check lib/index.js && node --check lib/core.js && node --check lib/reapply.js && node --input-type=module -e "import './lib/index.js'"
       - run: npm pack --ignore-scripts
 
@@ -44,7 +44,7 @@ jobs:
         with:
           node-version: 22
       - run: npm ci --ignore-scripts --legacy-peer-deps
-      - name: Verify rewind against the published DSH session runtime
+      - name: Verify legacy rewind history against the published DSH session runtime
         run: |
           npm ci --prefix test/fixtures/rewind-session --ignore-scripts
           node --test test/fixtures/rewind-session/rewind.mjs

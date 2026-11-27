@@ -91,6 +91,8 @@ A full page in the left sidebar: one line of state at the top, "Apply" as the pr
 
 ## Updates
 
+On the development branch, the Purge composer undo button, setting, and slash command are retired. Legacy HTTP calls, draft restoration and existing conversation history remain supported. Use the undo entry supplied by your host or a separate plugin when available.
+
 1.7.21 unifies patch counts and status semantics, judges patch #71 by per-file evidence, fixes the `/purge-rewind` collision with the host `/rewind`, and lands a batch of stability fixes. See the [release notes](https://github.com/kingcharleslzy-ai/dsh-purge/releases/tag/v1.7.21).
 
 Two separate preferences (check / install), default check-only every six hours. Installing never restarts the app — you decide when to reopen it.
