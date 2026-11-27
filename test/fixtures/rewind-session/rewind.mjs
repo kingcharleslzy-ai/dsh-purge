@@ -14,6 +14,13 @@ test('saved legacy rewind markers stay readable without changing history or drop
   assert.deepEqual(session.snapshotEvents(), events);
 });
 
+test('a new conversation keeps the host deriveMessages method', () => {
+  const session = Session.create('new-test');
+  const original = session.deriveMessages;
+  wrapSessionDeriveMessages(session);
+  assert.equal(session.deriveMessages, original);
+});
+
 test('#273 official image offload can read old rewind markers after migration', async t => {
   const fs = await import('node:fs/promises');
   const { fileURLToPath, pathToFileURL } = await import('node:url');
