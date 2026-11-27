@@ -9,7 +9,7 @@
 
 | 项 | 值 |
 | --- | --- |
-| 插件版本 | `dsh-purge-community` 1.7.23 |
+| 插件版本 | `dsh-purge-community` 1.7.24 |
 | 声明范围 | `dsh.compatibility.dsh = ">=0.2.1-rc.1 <0.3.0"` |
 | profile | `desktop`、`web` |
 | 逐发行状态字段 | `dsh.compatibility.dshReleases` |
