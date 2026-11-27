@@ -22,6 +22,22 @@ jobs:
           public static class StateProbe {
             [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet=System.Runtime.InteropServices.CharSet.Unicode, SetLastError=true)]
             static extern bool MoveFileEx(string source,string destination,int flags);
+            [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet=System.Runtime.InteropServices.CharSet.Unicode, SetLastError=true, ExactSpelling=true)]
+            static extern Microsoft.Win32.SafeHandles.SafeFileHandle CreateFileW(string path,uint rights,uint share,IntPtr security,uint disposition,uint flags,IntPtr template);
+            [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError=true, ExactSpelling=true)]
+            static extern bool SetFileInformationByHandle(Microsoft.Win32.SafeHandles.SafeFileHandle h,int infoClass, byte[] buffer, uint bytes);
+            static int PublishPosix(string source,string dest){
+              byte[] name=System.Text.Encoding.Unicode.GetBytes(dest);
+              int lenAt=2*IntPtr.Size;
+              byte[] buf=new byte[lenAt+4+name.Length+2];
+              Buffer.BlockCopy(BitConverter.GetBytes(3),0,buf,0,4);
+              Buffer.BlockCopy(BitConverter.GetBytes(name.Length),0,buf,lenAt,4);
+              Buffer.BlockCopy(name,0,buf,lenAt+4,name.Length);
+              using(var h=CreateFileW(source,0x10000,7,IntPtr.Zero,3,0,IntPtr.Zero)){
+                if(h.IsInvalid || !SetFileInformationByHandle(h,22,buf,(uint)buf.Length))return System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+                return 0;
+              }
+            }
             public static void Run(int mode) {
               string dir = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString())).FullName;
               string file = Path.Combine(dir,"state.json"), stage=file+".tmp";
@@ -51,6 +67,7 @@ jobs:
                   File.WriteAllText(stage,json);
                   try{
                     if(mode==1)File.Replace(stage,file,null);
+                    else if(mode==3){int err=PublishPosix(stage,file);if(err!=0){errors.AddOrUpdate("writer/"+err,1,(k,n)=>n+1);continue;}}
                     else if(!MoveFileEx(stage,file,1)){
                       int error=System.Runtime.InteropServices.Marshal.GetLastWin32Error();
                       errors.AddOrUpdate("writer/"+error,1,(k,n)=>n+1);continue;
@@ -71,3 +88,4 @@ jobs:
           [StateProbe]::Run(0)
           [StateProbe]::Run(1)
           [StateProbe]::Run(2)
+          [StateProbe]::Run(3)
