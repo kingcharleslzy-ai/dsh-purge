@@ -37,7 +37,25 @@ test("without expect the old replace-all behaviour is unchanged", () => {
 
 // Real-host probe: every literal anchor must appear exactly once per pristine file.
 // It is skipped when no host is installed, so CI still passes without one.
-test("real host: every literal anchor appears exactly once (pristine copy)", () => {
+// 同一句话在不同工具文件里的份数不一定相同（rc.5 的 pwsh 描述重复了一份）。
+// 这里把已知的"每文件命中数"钉死：未登记的锚点必须恰好 1 次，登记过的必须等于登记值，
+// 将来宿主再复制/删掉一份就会报错——检测力不变，只是不再假设"全宿主唯一"。
+const DECLARED_HITS = [
+  // [patch id, 锚点前缀, { 文件条目: 次数 }]
+  [33, "a policy denial: do not retry another way", { "tool-pwsh": 2 }],
+  [33, "[sandbox: file access denied under <mode> mode]", { "tool-pwsh": 2 }],
+  [48, "Before any delete or move, verify that the resolved absolute target path", { "tool-pwsh": 2 }],
+];
+
+function declaredHits(id, pattern, key) {
+  const row = DECLARED_HITS.find(
+    ([pid, prefix]) => pid === id && String(pattern).startsWith(prefix),
+  );
+  if (!row) return 1;
+  return row[2][key] ?? 1;
+}
+
+test("real host: every literal anchor matches its declared hit count (pristine copy)", () => {
   const ai = process.env.PURGE_TEST_HOST
     || "/Applications/DeepSeek Harness.app/Contents/Resources/app/dsh/node_modules/@deepseek-ai";
   if (!fs.existsSync(ai)) return;
@@ -62,19 +80,18 @@ test("real host: every literal anchor appears exactly once (pristine copy)", () 
         for (const rep of p.replacements || []) {
           if (!rep.pattern || rep.pattern instanceof RegExp) continue;
           const n = text.split(rep.pattern).length - 1;
-          // 这个锚点在原始宿主里就该出现多次（成对文案），不是漂移。
           if (p.multiHit) continue;
-          // 声明了 expect 的锚点允许重复出现，只要数量被钉死（应用时会校验）。
-          if (typeof rep.expect === "number") {
-            if (n !== rep.expect) {
-              offenders.push(`#${p.id} ${path.basename(fp)} hits=${n} expected=${rep.expect}`);
-            }
-            continue;
+          // 补丁自己声明的期望次数优先（应用时会校验），否则用本文件的登记值。
+          const expected =
+            typeof rep.expect === "number" ? rep.expect : declaredHits(p.id, rep.pattern, key);
+          // 0 次 = 本端没有这段文案（optional 锚点），由 selfcheck 报「不适用」，不算漂移。
+          if (n === 0) continue;
+          if (n !== expected) {
+            offenders.push(`#${p.id} ${key}/${path.basename(fp)} hits=${n} expected=${expected}`);
           }
-          if (n > 1) offenders.push(`#${p.id} ${path.basename(fp)} hits=${n}`);
         }
       }
     }
   }
-  assert.deepEqual(offenders, [], "anchor appears more than once; declare expect or narrow the pattern");
+  assert.deepEqual(offenders, [], "anchor hit count drifted from what the patch declares");
 });
