@@ -1,5 +1,9 @@
 import { apiUrl } from "../api/client.js";
 import React from "react";
+import {
+  platformDisplay,
+  platformLabel,
+} from "../../../../lib/platform-display.js";
 // UI derived from YuJunZhiXue/dsh-purge 1.1.71 (MIT). See LICENSE.
 
 export const __dshPurgeDrill = (() => {
@@ -6607,7 +6611,11 @@ export const __dshPurgeDrill = (() => {
         h(
           "span",
           { className: "rt-tag" },
-          runtime.effective === "windows" ? "Windows" : "Linux/Kali",
+          platformLabel(
+            runtime.nodePlatform
+              ? platformDisplay(runtime.nodePlatform, data?.config?.platform)
+              : runtime.effective || "unknown",
+          ),
         ),
         adapt.kali
           ? h("span", { className: "rt-tag rt-tag-live" }, "Kali")
