@@ -1,0 +1,26 @@
+name: Official rc.5 desktop layout
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'lib/host-layout.js'
+      - 'lib/runtime-layout.js'
+      - 'scripts/check-rc5-desktop.ps1'
+      - '.github/workflows/rc5-desktop.yml'
+permissions:
+  contents: read
+jobs:
+  rc5-desktop-baseline:
+    strategy:
+      fail-fast: false
+      matrix:
+        install: [fresh, upgrade]
+    runs-on: windows-2025
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Inspect the signed rc.5 installation and open its desktop window
+        shell: pwsh
+        run: ./scripts/check-rc5-desktop.ps1 -Upgrade:('${{ matrix.install }}' -eq 'upgrade')

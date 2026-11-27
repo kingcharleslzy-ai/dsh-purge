@@ -1,7 +1,7 @@
 # AGENTS.md — 给 AI agent 的 Purge 使用说明书
 
 > 写给**在 DSH 里干活的 agent**，不是营销文档。
-> 当前版本：**1.7.20** · 适配 DSH Desktop **0.2.2-rc.3**（0.2.2-rc.1 / rc.2 / rc.3 / 0.2.1-rc.1 / rc.2 / rc.3 / rc.5 同样通过）
+> 当前版本：**1.7.23** · 适配 DSH Desktop **0.2.2-rc.3**（0.2.2-rc.1 / rc.2 / rc.3 / 0.2.1-rc.1 / rc.2 / rc.3 / rc.5 同样通过）
 > 版本号由 `npm run check:docs` 与 `package.json` 校验，发版必须同步；历史版本与 PR 记录在 [maintenance-archive](docs/maintenance-archive.md)，不要再写回本文件。
 
 ---
@@ -31,6 +31,8 @@
 装（官方插件界面/市场，或社区安装器备份迁移）→ 点「应用」（解包 host / 写 74 条补丁 / 建快照）→ 退出并重开 DSH（**补丁只有重启后才被加载**）→ `selfcheck` 全绿 = 可以开工。
 **什么时候要再点一次「应用」**：DSH 官方更新后（`app.asar` 会重新出现，旧补丁全部失效）、插件自身升级后、新装带工具面/预设的插件后、模型开始推脱或工具突然被追问审批时。
 「应用」是幂等的：不确定就点它，然后退出重开。安装、应用、加载是三个不同阶段——安装不自动应用或重启，应用会备份并写盘，当前进程不热重载这些模块。
+
+开发分支已移除插件自带的会话回退。若用户需要撤回对话，先查看当前 DSH 或独立回退插件实际注册的命令。旧 HTTP 接口仍可用；旧配置的 `rewind` 值保留，面板不再使用它来显示按钮。
 
 ## 3. CLI 参考（全部命令 + 退出码）
 
@@ -102,7 +104,7 @@ purge-community probe new
 
 | 组件 | 值 |
 | --- | --- |
-| 插件 | `dsh-purge-community` 1.7.20 |
+| 插件 | `dsh-purge-community` 1.7.23 |
 | 已验证宿主 | DSH Desktop 0.2.2-rc.3 / 0.2.2-rc.2 / 0.2.2-rc.1 / 0.2.1-rc.1 / 0.2.1-rc.2 / 0.2.1-rc.3 / 0.2.1-rc.5 |
 | 0.2.2-rc.3 | 官方 rc.3 隔离副本 74 条补丁（本分支已移除 14 条权限补丁）/ 二次应用幂等；真实 Host Loader 预设注册通过。Windows rc.3 未复测补丁。 |
 | 其它宿主 | 允许应用，但 `selfcheck` 会标"未验证"；先看 `diagnose` |
@@ -127,6 +129,8 @@ purge-community probe new
 ## 12. 安装 / 更新边界（细节见 troubleshooting）
 
 <a id="installation"></a>
+
+dsh-go 手机本机引擎的 profile 由 App 身份管理。遇到 `EACCES`，先按[只读检查](docs/INSTALLATION.md#android-profile-access)验证报错路径是否可读，保留原始错误；SSH 连接应在对应电脑上诊断。
 
 - 收到仓库链接时，用它确认项目身份并查最新稳定 Release。首装从市场工具取得 Git 目标时，原样传入固定提交的 `spec`；条目未返回 `registry` 就省略该参数。使用 CLI 时选择该稳定 Release 已上传的版本化 TGZ。沿用目标 profile 原有的 npm 配置。
 - 若日志显示 pnpm 在 GitHub 仓库路径下请求 `/yaml`，核对本次安装的 registry、DSH 记住的「安装源」和宿主首选源。只纠正有误的 npm 地址，保留有效私有源、代理和全局配置。[字段对照与重试步骤](docs/INSTALLATION.md#install-addresses)

@@ -134,3 +134,17 @@ test('metadata-only version check requires the official published tag and never 
   await assert.rejects(readPublishedVersion(async()=>{ calls++; return Response.redirect('https://example.com'); }));
   assert.equal(calls,1);
 });
+
+test('metadata-only 5xx retry shares a bounded budget; preserve final HTTP errors and never replay 4xx or assets', async () => {
+  for (const [sequence, metadata, expected, count] of [
+    [[502,200],true,200,2], [[503,502,504],true,504,3],
+    [[401],true,401,1], [[403],true,403,1], [[429],true,429,1], [[502],false,502,1],
+  ]) {
+    let calls=0;
+    const req=requestUpdate('https://api.github.com/example',{retryMetadata:metadata,
+      fetch:async()=>new Response('data',{status:sequence[calls++]})});
+    if(expected===200) assert.equal((await req).body.toString(),'data');
+    else await assert.rejects(req,new RegExp('HTTP '+expected));
+    assert.equal(calls,count);
+  }
+});

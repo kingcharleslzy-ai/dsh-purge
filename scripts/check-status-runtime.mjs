@@ -23,12 +23,17 @@ const require=createRequire(cli);
 const {Context,Service}=await import(pathToFileURL(require.resolve('@deepseek-ai/cordis')));
 const {installWebServer}=await import('../lib/index.js');
 const {gatherState}=await import('../lib/core.js');
+class TestConnection extends Service {
+  constructor(ctx){super(ctx,'connection');}
+  admit(req){return req.headers.authorization === 'Bearer fixture-owner' ? {peer:{principal:{kind:'owner'}}} : {rejection:401};}
+}
 class Web extends Service {
   constructor(ctx){super(ctx,'webServer');this.routes=new Map();}
   register(spec){assert(!this.routes.has(spec.path));this.routes.set(spec.path,spec);return()=>this.routes.delete(spec.path);}
 }
 const ctx=new Context();let server;
 try{
+  await ctx.plugin(TestConnection);
   await ctx.plugin(Web);
   await ctx.plugin({name:'purge-status-read-test',apply(child){installWebServer(child,{});}});
   await new Promise(r=>setImmediate(r));
@@ -36,14 +41,16 @@ try{
   server=http.createServer((req,res)=>{if(req.url!=='/dsh-purge/status'||req.method!=='GET'){res.writeHead(405);res.end();return;}route.handler(req,res).catch(e=>{res.writeHead(500);res.end(String(e));});});
   await new Promise(r=>server.listen(0,'127.0.0.1',r));
   const url=`http://127.0.0.1:${server.address().port}/dsh-purge/status`;
+  assert.equal((await fetch(url)).status,401);
+  const read=()=>fetch(url,{headers:{authorization:"Bearer fixture-owner"},signal:AbortSignal.timeout(60000)});
   const expected=await gatherState({aiBase:process.env.DSH_BASE,dshHome:home,surface:'desktop'});
   for(let n=0;n<3;n++){
-    const start=performance.now();const response=await fetch(url,{signal:AbortSignal.timeout(60000)});assert.equal(response.status,200);
+    const start=performance.now();const response=await read();assert.equal(response.status,200);
     const data=await response.json();assert.equal(data.ok,true);assert.equal(data.ai_base,process.env.DSH_BASE);assert.deepEqual(data.patch_status,expected.patch_status);
     console.log(JSON.stringify({request:n,ms:performance.now()-start,status:response.status,counts:[data.patches_applied,data.patches_total]}));
   }
   // Two HTTP clients exercise concurrent async diagnostic scopes on the same instance.
-  const pair=await Promise.all([fetch(url),fetch(url)]);assert(pair.every(r=>r.status===200));
+  const pair=await Promise.all([read(),read()]);assert(pair.every(r=>r.status===200));
   const states=await Promise.all(pair.map(r=>r.json()));assert.deepEqual(states[0].patch_status,states[1].patch_status);
   console.log('PASS: actual registered status route over HTTP, sequential and concurrent reads; no apply/restart');
 }finally{if(server){server.closeAllConnections();await new Promise(r=>server.close(r));}await ctx.fiber.dispose();}

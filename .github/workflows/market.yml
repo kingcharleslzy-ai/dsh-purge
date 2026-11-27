@@ -8,18 +8,15 @@ on:
     - cron: '17 * * * *'
 permissions:
   contents: read
-  pages: write
-  id-token: write
 concurrency:
   group: pages
   cancel-in-progress: false
 jobs:
-  publish:
+  build:
     if: github.repository == 'kingcharleslzy-ai/dsh-purge' && (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      artifact_id: ${{ steps.upload.outputs.artifact_id }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -32,10 +29,50 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
       - run: node market/validate.mjs market-dist/index.json
-      - uses: actions/configure-pages@v5
+      - name: Compare scheduled build with live market
+        if: github.event_name == 'schedule'
+        id: compare
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in market-dist/*; do
+            url="https://kingcharleslzy-ai.github.io/dsh-purge/$(basename "$file")"
+            if ! curl -fsS --max-time 20 "$url" -o "$RUNNER_TEMP/live-file" || ! cmp -s "$file" "$RUNNER_TEMP/live-file"; then
+              exit 0
+            fi
+          done
+          echo 'unchanged=true' >> "$GITHUB_OUTPUT"
       - uses: actions/upload-pages-artifact@v3
+        id: upload
+        if: steps.compare.outputs.unchanged != 'true'
         with:
           path: market-dist
+
+  publish:
+    needs: build
+    if: needs.build.outputs.artifact_id != ''
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Wait for the uploaded artifact in this run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ needs.build.outputs.artifact_id }}
+        run: |
+          set -euo pipefail
+          for delay in 1 2 4 8 16 32; do
+            ids=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" --jq '.artifacts[] | select(.name == "github-pages" and .expired == false) | .id')
+            if [[ "$ids" == "$ARTIFACT_ID" ]]; then exit 0; fi
+            sleep "$delay"
+          done
+          echo "::error::Uploaded Pages artifact $ARTIFACT_ID is not visible in run $GITHUB_RUN_ID"
+          exit 1
       - name: Deploy index
         id: deployment
         uses: actions/deploy-pages@v4

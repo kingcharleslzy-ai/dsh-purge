@@ -152,10 +152,36 @@ test('concurrent state readers see complete JSON through archive lock retries an
   const helper = path.join(root, 'helper.ps1');
   fs.writeFileSync(helper, WINDOWS_ASAR_HANDOFF_PS1, 'utf8');
   const fixture = fileURLToPath(new URL('./fixtures/windows-handoff-state-reader.ps1', import.meta.url));
-  const stdout = execFileSync('powershell.exe', ['-NoProfile', '-File', fixture, '-Helper', helper],
-    { encoding: 'utf8', timeout: 40000 });
-  const result = JSON.parse(stdout);
-  assert.ok(result.reads >= 3);
-  assert.equal(result.lockCycles, 3);
-  assert.equal(result.rollback, true);
+  for (let round = 1; round <= 3; round++) {
+    const stdout = execFileSync('powershell.exe', ['-NoProfile', '-File', fixture, '-Helper', helper],
+      { encoding: 'utf8', timeout: 40000 });
+    const result = JSON.parse(stdout);
+    assert.equal(result.lockCycles, 8);
+    assert.ok(result.reads >= result.lockCycles);
+    assert.equal(result.rollback, true);
+    t.diagnostic(`round ${round}: ${result.reads} complete reads, ${result.lockCycles} lock cycles, archive hash restored`);
+  }
+});
+
+test('Job membership query reports its native failure before choosing a launcher', {
+  skip: process.platform !== 'win32',
+}, async t => {
+  const { WINDOWS_JOB_QUERY_PS1 } = await import('../lib/windows-asar-handoff.js');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'purge-job-query-'));
+  t.after(() => fs.rmSync(root, {recursive: true, force: true}));
+  const file = path.join(root, 'query.ps1');
+  fs.writeFileSync(file, WINDOWS_JOB_QUERY_PS1 + `
+$ErrorActionPreference = 'Stop'
+if ([PurgeJob]::Membership([Diagnostics.Process]::GetCurrentProcess().Handle) -isnot [bool]) { throw 'Expected a bool' }
+try { $null = [PurgeJob]::Membership([IntPtr]::Zero) }
+catch {
+  $cause = $_.Exception.GetBaseException()
+  if ($cause.NativeErrorCode -ne 6) { throw }
+  Write-Output $cause.Message
+  exit 0
+}
+throw 'Unexpected success for an invalid process handle'
+`);
+  const output = execFileSync('powershell.exe', ['-NoProfile','-File',file], {encoding:'utf8'});
+  assert.match(output, /IsProcessInJob win32_code=6/);
 });

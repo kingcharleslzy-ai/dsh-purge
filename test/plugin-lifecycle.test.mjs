@@ -23,6 +23,10 @@ class Web extends Service {
     return () => this.routes.delete(spec.path);
   }
 }
+class Connection extends Service {
+  constructor(ctx){super(ctx,'connection');}
+  admit(){return {peer:{principal:{kind:'owner'}}};}
+}
 test("real Cordis late service, replacement and parent reload retain commands and routes without global polling", async () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "purge-lifecycle-"));
   const previous = process.env.DSH_HOME;
@@ -33,16 +37,26 @@ test("real Cordis late service, replacement and parent reload retain commands an
     const owner = mount(); await owner;
     const commands = root.plugin(Commands);await commands;await tick();
     assert.equal(root.commands.entries.get("rewind").owner,"external");
-    for(const name of ["purge","rules","skills","purge-rewind"])assert(root.commands.entries.has(name));
+    for(const name of ["purge","rules","skills"])assert(root.commands.entries.has(name));
     let web = root.plugin(Web);await web;await tick();
     const routes = root.webServer.routes;
     assert(routes.has("/dsh-purge/status"));
-    // The diagnostic route reads disk state only and must not wait forever for connection/loader.
+    // Routes and CLI commands still register without Connection, but HTTP fails closed.
     assert(!root.get("connection"));
     const response = {writeHead(code) {this.code=code;},end(body) {this.body=body;}};
     await routes.get("/dsh-purge/status").handler({method:"GET",headers:{host:"127.0.0.1:3080"}},response);
-    assert.equal(response.code,200);
-    assert.equal(JSON.parse(response.body).ready,true);
+    assert.equal(response.code,503);
+    const connection=root.plugin(Connection);await connection;await tick();
+    const authenticated={writeHead(code){this.code=code;},end(body){this.body=body;}};
+    await routes.get("/dsh-purge/status").handler({method:"GET",headers:{host:"127.0.0.1:3080"}},authenticated);
+    assert.equal(authenticated.code,200);
+    assert.equal(JSON.parse(authenticated.body).ready,true);
+    const stale=Object.assign(Readable.from(['{"rewind":true}']),{method:"POST",headers:{host:"127.0.0.1:3080"}});
+    const retired={writeHead(code){this.code=code;},end(body){this.body=body;}};
+    await routes.get("/dsh-purge/boost").handler(stale,retired);
+    assert.equal(retired.code,200);
+    assert.equal(JSON.parse(retired.body).rewind,true);
+
     // Both independently registered update handlers must use their own scoped
     // settings reader; malformed channel config must never become direct traffic.
     fs.mkdirSync(path.join(tmp,"dsh-purge"),{recursive:true});
@@ -51,7 +65,11 @@ test("real Cordis late service, replacement and parent reload retain commands an
       const req=Object.assign(Readable.from(["{}"]),{method,headers:{host:"127.0.0.1:3080"}});
       const res={writeHead(code){this.code=code;},end(body){this.body=body;}};
       await routes.get("/dsh-purge/update").handler(req,res);
-      assert.equal(res.code,500);assert.match(JSON.parse(res.body).error,/无法读取更新密钥设置.*JSON/);assert(!res.body.includes("FAKE_SECRET"));
+      assert.equal(res.code,500);
+      // Windows can reject this plaintext fixture at file protection before JSON parsing.
+      assert.match(JSON.parse(res.body).error,/无法读取更新密钥设置.*JSON|Windows 更新密钥文件保护失败/);
+      assert(!res.body.includes("FAKE_SECRET"));
+      assert.equal(fs.readFileSync(path.join(tmp,"dsh-purge/update-channel.json"),'utf8'),"FAKE_SECRET_broken_json");
     }
     fs.unlinkSync(path.join(tmp,"dsh-purge/update-channel.json"));
     await web.dispose();await tick();assert.equal(routes.size,0);
@@ -60,7 +78,8 @@ test("real Cordis late service, replacement and parent reload retain commands an
     const secondRoutes=root.webServer.routes;
     await owner.restart();await tick();
     assert(secondRoutes.has("/dsh-purge/status"));
-    assert(root.commands.entries.has("purge-rewind"));
+    assert(!root.commands.entries.has("purge-rewind"));
+    for (const url of ["/dsh-purge/rewind", "/dsh-purge/rewind/options", "/dsh-purge/last-user"]) assert(secondRoutes.has(url));
     await owner.dispose();await tick();
     assert.equal(secondRoutes.size,0);
     assert.deepEqual([...root.commands.entries.keys()],["rewind"]);

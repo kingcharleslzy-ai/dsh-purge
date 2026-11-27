@@ -39,7 +39,11 @@ import {
   versionChoiceLabel,
 } from "../shared/versions.js";
 
-export function PurgifySection({ page = "status", onStatus } = {}) {
+export function PurgifySection({
+  page = "status",
+  active = true,
+  onStatus,
+} = {}) {
   const t = useT();
   const tRef = useRef(t);
   tRef.current = t;
@@ -290,10 +294,13 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
     [channel, pick, postUpdate, updateInfo],
   );
 
-  const loadAll = useCallback(() => {
+  const generation = useRef(0);
+  const refreshStatus = useCallback(() => {
+    const ticket = ++generation.current;
     const tr = tRef.current;
     apiJson("/dsh-purge/status")
       .then((d) => {
+        if (ticket !== generation.current) return;
         if (d && d.ok) {
           setState(d);
           try {
@@ -325,6 +332,7 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
         }
       })
       .catch((e) => {
+        if (ticket !== generation.current) return;
         setState(unavailableStatus(e));
         setNotice({
           kind: "error",
@@ -332,6 +340,32 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
           text: tr("err.status", { error: e.message }),
         });
       });
+  }, []);
+  useEffect(() => {
+    if (active) refreshStatus();
+    return () => {
+      generation.current++;
+    };
+  }, [active, refreshStatus]);
+  const phase = state?.asar_handoff?.phase;
+  useEffect(() => {
+    if (
+      page !== "status" ||
+      !active ||
+      ![
+        "starting",
+        "ready",
+        "waiting_for_quit",
+        "waiting_for_unlock",
+        "moving",
+      ].includes(phase)
+    )
+      return;
+    const timer = setInterval(refreshStatus, 2000);
+    return () => clearInterval(timer);
+  }, [page, active, phase, refreshStatus]);
+  useEffect(() => {
+    const tr = tRef.current;
     apiJson("/dsh-purge/update")
       .then((d) => {
         if (!d) return;
@@ -376,11 +410,6 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
       })
       .catch(() => {});
   }, []);
-
-  useEffect(() => {
-    loadAll();
-    // Load once. Re-reading editable fields after five seconds overwrote unsaved input.
-  }, [loadAll]);
 
   const rejectNeedPrompt = useCallback((tr) => {
     setAskRestart(false);
@@ -440,7 +469,7 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
                   detail: incompleteApplyDetail(d, tr),
                 }),
               });
-              loadAll();
+              refreshStatus();
               if (d.restarting || d.needs_full_quit) {
                 suppressRestartAsk.current = false;
                 setAskRestart(true);
@@ -454,11 +483,11 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
                   text: "补丁已写入磁盘，当前进程尚未加载。换包助手等待你完整退出（macOS 用 ⌘Q，Windows 从系统托盘退出）。确认换包完成后再手动打开 DSH，不会自动重启。",
                 });
                 setAskRestart(false);
-                loadAll();
+                refreshStatus();
                 return;
               }
               setNotice({ kind: "ok", text: tr("ok.done") });
-              loadAll();
+              refreshStatus();
               if (d.restarting || d.needs_full_quit) {
                 suppressRestartAsk.current = false;
                 setAskRestart(true);
@@ -468,7 +497,7 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
               return;
             }
             setNotice({ kind: "ok", text: tr("ok.done") });
-            loadAll();
+            refreshStatus();
           })
           .catch((e) => {
             if (ticket !== actionTicket.current) return;
@@ -483,7 +512,7 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
       };
       run();
     },
-    [loadAll, rejectNeedPrompt, state],
+    [refreshStatus, rejectNeedPrompt, state],
   );
 
   const saveOverride = useCallback(async () => {
@@ -854,7 +883,7 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
             {
               type: "button",
               className: "dshpp-scan",
-              onClick: loadAll,
+              onClick: refreshStatus,
               disabled: patchBusy || uninstallBusy,
               title: t("scan.hint"),
             },
@@ -871,7 +900,7 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
         : null,
       noticeNode(notice),
       h(PatchHealth, { state: s }),
-      h(PatchGroupSwitches, { state: s, onSaved: loadAll }),
+      h(PatchGroupSwitches, { state: s, onSaved: refreshStatus }),
       h(
         "section",
         { className: "dshpp-fold is-open" },
@@ -900,7 +929,7 @@ export function PurgifySection({ page = "status", onStatus } = {}) {
         "details",
         null,
         h("summary", null, "高级选项"),
-        h(HooksDenySection, { onSaved: loadAll }),
+        h(HooksDenySection, { onSaved: refreshStatus }),
       ),
       askUninstall
         ? h(
