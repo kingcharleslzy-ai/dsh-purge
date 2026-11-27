@@ -46,14 +46,12 @@ test("YAML comments, other plugins, malformed YAML and JS tags cannot fabricate 
   assert.equal(permissionState(config(), {get(){throw Error("disposed service")}}).state, "unknown");
 });
 
-test("permission default patches require explicit selection", async () => {
-  const { ALL_PATCHES, patchEnabled } = await import("../lib/core.js");
-  for (const id of [7, 8, 10, 51]) {
-    const patch = ALL_PATCHES.find(item => item.id === id);
-    assert.equal(patchEnabled(patch, []), false);
-    assert.equal(patchEnabled(patch, [18, 19]), false);
-    assert.equal(patchEnabled(patch, [id]), true);
-  }
+test("retired permission edits have restoration evidence but cannot be selected", async () => {
+  const {ALL_PATCHES} = await import("../lib/core.js");
+  const {retiredRulesFor} = await import("../lib/retired-permissions.mjs");
+  const former=[6,7,8,9,10,13,14,15,16,35,51,59,60,62];
+  assert(!ALL_PATCHES.some(p=>former.includes(p.id)));
+  assert.deepEqual(retiredRulesFor(["sandbox-local"]).map(p=>p.id),[6,15]);
 });
 
 test("permission migration recovers only reproducible plugin output", async () => {

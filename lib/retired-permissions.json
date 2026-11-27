@@ -1,0 +1,476 @@
+[
+  {
+    "id": 6,
+    "keys": [
+      "sandbox-local"
+    ],
+    "markers": [],
+    "edits": [
+      {
+        "stock": {
+          "prefix": "\"(deny file-",
+          "size": 20,
+          "sha256": "7931743f0b60f55fb484e9c0301bf50ecafa7974afc0b05fdf66ac13233cffe8"
+        },
+        "old": {
+          "prefix": "\"(allow file",
+          "size": 21,
+          "sha256": "274f5fc1825e61f5fb56d527f0c1645651ae5c414c4d5155614bf256779d91b8"
+        }
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "keys": [
+      "base"
+    ],
+    "markers": [],
+    "edits": [
+      {
+        "stock": {
+          "prefix": "mode: !!js p",
+          "size": 63,
+          "sha256": "5f89beb7e39c21d3c69b3f9b5feccb3a6244e031953c9522357b16ea6c2bdcae"
+        },
+        "old": {
+          "prefix": "mode: !!js p",
+          "size": 66,
+          "sha256": "53907cc70bd7824c24b960e9c9cd996efcf9cd70ac6658f34cbe9c89de2f4a2f"
+        }
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "keys": [
+      "base"
+    ],
+    "markers": [],
+    "edits": [
+      {
+        "stock": {
+          "prefix": "policy: !!js",
+          "size": 112,
+          "sha256": "469caa0ab9f0f81493bb06a72fdcf5d7d98d84a87691b138de6f885ac2bcd9dc"
+        },
+        "old": {
+          "prefix": "policy: !!js",
+          "size": 115,
+          "sha256": "223d1d8eee72ca805c34577cac3bc0308770fa511e5ded914c2f0fb1fc2d144f"
+        }
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "keys": [
+      "user-approval-code",
+      "user-approval-invariant",
+      "user-approval"
+    ],
+    "markers": [
+      {
+        "prefix": "return \"allo",
+        "size": 55,
+        "sha256": "8ddbb9196251bdbd8f4092bedc03c09a95299a05264f0a0e35e37aa627f14212"
+      },
+      {
+        "prefix": "[dsh-purge] ",
+        "size": 65,
+        "sha256": "2771b60438dac4cb839b3fc718c93e7043b5ed3bf741a9d4be5ad2f33a30e606"
+      }
+    ],
+    "edits": [
+      {
+        "stock": {
+          "prefix": "if (this.eff",
+          "size": 323,
+          "sha256": "746d4ae3d2642125e291d23707bf0c5b8605ecf2ec85da69b285a7e0758c998d"
+        },
+        "old": {
+          "prefix": "return \"allo",
+          "size": 169,
+          "sha256": "d3f72d2667676c037d2cf073058a779b2bd43aae53da39a805a84ef5015530e6"
+        }
+      },
+      {
+        "stock": {
+          "prefix": "if (this.eff",
+          "size": 77,
+          "sha256": "84509213eea3052e2f377b3d4adef9c39c81e9198745c495825d5417396f1934"
+        },
+        "old": {
+          "prefix": "return 'allo",
+          "size": 91,
+          "sha256": "4db5e7614f717ab9fbd27e038a65f50d74e8c2286df8e68a251a0ae97e3073a9"
+        }
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "keys": [
+      "user-approval-code"
+    ],
+    "markers": [],
+    "edits": [
+      {
+        "stock": {
+          "prefix": "static Confi",
+          "size": 79,
+          "sha256": "08f3ba4eb2096b432b01056d7170ec46e2c769e56571b6022938cc6c89b225f6"
+        },
+        "old": {
+          "prefix": "static Confi",
+          "size": 81,
+          "sha256": "4251a2eb9834ce4d52cb57485221d212dc634ff2faf55247bb5fa1999eba1014"
+        }
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "keys": [
+      "escalation"
+    ],
+    "markers": [
+      {
+        "prefix": "[dsh-purge] ",
+        "size": 29,
+        "sha256": "c27ab7f429eeacbc2ff8b408d7f9f04a36487123ac0e0854a748cc3c12391336"
+      }
+    ],
+    "edits": [
+      {
+        "stock": {
+          "prefix": "if (!(WIDER_",
+          "size": 469,
+          "sha256": "c05aead3c31897e694bc28c0a941ce7e9d9e22219f65d4779389c347ed047355"
+        },
+        "old": {
+          "prefix": "// [dsh-purg",
+          "size": 212,
+          "sha256": "865a7a730f539533daa62403aedfb1fae3778cb08372a566aef723753a9c9fc9"
+        }
+      },
+      {
+        "stock": {
+          "prefix": "if (!(WIDER_",
+          "size": 627,
+          "sha256": "3c7a630a36c2f72f8d68b8c525c296263e60176b70244d38877a58d4de971a15"
+        },
+        "old": {
+          "prefix": "// [dsh-purg",
+          "size": 212,
+          "sha256": "865a7a730f539533daa62403aedfb1fae3778cb08372a566aef723753a9c9fc9"
+        }
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "keys": [
+      "escalation"
+    ],
+    "markers": [
+      {
+        "prefix": "[dsh-purge] ",
+        "size": 67,
+        "sha256": "a5687e30c259a47b7daa233b08fa729fcb77047e031563c68e6f9bfbd318d342"
+      }
+    ],
+    "edits": [
+      {
+        "stock": {
+          "regex": "async function approveEscalation\\(request, approval\\) \\{[\\s\\S]*?\\n\\}\\n\\/\\/#endregion"
+        },
+        "old": {
+          "prefix": "async functi",
+          "size": 196,
+          "sha256": "ecad673ecd3125ee89348483234f9a6c13cfcd9563d32bea2a236fd3743368fd"
+        }
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "keys": [
+      "sandbox-local"
+    ],
+    "markers": [
+      {
+        "prefix": "[dsh-purge] ",
+        "size": 26,
+        "sha256": "222432498251d2151280bfbb5f5c99569b4b506be6614ff854e83ddf5be99191"
+      }
+    ],
+    "edits": [
+      {
+        "stock": {
+          "prefix": "confine(argv",
+          "size": 650,
+          "sha256": "ddf47d663b7db6b7304ff72c59f5c9c6a188ee063f50f714648d22780a7726d2"
+        },
+        "old": {
+          "prefix": "confine(argv",
+          "size": 402,
+          "sha256": "a3444f4a55d5744cc51848dfbd5cc56bba45b708491788510de9ad77571d4464"
+        }
+      },
+      {
+        "stock": {
+          "prefix": "async confin",
+          "size": 845,
+          "sha256": "a1054d23d8c874ce1bd2b6e78d4cb148bd2d348f39de6d7197af42da1d0009c5"
+        },
+        "old": {
+          "prefix": "confine(argv",
+          "size": 402,
+          "sha256": "a3444f4a55d5744cc51848dfbd5cc56bba45b708491788510de9ad77571d4464"
+        }
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "keys": [
+      "fs-sandbox"
+    ],
+    "markers": [
+      {
+        "prefix": "[dsh-purge] ",
+        "size": 37,
+        "sha256": "8f35a025d062dc18948cc4983a515a954a462415ec8fc85cf440f12633424653"
+      }
+    ],
+    "edits": [
+      {
+        "stock": {
+          "prefix": "async checke",
+          "size": 712,
+          "sha256": "765d59687cdf59cdc2136b8a6954cf856dd90478c46fa79a0e0d53b4b5d0ce1d"
+        },
+        "old": {
+          "prefix": "async checke",
+          "size": 257,
+          "sha256": "bbf47c5c3ff70e1218e25e95e5feab17b9738e4fcc0fc2c3df85ce0583b2c672"
+        }
+      }
+    ]
+  },
+  {
+    "id": 35,
+    "keys": [
+      "escalation"
+    ],
+    "markers": [
+      {
+        "prefix": "[dsh-purge] ",
+        "size": 37,
+        "sha256": "542c61dbdb1e6c3ed3079ddceaf51e3cc2987fccc246411562fad01df32a467e"
+      }
+    ],
+    "edits": [
+      {
+        "stock": {
+          "prefix": "switch (outc",
+          "size": 436,
+          "sha256": "eb3501545e62a39b3b65de2a9ddf65b0761acf8c0428ebb1c40c8b058dbb7861"
+        },
+        "old": {
+          "prefix": "switch (outc",
+          "size": 112,
+          "sha256": "e575504a35ed36e27415acbd9a1969249c9851e6bfd24830eeda66e47490d90e"
+        }
+      },
+      {
+        "stock": {
+          "prefix": "switch (outc",
+          "size": 503,
+          "sha256": "8112eb377185b47437788ab08dbec86ea1b33bffa2f12f7ecf5c619b66622d9e"
+        },
+        "old": {
+          "prefix": "switch (outc",
+          "size": 112,
+          "sha256": "e575504a35ed36e27415acbd9a1969249c9851e6bfd24830eeda66e47490d90e"
+        }
+      }
+    ]
+  },
+  {
+    "id": 51,
+    "keys": [
+      "permission-presets",
+      "permission-presets-types"
+    ],
+    "markers": [
+      {
+        "prefix": "[dsh-purge] ",
+        "size": 56,
+        "sha256": "5df5a9cd48d395258b616e51857498e48ef0bcf558823b06c5f1db3db87c099f"
+      },
+      {
+        "prefix": "[dsh-purge] ",
+        "size": 46,
+        "sha256": "81afd44ba528a869bddd6d9aba110e9f7706ee87544052d8a08724a92894a2fa"
+      }
+    ],
+    "edits": [
+      {
+        "stock": {
+          "prefix": "const name =",
+          "size": 32,
+          "sha256": "a80d37ab719cfcf8ba9ec2dd29bece9b38447366dccb74bb76aa510214b33eb8"
+        },
+        "old": {
+          "prefix": "const name =",
+          "size": 169,
+          "sha256": "766a1c8b40825391bf119f73e5c1fc8a31caa205187119649b2f023469e3425e"
+        }
+      },
+      {
+        "stock": {
+          "prefix": "Write inside",
+          "size": 95,
+          "sha256": "cf35f8495b23dfdd5c89b588e2d6a38cd188e9a3210af4b4172989e95a0d7a14"
+        },
+        "old": {
+          "prefix": "Write inside",
+          "size": 145,
+          "sha256": "f24cb6360250fce37b3bdf55e03e2b24e290aae099699b7797f84b04a12ce5b2"
+        }
+      }
+    ]
+  },
+  {
+    "id": 59,
+    "keys": [
+      "auto-review"
+    ],
+    "markers": [
+      {
+        "prefix": "[dsh-purge] ",
+        "size": 56,
+        "sha256": "9a36925aabc3b753646880d5dbbf62bbf5d358b764468dccf7f5649d18eb39de"
+      }
+    ],
+    "edits": [
+      {
+        "stock": {
+          "prefix": "\t\tyield ctx.",
+          "size": 88,
+          "sha256": "8b3364365ac702b35388e99a65832e2703c937fb6569ba9c0d1f31ffcaa9999d"
+        },
+        "old": {
+          "prefix": "\t\tyield ctx.",
+          "size": 166,
+          "sha256": "1a36033112894a28ee53b9ba6df063c17151af8daaa1a400352af62fd5345e73"
+        }
+      }
+    ]
+  },
+  {
+    "id": 60,
+    "keys": [
+      "ptc-tool"
+    ],
+    "markers": [
+      {
+        "prefix": "[dsh-purge] ",
+        "size": 55,
+        "sha256": "e839f92ba0080647bdbf252bcf7e6ab3ca2550feedff9447970007abd0f941d2"
+      }
+    ],
+    "edits": [
+      {
+        "stock": {
+          "prefix": "Wider sandbo",
+          "size": 92,
+          "sha256": "fe9d4d37f3d0449ce4f13a29fc0ec647894381ea98d324d801b4d46319042716"
+        },
+        "old": {
+          "prefix": "Optional wid",
+          "size": 90,
+          "sha256": "9fb87ad4df2cb609a94dff4335c0752d96eddf16f34fbbf600807d325e714131"
+        }
+      },
+      {
+        "stock": {
+          "prefix": "Reason this ",
+          "size": 128,
+          "sha256": "7855b0bb14aa78cd71beec25fc6cffeccb17b26311a625180c695a903cb29e59"
+        },
+        "old": {
+          "prefix": "Optional not",
+          "size": 56,
+          "sha256": "b599de85431dc4d4e089068e581c92a5288756cb9990e3dcb0fcb7178eff8231"
+        }
+      },
+      {
+        "stock": {
+          "prefix": " A sandbox e",
+          "size": 312,
+          "sha256": "c6248abb3f6f1a2cf66778c345f3213f7acc4bec4bfd3070269903bbc3d75ae4"
+        },
+        "old": {
+          "prefix": " Continue th",
+          "size": 107,
+          "sha256": "ef1d0f68b63533f4085b7b693ce4a0a4f50f8da56946d2903840feeb7fd77600"
+        }
+      },
+      {
+        "stock": {
+          "prefix": "file sandbox",
+          "size": 33,
+          "sha256": "b9eaa20ffadccdc1f3a9eaec80cfab648cb6340f33f46919185ef99600ed6b63"
+        },
+        "old": {
+          "prefix": "file sandbox",
+          "size": 34,
+          "sha256": "b12250304960a403abfd24db7b65c7712ae02ae7cf37323c267b615786cdc90b"
+        }
+      }
+    ]
+  },
+  {
+    "id": 62,
+    "keys": [
+      "dsh-tools-pipeline",
+      "dsh-tools-pipeline-types"
+    ],
+    "markers": [
+      {
+        "prefix": "[dsh-purge] ",
+        "size": 39,
+        "sha256": "aa747195c1abc8369d07fdc71f989ed92bd49d78e8d711c1b761625662c7d9d6"
+      }
+    ],
+    "edits": [
+      {
+        "stock": {
+          "prefix": "const approv",
+          "size": 42,
+          "sha256": "0255729dde7e4657287151b34e7491180ee3cafaa753b8c3c7815ca4a9abec32"
+        },
+        "old": {
+          "prefix": "const approv",
+          "size": 161,
+          "sha256": "51039d6f4aa7d60db05bc4b65302d579e52353af3531563bb5e48a73f04e264a"
+        }
+      },
+      {
+        "stock": {
+          "prefix": "const approv",
+          "size": 42,
+          "sha256": "bb72a89c77950a0b16e0fcecdb721e46ac5140d0d1f177852cf13c4706406fc7"
+        },
+        "old": {
+          "prefix": "const approv",
+          "size": 161,
+          "sha256": "ca6fe1d186776506a3056e734ad5616637698ff0982c1647cb0efb196f2f7fb2"
+        }
+      }
+    ]
+  }
+]

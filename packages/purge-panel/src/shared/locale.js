@@ -128,6 +128,8 @@ export const zh = {
     "这台宿主没有对应组件或文件，进了也不进分母。永远 0 工作量。",
   "health.verdict.pending": "有 {n} 条已启用但还没写盘",
   "evidence.summary": "仅有分组摘要",
+  "health.legacy.pending": "旧版权限改动待恢复",
+  "health.legacy.unmatched": "旧版权限改动无法核实",
   "evidence.unknown": "无法核实",
   "health.verdict.ok": "宿主补丁全部就位",
   "groups.unreadable": "读取失败，补丁明细暂不可用；请刷新重试。",
@@ -137,7 +139,7 @@ export const zh = {
   "filter.na": "本端不适用",
   "filter.hint": "点组标题展开明细；悬停状态看原因",
   "filter.empty": "这个过滤条件下没有补丁。",
-  "sw.permission": "权限补丁",
+  "sw.permission": "权限补丁（已移除）",
   "inject.title": "注入与分层",
   "inject.desc":
     "控制 Purge 提示词注入进入哪些会话。以下设置都不改变默认行为：不填就按原来的方式工作。",
@@ -157,9 +159,10 @@ export const zh = {
   "inject.saved": "已保存",
   "inject.retry": "重试",
   "inject.noHost": "宿主未提供 configEditor，无法从界面写入。",
-  "sw.permission.desc": "让宿主不再用沙箱边界和审批弹窗拦工具调用。默认开。",
+  "sw.permission.desc":
+    "本构建已移除全部权限/沙箱/审批补丁。权限请直接用 DSH 原生设置（danger-full-access、approval policy）。",
   "sw.permission.hint":
-    "改写宿主里的沙箱 / 审批 / 自动放行代码，共 14 条：#6 #7 #8 #9 #10 #13 #14 #15 #16 #35 #51 #59 #60 #62。开启后必须点「应用」才写盘，写前自动备份；需要你手动退出重开 DSH 才生效。关掉它不会立刻回滚已写入的文件，下次「应用」才回滚。",
+    "这些补丁会以精确片段改写宿主源码，把沙箱 confine()、文件写围栏 checkedTarget()、提权阶梯与审批门全部拆掉。它们的效果可由 DSH 原生 danger-full-access + approval policy: never 完全达成，而宿主改写会随官方更新失效、无法按会话隔离、且无法轻量回滚。因此本分支不再提供。",
   "sw.context": "上下文管理",
   "sw.context.desc":
     "关掉重复调用提醒与工具结果修剪。默认关，开了 token 会涨。",
@@ -633,6 +636,8 @@ export const en = {
     "This host has no such component or file. Excluded from the denominator; zero work.",
   "health.verdict.pending": "{n} enabled but not written yet",
   "evidence.summary": "Group summary only",
+  "health.legacy.pending": "Legacy permission restoration pending",
+  "health.legacy.unmatched": "Legacy permission changes could not be verified",
   "evidence.unknown": "Cannot verify",
   "health.verdict.ok": "All host patches in place",
   "groups.unreadable":
@@ -643,7 +648,7 @@ export const en = {
   "filter.na": "Not for this host",
   "filter.hint": "Open a group for rows; hover a status for the reason",
   "filter.empty": "No patches match this filter.",
-  "sw.permission": "Permission patches",
+  "sw.permission": "Permission patches (removed)",
   "inject.title": "Injection & layers",
   "inject.desc":
     "Control which sessions receive the Purge prompt injection. Nothing here changes default behaviour: leave it empty and it works exactly as before.",
@@ -668,9 +673,9 @@ export const en = {
   "inject.noHost":
     "The host does not provide configEditor, so this cannot be written from the UI.",
   "sw.permission.desc":
-    "Stop the host from blocking tool calls behind sandbox and approval gates. On by default.",
+    "This build ships no permission / sandbox / approval patches. Use the native DSH settings instead (danger-full-access, approval policy).",
   "sw.permission.hint":
-    "Rewrites the host sandbox / approval / auto-grant code: 14 patches (#6 #7 #8 #9 #10 #13 #14 #15 #16 #35 #51 #59 #60 #62). Nothing is written until you press Apply, and a backup is taken first; you must quit and reopen DSH yourself. Turning it off does not roll back what is already written; the next Apply does.",
+    "Those patches rewrote host source fragments to strip sandbox confine(), the filesystem write fence checkedTarget(), the escalation ladder and the approval gate. Every effect is reachable through native DSH danger-full-access + approval policy: never, while host rewriting breaks on official updates, cannot be scoped per session, and has no lightweight rollback. Hence they are no longer provided.",
   "sw.context": "Context management",
   "sw.context.desc":
     "Turn off the repeat-call reminder and tool-result pruning. Off by default; tokens grow when on.",

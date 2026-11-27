@@ -9250,6 +9250,8 @@ var zh = {
   "health.hint.na": "\u8FD9\u53F0\u5BBF\u4E3B\u6CA1\u6709\u5BF9\u5E94\u7EC4\u4EF6\u6216\u6587\u4EF6\uFF0C\u8FDB\u4E86\u4E5F\u4E0D\u8FDB\u5206\u6BCD\u3002\u6C38\u8FDC 0 \u5DE5\u4F5C\u91CF\u3002",
   "health.verdict.pending": "\u6709 {n} \u6761\u5DF2\u542F\u7528\u4F46\u8FD8\u6CA1\u5199\u76D8",
   "evidence.summary": "\u4EC5\u6709\u5206\u7EC4\u6458\u8981",
+  "health.legacy.pending": "\u65E7\u7248\u6743\u9650\u6539\u52A8\u5F85\u6062\u590D",
+  "health.legacy.unmatched": "\u65E7\u7248\u6743\u9650\u6539\u52A8\u65E0\u6CD5\u6838\u5B9E",
   "evidence.unknown": "\u65E0\u6CD5\u6838\u5B9E",
   "health.verdict.ok": "\u5BBF\u4E3B\u8865\u4E01\u5168\u90E8\u5C31\u4F4D",
   "groups.unreadable": "\u8BFB\u53D6\u5931\u8D25\uFF0C\u8865\u4E01\u660E\u7EC6\u6682\u4E0D\u53EF\u7528\uFF1B\u8BF7\u5237\u65B0\u91CD\u8BD5\u3002",
@@ -9259,7 +9261,7 @@ var zh = {
   "filter.na": "\u672C\u7AEF\u4E0D\u9002\u7528",
   "filter.hint": "\u70B9\u7EC4\u6807\u9898\u5C55\u5F00\u660E\u7EC6\uFF1B\u60AC\u505C\u72B6\u6001\u770B\u539F\u56E0",
   "filter.empty": "\u8FD9\u4E2A\u8FC7\u6EE4\u6761\u4EF6\u4E0B\u6CA1\u6709\u8865\u4E01\u3002",
-  "sw.permission": "\u6743\u9650\u8865\u4E01",
+  "sw.permission": "\u6743\u9650\u8865\u4E01\uFF08\u5DF2\u79FB\u9664\uFF09",
   "inject.title": "\u6CE8\u5165\u4E0E\u5206\u5C42",
   "inject.desc": "\u63A7\u5236 Purge \u63D0\u793A\u8BCD\u6CE8\u5165\u8FDB\u5165\u54EA\u4E9B\u4F1A\u8BDD\u3002\u4EE5\u4E0B\u8BBE\u7F6E\u90FD\u4E0D\u6539\u53D8\u9ED8\u8BA4\u884C\u4E3A\uFF1A\u4E0D\u586B\u5C31\u6309\u539F\u6765\u7684\u65B9\u5F0F\u5DE5\u4F5C\u3002",
   "inject.enabled": "\u542F\u7528\u6CE8\u5165",
@@ -9277,8 +9279,8 @@ var zh = {
   "inject.saved": "\u5DF2\u4FDD\u5B58",
   "inject.retry": "\u91CD\u8BD5",
   "inject.noHost": "\u5BBF\u4E3B\u672A\u63D0\u4F9B configEditor\uFF0C\u65E0\u6CD5\u4ECE\u754C\u9762\u5199\u5165\u3002",
-  "sw.permission.desc": "\u8BA9\u5BBF\u4E3B\u4E0D\u518D\u7528\u6C99\u7BB1\u8FB9\u754C\u548C\u5BA1\u6279\u5F39\u7A97\u62E6\u5DE5\u5177\u8C03\u7528\u3002\u9ED8\u8BA4\u5F00\u3002",
-  "sw.permission.hint": "\u6539\u5199\u5BBF\u4E3B\u91CC\u7684\u6C99\u7BB1 / \u5BA1\u6279 / \u81EA\u52A8\u653E\u884C\u4EE3\u7801\uFF0C\u5171 14 \u6761\uFF1A#6 #7 #8 #9 #10 #13 #14 #15 #16 #35 #51 #59 #60 #62\u3002\u5F00\u542F\u540E\u5FC5\u987B\u70B9\u300C\u5E94\u7528\u300D\u624D\u5199\u76D8\uFF0C\u5199\u524D\u81EA\u52A8\u5907\u4EFD\uFF1B\u9700\u8981\u4F60\u624B\u52A8\u9000\u51FA\u91CD\u5F00 DSH \u624D\u751F\u6548\u3002\u5173\u6389\u5B83\u4E0D\u4F1A\u7ACB\u523B\u56DE\u6EDA\u5DF2\u5199\u5165\u7684\u6587\u4EF6\uFF0C\u4E0B\u6B21\u300C\u5E94\u7528\u300D\u624D\u56DE\u6EDA\u3002",
+  "sw.permission.desc": "\u672C\u6784\u5EFA\u5DF2\u79FB\u9664\u5168\u90E8\u6743\u9650/\u6C99\u7BB1/\u5BA1\u6279\u8865\u4E01\u3002\u6743\u9650\u8BF7\u76F4\u63A5\u7528 DSH \u539F\u751F\u8BBE\u7F6E\uFF08danger-full-access\u3001approval policy\uFF09\u3002",
+  "sw.permission.hint": "\u8FD9\u4E9B\u8865\u4E01\u4F1A\u4EE5\u7CBE\u786E\u7247\u6BB5\u6539\u5199\u5BBF\u4E3B\u6E90\u7801\uFF0C\u628A\u6C99\u7BB1 confine()\u3001\u6587\u4EF6\u5199\u56F4\u680F checkedTarget()\u3001\u63D0\u6743\u9636\u68AF\u4E0E\u5BA1\u6279\u95E8\u5168\u90E8\u62C6\u6389\u3002\u5B83\u4EEC\u7684\u6548\u679C\u53EF\u7531 DSH \u539F\u751F danger-full-access + approval policy: never \u5B8C\u5168\u8FBE\u6210\uFF0C\u800C\u5BBF\u4E3B\u6539\u5199\u4F1A\u968F\u5B98\u65B9\u66F4\u65B0\u5931\u6548\u3001\u65E0\u6CD5\u6309\u4F1A\u8BDD\u9694\u79BB\u3001\u4E14\u65E0\u6CD5\u8F7B\u91CF\u56DE\u6EDA\u3002\u56E0\u6B64\u672C\u5206\u652F\u4E0D\u518D\u63D0\u4F9B\u3002",
   "sw.context": "\u4E0A\u4E0B\u6587\u7BA1\u7406",
   "sw.context.desc": "\u5173\u6389\u91CD\u590D\u8C03\u7528\u63D0\u9192\u4E0E\u5DE5\u5177\u7ED3\u679C\u4FEE\u526A\u3002\u9ED8\u8BA4\u5173\uFF0C\u5F00\u4E86 token \u4F1A\u6DA8\u3002",
   "sw.context.hint": "\u5BF9\u5E94 #18 \u91CD\u590D\u8C03\u7528\u63D0\u9192\u3001#19 \u5DE5\u5177\u7ED3\u679C\u4FEE\u526A\u3002\u5173\u6389\u540E\u6A21\u578B\u4E0D\u518D\u6536\u5230\u91CD\u590D\u8C03\u7528\u63D0\u9192\uFF0C\u957F\u5DE5\u5177\u8F93\u51FA\u4E5F\u4E0D\u518D\u88AB\u88C1\u526A\u2014\u2014\u4EE3\u4EF7\u662F token \u6301\u7EED\u589E\u957F\uFF0C\u91CD\u5EA6\u4F1A\u8BDD\u66F4\u5BB9\u6613\u649E\u4E0A\u9650\u3002\u9ED8\u8BA4\u5173\u3002",
@@ -9703,6 +9705,8 @@ var en = {
   "health.hint.na": "This host has no such component or file. Excluded from the denominator; zero work.",
   "health.verdict.pending": "{n} enabled but not written yet",
   "evidence.summary": "Group summary only",
+  "health.legacy.pending": "Legacy permission restoration pending",
+  "health.legacy.unmatched": "Legacy permission changes could not be verified",
   "evidence.unknown": "Cannot verify",
   "health.verdict.ok": "All host patches in place",
   "groups.unreadable": "Read failed; patch detail is unavailable. Refresh to retry.",
@@ -9712,7 +9716,7 @@ var en = {
   "filter.na": "Not for this host",
   "filter.hint": "Open a group for rows; hover a status for the reason",
   "filter.empty": "No patches match this filter.",
-  "sw.permission": "Permission patches",
+  "sw.permission": "Permission patches (removed)",
   "inject.title": "Injection & layers",
   "inject.desc": "Control which sessions receive the Purge prompt injection. Nothing here changes default behaviour: leave it empty and it works exactly as before.",
   "inject.enabled": "Enable injection",
@@ -9730,8 +9734,8 @@ var en = {
   "inject.saved": "Saved",
   "inject.retry": "Retry",
   "inject.noHost": "The host does not provide configEditor, so this cannot be written from the UI.",
-  "sw.permission.desc": "Stop the host from blocking tool calls behind sandbox and approval gates. On by default.",
-  "sw.permission.hint": "Rewrites the host sandbox / approval / auto-grant code: 14 patches (#6 #7 #8 #9 #10 #13 #14 #15 #16 #35 #51 #59 #60 #62). Nothing is written until you press Apply, and a backup is taken first; you must quit and reopen DSH yourself. Turning it off does not roll back what is already written; the next Apply does.",
+  "sw.permission.desc": "This build ships no permission / sandbox / approval patches. Use the native DSH settings instead (danger-full-access, approval policy).",
+  "sw.permission.hint": "Those patches rewrote host source fragments to strip sandbox confine(), the filesystem write fence checkedTarget(), the escalation ladder and the approval gate. Every effect is reachable through native DSH danger-full-access + approval policy: never, while host rewriting breaks on official updates, cannot be scoped per session, and has no lightweight rollback. Hence they are no longer provided.",
   "sw.context": "Context management",
   "sw.context.desc": "Turn off the repeat-call reminder and tool-result pruning. Off by default; tokens grow when on.",
   "sw.context.hint": "#18 repeat-tool reminder and #19 tool-result pruner. With them off the model no longer gets repeat-call reminders and long tool output is kept in full; the cost is steady token growth. Off by default.",
@@ -10297,22 +10301,7 @@ var LAYER_GROUP = {
   "0.2.0 \u517C\u5BB9": "dsh20"
 };
 var GROUP_ORDER = ["prompt", "code", "tools", "compat", "dsh20"];
-var PERMISSION_PATCH_IDS = [
-  6,
-  7,
-  8,
-  9,
-  10,
-  13,
-  14,
-  15,
-  16,
-  35,
-  51,
-  59,
-  60,
-  62
-];
+var PERMISSION_PATCH_IDS = [];
 var CONTEXT_PATCH_IDS = [18, 19];
 var PERMISSION_SET = new Set(PERMISSION_PATCH_IDS);
 var CONTEXT_SET = new Set(CONTEXT_PATCH_IDS);
@@ -10404,10 +10393,12 @@ function PatchHealth({ state }) {
   const counts = patchGroupCounts(evidence.rows);
   const denom = Math.max(counts.denom, 1);
   const pct = (n) => n / denom * 100;
-  const verdict = counts.pending ? t("health.verdict.pending", { n: counts.pending }) : t("health.verdict.ok");
+  const legacy = state.legacyPermissions;
+  const verdict = legacy ? t("health.legacy." + legacy.status) : counts.pending ? t("health.verdict.pending", { n: counts.pending }) : t("health.verdict.ok");
   return h(
     "div",
     { className: "dshpp-health" },
+    legacy && h("p", { role: "status" }, legacy.message),
     h(
       "div",
       { className: "dshpp-health-top" },

@@ -61,9 +61,9 @@ export const LAYER_GROUP = {
 export const GROUP_ORDER = ["prompt", "code", "tools", "compat", "dsh20"];
 
 // 补丁按"谁在管它"分成三组，状态页的开关和计数都按这个口径走。
-export const PERMISSION_PATCH_IDS = [
-  6, 7, 8, 9, 10, 13, 14, 15, 16, 35, 51, 59, 60, 62,
-];
+// 权限/沙箱/审批补丁已整体移除：其效果由 DSH 原生 danger-full-access + approval policy
+// 完全达成，无需改写宿主源码。保留空数组，使状态页与分组逻辑无需特殊分支。
+export const PERMISSION_PATCH_IDS = [];
 export const CONTEXT_PATCH_IDS = [18, 19];
 export const NA_PATCH_IDS = [54, 76, 80];
 
@@ -191,12 +191,16 @@ export function PatchHealth({ state }) {
   const counts = patchGroupCounts(evidence.rows);
   const denom = Math.max(counts.denom, 1);
   const pct = (n) => (n / denom) * 100;
-  const verdict = counts.pending
-    ? t("health.verdict.pending", { n: counts.pending })
-    : t("health.verdict.ok");
+  const legacy = state.legacyPermissions;
+  const verdict = legacy
+    ? t("health.legacy." + legacy.status)
+    : counts.pending
+      ? t("health.verdict.pending", { n: counts.pending })
+      : t("health.verdict.ok");
   return h(
     "div",
     { className: "dshpp-health" },
+    legacy && h("p", { role: "status" }, legacy.message),
     h(
       "div",
       { className: "dshpp-health-top" },
