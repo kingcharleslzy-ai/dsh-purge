@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { Session } from '@deepseek-ai/dsh-session';
-import { applyRewind, cutSurfaceNodes } from '../../../lib/rewind.js';
+import { analyzeRewind, applyRewind, cutSurfaceNodes } from '../../../lib/rewind.js';
 
 function setup() {
   const session = Session.create('rewind-test');
@@ -38,7 +38,7 @@ test('rewind removes the current turn from the surface and model input, preservi
   assert.deepEqual(session.surface.nodes, [system, currentContext, oldUser, oldAnswer, marker.seq]);
   assert.deepEqual(session.deriveMessages().map(m => m.id), ['system','updated-context','previous-question','previous-answer']);
   assert.deepEqual(session.snapshotEvents().slice(0, -1), before);
-  assert.equal((await applyRewind(ctx, session.id)).ok, true);
+  assert.equal((await applyRewind(ctx, session.id)).ok, false);
   assert.equal(session.snapshotEvents().at(-1).seq, marker.seq);
 });
 
@@ -120,5 +120,48 @@ test('#273 official image offload can read old rewind markers after migration', 
     assert.deepEqual(await request(), {kind:'retry'});
     assert.equal(session.snapshotEvents().at(-1).type, 'image/offload');
     assert.equal(session.deriveMessages().at(-1).content[0].offloaded, true);
+  }
+});
+
+test('#265 consecutive rewinds advance one closed turn, including after a new message', async () => {
+  const { session, ctx, message } = setup();
+  const addTurn = turn => {
+    session.append('turn/start', { turn });
+    message('user', 'q' + turn);
+    message('assistant', 'a' + turn);
+    session.append('turn/end', { turn });
+  };
+  addTurn(1);
+  addTurn(2);
+  assert.equal((await applyRewind(ctx, session.id)).text, 'q2');
+  addTurn(3);
+  assert.equal((await applyRewind(ctx, session.id)).text, 'q3');
+  assert.equal((await applyRewind(ctx, session.id)).text, 'q1');
+  const count = session.snapshotEvents().length;
+  assert.equal((await applyRewind(ctx, session.id)).ok, false);
+  assert.equal(session.snapshotEvents().length, count);
+});
+
+test('#265 round uses only the child sessions belonging to the selected turn', async () => {
+  const { session, message } = setup();
+  const children = [Session.create('child-1'), Session.create('child-2')];
+  const sessions = new Map([session, ...children].map(s => [s.id, s]));
+  const ctx = { get: name => name === 'sessions' ? sessions : undefined };
+  for (const [i, child] of children.entries()) {
+    const turn = i + 1;
+    session.append('turn/start', { turn });
+    message('user', 'parent-' + turn);
+    session.append('subagent/descriptor', { childId: child.id });
+    session.append('turn/end', { turn });
+    child.append('turn/start', { turn });
+    child.append('user/message', { role: 'user', id: 'child-q', content: 'child task' }, { surfaceOp: 'append' });
+    child.append('turn/end', { turn });
+  }
+  for (const i of [1, 0]) {
+    assert.deepEqual((await analyzeRewind(ctx, session.id)).subagentIds, [children[i].id]);
+    const result = await applyRewind(ctx, session.id, 'round');
+    assert.equal(result.ok, true, result.error);
+    assert.equal(result.text, 'parent-' + (i + 1));
+    assert.deepEqual(result.subagentIds, [children[i].id]);
   }
 });

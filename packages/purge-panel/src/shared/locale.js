@@ -461,9 +461,9 @@ export const zh = {
   "rewind.empty": "没有可回退的上一句",
   "rewind.fail": "回退失败: {error}",
   "rewind.once": "回退一次",
-  "rewind.once.hint": "把这一轮发出去的那句放回输入框，并清掉这一轮",
+  "rewind.once.hint": "撤回当前会话一轮，最后一句回到输入框。工作区文件保持原样。",
   "rewind.round": "回退上一轮",
-  "rewind.round.hint": "把这一轮发出去的那句放回输入框；子代理也只撤这一轮",
+  "rewind.round.hint": "撤回主会话一轮，并回退该轮的子会话。工作区文件保持原样。",
   "hooksDeny.title": "Hooks 拦截",
   "hooksDeny.bypass": "放行 hooks 的 deny / ask（补丁 30 / 31 / 64 / 65）",
   "hooksDeny.hint":
@@ -982,10 +982,10 @@ export const en = {
   "rewind.fail": "Undo failed: {error}",
   "rewind.once": "Undo once",
   "rewind.once.hint":
-    "Put this round's message back in the box and drop only this round",
+    "Undo one turn in this chat and restore its last prompt to the composer. Workspace files stay as they are.",
   "rewind.round": "Undo last round",
   "rewind.round.hint":
-    "Put this round's message back in the box; subagents drop only this round",
+    "Undo one main-chat turn and rewind its child chats. Workspace files stay as they are.",
   "hooksDeny.title": "Hook interception",
   "hooksDeny.bypass": "Bypass hook deny / ask (patches 30 / 31 / 64 / 65)",
   "hooksDeny.hint":

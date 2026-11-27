@@ -9535,9 +9535,9 @@ var zh = {
   "rewind.empty": "\u6CA1\u6709\u53EF\u56DE\u9000\u7684\u4E0A\u4E00\u53E5",
   "rewind.fail": "\u56DE\u9000\u5931\u8D25: {error}",
   "rewind.once": "\u56DE\u9000\u4E00\u6B21",
-  "rewind.once.hint": "\u628A\u8FD9\u4E00\u8F6E\u53D1\u51FA\u53BB\u7684\u90A3\u53E5\u653E\u56DE\u8F93\u5165\u6846\uFF0C\u5E76\u6E05\u6389\u8FD9\u4E00\u8F6E",
+  "rewind.once.hint": "\u64A4\u56DE\u5F53\u524D\u4F1A\u8BDD\u4E00\u8F6E\uFF0C\u6700\u540E\u4E00\u53E5\u56DE\u5230\u8F93\u5165\u6846\u3002\u5DE5\u4F5C\u533A\u6587\u4EF6\u4FDD\u6301\u539F\u6837\u3002",
   "rewind.round": "\u56DE\u9000\u4E0A\u4E00\u8F6E",
-  "rewind.round.hint": "\u628A\u8FD9\u4E00\u8F6E\u53D1\u51FA\u53BB\u7684\u90A3\u53E5\u653E\u56DE\u8F93\u5165\u6846\uFF1B\u5B50\u4EE3\u7406\u4E5F\u53EA\u64A4\u8FD9\u4E00\u8F6E",
+  "rewind.round.hint": "\u64A4\u56DE\u4E3B\u4F1A\u8BDD\u4E00\u8F6E\uFF0C\u5E76\u56DE\u9000\u8BE5\u8F6E\u7684\u5B50\u4F1A\u8BDD\u3002\u5DE5\u4F5C\u533A\u6587\u4EF6\u4FDD\u6301\u539F\u6837\u3002",
   "hooksDeny.title": "Hooks \u62E6\u622A",
   "hooksDeny.bypass": "\u653E\u884C hooks \u7684 deny / ask\uFF08\u8865\u4E01 30 / 31 / 64 / 65\uFF09",
   "hooksDeny.hint": "\u5173\u6389\u540E\uFF0C\u7528\u6237\u81EA\u5DF1\u7684 PreToolUse / UserPromptSubmit / Stop hook \u7684 deny \u4F1A\u6309\u5B98\u65B9\u903B\u8F91\u751F\u6548\u3002\u5B98\u65B9 ask \u5206\u652F\u672C\u8EAB\u662F\u7A7A\u64CD\u4F5C\uFF0C\u5173\u5F00\u5173\u4E0D\u4F1A\u5F39\u51FA\u5BA1\u6279\u6846\u3002\u6539\u5B8C\u540E\u70B9\u300C\u5E94\u7528\u300D\u5E76\u91CD\u542F\u624D\u5199\u8FDB\u5BBF\u4E3B\u3002",
@@ -9983,9 +9983,9 @@ var en = {
   "rewind.empty": "Nothing to undo",
   "rewind.fail": "Undo failed: {error}",
   "rewind.once": "Undo once",
-  "rewind.once.hint": "Put this round's message back in the box and drop only this round",
+  "rewind.once.hint": "Undo one turn in this chat and restore its last prompt to the composer. Workspace files stay as they are.",
   "rewind.round": "Undo last round",
-  "rewind.round.hint": "Put this round's message back in the box; subagents drop only this round",
+  "rewind.round.hint": "Undo one main-chat turn and rewind its child chats. Workspace files stay as they are.",
   "hooksDeny.title": "Hook interception",
   "hooksDeny.bypass": "Bypass hook deny / ask (patches 30 / 31 / 64 / 65)",
   "hooksDeny.hint": "When off, your own PreToolUse / UserPromptSubmit / Stop hook deny runs as the official host wrote it. The official ask branch is a no-op; turning this off will not show an approval dialog. Click Apply and restart to write the host files.",
@@ -14752,7 +14752,7 @@ function rewindMenuNode(t, style, menuRef, runRewind) {
         rewindText(
           t,
           "rewind.once.hint",
-          "\u628A\u8FD9\u4E00\u8F6E\u53D1\u51FA\u53BB\u7684\u90A3\u53E5\u653E\u56DE\u8F93\u5165\u6846\uFF0C\u5E76\u6E05\u6389\u8FD9\u4E00\u8F6E"
+          "\u64A4\u56DE\u5F53\u524D\u4F1A\u8BDD\u4E00\u8F6E\uFF0C\u6700\u540E\u4E00\u53E5\u56DE\u5230\u8F93\u5165\u6846\u3002\u5DE5\u4F5C\u533A\u6587\u4EF6\u4FDD\u6301\u539F\u6837\u3002"
         )
       )
     ),
@@ -14778,7 +14778,7 @@ function rewindMenuNode(t, style, menuRef, runRewind) {
         rewindText(
           t,
           "rewind.round.hint",
-          "\u628A\u8FD9\u4E00\u8F6E\u53D1\u51FA\u53BB\u7684\u90A3\u53E5\u653E\u56DE\u8F93\u5165\u6846\uFF1B\u5B50\u4EE3\u7406\u4E5F\u53EA\u64A4\u8FD9\u4E00\u8F6E"
+          "\u64A4\u56DE\u4E3B\u4F1A\u8BDD\u4E00\u8F6E\uFF0C\u5E76\u56DE\u9000\u8BE5\u8F6E\u7684\u5B50\u4F1A\u8BDD\u3002\u5DE5\u4F5C\u533A\u6587\u4EF6\u4FDD\u6301\u539F\u6837\u3002"
         )
       )
     )
