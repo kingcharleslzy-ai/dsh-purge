@@ -187,6 +187,8 @@ Web 面板默认接受回环地址和宿主配置的监听地址。通过自有�
 | 通过 SSH 连接电脑 | 连接电脑后打开「Chats → Switch to Web」。在 Web 视图点左上角「Chats and workspaces」，在「Global panels」中点「Purge」。 |
 | 手机本机引擎 | 选择「This phone」，等引擎显示「Running」。打开「Chats → All features（全部功能）」，点「Purge」面板。 |
 
+手机本机引擎请使用 App 自己的插件管理或终端；若启动时读 profile 报 `EACCES`，见[手机文件权限排查](docs/INSTALLATION.md#android-profile-access)。
+
 面板顶部显示宿主和插件版本。在「状态」页的维护区点「最近动作」，可查看当前宿主的操作记录。
 
 **验收范围**仅限 Android 15 ARM64 模拟器上的只读功能。测试使用 dsh-go 1.0.15 和 DSH 0.2.2-rc.1，通过只读测试后端核对了版本、状态、诊断和最近动作。SSH 测试使用 Purge 1.6.92，手机本机引擎还复测了 1.7.17。真机和写入操作（应用补丁、升级、回滚）尚未验收。
