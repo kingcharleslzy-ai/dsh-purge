@@ -470,3 +470,78 @@ test("same two patches: details count once, legacy summaries keep errors without
     }
   }
 });
+
+test("status refresh ignores late results and retries without reloading editable data", async () => {
+  const waits = [],
+    reads = [];
+  const api = harness(async (url, init) => {
+    if (String(url).endsWith("/status"))
+      return new Promise((resolve) => waits.push(resolve));
+    reads.push(String(url));
+    return reply({ ok: true, versions: [], content: "original" });
+  });
+  let tree;
+  const states = [];
+  const observe = (s) => states.push(s);
+  const render = (active) =>
+    React.createElement(api.PurgifySection, { active, onStatus: observe });
+  await act(async () => {
+    tree = create(render(true));
+  });
+  const before = [...reads];
+  await act(async () => {
+    tree.update(render(false));
+  });
+  // The write invalidates an in-flight GET, just as a host mutation would.
+  await api.apiJson("/fixture-write", { method: "POST" });
+  await act(async () => {
+    tree.update(render(true));
+  });
+  assert.equal(waits.length, 2);
+  await act(async () =>
+    waits[1](
+      reply({
+        ok: true,
+        ai_base: "fixture",
+        patch_status: { 1: "applied", 2: "applied" },
+      }),
+    ),
+  );
+  await act(async () =>
+    waits[0](
+      reply({
+        ok: true,
+        ai_base: "fixture",
+        patch_status: { 1: "applied", 2: "pending" },
+      }),
+    ),
+  );
+  assert.deepEqual(
+    { ...states.at(-1).patch_status },
+    { 1: "applied", 2: "applied" },
+  );
+  const refresh = () =>
+    tree.root
+      .findAllByType("button")
+      .find((b) => b.props.className?.includes("dshpp-scan"))
+      .props.onClick();
+  await act(async () => refresh());
+  await act(async () => waits[2](reply({ ok: false, error: "unavailable" })));
+  assert.equal(states.at(-1).ok, false);
+  await act(async () => refresh());
+  await act(async () =>
+    waits[3](
+      reply({
+        ok: true,
+        ai_base: "fixture",
+        patch_status: { 1: "pending", 2: "applied" },
+      }),
+    ),
+  );
+  assert.equal(states.at(-1).ok, true);
+  assert.deepEqual(
+    reads.filter((s) => !s.endsWith("/fixture-write")),
+    before,
+  );
+  await act(async () => tree.unmount());
+});

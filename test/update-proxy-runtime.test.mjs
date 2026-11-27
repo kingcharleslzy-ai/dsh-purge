@@ -125,3 +125,25 @@ test('real CONNECT tunnel validates TLS, scopes credentials and respects total t
     await assert.rejects(requestUpdate(base+'/slow',{env,timeout:100}),/超时/);
   } finally {for(const socket of sockets)socket.destroy();await Promise.all([server,proxy,socks].map(s=>new Promise(resolve=>s.close(resolve))));}
 });
+
+test('both Windows exec wrappers keep the native promise contract in a disposable child', async () => {
+  const moduleURL=new URL('../lib/hide-console.js',import.meta.url).href;
+  for(const mode of ['service','sidecar']) {
+    const script=`
+      import assert from 'node:assert/strict';
+      import {promisify} from 'node:util';
+      import {installHideConsole,hideConsoleEntrySource} from ${JSON.stringify(moduleURL)};
+      const cp=process.getBuiltinModule('child_process');
+      Object.defineProperty(process,'platform',{value:'win32',configurable:true});
+      if (${JSON.stringify(mode)} === 'service') installHideConsole();
+      else await import('data:text/javascript,'+encodeURIComponent(hideConsoleEntrySource()));
+      Object.defineProperty(process,'platform',{value:${JSON.stringify(process.platform)},configurable:true});
+      const promise=promisify(cp.execFile)(process.execPath,['-e',"process.stdout.write('out');process.stderr.write('err')"]);
+      assert.ok(promise.child.pid);assert.deepEqual(await promise,{stdout:'out',stderr:'err'});
+      const shell=await promisify(cp.exec)('"'+process.execPath+'" -p 42');
+      assert.equal(shell.stdout.trim(),'42');assert.equal(shell.stderr,'');
+      await assert.rejects(promisify(cp.execFile)(process.execPath,['-e',"process.stderr.write('bad');process.exitCode=4"]),e=>e.code===4 && e.stderr==='bad');
+    `;
+    await exec(process.execPath,['--input-type=module','-e',script]);
+  }
+});

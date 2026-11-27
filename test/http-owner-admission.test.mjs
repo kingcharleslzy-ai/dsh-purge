@@ -32,7 +32,7 @@ test('only the Host owner is admitted, using the original service receiver and r
 test('missing, throwing and malformed authentication fail closed without exposing errors',()=>{
   for(const connection of [undefined,null,{}, {admit:true}, {admit(){throw Error('PRIVATE_FIXTURE');}},
     ...[undefined,null,false,{}, {peer:{}}, {peer:{principal:{}}}, {rejection:undefined},
-      {rejection:200}, {rejection:'401'},Promise.resolve(owner())].map(value=>({admit:()=>value}))]){
+      {rejection:200}, {rejection:'401'},Promise.resolve(owner()),Promise.reject(Error("PRIVATE_FIXTURE"))].map(value=>({admit:()=>value}))]){
     const result=decide(connection);
     assert.equal(result.allowed,false);
     assert.equal(result.status,503);
