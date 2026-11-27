@@ -23,18 +23,31 @@ foreach ($name in 'app.asar','app','runtime','runtime/bin','runtime/cli/bin','ru
 
 # Compare a normal launch with the flag in #286. Leave the vendor archive sealed.
 $env:DSH_HOME = Join-Path $root 'profile'
+Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public static class WindowProbe {
+    [DllImport("user32.dll")]
+    public static extern bool IsWindowVisible(IntPtr handle);
+}
+'@
 foreach ($mode in 'normal','updated') {
     $launch = @{ FilePath = $exe; PassThru = $true }
     if ($mode -eq 'updated') { $launch.ArgumentList = '--updated' }
     $p = Start-Process @launch
     $deadline = [DateTime]::UtcNow.AddSeconds(90)
+    $visibleSamples = 0
     do {
         Start-Sleep -Milliseconds 500
         $p.Refresh()
         if ($p.HasExited) { throw "$mode exited before the window check: $($p.ExitCode)" }
-    } while (-not $p.MainWindowHandle -and [DateTime]::UtcNow -lt $deadline)
-    if (-not $p.MainWindowHandle) { throw "$mode has a live process but no visible main window" }
-    Write-Output "$mode visible window: pid=$($p.Id) hwnd=$($p.MainWindowHandle) title=$($p.MainWindowTitle)"
+        $hwnd = $p.MainWindowHandle
+        if ($hwnd -ne [IntPtr]::Zero -and [WindowProbe]::IsWindowVisible($hwnd) -and $p.MainWindowTitle -like '*DeepSeek Harness*') {
+            $visibleSamples++
+        } else { $visibleSamples = 0 }
+    } while ($visibleSamples -lt 4 -and [DateTime]::UtcNow -lt $deadline)
+    if ($visibleSamples -lt 4) { throw "$mode has no stable visible DSH window (last handle $hwnd)" }
+    Write-Output "$mode visible window: pid=$($p.Id) hwnd=$hwnd title=$($p.MainWindowTitle)"
     # On the disposable runner isolate the second launch from tray/single-instance reuse.
     taskkill.exe /T /F /PID $p.Id | Out-Null
     if ($LASTEXITCODE -or !$p.WaitForExit(15000)) { throw "Unable to end the $mode test process" }
