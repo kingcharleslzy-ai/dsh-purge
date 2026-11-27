@@ -9526,18 +9526,6 @@ var zh = {
   "metric.sealed.count": "\u5F85\u89E3\u5F00",
   "metric.lost": "\u8865\u4E01\u5DF2\u4E22\u5931\uFF0C\u8BF7\u91CD\u65B0\u5E94\u7528",
   "metric.lost.count": "\u5DF2\u4E22\u5931",
-  "rewind.settings": "\u4F1A\u8BDD\u5916\u89C2",
-  "rewind.show": "\u663E\u793A\u8F93\u5165\u6846\u56DE\u9000\u6309\u94AE",
-  "rewind.readAgain": "\u91CD\u65B0\u8BFB\u53D6",
-  "rewind.label": "\u56DE\u9000",
-  "rewind.aria": "\u56DE\u9000",
-  "rewind.busy": "\u56DE\u9000\u4E2D\u2026",
-  "rewind.empty": "\u6CA1\u6709\u53EF\u56DE\u9000\u7684\u4E0A\u4E00\u53E5",
-  "rewind.fail": "\u56DE\u9000\u5931\u8D25: {error}",
-  "rewind.once": "\u56DE\u9000\u4E00\u6B21",
-  "rewind.once.hint": "\u628A\u8FD9\u4E00\u8F6E\u53D1\u51FA\u53BB\u7684\u90A3\u53E5\u653E\u56DE\u8F93\u5165\u6846\uFF0C\u5E76\u6E05\u6389\u8FD9\u4E00\u8F6E",
-  "rewind.round": "\u56DE\u9000\u4E0A\u4E00\u8F6E",
-  "rewind.round.hint": "\u628A\u8FD9\u4E00\u8F6E\u53D1\u51FA\u53BB\u7684\u90A3\u53E5\u653E\u56DE\u8F93\u5165\u6846\uFF1B\u5B50\u4EE3\u7406\u4E5F\u53EA\u64A4\u8FD9\u4E00\u8F6E",
   "hooksDeny.title": "Hooks \u62E6\u622A",
   "hooksDeny.bypass": "\u653E\u884C hooks \u7684 deny / ask\uFF08\u8865\u4E01 30 / 31 / 64 / 65\uFF09",
   "hooksDeny.hint": "\u5173\u6389\u540E\uFF0C\u7528\u6237\u81EA\u5DF1\u7684 PreToolUse / UserPromptSubmit / Stop hook \u7684 deny \u4F1A\u6309\u5B98\u65B9\u903B\u8F91\u751F\u6548\u3002\u5B98\u65B9 ask \u5206\u652F\u672C\u8EAB\u662F\u7A7A\u64CD\u4F5C\uFF0C\u5173\u5F00\u5173\u4E0D\u4F1A\u5F39\u51FA\u5BA1\u6279\u6846\u3002\u6539\u5B8C\u540E\u70B9\u300C\u5E94\u7528\u300D\u5E76\u91CD\u542F\u624D\u5199\u8FDB\u5BBF\u4E3B\u3002",
@@ -9974,18 +9962,6 @@ var en = {
   "metric.lost.count": "Lost",
   "status.unlocated": "Not located",
   "metric.unlocated": "This install was not found yet",
-  "rewind.settings": "Conversation appearance",
-  "rewind.show": "Show the rewind button in the composer",
-  "rewind.readAgain": "Try again",
-  "rewind.label": "Undo",
-  "rewind.aria": "Undo",
-  "rewind.busy": "Undoing\u2026",
-  "rewind.empty": "Nothing to undo",
-  "rewind.fail": "Undo failed: {error}",
-  "rewind.once": "Undo once",
-  "rewind.once.hint": "Put this round's message back in the box and drop only this round",
-  "rewind.round": "Undo last round",
-  "rewind.round.hint": "Put this round's message back in the box; subagents drop only this round",
   "hooksDeny.title": "Hook interception",
   "hooksDeny.bypass": "Bypass hook deny / ask (patches 30 / 31 / 64 / 65)",
   "hooksDeny.hint": "When off, your own PreToolUse / UserPromptSubmit / Stop hook deny runs as the official host wrote it. The official ask branch is a no-op; turning this off will not show an approval dialog. Click Apply and restart to write the host files.",
@@ -10179,36 +10155,6 @@ function AuthGate(props) {
       )
     )
   );
-}
-
-// src/state/rewind-visibility.js
-var visible = false;
-var pendingRead;
-var listeners = /* @__PURE__ */ new Set();
-function subscribeRewind(listener) {
-  listeners.add(listener);
-  listener(visible);
-  return () => listeners.delete(listener);
-}
-function publish(value) {
-  visible = value;
-  for (const listener of listeners) listener(value);
-  return value;
-}
-function valueFrom(reply) {
-  if (reply?.ok !== true || typeof reply.rewind !== "boolean")
-    throw new Error(reply?.error || "\u65E0\u6CD5\u8BFB\u53D6\u56DE\u9000\u6309\u94AE\u8BBE\u7F6E");
-  return reply.rewind;
-}
-function readRewindVisibility() {
-  if (pendingRead) return pendingRead;
-  const request = apiJson("/dsh-purge/boost").then(
-    (reply) => pendingRead === request ? publish(valueFrom(reply)) : visible
-  ).finally(() => {
-    if (pendingRead === request) pendingRead = void 0;
-  });
-  pendingRead = request;
-  return request;
 }
 
 // ../../lib/patch-state.mjs
@@ -12226,15 +12172,15 @@ function PurgifySection({
 }
 
 // src/state/session-context.js
-var import_react11 = require("react");
+var import_react10 = require("react");
 var host = null;
-var listeners2 = /* @__PURE__ */ new Set();
+var listeners = /* @__PURE__ */ new Set();
 function notify() {
-  for (const listener of listeners2) listener();
+  for (const listener of listeners) listener();
 }
 function subscribe(listener) {
-  listeners2.add(listener);
-  return () => listeners2.delete(listener);
+  listeners.add(listener);
+  return () => listeners.delete(listener);
 }
 function bindSessionContext(ctx) {
   host = ctx;
@@ -12285,7 +12231,7 @@ function clientCurrentCwd() {
   }
 }
 function useCurrentCwd() {
-  return (0, import_react11.useSyncExternalStore)(subscribe, clientCurrentCwd, () => "");
+  return (0, import_react10.useSyncExternalStore)(subscribe, clientCurrentCwd, () => "");
 }
 
 // src/components/rules.js
@@ -14057,7 +14003,6 @@ function PurgePage() {
       h(
         "div",
         { hidden: tab !== "more", className: "dshpp-sec" },
-        false ? h(RewindSetting) : null,
         visited.more ? h(PurgifySection, { page: "more" }) : null
       ),
       tab === "drill" ? h(
@@ -14209,54 +14154,20 @@ function installLegacyVisibility(doc = globalThis.document) {
   return () => style.remove();
 }
 
-// src/components/rewind.js
-var import_react_dom = require("react-dom");
-
-// src/state/rewind-draft.js
-var DRAFT_KEY = "dshp-rewind-draft:";
-var ARM_KEY = "dshp-rewind-arm:";
-var FILL_DELAYS = [0, 50, 180, 400, 800];
-var ARM_TTL_MS = 45 * 1e3;
-var seenAt = 0;
+// src/state/conversation-access.js
 var host2 = null;
-var workspace = null;
-var conversation = null;
-var pendingComposer = { sessionId: "", text: "", at: 0 };
-var armedFill = { sessionId: "", text: "", at: 0 };
-function storage() {
-  try {
-    return typeof window !== "undefined" ? window.sessionStorage : null;
-  } catch {
-    return null;
-  }
-}
-function bindRewindHost(ctx) {
-  host2 = ctx || null;
-  workspace = ctx && ctx.uiWorkspace || null;
-  conversation = ctx && ctx.conversation || null;
+function bindConversationAccess(ctx) {
+  host2 = ctx;
+  return () => {
+    if (host2 === ctx) host2 = null;
+  };
 }
 function hostSessions() {
   return host2 && host2.sessions || null;
 }
-function getRewindSeenAt() {
-  return seenAt;
-}
-function noteRewindAt(at) {
-  if (at) seenAt = at;
-}
-function rewindText(t, key, fallback) {
-  try {
-    if (typeof t === "function") {
-      const value = t(key);
-      if (value && value !== key) return value;
-    }
-  } catch {
-  }
-  return fallback;
-}
 function currentSessionId(sessions) {
   try {
-    const selected = workspace?.selection?.getSnapshot?.()?.sessionId;
+    const selected = host2?.uiWorkspace?.selection?.getSnapshot?.()?.sessionId;
     if (typeof selected === "string" && selected) return selected;
   } catch {
   }
@@ -14267,97 +14178,7 @@ function currentSessionId(sessions) {
   }
   return "";
 }
-function sessionKnown(sessions, sessionId) {
-  try {
-    const snap = sessions?.list?.getSnapshot?.();
-    if (!snap || !sessionId) return false;
-    if (snap.byId && Object.prototype.hasOwnProperty.call(snap.byId, sessionId))
-      return true;
-    if (Array.isArray(snap.ids) && snap.ids.includes(sessionId)) return true;
-  } catch {
-  }
-  return false;
-}
-function waitMs(ms) {
-  return new Promise((resolve) => {
-    if (typeof window !== "undefined" && window.setTimeout)
-      window.setTimeout(resolve, ms);
-    else setTimeout(resolve, ms);
-  });
-}
-function isPluginDraft(text) {
-  const value = String(text || "").trim();
-  if (!value) return false;
-  return /^\[MNEMON\]/i.test(value) || /MNEMON RUNTIME MEMORY SNAPSHOT/i.test(value) || /^MNEMON VIEW TOOLS/im.test(value);
-}
-function writeDraft(sessionId, text) {
-  if (!sessionId) return;
-  const value = isPluginDraft(text) ? "" : text || "";
-  pendingComposer = { sessionId, text: value, at: Date.now() };
-  try {
-    storage()?.setItem(DRAFT_KEY + sessionId, value);
-  } catch {
-  }
-}
-function peekDraft(sessionId) {
-  if (!sessionId) return "";
-  if (pendingComposer.sessionId === sessionId && pendingComposer.text)
-    return pendingComposer.text;
-  try {
-    return storage()?.getItem(DRAFT_KEY + sessionId) || "";
-  } catch {
-    return "";
-  }
-}
-function clearStoredDraft(sessionId) {
-  if (!sessionId) return;
-  if (pendingComposer.sessionId === sessionId)
-    pendingComposer = { sessionId: "", text: "", at: 0 };
-  try {
-    storage()?.removeItem(DRAFT_KEY + sessionId);
-  } catch {
-  }
-  try {
-    storage()?.removeItem(ARM_KEY + sessionId);
-  } catch {
-  }
-}
-function armComposerFill(sessionId, text) {
-  if (!sessionId || !text || isPluginDraft(text)) return;
-  const at = Date.now();
-  armedFill = { sessionId, text, at };
-  writeDraft(sessionId, text);
-  try {
-    storage()?.setItem(ARM_KEY + sessionId, String(at));
-  } catch {
-  }
-}
-function takeArmedFill(sessionId) {
-  if (!sessionId) return "";
-  let text = "";
-  let at = 0;
-  if (armedFill.sessionId === sessionId && armedFill.text) {
-    text = armedFill.text;
-    at = armedFill.at;
-  } else {
-    text = peekDraft(sessionId);
-    try {
-      at = Number(storage()?.getItem(ARM_KEY + sessionId) || 0);
-    } catch {
-      at = 0;
-    }
-  }
-  if (!text || !at || Date.now() - at > ARM_TTL_MS) {
-    if (text && (!at || Date.now() - at > ARM_TTL_MS))
-      clearStoredDraft(sessionId);
-    return "";
-  }
-  clearStoredDraft(sessionId);
-  armedFill = { sessionId: "", text: "", at: 0 };
-  return text;
-}
 function conversationFace() {
-  if (conversation) return conversation;
   if (host2?.conversation) return host2.conversation;
   if (typeof host2?.get === "function") {
     try {
@@ -14385,595 +14206,6 @@ function conversationInput(sessionId) {
   } catch {
     return null;
   }
-}
-function liveDraft(sessionId, inputActions) {
-  try {
-    const fromActions = inputActions?.state?.getSnapshot?.()?.draft;
-    if (typeof fromActions === "string") return fromActions;
-  } catch {
-  }
-  try {
-    const draft = conversationInput(sessionId)?.state?.getSnapshot?.()?.draft;
-    if (typeof draft === "string") return draft;
-  } catch {
-  }
-  return "";
-}
-function hostSetDraft(sessionId, text) {
-  if (!sessionId) return false;
-  try {
-    const input = conversationInput(sessionId);
-    if (input && typeof input.setDraft === "function") {
-      input.setDraft(text || "");
-      return true;
-    }
-  } catch {
-  }
-  return false;
-}
-function fillComposer(inputActions, text) {
-  if (inputActions && typeof inputActions.setDraft === "function") {
-    try {
-      inputActions.setDraft(text || "");
-    } catch {
-    }
-  }
-}
-function scheduleComposerFill(sessionId, text, inputActions) {
-  if (!sessionId || !text || isPluginDraft(text)) return () => {
-  };
-  let stopped = false;
-  let filled = false;
-  const timers = [];
-  const setTimer = typeof window !== "undefined" && window.setTimeout ? (fn, ms) => window.setTimeout(fn, ms) : (fn, ms) => setTimeout(fn, ms);
-  const clearTimer = typeof window !== "undefined" && window.clearTimeout ? (id) => window.clearTimeout(id) : (id) => clearTimeout(id);
-  const tryFill = () => {
-    if (stopped) return;
-    const current = liveDraft(sessionId, inputActions);
-    if (filled && current !== text) {
-      stopped = true;
-      return;
-    }
-    if (current && current !== text) {
-      stopped = true;
-      return;
-    }
-    fillComposer(inputActions, text);
-    hostSetDraft(sessionId, text);
-    filled = true;
-  };
-  for (const ms of FILL_DELAYS) timers.push(setTimer(tryFill, ms));
-  return () => {
-    stopped = true;
-    for (const id of timers) {
-      try {
-        clearTimer(id);
-      } catch {
-      }
-    }
-  };
-}
-function scheduleEchoClear(sessionId, inputActions) {
-  if (!sessionId) return () => {
-  };
-  let last = "";
-  let stopped = false;
-  const timers = [];
-  const setTimer = typeof window !== "undefined" && window.setTimeout ? (fn, ms) => window.setTimeout(fn, ms) : (fn, ms) => setTimeout(fn, ms);
-  const clearTimer = typeof window !== "undefined" && window.clearTimeout ? (id) => window.clearTimeout(id) : (id) => clearTimeout(id);
-  const tryClear = () => {
-    if (stopped || !last) return;
-    const current = String(liveDraft(sessionId, inputActions) || "").trim();
-    if (!current) {
-      stopped = true;
-      return;
-    }
-    if (current !== last) return;
-    fillComposer(inputActions, "");
-    hostSetDraft(sessionId, "");
-    clearStoredDraft(sessionId);
-    stopped = true;
-  };
-  apiJson("/dsh-purge/last-user?sessionId=" + encodeURIComponent(sessionId)).then((data) => {
-    if (stopped) return;
-    last = String(data?.text || "").trim();
-    if (!last || isPluginDraft(last)) return;
-    tryClear();
-    for (const ms of [0, 50, 180, 400]) timers.push(setTimer(tryClear, ms));
-  }).catch(() => {
-  });
-  return () => {
-    stopped = true;
-    for (const id of timers) {
-      try {
-        clearTimer(id);
-      } catch {
-      }
-    }
-  };
-}
-async function dropInheritedQueue(sessions, sessionId) {
-  if (!sessions || !sessionId) return;
-  const drop = async () => {
-    try {
-      const actx = typeof sessions.scope === "function" ? sessions.scope(sessionId) : void 0;
-      const face = typeof sessions.sessionOf === "function" ? sessions.sessionOf(actx) : void 0;
-      const queue = face?.getSnapshot?.()?.queue || [];
-      for (const item of queue) {
-        const id = item?.id || item?.itemId;
-        if (!id) continue;
-        try {
-          await face.updateQueue?.(id, { kind: "remove" });
-        } catch {
-        }
-      }
-    } catch {
-    }
-  };
-  await drop();
-  if (typeof window !== "undefined" && window.setTimeout)
-    window.setTimeout(() => {
-      drop();
-    }, 80);
-}
-async function openRewoundSession(sessions, sessionId) {
-  if (!sessionId) return;
-  let lastError = null;
-  for (let attempt = 0; attempt < 25; attempt += 1) {
-    if (sessions && typeof sessions.refresh === "function" && !sessionKnown(sessions, sessionId)) {
-      try {
-        await sessions.refresh();
-      } catch (error) {
-        lastError = error;
-      }
-    }
-    const known = sessionKnown(sessions, sessionId);
-    if (known || typeof sessions?.open === "function") {
-      try {
-        if (workspace && typeof workspace.openSession === "function") {
-          workspace.openSession(sessionId);
-        } else if (typeof sessions?.open === "function") {
-          sessions.open(sessionId);
-        } else {
-          throw new Error("\u6253\u4E0D\u5F00\u56DE\u9000\u540E\u7684\u4F1A\u8BDD");
-        }
-        const selected = workspace?.selection?.getSnapshot?.()?.sessionId;
-        if (!workspace || selected === sessionId) {
-          await dropInheritedQueue(sessions, sessionId);
-          if (typeof window !== "undefined" && window.setTimeout)
-            window.setTimeout(() => {
-              dropInheritedQueue(sessions, sessionId);
-            }, 250);
-          return;
-        }
-      } catch (error) {
-        lastError = error;
-      }
-    }
-    await waitMs(120);
-  }
-  throw new Error(lastError && lastError.message || "\u56DE\u9000\u540E\u7684\u4F1A\u8BDD\u6CA1\u6709\u6253\u5F00");
-}
-
-// src/components/rewind.js
-var REWIND_CSS = `
-.dshp-rewind-wrap{position:relative;display:inline-flex}
-.dshp-rewind{appearance:none;display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 8px;border:0;border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary,currentColor);font:12px/1 var(--ds-font-sans,system-ui,sans-serif);cursor:pointer}
-.dshp-rewind:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.12));color:var(--dsw-alias-label-primary,currentColor)}
-.dshp-rewind:disabled{opacity:.4;cursor:default}
-.dshp-rewind svg{display:block}
-.dshp-rewind-menu{position:fixed;z-index:2147483000;box-sizing:border-box;width:max-content;min-width:min(220px,calc(100vw - 16px));max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);overflow:auto;padding:4px;border:0;border-radius:12px;background:var(--dsw-specific-menu,#fff);color:var(--dsw-alias-label-primary,#1a1a1a);--dsw-elevation-stroke-color:var(--dsw-alias-border-l1);box-shadow:var(--dsw-elevation-prominent,0 8px 24px rgba(0,0,0,.16));transform:translateY(-100%)}
-body[data-ds-dark-theme] .dshp-rewind-menu{background:var(--dsw-specific-menu,#32312d);color:var(--dsw-alias-label-primary,#e6e2db);--dsw-elevation-stroke-color:var(--dsw-alias-border-l1,#3f3d38);box-shadow:var(--dsw-elevation-prominent,0 10px 28px rgba(0,0,0,.45))}
-.dshp-rewind-item{display:flex;flex-direction:column;gap:2px;width:100%;padding:8px 10px;border:0;border-radius:8px;background:transparent;color:inherit;text-align:left;cursor:pointer;font:12px/1.3 var(--ds-font-sans,system-ui,sans-serif)}
-.dshp-rewind-item:hover{background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.12))}
-.dshp-rewind-item b{font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary,inherit)}
-.dshp-rewind-item span{color:var(--dsw-alias-label-tertiary,#9a958c);font-size:11px}
-body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tertiary,#a8a39a)}
-`;
-var RewindMenu = class extends Component {
-  state = { position: null };
-  reposition = () => {
-    const { anchor, menuRef } = this.props;
-    const menu = menuRef.current;
-    if (!anchor || !menu) return;
-    const rect = anchor.getBoundingClientRect();
-    const size = menu.getBoundingClientRect();
-    const win = anchor.ownerDocument.defaultView;
-    const viewport = win.visualViewport;
-    const x = viewport?.offsetLeft ?? 0;
-    const y = viewport?.offsetTop ?? 0;
-    const right = x + (viewport?.width ?? win.innerWidth);
-    const bottom = y + (viewport?.height ?? win.innerHeight);
-    const above = rect.top - 8 - size.height;
-    const left = Math.max(
-      x + 8,
-      Math.min(rect.right - size.width, right - size.width - 8)
-    );
-    const top = Math.max(
-      y + 8,
-      Math.min(
-        above >= y + 8 ? above : rect.bottom + 8,
-        bottom - size.height - 8
-      )
-    );
-    const prev = this.state.position;
-    if (!prev || left !== prev.left || top !== prev.top)
-      this.setState({ position: { left, top } });
-  };
-  componentDidMount() {
-    const win = this.props.anchor?.ownerDocument?.defaultView;
-    if (!win || typeof import_react_dom.createPortal !== "function") return;
-    this.win = win;
-    this.reposition();
-    win.addEventListener("resize", this.reposition);
-    win.addEventListener("scroll", this.reposition, true);
-    win.visualViewport?.addEventListener("resize", this.reposition);
-    win.visualViewport?.addEventListener("scroll", this.reposition);
-    if (win.ResizeObserver) {
-      this.observer = new win.ResizeObserver(this.reposition);
-      this.observer.observe(this.props.anchor);
-      this.observer.observe(this.props.menuRef.current);
-    }
-  }
-  componentWillUnmount() {
-    this.win?.removeEventListener("resize", this.reposition);
-    this.win?.removeEventListener("scroll", this.reposition, true);
-    this.win?.visualViewport?.removeEventListener("resize", this.reposition);
-    this.win?.visualViewport?.removeEventListener("scroll", this.reposition);
-    this.observer?.disconnect();
-  }
-  render() {
-    const { t, menuRef, runRewind, anchor } = this.props;
-    const body = anchor?.ownerDocument?.body;
-    const portal = body && typeof import_react_dom.createPortal === "function";
-    const style = portal ? {
-      ...this.state.position,
-      visibility: this.state.position ? "visible" : "hidden",
-      transform: "none"
-    } : {
-      position: "absolute",
-      right: 0,
-      bottom: "calc(100% + 8px)",
-      transform: "none"
-    };
-    const menu = rewindMenuNode(t, style, menuRef, runRewind);
-    return portal ? (0, import_react_dom.createPortal)(menu, body) : menu;
-  }
-};
-function rewindMenuNode(t, style, menuRef, runRewind) {
-  return h(
-    "div",
-    {
-      className: "dshp-rewind-menu",
-      role: "menu",
-      ref: menuRef,
-      style
-    },
-    h(
-      "button",
-      {
-        type: "button",
-        className: "dshp-rewind-item",
-        onMouseDown: (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        },
-        onClick: (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          runRewind("once");
-        }
-      },
-      h("b", null, rewindText(t, "rewind.once", "\u56DE\u9000\u4E00\u6B21")),
-      h(
-        "span",
-        null,
-        rewindText(
-          t,
-          "rewind.once.hint",
-          "\u628A\u8FD9\u4E00\u8F6E\u53D1\u51FA\u53BB\u7684\u90A3\u53E5\u653E\u56DE\u8F93\u5165\u6846\uFF0C\u5E76\u6E05\u6389\u8FD9\u4E00\u8F6E"
-        )
-      )
-    ),
-    h(
-      "button",
-      {
-        type: "button",
-        className: "dshp-rewind-item",
-        onMouseDown: (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        },
-        onClick: (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          runRewind("round");
-        }
-      },
-      h("b", null, rewindText(t, "rewind.round", "\u56DE\u9000\u4E0A\u4E00\u8F6E")),
-      h(
-        "span",
-        null,
-        rewindText(
-          t,
-          "rewind.round.hint",
-          "\u628A\u8FD9\u4E00\u8F6E\u53D1\u51FA\u53BB\u7684\u90A3\u53E5\u653E\u56DE\u8F93\u5165\u6846\uFF1B\u5B50\u4EE3\u7406\u4E5F\u53EA\u64A4\u8FD9\u4E00\u8F6E"
-        )
-      )
-    )
-  );
-}
-var RewindFallback = class extends Component {
-  constructor(p) {
-    super(p);
-    this.state = { menu: false, busy: false, notice: "" };
-    this.wrap = null;
-    this.menuRef = { current: null };
-    this.onDoc = (event) => {
-      if (this.wrap && this.wrap.contains(event.target)) return;
-      if (this.menuRef.current?.contains(event.target)) return;
-      this.setState({ menu: false });
-    };
-  }
-  componentDidMount() {
-    if (typeof document !== "undefined" && document.addEventListener)
-      document.addEventListener("mousedown", this.onDoc);
-  }
-  componentWillUnmount() {
-    if (typeof document !== "undefined" && document.removeEventListener)
-      document.removeEventListener("mousedown", this.onDoc);
-  }
-  run(mode) {
-    const sessionId = this.props.sessionId || currentSessionId(hostSessions());
-    if (!sessionId || this.state.busy) return;
-    this.setState({ busy: true, menu: false, notice: "" });
-    apiJson("/dsh-purge/rewind", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ sessionId, mode })
-    }).then(async (data) => {
-      if (!data || !data.ok || !data.sessionId || data.cleared === false) {
-        throw new Error(data && data.error || "\u6CA1\u6709\u6E05\u6389\u4E4B\u524D\u53D1\u9001\u7684\u5185\u5BB9");
-      }
-      noteRewindAt(data.at);
-      const text = isPluginDraft(data.text) ? "" : data.text || "";
-      armComposerFill(data.sessionId, text);
-      await openRewoundSession(hostSessions(), data.sessionId);
-      scheduleComposerFill(data.sessionId, text);
-      this.setState({ busy: false });
-    }).catch((e) => {
-      this.setState({
-        busy: false,
-        notice: "\u56DE\u9000\u5931\u8D25: " + String(e && e.message || e)
-      });
-    });
-  }
-  openMenu() {
-    this.setState(({ menu }) => ({ menu: !menu, notice: "" }));
-  }
-  render() {
-    const sessionId = this.props.sessionId || currentSessionId(hostSessions());
-    const t = this.props.t || null;
-    const label = this.state.busy ? "\u56DE\u9000\u4E2D\u2026" : this.state.notice ? this.state.notice.slice(0, 18) : "\u56DE\u9000";
-    return h(
-      "div",
-      {
-        className: "dshp-rewind-wrap",
-        ref: (node) => {
-          this.wrap = node;
-        }
-      },
-      h("style", null, REWIND_CSS),
-      h(
-        "button",
-        {
-          type: "button",
-          className: "dshp-rewind",
-          disabled: this.state.busy || !sessionId,
-          onMouseDown: (e) => e.preventDefault(),
-          onClick: (e) => {
-            e.preventDefault();
-            this.openMenu();
-          }
-        },
-        label
-      ),
-      this.state.menu ? h(RewindMenu, {
-        t,
-        anchor: this.wrap,
-        menuRef: this.menuRef,
-        runRewind: (mode) => this.run(mode)
-      }) : null
-    );
-  }
-};
-var RewindSafe = class extends Component {
-  constructor(p) {
-    super(p);
-    this.state = { failed: false, visible: false };
-  }
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-  componentDidCatch(error) {
-    try {
-      console.error("[dsh-purge] rewind slot:", error);
-    } catch {
-    }
-  }
-  componentDidMount() {
-    this.unsubscribe = subscribeRewind((visible2) => this.setState({ visible: visible2 }));
-    readRewindVisibility().catch(() => {
-      if (this.unsubscribe)
-        this.setState({ visible: true });
-    });
-  }
-  componentWillUnmount() {
-    this.unsubscribe?.();
-    this.unsubscribe = null;
-  }
-  render() {
-    return h(
-      import_react.default.Fragment,
-      null,
-      !this.state.failed && h(RewindDraftSync, this.props),
-      this.state.visible ? h(this.state.failed ? RewindFallback : RewindButton, this.props) : null
-    );
-  }
-};
-function RewindDraftSync({ sessionId: slotSession, inputActions }) {
-  const sessionId = slotSession || currentSessionId(hostSessions());
-  useEffect(() => {
-    if (!sessionId) return;
-    const armed = takeArmedFill(sessionId);
-    if (armed) {
-      scheduleComposerFill(sessionId, armed, inputActions);
-      return;
-    }
-    scheduleEchoClear(sessionId, inputActions);
-  }, [sessionId, inputActions]);
-  return null;
-}
-function RewindButton(props) {
-  const fallbackT = useT();
-  const t = props.t || fallbackT;
-  const sessions = hostSessions();
-  const sessionId = props.sessionId || currentSessionId(sessions);
-  const wrapRef = useRef(null);
-  const menuRef = useRef(null);
-  const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState("");
-  const [menu, setMenu] = useState(false);
-  useEffect(() => {
-    if (!menu) return;
-    if (typeof document === "undefined" || !document.addEventListener)
-      return void 0;
-    const onDoc = (event) => {
-      if (wrapRef.current && wrapRef.current.contains(event.target)) return;
-      if (menuRef.current && menuRef.current.contains(event.target)) return;
-      setMenu(false);
-    };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [menu]);
-  const runRewind = async (mode) => {
-    if (!sessionId || busy) return;
-    setBusy(true);
-    setMenu(false);
-    setNotice("");
-    try {
-      const data = await apiJson("/dsh-purge/rewind", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ sessionId, mode })
-      });
-      if (!data || !data.ok || !data.sessionId || data.cleared === false) {
-        throw new Error(data && data.error || "\u6CA1\u6709\u6E05\u6389\u4E4B\u524D\u53D1\u9001\u7684\u5185\u5BB9");
-      }
-      noteRewindAt(data.at);
-      const text = isPluginDraft(data.text) ? "" : data.text || "";
-      armComposerFill(data.sessionId, text);
-      await openRewoundSession(sessions, data.sessionId);
-      scheduleComposerFill(data.sessionId, text);
-    } catch (e) {
-      const message = rewindText(t, "rewind.fail", "\u56DE\u9000\u5931\u8D25: {error}").replace(
-        "{error}",
-        String(e && e.message || e)
-      );
-      setNotice(message);
-    } finally {
-      setBusy(false);
-    }
-  };
-  const onClick = (event) => {
-    event?.preventDefault?.();
-    event?.stopPropagation?.();
-    if (!sessionId || busy) return;
-    if (menu) {
-      setMenu(false);
-      return;
-    }
-    setNotice("");
-    setMenu(true);
-  };
-  const failLabel = notice ? notice.length > 18 ? notice.slice(0, 18) + "\u2026" : notice : "";
-  const label = busy ? rewindText(t, "rewind.busy", "\u56DE\u9000\u4E2D\u2026") : failLabel || rewindText(t, "rewind.label", "\u56DE\u9000");
-  const title = notice || rewindText(t, "rewind.aria", "\u56DE\u9000");
-  return h(
-    "div",
-    { className: "dshp-rewind-wrap", ref: wrapRef },
-    h("style", null, REWIND_CSS),
-    h(
-      "button",
-      {
-        type: "button",
-        className: "dshp-rewind",
-        title,
-        "aria-label": rewindText(t, "rewind.aria", "\u56DE\u9000"),
-        "aria-expanded": menu ? "true" : "false",
-        disabled: busy || !sessionId,
-        onMouseDown: (e) => e.preventDefault(),
-        onClick
-      },
-      h(
-        "svg",
-        {
-          viewBox: "0 0 16 16",
-          width: "14",
-          height: "14",
-          "aria-hidden": true
-        },
-        h("path", {
-          fill: "currentColor",
-          d: "M7.2 3.2 3.4 7l3.8 3.8V8.6c2.8 0 4.7.7 5.9 2.3-.2-2.8-1.9-5.2-5.9-5.6V3.2z"
-        })
-      ),
-      label
-    ),
-    menu ? h(RewindMenu, { t, anchor: wrapRef.current, menuRef, runRewind }) : null
-  );
-}
-function installRewindWatch(ctx) {
-  const sessions = ctx && ctx.sessions || hostSessions();
-  if (!sessions) return () => {
-  };
-  const tick = async () => {
-    try {
-      const data = await apiJson("/dsh-purge/rewind");
-      if (!data || !data.sessionId || !data.at || data.at <= getRewindSeenAt())
-        return;
-      noteRewindAt(data.at);
-      const current = currentSessionId(sessions);
-      if (current && current !== data.parentId) return;
-      const text = isPluginDraft(data.text) ? "" : data.text || "";
-      armComposerFill(data.sessionId, text);
-      scheduleComposerFill(data.sessionId, text);
-      await openRewoundSession(sessions, data.sessionId);
-      scheduleComposerFill(data.sessionId, text);
-    } catch {
-    }
-  };
-  const timer = typeof window !== "undefined" && window.setInterval ? window.setInterval(tick, 1200) : null;
-  return () => {
-    if (timer && typeof window !== "undefined" && window.clearInterval)
-      window.clearInterval(timer);
-  };
-}
-function installRewindUi(ctx) {
-  bindRewindHost(ctx);
-  ctx.slots.inject(
-    "conversation.input.right",
-    () => ctx.slots.register(
-      {
-        name: "conversation.input.right",
-        id: "dsh-purge-rewind",
-        order: 20,
-        inject: (sessionId) => ({ sessionId, t: ctx.locale.bind(NS) })
-      },
-      RewindSafe
-    )
-  );
-  ctx.effect(() => installRewindWatch(ctx), "dsh-purge: rewind watch");
 }
 
 // src/components/welcome.js
@@ -15542,7 +14774,10 @@ function apply(ctx) {
   ctx.effect(startGrantSync, "panel grant sync");
   ctx.inject(
     ["sessions", "uiWorkspace", "conversation"],
-    (host3) => installRewindUi(host3)
+    (host3) => host3.effect(
+      () => bindConversationAccess(host3),
+      "panel conversation access"
+    )
   );
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), "panel locale");
   const t = ctx.locale.bind(NS);

@@ -13,7 +13,7 @@ import sidebarGlyph from "./assets/sidebar-glyph.png";
 import { bindSessionContext } from "./state/session-context.js";
 import { bindPresetMenu } from "./state/preset-menu.js";
 import { installLegacyVisibility } from "./state/legacy-visibility.js";
-import { installRewindUi } from "./components/rewind.js";
+import { bindConversationAccess } from "./state/conversation-access.js";
 import { WelcomeNotice } from "./components/welcome.js";
 import { EnvAdaptSendGate } from "./components/env-gate.js";
 
@@ -94,9 +94,11 @@ export function apply(ctx) {
     ),
   );
   ctx.effect(startGrantSync, "panel grant sync");
-  // Restored from 1.1.71 apply(): conversation.input.right rewind button.
   ctx.inject(["sessions", "uiWorkspace", "conversation"], (host) =>
-    installRewindUi(host),
+    host.effect(
+      () => bindConversationAccess(host),
+      "panel conversation access",
+    ),
   );
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), "panel locale");
   const t = ctx.locale.bind(NS);

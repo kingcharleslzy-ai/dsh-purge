@@ -53,16 +53,16 @@ export const name='purge-acceptance'; export function apply(ctx){installCommands
   const add=page.getByRole('button',{name:/添加文件或调用指令|add files or (run|invoke) commands/i});
   await add.click();
   const menu=page.getByRole('listbox');
-  await menu.getByText('purge-rewind',{exact:true}).waitFor();
   await menu.getByText('rewind',{exact:true}).waitFor();
+  assert.equal(await menu.getByText('purge-rewind',{exact:true}).count(),0);
   const chooser=page.waitForEvent('filechooser');
   await menu.getByText(/^(文件|file)$/i).first().click();
   await chooser;
   await page.keyboard.press('Escape');
   await page.locator('[contenteditable=true],textarea').first().click();await page.keyboard.type('/');
-  await menu.getByText('purge-rewind',{exact:true}).waitFor();
   await menu.getByText('rewind',{exact:true}).waitFor();
-  console.log('PASS: anonymous 401, owner reaches handler; + and / list both plugins; file chooser opens.');
+  assert.equal(await menu.getByText('purge-rewind',{exact:true}).count(),0);
+  console.log('PASS: anonymous 401, owner reaches handler; + and / preserve independent rewind; file chooser opens.');
 } finally {
   try {await browser?.close();}
   finally {

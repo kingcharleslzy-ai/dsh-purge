@@ -35,17 +35,17 @@ test("invalid or unreadable tuning is reported and never replaced", t => {
   assert.ok(fs.statSync(file).isDirectory());
 });
 
-test("rewind CLI protects corrupt settings and accepts a repaired file including unknown fields", t => {
+test("settings CLI protects corrupt settings and accepts a repaired file including unknown fields", t => {
   const { home, file } = fixture(t);
-  const run = sub => spawnSync(process.execPath, [cli, "rewind", sub], {
+  const run = sub => spawnSync(process.execPath, [cli, "inject", sub], {
     env: { ...process.env, DSH_HOME: home }, encoding: "utf8",
   });
-  assert.equal(readTuning(home).rewind, false);
-  assert.equal(run("on").status, 0);
-  assert.equal(readTuning(home).rewind, true);
+  assert.equal(readTuning(home).injectPosition, "head");
+  assert.equal(run("tail").status, 0);
+  assert.equal(readTuning(home).injectPosition, "tail");
   const raw = '{"rewind":true,"custom":"secret text"';
   fs.writeFileSync(file, raw);
-  for (const sub of ["status", "off"]) {
+  for (const sub of ["status", "head"]) {
     const r = run(sub);
     assert.equal(r.status, 1);
     assert.match(r.stderr, /tuning\.json/);
@@ -53,8 +53,9 @@ test("rewind CLI protects corrupt settings and accepts a repaired file including
     assert.equal(fs.readFileSync(file, "utf8"), raw);
   }
   fs.writeFileSync(file, raw + "}");
-  assert.equal(run("off").status, 0);
-  assert.equal(readTuning(home).rewind, false);
+  assert.equal(run("head").status, 0);
+  assert.equal(readTuning(home).injectPosition, "head");
+  assert.equal(readTuning(home).rewind, true);
   assert.equal(readTuning(home).custom, "secret text");
 });
 

@@ -116,15 +116,15 @@ test("real CLI records effective setting changes once and keeps unknown settings
     env: { ...process.env, DSH_HOME: home }, encoding: "utf8",
   });
   try {
-    assert.equal(JSON.parse(run("rewind").stdout).rewind, false);
-    writeTuning({ customPrivateField: "private fixture", rewind: true }, home);
+    assert.equal(JSON.parse(run("retry").stdout).refusalRetry, false);
+    writeTuning({ customPrivateField: "private fixture", refusalRetry: true }, home);
     let rows = readAudit({ home });
-    assert.equal(rows.length, 1); assert.equal(rows[0].key, "rewind");
+    assert.equal(rows.length, 1); assert.equal(rows[0].key, "refusalRetry");
     assert(!JSON.stringify(rows).includes("private fixture"));
-    const a = run("rewind", "off"); assert.equal(a.status, 0, a.stderr);
+    const a = run("retry", "off"); assert.equal(a.status, 0, a.stderr);
     assert.equal(JSON.parse(a.stdout).restart_required, false);
     assert.equal(readTuning(home).customPrivateField, "private fixture");
-    const b = run("rewind", "off"); assert.equal(b.status, 0, b.stderr);
+    const b = run("retry", "off"); assert.equal(b.status, 0, b.stderr);
     rows = readAudit({ home }); assert.equal(rows.length, 2);
     assert(rows.every(r => r.event === "tuning_setting"));
     const c = run("retry", "off"); assert.equal(c.status, 0, c.stderr);
@@ -151,14 +151,14 @@ test("cancel closes a non-generator iterator exactly once", async () => {
 test("invalid known settings are not copied to audit; a failed write never logs success", () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), "purge-audit-integrity-"));
   try {
-    writeTuning({ rewind: "sensitive-invalid-value" }, home);
-    writeTuning({ rewind: true }, home);
+    writeTuning({ askNoBlock: "sensitive-invalid-value" }, home);
+    writeTuning({ askNoBlock: false }, home);
     const rows = readAudit({ home });
     assert.equal(rows.length, 2);
     assert.equal(JSON.stringify(rows).includes("sensitive-invalid-value"), false);
     const file = path.join(home, "dsh-purge", "tuning.json");
     fs.unlinkSync(file); fs.mkdirSync(file);
-    assert.throws(() => writeTuning({ rewind: false }, home));
+    assert.throws(() => writeTuning({ injectPosition: "head" }, home));
     assert.equal(readAudit({ home }).length, 2);
   } finally { fs.rmSync(home, { recursive: true, force: true }); }
 });

@@ -36,7 +36,7 @@ try {
   await fiber;
   await new Promise(resolve => setImmediate(resolve));
   const names=ctx.commands.list(undefined).map(d=>d.name);
-  assert(names.includes("rewind") && names.includes("purge-rewind"));
+  assert(names.includes("rewind") && !names.includes("purge-rewind"));
   assert.deepEqual(ctx.tools.defs.map(d=>d.name),["purge_status","purge_apply","purge_revert"]);
   assert(ctx.systemPrompt.sections.some(d=>d.name==="dsh-purge"));
   for(const route of ["status","community","audit","boost","own-servers","selfcheck"])assert(ctx.webServer.routes.has(`/dsh-purge/${route}`));

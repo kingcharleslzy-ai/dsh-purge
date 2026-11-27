@@ -40,7 +40,7 @@
     "build": "node scripts/build.mjs",
     "check:build": "node scripts/build.mjs --check",
     "format:check": "prettier --check \"src/**/*.{js,css}\" \"scripts/*.mjs\" \"test/*.{cjs,mjs}\"",
-    "test": "npm run check:build && node --check client.js && node test/check.cjs && node test/requests.cjs && node test/rewind.mjs && node test/session-context.mjs && node test/api.mjs && node --test test/maintenance.test.cjs test/restart.test.cjs test/welcome.test.cjs test/layout-notice.test.cjs test/apply-result.test.cjs test/status.test.cjs",
+    "test": "npm run check:build && node --check client.js && node test/check.cjs && node test/requests.cjs && node test/session-context.mjs && node test/api.mjs && node --test test/maintenance.test.cjs test/restart.test.cjs test/welcome.test.cjs test/layout-notice.test.cjs test/apply-result.test.cjs test/status.test.cjs",
     "prepack": "npm run check:build"
   },
   "devDependencies": {

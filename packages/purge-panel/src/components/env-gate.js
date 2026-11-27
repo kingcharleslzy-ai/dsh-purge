@@ -16,7 +16,7 @@ import {
   conversationInput,
   currentSessionId,
   hostSessions,
-} from "../state/rewind-draft.js";
+} from "../state/conversation-access.js";
 import {
   isRedteamModeActive,
   looksLikeSendControl,
