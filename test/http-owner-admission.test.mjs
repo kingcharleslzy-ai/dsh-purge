@@ -73,7 +73,12 @@ function fixture(t,initial={admit:()=>({rejection:401})}){
 
 test('every registered management route rejects anonymous requests before body or business work',async t=>{
   const f=fixture(t);
-  assert.ok(f.routes.size>=20,'exercise the production registration table');
+  for (const name of ['status','diagnose','selfcheck','boost','probe','audit','hooks-deny','update',
+    'apply','revert','uninstall','drill-grant','override','own-servers','restart','skills','skill','rules']) {
+    assert.ok(f.routes.has('/dsh-purge/' + name), name);
+  }
+  assert.ok(f.routes.has('/redteam/api'));
+  for (const name of ['rewind','rewind/options','last-user']) assert(!f.routes.has('/dsh-purge/' + name));
   for(const path of f.routes.keys()){
     for(const method of ['GET','POST']){
       const res=await f.call(path,{method});
