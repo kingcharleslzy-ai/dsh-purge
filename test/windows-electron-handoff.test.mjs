@@ -3,10 +3,16 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { execFileSync, spawn } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as wait } from 'node:timers/promises';
-import { WINDOWS_ASAR_HANDOFF_PS1, readWindowsAsarHandoff } from '../lib/windows-asar-handoff.js';
+import {
+  WINDOWS_ASAR_HANDOFF_NODE,
+  WINDOWS_ASAR_HANDOFF_PS1,
+  readWindowsAsarHandoff,
+  resolveWindowsHandoffNode,
+  scheduleWindowsAsarHandoff,
+} from '../lib/windows-asar-handoff.js';
 
 // 夹具用 import.meta.url 定位：Windows 上 cwd 可能被外层脚本改掉，
 // 用 cwd 拼接时（path.resolve 相对写法）会指向不存在的路径。
@@ -158,4 +164,129 @@ test('concurrent state readers see complete JSON through archive lock retries an
   assert.ok(result.reads >= 3);
   assert.equal(result.lockCycles, 3);
   assert.equal(result.rollback, true);
+});
+
+test('resolveWindowsHandoffNode resolves bundled node.exe and respects io.nodeExe overrides', t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'purge node resolve 中文 '));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const resDir = path.join(root, 'DeepSeek Harness', 'resources');
+  const exe = path.join(root, 'DeepSeek Harness', 'DeepSeek Harness.exe');
+  const asar = path.join(resDir, 'app.asar');
+  fs.mkdirSync(resDir, { recursive: true });
+  fs.writeFileSync(exe, 'exe');
+  fs.writeFileSync(asar, 'asar');
+
+  assert.equal(resolveWindowsHandoffNode({ asar, exe }), null);
+  assert.equal(resolveWindowsHandoffNode({ asar, exe }, { nodeExe: process.execPath }), process.execPath);
+
+  const bundledNode = path.join(resDir, 'runtime', 'primary-runtime', 'dependencies', 'node', 'bin', 'node.exe');
+  fs.mkdirSync(path.dirname(bundledNode), { recursive: true });
+  fs.writeFileSync(bundledNode, 'node');
+
+  assert.equal(resolveWindowsHandoffNode({ asar, exe }), bundledNode);
+  assert.equal(resolveWindowsHandoffNode({ asar: path.join(root, 'other', 'app.asar'), exe }), bundledNode);
+  assert.equal(resolveWindowsHandoffNode({ asar, exe }, { nodeExe: null }), null);
+});
+
+test('scheduleWindowsAsarHandoff launches Node helper without -EncodedCommand when bundled node.exe exists', t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'purge node broker '));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const resDir = path.join(root, 'DeepSeek Harness', 'resources');
+  const exe = path.join(root, 'DeepSeek Harness', 'DeepSeek Harness.exe');
+  const asar = path.join(resDir, 'app.asar');
+  const bundledNode = path.join(resDir, 'runtime', 'primary-runtime', 'dependencies', 'node', 'bin', 'node.exe');
+  fs.mkdirSync(path.dirname(bundledNode), { recursive: true });
+  fs.writeFileSync(exe, 'exe');
+  fs.writeFileSync(asar, 'asar');
+  fs.writeFileSync(bundledNode, 'node');
+
+  let capturedCmd = '';
+  let capturedArgs = [];
+  const res = scheduleWindowsAsarHandoff({ exe, asar }, {
+    spawn(cmd, args) {
+      capturedCmd = cmd;
+      capturedArgs = args;
+      const fake = { on() {}, unref() {} };
+      return fake;
+    },
+  });
+  const mjsHelper = path.join(os.tmpdir(), `dsh-purge-handoff-${res.handoff.token}.mjs`);
+  const ps1Helper = path.join(os.tmpdir(), `dsh-purge-handoff-${res.handoff.token}.ps1`);
+  t.after(() => fs.rmSync(mjsHelper, { force: true }));
+
+  assert.equal(res.scheduled, true);
+  assert.equal(res.manualQuit, true);
+  assert.equal(fs.existsSync(mjsHelper), true);
+  assert.equal(fs.existsSync(ps1Helper), false);
+  assert.equal(capturedCmd, 'powershell.exe');
+
+  const broker = Buffer.from(capturedArgs[capturedArgs.indexOf('-EncodedCommand') + 1], 'base64').toString('utf16le');
+  assert.ok(broker.includes(bundledNode), 'broker must target bundled node.exe');
+  assert.ok(broker.includes(mjsHelper), 'broker must pass the .mjs helper path');
+  assert.ok(!broker.includes('-ExecutionPolicy Bypass -EncodedCommand'), 'WMI helper must not use PowerShell -EncodedCommand');
+});
+
+test('WINDOWS_ASAR_HANDOFF_NODE waits for holder exit, preserves backup, and blocks backup collisions', {
+  skip: process.platform !== 'win32',
+}, async t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'purge node helper 中文 '));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+
+  const helper = path.join(root, 'helper.mjs');
+  fs.writeFileSync(helper, WINDOWS_ASAR_HANDOFF_NODE, 'utf8');
+  const appDir = path.join(root, 'app');
+  fs.mkdirSync(appDir, { recursive: true });
+  fs.writeFileSync(path.join(appDir, 'package.json'), '{}');
+
+  const exe = path.join(root, 'holder app.exe');
+  fs.copyFileSync(process.execPath, exe);
+  const asar = path.join(root, 'app.asar');
+  fs.writeFileSync(asar, 'original node handoff archive');
+
+  const readyMarker = path.join(root, 'holder.ready');
+  const holder = spawn(exe, ['-e', "require('node:fs').writeFileSync(process.argv[1],'ok');setInterval(()=>{},1000)", readyMarker], { stdio: 'ignore' });
+  t.after(() => { try { holder.kill(); } catch {} });
+  for (let i = 0; i < 50 && !fs.existsSync(readyMarker); i++) await wait(100);
+  assert.equal(fs.existsSync(readyMarker), true);
+
+  const token = 'node-ok';
+  const statePath = asar + '.purge-handoff.json';
+  const lockPath = asar + '.rename-pending';
+  fs.writeFileSync(lockPath, token + '\n');
+  fs.writeFileSync(statePath, JSON.stringify({ token, phase: 'starting', updated_at: new Date().toISOString() }));
+
+  const child = spawn(process.execPath, [helper, exe, asar, statePath, token, '15', '100'], { stdio: 'pipe' });
+  t.after(() => { try { child.kill(); } catch {} });
+  let stderr = '';
+  child.stderr.on('data', (chunk) => { stderr += chunk; });
+
+  for (let i = 0; i < 100 && readWindowsAsarHandoff(asar)?.phase !== 'waiting_for_quit'; i++) await wait(100);
+  assert.equal(readWindowsAsarHandoff(asar)?.phase, 'waiting_for_quit', stderr);
+  assert.equal(fs.readFileSync(asar, 'utf8'), 'original node handoff archive');
+
+  holder.kill();
+  for (let i = 0; i < 100 && readWindowsAsarHandoff(asar)?.phase !== 'complete'; i++) await wait(100);
+  const doneState = readWindowsAsarHandoff(asar);
+  assert.equal(doneState?.phase, 'complete', stderr);
+  assert.equal(fs.existsSync(asar), false);
+  assert.equal(fs.existsSync(lockPath), false);
+  assert.equal(fs.readFileSync(doneState.backup, 'utf8'), 'original node handoff archive');
+
+  // Collision case: an existing .bak must never be overwritten.
+  const asar2 = path.join(root, 'collision.asar');
+  const state2 = asar2 + '.purge-handoff.json';
+  const bak2 = asar2 + '.purge-collide.bak';
+  fs.writeFileSync(asar2, 'fresh archive');
+  fs.writeFileSync(bak2, 'existing backup');
+  fs.writeFileSync(state2, JSON.stringify({ token: 'collide', phase: 'starting', updated_at: new Date().toISOString() }));
+  const collisionRes = spawnSync(process.execPath, [helper, path.join(root, 'absent.exe'), asar2, state2, 'collide', '5', '100'], {
+    encoding: 'utf8',
+    timeout: 10000,
+  });
+  assert.equal(collisionRes.status, 1);
+  const collideState = readWindowsAsarHandoff(asar2);
+  assert.equal(collideState?.phase, 'failed');
+  assert.equal(collideState?.error?.code, 'EEXIST');
+  assert.equal(fs.readFileSync(bak2, 'utf8'), 'existing backup');
+  assert.equal(fs.readFileSync(asar2, 'utf8'), 'fresh archive');
 });
