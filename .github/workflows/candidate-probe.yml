@@ -13,8 +13,15 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-      - shell: bash
+          node-version: 24
+      - name: Resolve the official nested npm host from its running web process
+        shell: bash
+        run: |
+          set -eu
+          npm install --prefix "$RUNNER_TEMP/mise-layout" --no-audit --no-fund --ignore-scripts @deepseek-ai/dsh@0.2.1-rc.2
+          node qa/host-location.mjs "$RUNNER_TEMP/mise-layout"
+      - if: always()
+        shell: bash
         run: |
           set -eu
           npm install --prefix "$RUNNER_TEMP/candidate-host" --no-audit --no-fund --ignore-scripts @deepseek-ai/dsh@0.2.2-rc.5 @deepseek-ai/dsh-plugin-market-index@0.2.2-rc.5 pnpm@10.32.1

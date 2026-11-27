@@ -3,11 +3,12 @@ import {execFileSync} from 'node:child_process';
 import {mkdtempSync,mkdirSync,readFileSync,statSync,existsSync,rmSync} from 'node:fs';
 import {createRequire} from 'node:module';
 import os from 'node:os';
+import {pathToFileURL} from 'node:url';
 import path from 'node:path';
 
 const prefix=path.resolve(process.argv[2]);
 const req=createRequire(path.join(prefix,'package.json'));
-const {marketInstallTarget,parseMarketIndex}=await import(req.resolve('@deepseek-ai/dsh-plugin-market-index'));
+const {marketInstallTarget,parseMarketIndex}=await import(pathToFileURL(req.resolve('@deepseek-ai/dsh-plugin-market-index')).href);
 const records=['dsh-privacy-mode','dsh-neko'].map(name=>JSON.parse(readFileSync(new URL('../market/'+name+'.json',import.meta.url))));
 const index=parseMarketIndex({format:1,title:'Review only',plugins:records},'https://example.org/index.json');
 for(const plugin of index.plugins){
@@ -28,5 +29,5 @@ for(const plugin of index.plugins){
     const patch=readFileSync(path.join(profile,'cordis.patch.yml'),'utf8');
     assert.ok(patch.includes(plugin.name));
     console.log('PASS fresh market install',plugin.name,pkg.version,release.source.commit);
-  } finally {rmSync(root,{recursive:true,force:true,maxRetries:5,retryDelay:100});}
+  } catch(e) { process.exitCode=1;console.error(plugin.name,e.message); } finally {rmSync(root,{recursive:true,force:true,maxRetries:5,retryDelay:100});}
 }
