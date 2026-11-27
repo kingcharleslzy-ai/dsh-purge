@@ -13,7 +13,7 @@ import sidebarGlyph from "./assets/sidebar-glyph.png";
 import { bindSessionContext } from "./state/session-context.js";
 import { bindPresetMenu } from "./state/preset-menu.js";
 import { installLegacyVisibility } from "./state/legacy-visibility.js";
-import { bindConversationAccess } from "./state/conversation-access.js";
+import { installRewindDraftSync } from "./components/rewind.js";
 import { WelcomeNotice } from "./components/welcome.js";
 import { EnvAdaptSendGate } from "./components/env-gate.js";
 
@@ -94,11 +94,9 @@ export function apply(ctx) {
     ),
   );
   ctx.effect(startGrantSync, "panel grant sync");
+  // Legacy API callers can still restore a composer draft. This slot renders nothing.
   ctx.inject(["sessions", "uiWorkspace", "conversation"], (host) =>
-    host.effect(
-      () => bindConversationAccess(host),
-      "panel conversation access",
-    ),
+    installRewindDraftSync(host),
   );
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), "panel locale");
   const t = ctx.locale.bind(NS);

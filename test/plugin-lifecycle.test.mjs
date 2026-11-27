@@ -54,8 +54,9 @@ test("real Cordis late service, replacement and parent reload retain commands an
     const stale=Object.assign(Readable.from(['{"rewind":true}']),{method:"POST",headers:{host:"127.0.0.1:3080"}});
     const retired={writeHead(code){this.code=code;},end(body){this.body=body;}};
     await routes.get("/dsh-purge/boost").handler(stale,retired);
-    assert.equal(retired.code,410);
-    assert(!fs.existsSync(path.join(tmp,"dsh-purge","tuning.json")));
+    assert.equal(retired.code,200);
+    assert.equal(JSON.parse(retired.body).rewind,true);
+
     // Both independently registered update handlers must use their own scoped
     // settings reader; malformed channel config must never become direct traffic.
     fs.mkdirSync(path.join(tmp,"dsh-purge"),{recursive:true});
@@ -78,7 +79,7 @@ test("real Cordis late service, replacement and parent reload retain commands an
     await owner.restart();await tick();
     assert(secondRoutes.has("/dsh-purge/status"));
     assert(!root.commands.entries.has("purge-rewind"));
-    for (const url of ["/dsh-purge/rewind", "/dsh-purge/rewind/options", "/dsh-purge/last-user"]) assert(!secondRoutes.has(url));
+    for (const url of ["/dsh-purge/rewind", "/dsh-purge/rewind/options", "/dsh-purge/last-user"]) assert(secondRoutes.has(url));
     await owner.dispose();await tick();
     assert.equal(secondRoutes.size,0);
     assert.deepEqual([...root.commands.entries.keys()],["rewind"]);

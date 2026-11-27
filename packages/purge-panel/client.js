@@ -14154,20 +14154,41 @@ function installLegacyVisibility(doc = globalThis.document) {
   return () => style.remove();
 }
 
-// src/state/conversation-access.js
+// src/state/rewind-draft.js
+var DRAFT_KEY = "dshp-rewind-draft:";
+var ARM_KEY = "dshp-rewind-arm:";
+var FILL_DELAYS = [0, 50, 180, 400, 800];
+var ARM_TTL_MS = 45 * 1e3;
+var seenAt = 0;
 var host2 = null;
-function bindConversationAccess(ctx) {
-  host2 = ctx;
-  return () => {
-    if (host2 === ctx) host2 = null;
-  };
+var workspace = null;
+var conversation = null;
+var pendingComposer = { sessionId: "", text: "", at: 0 };
+var armedFill = { sessionId: "", text: "", at: 0 };
+function storage() {
+  try {
+    return typeof window !== "undefined" ? window.sessionStorage : null;
+  } catch {
+    return null;
+  }
+}
+function bindRewindHost(ctx) {
+  host2 = ctx || null;
+  workspace = ctx && ctx.uiWorkspace || null;
+  conversation = ctx && ctx.conversation || null;
 }
 function hostSessions() {
   return host2 && host2.sessions || null;
 }
+function getRewindSeenAt() {
+  return seenAt;
+}
+function noteRewindAt(at) {
+  if (at) seenAt = at;
+}
 function currentSessionId(sessions) {
   try {
-    const selected = host2?.uiWorkspace?.selection?.getSnapshot?.()?.sessionId;
+    const selected = workspace?.selection?.getSnapshot?.()?.sessionId;
     if (typeof selected === "string" && selected) return selected;
   } catch {
   }
@@ -14178,7 +14199,97 @@ function currentSessionId(sessions) {
   }
   return "";
 }
+function sessionKnown(sessions, sessionId) {
+  try {
+    const snap = sessions?.list?.getSnapshot?.();
+    if (!snap || !sessionId) return false;
+    if (snap.byId && Object.prototype.hasOwnProperty.call(snap.byId, sessionId))
+      return true;
+    if (Array.isArray(snap.ids) && snap.ids.includes(sessionId)) return true;
+  } catch {
+  }
+  return false;
+}
+function waitMs(ms) {
+  return new Promise((resolve) => {
+    if (typeof window !== "undefined" && window.setTimeout)
+      window.setTimeout(resolve, ms);
+    else setTimeout(resolve, ms);
+  });
+}
+function isPluginDraft(text) {
+  const value = String(text || "").trim();
+  if (!value) return false;
+  return /^\[MNEMON\]/i.test(value) || /MNEMON RUNTIME MEMORY SNAPSHOT/i.test(value) || /^MNEMON VIEW TOOLS/im.test(value);
+}
+function writeDraft(sessionId, text) {
+  if (!sessionId) return;
+  const value = isPluginDraft(text) ? "" : text || "";
+  pendingComposer = { sessionId, text: value, at: Date.now() };
+  try {
+    storage()?.setItem(DRAFT_KEY + sessionId, value);
+  } catch {
+  }
+}
+function peekDraft(sessionId) {
+  if (!sessionId) return "";
+  if (pendingComposer.sessionId === sessionId && pendingComposer.text)
+    return pendingComposer.text;
+  try {
+    return storage()?.getItem(DRAFT_KEY + sessionId) || "";
+  } catch {
+    return "";
+  }
+}
+function clearStoredDraft(sessionId) {
+  if (!sessionId) return;
+  if (pendingComposer.sessionId === sessionId)
+    pendingComposer = { sessionId: "", text: "", at: 0 };
+  try {
+    storage()?.removeItem(DRAFT_KEY + sessionId);
+  } catch {
+  }
+  try {
+    storage()?.removeItem(ARM_KEY + sessionId);
+  } catch {
+  }
+}
+function armComposerFill(sessionId, text) {
+  if (!sessionId || !text || isPluginDraft(text)) return;
+  const at = Date.now();
+  armedFill = { sessionId, text, at };
+  writeDraft(sessionId, text);
+  try {
+    storage()?.setItem(ARM_KEY + sessionId, String(at));
+  } catch {
+  }
+}
+function takeArmedFill(sessionId) {
+  if (!sessionId) return "";
+  let text = "";
+  let at = 0;
+  if (armedFill.sessionId === sessionId && armedFill.text) {
+    text = armedFill.text;
+    at = armedFill.at;
+  } else {
+    text = peekDraft(sessionId);
+    try {
+      at = Number(storage()?.getItem(ARM_KEY + sessionId) || 0);
+    } catch {
+      at = 0;
+    }
+  }
+  if (!text || !at || Date.now() - at > ARM_TTL_MS) {
+    if (text && (!at || Date.now() - at > ARM_TTL_MS))
+      clearStoredDraft(sessionId);
+    return "";
+  }
+  clearStoredDraft(sessionId);
+  armedFill = { sessionId: "", text: "", at: 0 };
+  return text;
+}
 function conversationFace() {
+  if (conversation) return conversation;
   if (host2?.conversation) return host2.conversation;
   if (typeof host2?.get === "function") {
     try {
@@ -14206,6 +14317,231 @@ function conversationInput(sessionId) {
   } catch {
     return null;
   }
+}
+function liveDraft(sessionId, inputActions) {
+  try {
+    const fromActions = inputActions?.state?.getSnapshot?.()?.draft;
+    if (typeof fromActions === "string") return fromActions;
+  } catch {
+  }
+  try {
+    const draft = conversationInput(sessionId)?.state?.getSnapshot?.()?.draft;
+    if (typeof draft === "string") return draft;
+  } catch {
+  }
+  return "";
+}
+function hostSetDraft(sessionId, text) {
+  if (!sessionId) return false;
+  try {
+    const input = conversationInput(sessionId);
+    if (input && typeof input.setDraft === "function") {
+      input.setDraft(text || "");
+      return true;
+    }
+  } catch {
+  }
+  return false;
+}
+function fillComposer(inputActions, text) {
+  if (inputActions && typeof inputActions.setDraft === "function") {
+    try {
+      inputActions.setDraft(text || "");
+    } catch {
+    }
+  }
+}
+function scheduleComposerFill(sessionId, text, inputActions) {
+  if (!sessionId || !text || isPluginDraft(text)) return () => {
+  };
+  let stopped = false;
+  let filled = false;
+  const timers = [];
+  const setTimer = typeof window !== "undefined" && window.setTimeout ? (fn, ms) => window.setTimeout(fn, ms) : (fn, ms) => setTimeout(fn, ms);
+  const clearTimer = typeof window !== "undefined" && window.clearTimeout ? (id) => window.clearTimeout(id) : (id) => clearTimeout(id);
+  const tryFill = () => {
+    if (stopped) return;
+    const current = liveDraft(sessionId, inputActions);
+    if (filled && current !== text) {
+      stopped = true;
+      return;
+    }
+    if (current && current !== text) {
+      stopped = true;
+      return;
+    }
+    fillComposer(inputActions, text);
+    hostSetDraft(sessionId, text);
+    filled = true;
+  };
+  for (const ms of FILL_DELAYS) timers.push(setTimer(tryFill, ms));
+  return () => {
+    stopped = true;
+    for (const id of timers) {
+      try {
+        clearTimer(id);
+      } catch {
+      }
+    }
+  };
+}
+function scheduleEchoClear(sessionId, inputActions) {
+  if (!sessionId) return () => {
+  };
+  let last = "";
+  let stopped = false;
+  const timers = [];
+  const setTimer = typeof window !== "undefined" && window.setTimeout ? (fn, ms) => window.setTimeout(fn, ms) : (fn, ms) => setTimeout(fn, ms);
+  const clearTimer = typeof window !== "undefined" && window.clearTimeout ? (id) => window.clearTimeout(id) : (id) => clearTimeout(id);
+  const tryClear = () => {
+    if (stopped || !last) return;
+    const current = String(liveDraft(sessionId, inputActions) || "").trim();
+    if (!current) {
+      stopped = true;
+      return;
+    }
+    if (current !== last) return;
+    fillComposer(inputActions, "");
+    hostSetDraft(sessionId, "");
+    clearStoredDraft(sessionId);
+    stopped = true;
+  };
+  apiJson("/dsh-purge/last-user?sessionId=" + encodeURIComponent(sessionId)).then((data) => {
+    if (stopped) return;
+    last = String(data?.text || "").trim();
+    if (!last || isPluginDraft(last)) return;
+    tryClear();
+    for (const ms of [0, 50, 180, 400]) timers.push(setTimer(tryClear, ms));
+  }).catch(() => {
+  });
+  return () => {
+    stopped = true;
+    for (const id of timers) {
+      try {
+        clearTimer(id);
+      } catch {
+      }
+    }
+  };
+}
+async function dropInheritedQueue(sessions, sessionId) {
+  if (!sessions || !sessionId) return;
+  const drop = async () => {
+    try {
+      const actx = typeof sessions.scope === "function" ? sessions.scope(sessionId) : void 0;
+      const face = typeof sessions.sessionOf === "function" ? sessions.sessionOf(actx) : void 0;
+      const queue = face?.getSnapshot?.()?.queue || [];
+      for (const item of queue) {
+        const id = item?.id || item?.itemId;
+        if (!id) continue;
+        try {
+          await face.updateQueue?.(id, { kind: "remove" });
+        } catch {
+        }
+      }
+    } catch {
+    }
+  };
+  await drop();
+  if (typeof window !== "undefined" && window.setTimeout)
+    window.setTimeout(() => {
+      drop();
+    }, 80);
+}
+async function openRewoundSession(sessions, sessionId) {
+  if (!sessionId) return;
+  let lastError = null;
+  for (let attempt = 0; attempt < 25; attempt += 1) {
+    if (sessions && typeof sessions.refresh === "function" && !sessionKnown(sessions, sessionId)) {
+      try {
+        await sessions.refresh();
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    const known = sessionKnown(sessions, sessionId);
+    if (known || typeof sessions?.open === "function") {
+      try {
+        if (workspace && typeof workspace.openSession === "function") {
+          workspace.openSession(sessionId);
+        } else if (typeof sessions?.open === "function") {
+          sessions.open(sessionId);
+        } else {
+          throw new Error("\u6253\u4E0D\u5F00\u56DE\u9000\u540E\u7684\u4F1A\u8BDD");
+        }
+        const selected = workspace?.selection?.getSnapshot?.()?.sessionId;
+        if (!workspace || selected === sessionId) {
+          await dropInheritedQueue(sessions, sessionId);
+          if (typeof window !== "undefined" && window.setTimeout)
+            window.setTimeout(() => {
+              dropInheritedQueue(sessions, sessionId);
+            }, 250);
+          return;
+        }
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    await waitMs(120);
+  }
+  throw new Error(lastError && lastError.message || "\u56DE\u9000\u540E\u7684\u4F1A\u8BDD\u6CA1\u6709\u6253\u5F00");
+}
+
+// src/components/rewind.js
+function RewindDraftSync({ sessionId: slotSession, inputActions }) {
+  const sessionId = slotSession || currentSessionId(hostSessions());
+  useEffect(() => {
+    if (!sessionId) return;
+    const armed = takeArmedFill(sessionId);
+    if (armed) {
+      scheduleComposerFill(sessionId, armed, inputActions);
+      return;
+    }
+    scheduleEchoClear(sessionId, inputActions);
+  }, [sessionId, inputActions]);
+  return null;
+}
+function installRewindWatch(ctx) {
+  const sessions = ctx && ctx.sessions || hostSessions();
+  if (!sessions) return () => {
+  };
+  const tick = async () => {
+    try {
+      const data = await apiJson("/dsh-purge/rewind");
+      if (!data || !data.sessionId || !data.at || data.at <= getRewindSeenAt())
+        return;
+      noteRewindAt(data.at);
+      const current = currentSessionId(sessions);
+      if (current && current !== data.parentId) return;
+      const text = isPluginDraft(data.text) ? "" : data.text || "";
+      armComposerFill(data.sessionId, text);
+      scheduleComposerFill(data.sessionId, text);
+      await openRewoundSession(sessions, data.sessionId);
+      scheduleComposerFill(data.sessionId, text);
+    } catch {
+    }
+  };
+  const timer = typeof window !== "undefined" && window.setInterval ? window.setInterval(tick, 1200) : null;
+  return () => {
+    if (timer && typeof window !== "undefined" && window.clearInterval)
+      window.clearInterval(timer);
+  };
+}
+function installRewindDraftSync(ctx) {
+  bindRewindHost(ctx);
+  ctx.slots.inject(
+    "conversation.input.right",
+    () => ctx.slots.register(
+      {
+        name: "conversation.input.right",
+        id: "dsh-purge-draft-sync",
+        order: 20,
+        inject: (sessionId) => ({ sessionId })
+      },
+      RewindDraftSync
+    )
+  );
+  ctx.effect(() => installRewindWatch(ctx), "dsh-purge: rewind watch");
 }
 
 // src/components/welcome.js
@@ -14774,10 +15110,7 @@ function apply(ctx) {
   ctx.effect(startGrantSync, "panel grant sync");
   ctx.inject(
     ["sessions", "uiWorkspace", "conversation"],
-    (host3) => host3.effect(
-      () => bindConversationAccess(host3),
-      "panel conversation access"
-    )
+    (host3) => installRewindDraftSync(host3)
   );
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), "panel locale");
   const t = ctx.locale.bind(NS);

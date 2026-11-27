@@ -2,7 +2,7 @@
 // YuJunZhiXue/dsh-purge 1.1.71 (MIT). Original block: client.js 1.1.71
 // lines 7994-8132: isRedteamPresetId / readSessionAgentPreset /
 // isRedteamModeActive / looksLikeSendControl.
-import { currentSessionId, hostSessions } from "./conversation-access.js";
+import { currentSessionId, hostSessions } from "./rewind-draft.js";
 
 export function isRedteamPresetId(value) {
   const text = String(value || "").trim();

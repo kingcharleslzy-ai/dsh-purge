@@ -161,6 +161,14 @@ if (LEGACY[op]) {
         hint: "purge-community retry on|off | retry decompose on|off",
       };
     }
+  } else if (op === "rewind") {
+    const sub = (argument || "status").toLowerCase();
+    if (sub === "on" || sub === "off") {
+      const next = writeTuning({ rewind: sub === "on" });
+      result = { ok: true, rewind: next.rewind, restart_required: false, effective: "page-refresh" };
+    } else {
+      result = { ok: true, rewind: readTuning(home).rewind === true, hint: "purge-community rewind on|off" };
+    }
   } else if (op === "inject") {
     // 注入位置：head / tail / both。改完下一轮对话即生效（section 每轮回读 tuning），
     // 不需要重启；面板显示的段位会在下一次读取时刷新。
@@ -274,7 +282,7 @@ if (LEGACY[op]) {
     });
   } else
     throw Error(
-      "用法：purge-community status | host-status | diagnose | selfcheck [--json] | boost on|off | patches [list|enable ids|disable ids] | probe [new] | audit [--limit n] | preset [status|install] | backup [prune|usage] | rollback <备份ID> | migrate <tgz> | apply | revert | uninstall | edit",
+      "用法：purge-community status | host-status | diagnose | selfcheck [--json] | boost on|off | rewind on|off | patches [list|enable ids|disable ids] | probe [new] | audit [--limit n] | preset [status|install] | backup [prune|usage] | rollback <备份ID> | migrate <tgz> | apply | revert | uninstall | edit",
     );
   console.log(JSON.stringify(result, null, 2));
 } catch (e) {
