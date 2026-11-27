@@ -34,6 +34,10 @@ try {
   if(JSON.parse(boot).package !== pkg.name) throw Error("Dependency-free bootstrap entry failed");
   ok("未安装依赖的解压包可以启动引导 CLI");
 
+  // Validate the preview manifest against the extracted archive, not the checkout.
+  for (const preview of JSON.parse(fs.readFileSync(path.join(pkgDir, "screenshots.json"), "utf8"))) {
+    if (!fs.statSync(path.join(pkgDir, preview)).isFile()) throw Error("Missing packaged screenshot: " + preview);
+  }
   // Install the packed artifact's declared dependencies, not source-tree node_modules.
   const installArgs = ["install", "--ignore-scripts", "--legacy-peer-deps", "--omit=dev", "--no-audit", "--no-fund"];
   // Node cannot exec a .cmd file directly. This command contains only fixed arguments;
