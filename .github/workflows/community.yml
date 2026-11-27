@@ -54,6 +54,14 @@ jobs:
       - name: Full Windows suite with bounded process concurrency
         if: runner.os == 'Windows'
         run: npm test -- --test-concurrency=2
+      - name: Save with both legacy and current entries in an isolated official DSH profile
+        if: runner.os == 'Windows' || runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -eu
+          prefix="$RUNNER_TEMP/purge-owner-host"
+          npm install --prefix "$prefix" --ignore-scripts --no-audit --no-fund @deepseek-ai/dsh@0.2.2-rc.5
+          node scripts/check-config-owner.mjs "$prefix"
       - name: Windows PowerShell 5.1 installer wrapper
         if: runner.os == 'Windows'
         shell: powershell
