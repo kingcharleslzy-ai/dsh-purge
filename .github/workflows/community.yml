@@ -228,3 +228,14 @@ jobs:
           node packages/purge-panel/test/settings-entries-browser.mjs
       - name: Native Windows exec promises, WinINET reads and transient TLS response
         run: node --test test/update-proxy-runtime.test.mjs test/update-http.test.mjs
+
+  rc5-desktop-baseline:
+    runs-on: windows-2025
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Inspect the signed rc.5 installation and open its desktop window
+        shell: pwsh
+        run: ./scripts/check-rc5-desktop.ps1
