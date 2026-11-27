@@ -461,9 +461,11 @@ export const zh = {
   "rewind.empty": "没有可回退的上一句",
   "rewind.fail": "回退失败: {error}",
   "rewind.once": "回退一次",
-  "rewind.once.hint": "撤回当前会话一轮，最后一句回到输入框。工作区文件保持原样。",
+  "rewind.once.hint":
+    "撤回当前会话一轮，最后一句回到输入框。工作区文件保持原样。",
   "rewind.round": "回退上一轮",
-  "rewind.round.hint": "撤回主会话一轮，并回退该轮的子会话。工作区文件保持原样。",
+  "rewind.round.hint":
+    "撤回主会话一轮，并回退该轮的子会话。工作区文件保持原样。",
   "hooksDeny.title": "Hooks 拦截",
   "hooksDeny.bypass": "放行 hooks 的 deny / ask（补丁 30 / 31 / 64 / 65）",
   "hooksDeny.hint":
