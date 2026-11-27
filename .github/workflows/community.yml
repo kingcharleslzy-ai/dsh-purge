@@ -196,3 +196,35 @@ jobs:
           fi
           node scripts/check-native-prompt-electron.mjs
           ELECTRON_RUN_AS_NODE=1 "$PURGE_ELECTRON_EXEC" scripts/check-evidence-tools-runtime.mjs "$runtime"
+
+  windows-web-acceptance:
+    runs-on: windows-2025
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci --ignore-scripts --legacy-peer-deps
+      - run: npm --prefix packages/purge-panel ci --ignore-scripts --legacy-peer-deps
+      - name: Install isolated official host and published rewind client
+        shell: bash
+        run: |
+          set -euo pipefail
+          prefix="$RUNNER_TEMP/dsh-web-test"
+          npm install --prefix "$prefix" --ignore-scripts --no-audit --no-fund @deepseek-ai/dsh@0.2.2-rc.3 playwright-core@1.56.1
+          cd "$prefix"
+          archive=$(npm pack --ignore-scripts --silent dsh-rewind-plugin@0.24.0)
+          mkdir node_modules/dsh-rewind-plugin
+          tar -xzf "$archive" --strip-components=1 -C node_modules/dsh-rewind-plugin
+      - name: Official DSH authentication, command menus and native file chooser
+        run: node scripts/check-web-owner-menu.mjs "$env:RUNNER_TEMP/dsh-web-test"
+      - name: Shipped panel refresh in Chrome
+        run: |
+          $env:CHROME_BIN = (Get-Command chrome.exe -ErrorAction SilentlyContinue).Source
+          if (!$env:CHROME_BIN) { $env:CHROME_BIN = "${env:ProgramFiles}\Google\Chrome\Application\chrome.exe" }
+          node packages/purge-panel/test/settings-entries-browser.mjs
+      - name: Native Windows exec promises, WinINET reads and transient TLS response
+        run: node --test test/update-proxy-runtime.test.mjs test/update-http.test.mjs
