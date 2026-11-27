@@ -135,8 +135,8 @@ test("real selfCheck tally keeps missing required files visible and excludes onl
   try {
     const states=Object.fromEntries(ALL_PATCHES.map(p=>[p.id,"applied"]));
     const selected=ALL_PATCHES.find(p=>p.settleWhenAbsent);
-    states[15]="missing_file";
-    states[16]="skipped"; // An unmatched anchor is not proof that the target is optional.
+    states[21]="missing_file";
+    states[22]="skipped"; // An unmatched anchor is not proof that the target is optional.
     states[17]="pending";
     states[24]="na";
     states[selected.id]="skipped";
@@ -146,8 +146,8 @@ test("real selfCheck tally keeps missing required files visible and excludes onl
     assert.equal(report.patch.applied,ALL_PATCHES.length-5);
     assert.equal(report.patch.not_applicable,2);
     assert.equal(report.state,"broken");
-    assert(report.layers.some(l=>l.broken.some(b=>b.id===15)));
-    assert(report.layers.some(l=>l.broken.some(b=>b.id===16)));
+    assert(report.layers.some(l=>l.broken.some(b=>b.id===21)));
+    assert(report.layers.some(l=>l.broken.some(b=>b.id===22)));
     assert(report.layers.some(l=>l.pending.includes(17)));
     assert(!report.layers.some(l=>l.broken.some(b=>b.id===selected.id)));
     const na=Object.fromEntries(ALL_PATCHES.map(p=>[p.id,"na"]));
@@ -271,13 +271,13 @@ test("#38 unreadable/missing preset stays unknown; reads only selected home and 
 
 test("#38 does not exempt arbitrary optional skips or required missing files",()=>{
   const states=Object.fromEntries(ALL_PATCHES.map(p=>[p.id,"applied"]));
-  states[71]="skipped";states[76]="not_needed";states[16]="missing_file";
+  states[71]="skipped";states[76]="not_needed";states[21]="missing_file";
   const layers=rollupLayers(states,true);
   const identity=layers.find(l=>l.ids.includes(76));
   assert.equal(identity.state,"broken");
   assert(identity.broken.some(p=>p.id===71));
   assert.deepEqual(identity.absent,[76]);
-  assert(layers.some(l=>l.broken.some(p=>p.id===16)));
+  assert(layers.some(l=>l.broken.some(p=>p.id===21)));
   states[76]="unknown";
   const mixed=rollupLayers(states,true).find(l=>l.ids.includes(76));
   assert.equal(mixed.state,"broken","an uncertain preset must not hide another confirmed failure");
