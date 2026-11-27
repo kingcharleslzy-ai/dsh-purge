@@ -270,6 +270,30 @@ function skillsApi(op, extra) {
 
 // src/vendor/drill.js
 var import_react2 = __toESM(require("react"), 1);
+
+// ../../lib/platform-display.js
+function platformDisplay(nodePlatform, configuredMode) {
+  if (configuredMode === "windows" || configuredMode === "linux") return configuredMode;
+  if (nodePlatform === "win32") return "windows";
+  if (nodePlatform === "darwin") return "macos";
+  return nodePlatform || "unknown";
+}
+function platformLabel(platform) {
+  switch (platform) {
+    case "macos":
+      return "macOS";
+    case "windows":
+      return "Windows";
+    case "linux":
+      return "Linux";
+    case "unknown":
+      return "\u672A\u77E5\u5E73\u53F0";
+    default:
+      return platform;
+  }
+}
+
+// src/vendor/drill.js
 var __dshPurgeDrill = (() => {
   var module2 = { exports: {} };
   var exports = module2.exports;
@@ -5984,7 +6008,9 @@ var __dshPurgeDrill = (() => {
         h2(
           "span",
           { className: "rt-tag" },
-          runtime.effective === "windows" ? "Windows" : "Linux/Kali"
+          platformLabel(
+            runtime.nodePlatform ? platformDisplay(runtime.nodePlatform, data?.config?.platform) : runtime.effective || "unknown"
+          )
         ),
         adapt.kali ? h2("span", { className: "rt-tag rt-tag-live" }, "Kali") : null,
         h2(
