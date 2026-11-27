@@ -14,6 +14,7 @@ $token = [guid]::NewGuid().ToString('N')
 $starting = @{ token=$token; phase='starting' } | ConvertTo-Json -Compress
 $process = $null
 $stateReader = $null
+$snapshotReader = $null
 $archiveReader = $null
 try {
     [IO.File]::WriteAllText((Join-Path $root 'app/package.json'), '{}')
@@ -36,6 +37,7 @@ try {
     }
     Start-Sleep -Milliseconds 250
     if ([IO.File]::ReadAllText($state) -ne $starting) { throw 'Previous state changed while locked' }
+    $snapshotReader = [IO.StreamReader]::new([IO.File]::Open($state, 'Open', 'Read', ([IO.FileShare]::ReadWrite -bor [IO.FileShare]::Delete)))
     $stateReader.Dispose()
     $stateReader = $null
 
@@ -65,6 +67,9 @@ try {
         }
         Start-Sleep -Milliseconds 1
     }
+    if ($snapshotReader.ReadToEnd() -ne $starting) { throw 'Already-open reader lost its original snapshot' }
+    $snapshotReader.Dispose()
+    $snapshotReader = $null
     if ((FixtureHash $asar) -ne $hash) { throw 'Locked archive changed' }
     $archiveReader.Dispose()
     $archiveReader = $null
@@ -79,6 +84,7 @@ try {
     if ((FixtureHash $asar) -ne $hash) { throw 'Offline rollback did not restore original archive' }
     @{reads=$reads; lockCycles=$cycles; rollback=$true} | ConvertTo-Json -Compress
 } finally {
+    if ($snapshotReader) { $snapshotReader.Dispose() }
     if ($stateReader) { $stateReader.Dispose() }
     if ($archiveReader) { $archiveReader.Dispose() }
     if ($process -and !$process.HasExited) { $process.Kill(); $process.WaitForExit() }
