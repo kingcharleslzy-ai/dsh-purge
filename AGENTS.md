@@ -128,6 +128,8 @@ purge-community probe new
 
 <a id="installation"></a>
 
+dsh-go 手机本机引擎的 profile 由 App 身份管理。遇到 `EACCES`，先按[只读检查](docs/INSTALLATION.md#android-profile-access)验证报错路径是否可读，保留原始错误；SSH 连接应在对应电脑上诊断。
+
 - 收到仓库链接时，用它确认项目身份并查最新稳定 Release。首装从市场工具取得 Git 目标时，原样传入固定提交的 `spec`；条目未返回 `registry` 就省略该参数。使用 CLI 时选择该稳定 Release 已上传的版本化 TGZ。沿用目标 profile 原有的 npm 配置。
 - 若日志显示 pnpm 在 GitHub 仓库路径下请求 `/yaml`，核对本次安装的 registry、DSH 记住的「安装源」和宿主首选源。只纠正有误的 npm 地址，保留有效私有源、代理和全局配置。[字段对照与重试步骤](docs/INSTALLATION.md#install-addresses)
 - 市场卡片显示旧版本时，先核对[社区索引](https://kingcharleslzy-ai.github.io/dsh-purge/index.json)中的包名、仓库和固定提交；用户指定了版本就沿用该版本。给市场生成安装按钮时遵循[收录说明](docs/MARKET-MIGRATION.md)，将目标版本和安装来源一起更新。
