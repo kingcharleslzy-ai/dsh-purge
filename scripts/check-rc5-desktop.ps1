@@ -1,4 +1,5 @@
 # Run only on a disposable test account. Do not reuse a user's installation.
+param([switch]$Upgrade)
 $ErrorActionPreference = 'Stop'
 if ($env:RUNNER_ENVIRONMENT -ne 'github-hosted' -or $env:RUNNER_OS -ne 'Windows') {
     throw 'Requires a GitHub-hosted Windows runner'
@@ -9,16 +10,21 @@ $installer = Join-Path $root 'installer.exe'
 $target = Join-Path $root 'DSH'
 $exe = Join-Path $target 'DeepSeek Harness.exe'
 $version = '0.2.2-rc.5'
-$url = "https://download.deepseek.com/dsh-desk/bin/win-x64/deepseek-harness-$version-win-x64.exe"
-curl.exe --fail --location --retry 2 --max-time 240 --output $installer $url
-if ($LASTEXITCODE) { throw "Installer download failed: $LASTEXITCODE" }
-$signature = Get-AuthenticodeSignature $installer
-if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.GetNameInfo('SimpleName', $false) -ne 'Hangzhou DeepSeek Artificial Intelligence Co., Ltd.') { throw 'Installer signer mismatch' }
-$install = Start-Process $installer -ArgumentList ("/S /D=" + $target) -Wait -PassThru
-if ($install.ExitCode -ne 0 -or (Get-Item $exe).VersionInfo.FileVersion -ne $version) { throw 'Installation or version check failed' }
+function Install-Official([string]$release) {
+    $url = "https://download.deepseek.com/dsh-desk/bin/win-x64/deepseek-harness-$release-win-x64.exe"
+    & curl.exe --fail --location --retry 2 --max-time 240 --output $installer $url
+    if ($LASTEXITCODE) { throw "Installer download failed: $LASTEXITCODE" }
+    $signature = Get-AuthenticodeSignature $installer
+    if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.GetNameInfo('SimpleName', $false) -ne 'Hangzhou DeepSeek Artificial Intelligence Co., Ltd.') { throw 'Installer signer mismatch' }
+    $install = Start-Process $installer -ArgumentList ("/S /D=" + $target) -Wait -PassThru
+    if ($install.ExitCode -ne 0 -or (Get-Item $exe).VersionInfo.FileVersion -ne $release) { throw 'Installation or version check failed' }
+}
+if ($Upgrade) { Install-Official '0.2.2-rc.3' }
+Install-Official $version
 foreach ($name in 'app.asar','app','runtime','runtime/bin','runtime/cli/bin','runtime/primary-runtime/dependencies/pnpm/bin/pnpm.mjs') {
     $present = Test-Path -LiteralPath (Join-Path $target "resources/$name")
-    Write-Output "rc.5 fresh install: resources/$name present=$present"
+    Write-Output "rc.5 inventory: resources/$name present=$present"
+    if (!$present -and $name -ne 'app') { throw "Required stock installation entry missing: $name" }
 }
 
 # Compare a normal launch with the flag in #286. Leave the vendor archive sealed.
@@ -76,6 +82,20 @@ commitExtractedDir(dest, next);
 '@ | Set-Content -LiteralPath $stage -Encoding utf8
 & node $stage (Resolve-Path lib/extract-asar.js).Path $resources
 if ($LASTEXITCODE) { throw 'Archive staging or verification failed' }
+# Reproduce the reported empty directory against the real installation, before
+# changing the archive. Restore the complete signed-installer runtime in finally.
+$runtime = Join-Path $resources 'runtime'
+$savedRuntime = Join-Path $root 'saved-runtime'
+Move-Item -LiteralPath $runtime -Destination $savedRuntime
+try {
+    New-Item -ItemType Directory -Path $runtime | Out-Null
+    & node --input-type=module -e "import {ensureAppRuntimeLink} from './lib/runtime-layout.js'; import assert from 'node:assert/strict'; const r=ensureAppRuntimeLink(process.argv[1]); assert.equal(r.ok,false); assert.equal(r.inventory,'empty'); console.log(r.error);" $resources
+    if ($LASTEXITCODE -or (Get-FileHash $archive).Hash -ne $previousHash) { throw 'Empty runtime did not fail cleanly' }
+} finally {
+    # Non-recursive delete also asserts that the check did not populate the directory.
+    [IO.Directory]::Delete($runtime)
+    Move-Item -LiteralPath $savedRuntime -Destination $runtime
+}
 Move-Item -LiteralPath $archive -Destination $backup
 try {
     Test-Window 'unpacked-updated' -Updated

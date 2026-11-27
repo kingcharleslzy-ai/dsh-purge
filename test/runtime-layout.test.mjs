@@ -217,3 +217,34 @@ test('diagnostics distinguish a missing app directory from a missing runtime ent
   assert.ok(missingRuntime.error.includes(path.join(f.resources, 'runtime')));
   assert.equal(fs.existsSync(f.link), false);
 });
+
+test('missing official runtime reports its inventory and preserves the archive and existing app runtime', t => {
+  const resources = fs.mkdtempSync(path.join(os.tmpdir(), 'desktop-inventory-'));
+  t.after(() => fs.rmSync(resources, { recursive:true, force:true }));
+  const runtime = path.join(resources, 'runtime');
+  const userFile = path.join(resources, 'app/runtime/keep');
+  fs.mkdirSync(path.dirname(userFile), { recursive:true });
+  fs.writeFileSync(userFile, 'untouched');
+  const archive = path.join(resources, 'app.asar');
+  fs.writeFileSync(archive, 'original');
+  function verify(inventory) {
+    const result = ensureAppRuntimeLink(resources);
+    assert.equal(result.ok, false);
+    assert.equal(result.reason, 'missing_runtime');
+    assert.equal(result.inventory, inventory);
+    assert.ok(result.error.includes(runtime));
+    assert.equal(fs.readFileSync(userFile, 'utf8'), 'untouched');
+    assert.equal(fs.readFileSync(archive, 'utf8'), 'original');
+  }
+  verify('absent');
+  fs.mkdirSync(runtime);
+  verify('empty');
+  fs.writeFileSync(path.join(runtime, 'desktop-runtime.json'), '{}');
+  verify('incomplete');
+  fs.renameSync(runtime, runtime + '.saved');
+  fs.writeFileSync(runtime, 'ordinary file');
+  verify('not_directory');
+  fs.unlinkSync(runtime);
+  fs.symlinkSync(path.join(resources, 'missing'), runtime, process.platform === 'win32' ? 'junction' : 'dir');
+  verify('broken_link');
+});
