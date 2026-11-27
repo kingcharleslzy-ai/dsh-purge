@@ -29,3 +29,23 @@ test('original and previously patched cmd shims converge to the same archive-awa
 test('cmd runs a real Electron archive entry, forwards arguments and propagates errors', {
   skip: process.platform !== 'win32' || !process.env.PURGE_ELECTRON_EXEC,
 }, () => checkWindowsLayouts(shim.text, process.env.PURGE_ELECTRON_EXEC));
+
+test('#282 desktop entry markers are distinct from legacy shim injection', async t => {
+  const fs = await import('node:fs/promises');
+  const path = await import('node:path');
+  const os = await import('node:os');
+  const { shimFileStatus, shimIsPatched } = await import('../lib/core.js');
+  const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'cli-entry-'));
+  t.after(() => fs.rm(dir, {recursive:true, force:true}));
+  const file = path.join(dir, 'dsh.cmd');
+  for (const [text, expected] of [
+    [original, 'original'], [shim.text, 'cli_entry_marked'],
+    [shim.text.replace('REM dsh-purge cli entry end', ''), 'cli_entry_incomplete'],
+    [original + 'echo REM dsh-purge cli entry begin', 'original'],
+  ]) {
+    await fs.writeFile(file, text);
+    assert.equal(shimFileStatus(file), expected);
+    assert.equal(shimIsPatched(file), false);
+    assert.equal(await fs.readFile(file, 'utf8'), text);
+  }
+});
