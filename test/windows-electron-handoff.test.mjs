@@ -152,12 +152,15 @@ test('concurrent state readers see complete JSON through archive lock retries an
   const helper = path.join(root, 'helper.ps1');
   fs.writeFileSync(helper, WINDOWS_ASAR_HANDOFF_PS1, 'utf8');
   const fixture = fileURLToPath(new URL('./fixtures/windows-handoff-state-reader.ps1', import.meta.url));
-  const stdout = execFileSync('powershell.exe', ['-NoProfile', '-File', fixture, '-Helper', helper],
-    { encoding: 'utf8', timeout: 40000 });
-  const result = JSON.parse(stdout);
-  assert.ok(result.reads >= 3);
-  assert.equal(result.lockCycles, 3);
-  assert.equal(result.rollback, true);
+  for (let round = 1; round <= 3; round++) {
+    const stdout = execFileSync('powershell.exe', ['-NoProfile', '-File', fixture, '-Helper', helper],
+      { encoding: 'utf8', timeout: 40000 });
+    const result = JSON.parse(stdout);
+    assert.equal(result.lockCycles, 8);
+    assert.ok(result.reads >= result.lockCycles);
+    assert.equal(result.rollback, true);
+    t.diagnostic(`round ${round}: ${result.reads} complete reads, ${result.lockCycles} lock cycles, archive hash restored`);
+  }
 });
 
 test('Job membership query reports its native failure before choosing a launcher', {
