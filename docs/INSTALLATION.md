@@ -1,6 +1,6 @@
 # 安装、升级与故障排查
 
-当前版本 **1.7.20**。面向用户与协助安装的 Agent。支持的安装器环境：Linux CLI/Web；macOS Desktop；Windows 11 的 PowerShell 5.1/7。完整 Windows 宿主补丁及界面验收与安装器测试分开，不能因安装通过就宣称全部功能正常。
+当前版本 **1.7.23**。面向用户与协助安装的 Agent。支持的安装器环境：Linux CLI/Web；macOS Desktop；Windows 11 的 PowerShell 5.1/7。完整 Windows 宿主补丁及界面验收与安装器测试分开，不能因安装通过就宣称全部功能正常。
 
 ## 安装前
 
@@ -8,6 +8,26 @@
 - 默认数据目录 `~/.dsh`；旧 Desktop CLI 默认 profile `desktop`；带独立 `@deepseek-ai/dsh` CLI 的新桌面壳及 CLI/Web 默认 `web`。不同目录/profile 必须显式指定，不能自动选另一个实例。
 - 保留正在运行的任务；安装不会停止进程或自动重启。用户在任务结束后手动重开。
 - 不需要管理员权限或全局 Node/pnpm；Desktop 入口使用该应用的 Electron 运行时和 CLI。遇到权限问题先核对路径，不建议盲目提权。
+
+<a id="android-profile-access"></a>
+
+### dsh-go 手机本机引擎提示 EACCES
+
+手机本机引擎使用 Android 分配给 App 的身份读写 profile。proot 终端中显示的 `root` 可能是模拟身份。宿主 Android 的真实 root 可以写出只有它自己能读的文件，导致安装命令成功，App 下次启动却读不到自己的 `package.json`。使用 App 内插件管理，或从该 App 自己的终端操作。手机通过 SSH 连接电脑时，要检查的是电脑上的 profile。
+
+遇到 `EACCES` 时，在 **App 自己的终端**核对报错所指的 profile。以下是默认 web profile 的只读检查，使用其他 profile 时把最后的 `web` 改成实际名称。
+
+```sh
+profile="${DSH_HOME:-$HOME/.dsh}/profiles/web"
+ls -ldn "$profile" "$profile/package.json" "$profile/node_modules/.bin" "$profile/.plugin-manager"
+if [ -r "$profile/package.json" ]; then
+  echo '当前身份可读 package.json'
+else
+  echo '请核对上面的路径、目录遍历权限和文件属主'
+fi
+```
+
+proot 显示的数字 UID 也可能经过映射，以 App 身份的实际读取结果为准。若报错是 `rename`，另核对错误中列出的父目录是否允许 App 写入和遍历。缺少某个可选目录本身不能证明权限有问题。保留原始路径和错误码，避免对整个 App 数据目录递归改权限。
 
 <a id="install-addresses"></a>
 

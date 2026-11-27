@@ -194,12 +194,7 @@ assert(
 );
 if (process.env.PANEL_CLIENT) {
   assert.equal(plugin.name, "dsh-purge-community");
-  const rewindSeat = seats.find(
-    (x) => x.spec.name === "conversation.input.right",
-  );
-  assert(rewindSeat, "community build restores the composer rewind slot");
-  assert.equal(rewindSeat.spec.id, "dsh-purge-rewind");
-  assert.equal(rewindSeat.spec.order, 20);
+  assert(!seats.some((seat) => seat.spec.id === "dsh-purge-rewind"));
 }
 const railSeat = seats.find((x) => x.spec.name === "sidebar.panellist");
 assert(railSeat, "left rail entry is registered");

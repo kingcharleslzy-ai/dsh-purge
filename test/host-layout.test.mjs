@@ -75,3 +75,30 @@ test("packaged Electron --updated uses actual app path, never disk as runtime ev
     assert.equal(hostLayoutEvidence(f.host, {...opts, appPath: path.join(f.resources, "app.asar")}).state, "archive_entry");
   } finally { f.close(); other.close(); }
 });
+
+test("#183 runtime directories are reported independently of the running entry", () => {
+  const f = fixture();
+  try {
+    const opts = {platform: "win32", argv: ["electron", path.join(f.resources, "app", "index.js")], execArgv: []};
+    const runtime = path.join(f.resources, "runtime");
+    const pnpm = path.join(runtime, "primary-runtime/dependencies/pnpm/bin/pnpm.mjs");
+    fs.mkdirSync(path.dirname(pnpm), {recursive: true});
+    fs.writeFileSync(pnpm, "// retained");
+    const partial = hostLayoutEvidence(f.host, opts);
+    assert.equal(partial.state, "unpacked_entry");
+    assert.deepEqual(partial.disk.runtime_cli_dirs, {"runtime/bin":"missing", "runtime/cli/bin":"missing"});
+    assert.match(partial.note, /runtime\/cli\/bin 未找到/);
+    fs.mkdirSync(path.join(runtime, "bin"));
+    fs.mkdirSync(path.join(runtime, "cli/bin"), {recursive:true});
+    const complete = hostLayoutEvidence(f.host, opts);
+    assert.deepEqual(complete.disk.runtime_cli_dirs, {"runtime/bin":"present", "runtime/cli/bin":"present"});
+    const denied = hostLayoutEvidence(f.host, {...opts, reader: {statSync(file) {
+      if (file === path.join(runtime, "cli/bin")) throw Object.assign(Error("denied"), {code:"EACCES"});
+      return fs.statSync(file);
+    }}});
+    assert.equal(denied.disk.runtime_cli_dirs["runtime/cli/bin"], "unreadable");
+    assert.match(denied.note, /EACCES/);
+    assert.equal(denied.state, "unpacked_entry");
+    assert.equal(fs.readFileSync(pnpm,"utf8"), "// retained");
+  } finally { f.close(); }
+});

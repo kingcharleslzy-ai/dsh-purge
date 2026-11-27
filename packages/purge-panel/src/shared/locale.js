@@ -139,11 +139,13 @@ export const zh = {
   "filter.empty": "这个过滤条件下没有补丁。",
   "sw.permission": "权限补丁",
   "inject.title": "注入与分层",
-  "inject.desc": "控制 Purge 提示词注入进入哪些会话。以下设置都不改变默认行为：不填就按原来的方式工作。",
+  "inject.desc":
+    "控制 Purge 提示词注入进入哪些会话。以下设置都不改变默认行为：不填就按原来的方式工作。",
   "inject.enabled": "启用注入",
   "inject.layers": "分层开关",
   "inject.layersHint": "已分层配置。未写入的层保持开启。",
-  "inject.layersUnset": "当前未分层配置：三层都跟随上面的总开关。改动任意一层后生效。",
+  "inject.layersUnset":
+    "当前未分层配置：三层都跟随上面的总开关。改动任意一层后生效。",
   "inject.layer.main": "主注入（prompt-inject.md）",
   "inject.layer.boost": "尾部强化段",
   "inject.layer.protocol": "能力协议说明",
@@ -469,18 +471,6 @@ export const zh = {
   "metric.sealed.count": "待解开",
   "metric.lost": "补丁已丢失，请重新应用",
   "metric.lost.count": "已丢失",
-  "rewind.settings": "会话外观",
-  "rewind.show": "显示输入框回退按钮",
-  "rewind.readAgain": "重新读取",
-  "rewind.label": "回退",
-  "rewind.aria": "回退",
-  "rewind.busy": "回退中…",
-  "rewind.empty": "没有可回退的上一句",
-  "rewind.fail": "回退失败: {error}",
-  "rewind.once": "回退一次",
-  "rewind.once.hint": "把这一轮发出去的那句放回输入框，并清掉这一轮",
-  "rewind.round": "回退上一轮",
-  "rewind.round.hint": "把这一轮发出去的那句放回输入框；子代理也只撤这一轮",
   "hooksDeny.title": "Hooks 拦截",
   "hooksDeny.bypass": "放行 hooks 的 deny / ask（补丁 30 / 31 / 64 / 65）",
   "hooksDeny.hint":
@@ -655,22 +645,28 @@ export const en = {
   "filter.empty": "No patches match this filter.",
   "sw.permission": "Permission patches",
   "inject.title": "Injection & layers",
-  "inject.desc": "Control which sessions receive the Purge prompt injection. Nothing here changes default behaviour: leave it empty and it works exactly as before.",
+  "inject.desc":
+    "Control which sessions receive the Purge prompt injection. Nothing here changes default behaviour: leave it empty and it works exactly as before.",
   "inject.enabled": "Enable injection",
   "inject.layers": "Per-layer switches",
-  "inject.layersHint": "Layers are configured explicitly. Omitted layers stay on.",
-  "inject.layersUnset": "Not layer-configured yet: all three layers follow the master switch above. Changing any layer switches to per-layer mode.",
+  "inject.layersHint":
+    "Layers are configured explicitly. Omitted layers stay on.",
+  "inject.layersUnset":
+    "Not layer-configured yet: all three layers follow the master switch above. Changing any layer switches to per-layer mode.",
   "inject.layer.main": "Main inject (prompt-inject.md)",
   "inject.layer.boost": "Boost tail",
   "inject.layer.protocol": "Capability protocol",
   "inject.presets": "Exclude by preset",
-  "inject.presetsHint": "Preset IDs (not display names), comma separated. Empty means no exclusion.",
+  "inject.presetsHint":
+    "Preset IDs (not display names), comma separated. Empty means no exclusion.",
   "inject.sessions": "Exclude by session",
-  "inject.sessionsHint": "Session IDs, comma separated. Empty means no exclusion.",
+  "inject.sessionsHint":
+    "Session IDs, comma separated. Empty means no exclusion.",
   "inject.sessionsPlaceholder": "session id",
   "inject.saved": "Saved",
   "inject.retry": "Retry",
-  "inject.noHost": "The host does not provide configEditor, so this cannot be written from the UI.",
+  "inject.noHost":
+    "The host does not provide configEditor, so this cannot be written from the UI.",
   "sw.permission.desc":
     "Stop the host from blocking tool calls behind sandbox and approval gates. On by default.",
   "sw.permission.hint":
@@ -1006,20 +1002,6 @@ export const en = {
   "metric.lost.count": "Lost",
   "status.unlocated": "Not located",
   "metric.unlocated": "This install was not found yet",
-  "rewind.settings": "Conversation appearance",
-  "rewind.show": "Show the rewind button in the composer",
-  "rewind.readAgain": "Try again",
-  "rewind.label": "Undo",
-  "rewind.aria": "Undo",
-  "rewind.busy": "Undoing…",
-  "rewind.empty": "Nothing to undo",
-  "rewind.fail": "Undo failed: {error}",
-  "rewind.once": "Undo once",
-  "rewind.once.hint":
-    "Put this round's message back in the box and drop only this round",
-  "rewind.round": "Undo last round",
-  "rewind.round.hint":
-    "Put this round's message back in the box; subagents drop only this round",
   "hooksDeny.title": "Hook interception",
   "hooksDeny.bypass": "Bypass hook deny / ask (patches 30 / 31 / 64 / 65)",
   "hooksDeny.hint":

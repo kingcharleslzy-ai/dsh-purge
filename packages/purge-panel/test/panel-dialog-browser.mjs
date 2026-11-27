@@ -1,4 +1,4 @@
-// Run CHROME_BIN=<Chrome executable> node test/rewind-browser.mjs.
+// Run CHROME_BIN=<Chrome executable> node test/panel-dialog-browser.mjs.
 // Use a disposable profile and the real panel components. No DSH is started.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
@@ -8,7 +8,7 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { buildSync } from "esbuild";
 
-const root = fs.mkdtempSync(path.join(os.tmpdir(), "rewind-menu-"));
+const root = fs.mkdtempSync(path.join(os.tmpdir(), "panel-dialog-"));
 const html = path.join(root, "index.html");
 try {
   buildSync({
@@ -18,28 +18,9 @@ try {
         import {checkPresetMenu} from "./test/preset-menu.fixture.js";
         import {createRoot} from "react-dom/client";
         import {flushSync} from "react-dom";
-        import {RewindButton, RewindFallback} from "./src/components/rewind.js";
         import {EnvironmentDialog} from "./src/components/env-gate.js";
         const slot = document.querySelector("#slot");
         const root = createRoot(slot);
-        const scroll = document.querySelector("main");
-        for (const View of [RewindButton, RewindFallback]) {
-          scroll.scrollTop = 0;
-          flushSync(() => root.render(React.createElement(View, {sessionId:"fixture"})));
-          flushSync(() => slot.querySelector("button").click());
-          for (const y of [0, 90]) {
-            scroll.scrollTop = y;
-            flushSync(() => scroll.dispatchEvent(new Event("scroll")));
-            const menu = document.querySelector("[role=menu]");
-            const anchor = slot.querySelector("button").getBoundingClientRect();
-            const box = menu.getBoundingClientRect();
-            if (menu.parentElement !== document.body || Math.abs(anchor.top-box.bottom-8)>1 ||
-                Math.abs(anchor.right-box.right)>1) throw Error("menu misplaced at scrollTop=" + y);
-          }
-          flushSync(() => document.body.dispatchEvent(new MouseEvent("mousedown",{bubbles:true})));
-          if(document.querySelector("[role=menu]")) throw Error("menu did not dismiss");
-          flushSync(() => root.render(null));
-        }
         const roster = document.createElement("ul");
         document.body.append(roster);
         function card(id, title, pressed = false, broken = false) {
@@ -127,9 +108,7 @@ try {
     { encoding: "utf8", timeout: 30000 },
   );
   assert.match(dom, /<output>passed<\/output>/);
-  console.log(
-    "PASS: both rewind menus follow the anchor through nested scrolling and dismiss outside",
-  );
+  console.log("PASS: preset menu and modal environment dialog");
 } finally {
   fs.rmSync(root, {
     recursive: true,

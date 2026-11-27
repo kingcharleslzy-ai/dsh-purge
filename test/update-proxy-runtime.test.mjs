@@ -38,6 +38,7 @@ test('real CONNECT tunnel validates TLS, scopes credentials and respects total t
   const server=https.createServer({key:fs.readFileSync(path.join(dir,'key.pem')),cert:fs.readFileSync(path.join(dir,'cert.pem'))},(req,res)=>{
     requests.push({url:req.url,headers:req.headers});
     counts.set(req.url,(counts.get(req.url)||0)+1);
+    if(req.url==='/release-metadata' && counts.get(req.url)===1){res.writeHead(502);res.end();return;}
     if(req.url==='/reset' && counts.get(req.url)===1){req.socket.destroy();return;}
     if(req.url==='/partial' && counts.get(req.url)===1){res.writeHead(200,{'content-length':'100'});res.write('discard-me');setTimeout(()=>req.socket.destroy(),10);return;}
     if(req.url==='/unauthorized'){res.writeHead(401);res.end();return;}
@@ -94,6 +95,8 @@ test('real CONNECT tunnel validates TLS, scopes credentials and respects total t
     assert(connects.every(r=>!r.headers.authorization && r.headers['proxy-authorization']==='Basic '+Buffer.from('user:fixture').toString('base64')));
     await assert.rejects(requestUpdate(`https://github.com:${server.address().port}/asset`,{env}),/网络连接失败/);
     await assert.rejects(requestUpdate(base+'/large',{env,maxBytes:2}),/过大/);
+    assert.equal((await requestUpdate(base+'/release-metadata',{env,retryMetadata:true})).body.toString(),'verified');
+    assert.equal(counts.get('/release-metadata'),2);
     for(const route of ['/reset','/partial']) {
       assert.equal((await requestUpdate(base+route,{env})).body.toString(),'verified');
       assert.equal(counts.get(route),2,'real reset/partial body retries exactly once');
@@ -124,4 +127,32 @@ test('real CONNECT tunnel validates TLS, scopes credentials and respects total t
     await assert.rejects(requestUpdate(base+'/stream',{env,timeout:100}),/超时/);
     await assert.rejects(requestUpdate(base+'/slow',{env,timeout:100}),/超时/);
   } finally {for(const socket of sockets)socket.destroy();await Promise.all([server,proxy,socks].map(s=>new Promise(resolve=>s.close(resolve))));}
+});
+
+test('both Windows exec wrappers keep the native promise contract in a disposable child', async () => {
+  const moduleURL=new URL('../lib/hide-console.js',import.meta.url).href;
+  for(const mode of ['service','sidecar']) {
+    const script=`
+      import assert from 'node:assert/strict';
+      import {promisify} from 'node:util';
+      import {installHideConsole,hideConsoleEntrySource} from ${JSON.stringify(moduleURL)};
+      const cp=process.getBuiltinModule('child_process');
+      Object.defineProperty(process,'platform',{value:'win32',configurable:true});
+      if (${JSON.stringify(mode)} === 'service') installHideConsole();
+      else await import('data:text/javascript,'+encodeURIComponent(hideConsoleEntrySource()));
+      Object.defineProperty(process,'platform',{value:${JSON.stringify(process.platform)},configurable:true});
+      const promise=promisify(cp.execFile)(process.execPath,['-e',"process.stdout.write('out');process.stderr.write('err')"]);
+      assert.ok(promise.child.pid);assert.deepEqual(await promise,{stdout:'out',stderr:'err'});
+      if(process.platform==='win32') {
+        const {readWindowsProxy}=await import(${JSON.stringify(new URL('../lib/update-system-proxy.js',import.meta.url).href)});
+        // Read the machine's normal WinINET settings without logging them or changing them.
+        const config=await readWindowsProxy({run:promisify(cp.execFile)});
+        assert.ok(config && typeof config==='object');
+      }
+      const shell=await promisify(cp.exec)('"'+process.execPath+'" -p 42');
+      assert.equal(shell.stdout.trim(),'42');assert.equal(shell.stderr,'');
+      await assert.rejects(promisify(cp.execFile)(process.execPath,['-e',"process.stderr.write('bad');process.exitCode=4"]),e=>e.code===4 && e.stderr==='bad');
+    `;
+    await exec(process.execPath,['--input-type=module','-e',script]);
+  }
 });

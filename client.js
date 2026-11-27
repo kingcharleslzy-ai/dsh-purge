@@ -48,13 +48,13 @@ var h = import_react.default.createElement;
 var { useState, useEffect, useCallback, useRef, Component } = import_react.default;
 
 // src/styles/base.css
-var base_default = '.dshpp-root {\r\n  --dshpp-display:\r\n    "Songti SC", "Noto Serif SC", "Iowan Old Style", Palatino,\r\n    "Palatino Linotype", Georgia, serif;\r\n  --dshpp-sans:\r\n    "Yu Gothic UI", "Hiragino Sans GB", "Source Han Sans SC", system-ui,\r\n    sans-serif;\r\n  --dshpp-mono: "Cascadia Mono", "Sarasa Mono SC", ui-monospace, monospace;\r\n  --dshpp-ease: cubic-bezier(0.16, 1, 0.3, 1);\r\n  max-width: 920px;\r\n  display: flex;\r\n  flex-direction: column;\r\n  gap: 18px;\r\n  padding: 16px;\r\n  border-radius: 12px;\r\n  background: var(--dshpp-bg);\r\n  color: var(--dshpp-ink);\r\n  font-family: var(--dshpp-sans);\r\n}\r\n.dshpp-root {\r\n  --dshpp-bg: transparent;\r\n  --dshpp-paper: color-mix(\r\n    in srgb,\r\n    var(--dsw-alias-bg-layer-1, #f6f4ef) 74%,\r\n    transparent\r\n  );\r\n  --dshpp-ink: var(--dsw-alias-label-primary, #1a1916);\r\n  --dshpp-mute: color-mix(\r\n    in srgb,\r\n    var(--dsw-alias-label-primary, #1a1916) 74%,\r\n    var(--dsw-alias-label-secondary, #5c564c)\r\n  );\r\n  --dshpp-line: color-mix(\r\n    in srgb,\r\n    var(--dsw-alias-border-l1, #c8c2b6) 78%,\r\n    transparent\r\n  );\r\n  --dshpp-fill: color-mix(\r\n    in srgb,\r\n    var(--dsw-alias-brand-primary, #6d8f78) 14%,\r\n    transparent\r\n  );\r\n  --dshpp-accent: var(--dsw-alias-brand-primary, #3f6b52);\r\n  --dshpp-accent-soft: color-mix(\r\n    in srgb,\r\n    var(--dsw-alias-brand-primary, #6d8f78) 18%,\r\n    transparent\r\n  );\r\n  --dshpp-ok: #1f7a45;\r\n  --dshpp-warn: #8a5a12;\r\n  --dshpp-bad: #9a3434;\r\n}\r\n.dshpp-root[data-theme="white"] {\r\n  color-scheme: light;\r\n}\r\n.dshpp-root[data-theme="dusk"] {\r\n  color-scheme: dark;\r\n  --dshpp-ok: #8fd0a8;\r\n  --dshpp-warn: #e4c48a;\r\n  --dshpp-bad: #f0b4b4;\r\n}\r\n.dshpp-toolbar {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: flex-end;\r\n  gap: 8px;\r\n}\r\n.dshpp-switch {\r\n  display: inline-flex;\r\n  border: 1px solid var(--dshpp-line);\r\n  border-radius: 999px;\r\n  overflow: hidden;\r\n  background: var(--dshpp-paper);\r\n}\r\n.dshpp-switch button {\r\n  appearance: none;\r\n  border: 0;\r\n  background: transparent;\r\n  color: var(--dshpp-mute);\r\n  font: 12px/1 var(--dshpp-sans);\r\n  padding: 6px 14px;\r\n  cursor: pointer;\r\n}\r\n.dshpp-switch button.is-on {\r\n  background: var(--dshpp-accent-soft);\r\n  color: var(--dshpp-ink);\r\n}\r\n.dshpp-switch button:focus-visible {\r\n  outline: 2px solid var(--dshpp-accent);\r\n  outline-offset: -2px;\r\n}\r\n.dshpp-panel {\r\n  border: 1px solid var(--dshpp-line);\r\n  background: var(--dshpp-paper);\r\n  border-radius: 10px;\r\n  padding: 18px 18px 16px;\r\n}\r\n.dshpp-kicker {\r\n  font-family: var(--dshpp-mono);\r\n  font-size: 11px;\r\n  letter-spacing: 0.14em;\r\n  text-transform: uppercase;\r\n  color: var(--dshpp-mute);\r\n  margin: 0 0 4px;\r\n}\r\n.dshpp-title {\r\n  font-family: var(--dshpp-display);\r\n  font-size: 20px;\r\n  font-weight: 500;\r\n  letter-spacing: 0.02em;\r\n  line-height: 1.3;\r\n  margin: 0;\r\n  color: var(--dshpp-ink);\r\n}\r\n.dshpp-head {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n  gap: 12px;\r\n  margin-bottom: 14px;\r\n  flex-wrap: wrap;\r\n}\r\n.dshpp-sub {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n  gap: 8px;\r\n  margin: 20px 0 10px;\r\n}\r\n.dshpp-sub h4 {\r\n  margin: 0;\r\n  font-family: var(--dshpp-display);\r\n  font-size: 15px;\r\n  font-weight: 500;\r\n}\r\n.dshpp-metrics {\r\n  display: grid;\r\n  grid-template-columns: repeat(3, minmax(0, 1fr));\r\n  gap: 8px;\r\n  margin-bottom: 14px;\r\n}\r\n.dshpp-metric {\r\n  border: 1px solid var(--dshpp-line);\r\n  background: var(--dshpp-bg);\r\n  padding: 12px;\r\n  min-height: 68px;\r\n  display: flex;\r\n  flex-direction: column;\r\n  gap: 4px;\r\n  border-radius: 8px;\r\n}\r\n.dshpp-metric b {\r\n  font-family: var(--dshpp-display);\r\n  font-size: 18px;\r\n  font-weight: 500;\r\n  line-height: 1.2;\r\n}\r\n.dshpp-metric span {\r\n  font-size: 11px;\r\n  color: var(--dshpp-mute);\r\n}\r\n.dshpp-bar {\r\n  height: 3px;\r\n  border-radius: 99px;\r\n  background: var(--dshpp-line);\r\n  overflow: hidden;\r\n  margin: 8px 0 14px;\r\n}\r\n.dshpp-bar > i {\r\n  display: block;\r\n  height: 100%;\r\n  background: var(--dshpp-accent);\r\n  width: 0;\r\n  transition: width 0.4s var(--dshpp-ease);\r\n}\r\n.dshpp-group {\r\n  border: 1px solid var(--dshpp-line);\r\n  margin: 0 0 8px;\r\n  background: var(--dshpp-bg);\r\n  border-radius: 8px;\r\n  overflow: hidden;\r\n}\r\n.dshpp-group-h {\r\n  width: 100%;\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 10px;\r\n  padding: 9px 12px;\r\n  border: 0;\r\n  background: transparent;\r\n  color: inherit;\r\n  cursor: pointer;\r\n  font: inherit;\r\n  text-align: left;\r\n}\r\n.dshpp-group-h:hover {\r\n  background: var(--dshpp-fill);\r\n}\r\n.dshpp-group-h:focus-visible {\r\n  outline: 2px solid var(--dshpp-accent);\r\n  outline-offset: -2px;\r\n}\r\n.dshpp-group-h strong {\r\n  font-family: var(--dshpp-display);\r\n  font-size: 14px;\r\n  font-weight: 500;\r\n}\r\n.dshpp-group-h em {\r\n  font-style: normal;\r\n  font-size: 12px;\r\n  color: var(--dshpp-mute);\r\n  flex: 1;\r\n}\r\n.dshpp-count {\r\n  font-family: var(--dshpp-mono);\r\n  font-size: 12px;\r\n  color: var(--dshpp-mute);\r\n}\r\n.dshpp-table {\r\n  width: 100%;\r\n  border-collapse: collapse;\r\n  font-size: 12.5px;\r\n}\r\n.dshpp-table th {\r\n  text-align: left;\r\n  font-weight: 500;\r\n  font-size: 11px;\r\n  letter-spacing: 0.06em;\r\n  color: var(--dshpp-mute);\r\n  padding: 7px 12px;\r\n  border-bottom: 1px solid var(--dshpp-line);\r\n}\r\n.dshpp-table td {\r\n  padding: 8px 12px;\r\n  border-bottom: 1px solid var(--dshpp-line);\r\n  vertical-align: middle;\r\n}\r\n.dshpp-table tr:last-child td {\r\n  border-bottom: 0;\r\n}\r\n.dshpp-table tr.is-on td {\r\n  background: var(--dshpp-accent-soft);\r\n}\r\n.dshpp-id {\r\n  font-family: var(--dshpp-mono);\r\n  opacity: 0.75;\r\n  width: 42px;\r\n}\r\n.dshpp-actions {\r\n  text-align: right;\r\n  white-space: nowrap;\r\n}\r\n.dshpp-row {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 8px;\r\n  flex-wrap: wrap;\r\n}\r\n.dshpp-row + .dshpp-row {\r\n  margin-top: 10px;\r\n}\r\n.dshpp-pill {\r\n  display: inline-flex;\r\n  align-items: center;\r\n  gap: 6px;\r\n  font-family: var(--dshpp-mono);\r\n  font-size: 11px;\r\n  padding: 2px 8px;\r\n  border: 1px solid var(--dshpp-line);\r\n  border-radius: 99px;\r\n  line-height: 1.6;\r\n  background: var(--dshpp-bg);\r\n}\r\n.dshpp-pill::before {\r\n  content: "";\r\n  width: 6px;\r\n  height: 6px;\r\n  border-radius: 50%;\r\n  background: currentColor;\r\n}\r\n.dshpp-pill.is-ok {\r\n  color: var(--dshpp-ok);\r\n  border-color: color-mix(in srgb, var(--dshpp-ok) 30%, var(--dshpp-line));\r\n}\r\n.dshpp-pill.is-wait {\r\n  color: var(--dshpp-warn);\r\n  border-color: color-mix(in srgb, var(--dshpp-warn) 30%, var(--dshpp-line));\r\n}\r\n.dshpp-pill.is-miss {\r\n  color: var(--dshpp-mute);\r\n}\r\n.dshpp-pill.is-bad {\r\n  color: var(--dshpp-bad);\r\n}\r\n.dshpp-btn {\r\n  appearance: none;\r\n  font-family: var(--dshpp-sans);\r\n  font-size: 13px;\r\n  font-weight: 500;\r\n  min-height: 34px;\r\n  padding: 0 14px;\r\n  border-radius: 8px;\r\n  border: 1px solid transparent;\r\n  cursor: pointer;\r\n  transition:\r\n    background 0.15s var(--dshpp-ease),\r\n    opacity 0.15s var(--dshpp-ease);\r\n}\r\n.dshpp-btn:disabled {\r\n  opacity: 0.45;\r\n  cursor: not-allowed;\r\n}\r\n.dshpp-btn:focus-visible {\r\n  outline: 2px solid var(--dshpp-accent);\r\n  outline-offset: 2px;\r\n}\r\n.dshpp-btn-primary {\r\n  background: var(--dshpp-accent-soft);\r\n  color: var(--dshpp-ink);\r\n  border-color: color-mix(in srgb, var(--dshpp-accent) 35%, var(--dshpp-line));\r\n}\r\n.dshpp-btn-primary:hover:not(:disabled) {\r\n  background: color-mix(in srgb, var(--dshpp-accent) 22%, var(--dshpp-bg));\r\n}\r\n.dshpp-btn-ghost {\r\n  background: transparent;\r\n  color: var(--dshpp-ink);\r\n  border-color: var(--dshpp-line);\r\n}\r\n.dshpp-btn-danger {\r\n  background: transparent;\r\n  color: var(--dshpp-bad);\r\n  border-color: color-mix(in srgb, var(--dshpp-bad) 40%, var(--dshpp-line));\r\n}\r\n.dshpp-btn-solid-danger {\r\n  background: color-mix(in srgb, var(--dshpp-bad) 16%, var(--dshpp-bg));\r\n  color: var(--dshpp-bad);\r\n  border-color: color-mix(in srgb, var(--dshpp-bad) 30%, var(--dshpp-line));\r\n}\r\n.dshpp-btn-tiny {\r\n  min-height: 28px;\r\n  padding: 0 10px;\r\n  font-size: 12px;\r\n}\r\n.dshpp-field,\r\n.dshpp-area {\r\n  width: 100%;\r\n  box-sizing: border-box;\r\n  font: 13px/1.55 var(--dshpp-mono);\r\n  padding: 8px 10px;\r\n  background: var(--dshpp-bg);\r\n  color: var(--dshpp-ink);\r\n  border: 1px solid var(--dshpp-line);\r\n  border-radius: 8px;\r\n}\r\n.dshpp-field {\r\n  width: auto;\r\n  min-width: 140px;\r\n}\r\n.dshpp-cr-row {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 10px;\r\n  flex-wrap: wrap;\r\n  margin: 8px 0 0;\r\n  font-size: 13px;\r\n}\r\n.dshpp-cr-row label {\r\n  display: inline-flex;\r\n  align-items: center;\r\n  gap: 6px;\r\n  color: var(--dshpp-ink);\r\n}\r\n.dshpp-cr-num {\r\n  width: 64px;\r\n  min-width: 64px;\r\n  height: 28px;\r\n  padding: 0 8px;\r\n}\r\n.dshpp-cr-text {\r\n  width: 120px;\r\n  min-width: 88px;\r\n  height: 28px;\r\n  padding: 0 8px;\r\n}\r\n.dshpp-ver {\r\n  width: 100%;\r\n  min-width: 0;\r\n  max-width: none;\r\n  height: 32px;\r\n  padding: 0 10px;\r\n  font-size: 12px;\r\n}\r\n.dshpp-rel {\r\n  margin: 0 0 14px;\r\n}\r\n.dshpp-now {\r\n  display: flex;\r\n  align-items: baseline;\r\n  gap: 8px;\r\n  flex-wrap: wrap;\r\n  margin: 0 0 4px;\r\n}\r\n.dshpp-now-label {\r\n  font-family: var(--dshpp-mono);\r\n  font-size: 11px;\r\n  letter-spacing: 0.12em;\r\n  text-transform: uppercase;\r\n  color: var(--dshpp-mute);\r\n}\r\n.dshpp-now-ver {\r\n  font-family: var(--dshpp-display);\r\n  font-size: 20px;\r\n  font-weight: 500;\r\n  letter-spacing: 0.01em;\r\n}\r\n.dshpp-now-mark {\r\n  display: inline-flex;\r\n  align-items: center;\r\n  margin-left: 6px;\r\n  padding: 1px 7px;\r\n  border-radius: 99px;\r\n  font-family: var(--dshpp-mono);\r\n  font-size: 11px;\r\n  font-style: normal;\r\n  font-weight: 500;\r\n  line-height: 1.5;\r\n  color: var(--dshpp-ok);\r\n  border: 1px solid color-mix(in srgb, var(--dshpp-ok) 38%, var(--dshpp-line));\r\n  background: color-mix(in srgb, var(--dshpp-ok) 14%, var(--dshpp-bg));\r\n}\r\n.dshpp-editions {\r\n  display: flex;\r\n  flex-direction: column;\r\n  margin: 10px 0 0;\r\n  border-top: 1px solid var(--dshpp-line);\r\n}\r\n.dshpp-edition {\r\n  display: grid;\r\n  grid-template-columns: auto minmax(0, 1fr) auto;\r\n  align-items: center;\r\n  gap: 10px;\r\n  padding: 10px 0;\r\n  border-bottom: 1px solid var(--dshpp-line);\r\n}\r\n.dshpp-edition-name {\r\n  display: inline-flex;\r\n  align-items: center;\r\n  gap: 0;\r\n  font-family: var(--dshpp-display);\r\n  font-size: 15px;\r\n  font-weight: 500;\r\n  white-space: nowrap;\r\n}\r\n.dshpp-edition.is-on .dshpp-edition-name {\r\n  color: var(--dshpp-ink);\r\n}\r\n.dshpp-edition:not(.is-on) .dshpp-edition-name {\r\n  color: var(--dshpp-mute);\r\n}\r\n.dshpp-edition .dshpp-btn {\r\n  min-width: 118px;\r\n}\r\n.dshpp-rel .dshpp-notice {\r\n  display: block;\r\n  margin-top: 8px;\r\n  min-height: 16px;\r\n}\r\n@media (max-width: 560px) {\r\n  .dshpp-edition {\r\n    grid-template-columns: 1fr auto;\r\n    grid-template-areas: "name btn" "sel sel";\r\n  }\r\n  .dshpp-edition-name {\r\n    grid-area: name;\r\n  }\r\n  .dshpp-edition .dshpp-ver {\r\n    grid-area: sel;\r\n  }\r\n  .dshpp-edition .dshpp-btn {\r\n    grid-area: btn;\r\n  }\r\n}\r\n.dshpp-area {\r\n  min-height: 220px;\r\n  resize: vertical;\r\n}\r\n.dshpp-field:focus,\r\n.dshpp-area:focus {\r\n  outline: none;\r\n  border-color: var(--dshpp-accent);\r\n  box-shadow: 0 0 0 3px var(--dshpp-accent-soft);\r\n}\r\n.dshpp-field:disabled,\r\n.dshpp-area:disabled {\r\n  opacity: 0.5;\r\n}\r\n.dshpp-ask {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 8px;\r\n  flex-wrap: wrap;\r\n  margin-top: 10px;\r\n  padding: 10px 12px;\r\n  border: 1px solid var(--dshpp-line);\r\n  border-radius: 8px;\r\n  background: var(--dshpp-bg);\r\n  font-size: 13px;\r\n}\r\n.dshpp-modal-bg {\r\n  position: fixed;\r\n  inset: 0;\r\n  z-index: 80;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  padding: 20px;\r\n  background: color-mix(in srgb, var(--dshpp-ink) 28%, transparent);\r\n}\r\n.dshpp-modal {\r\n  width: min(420px, 100%);\r\n  background: var(--dshpp-paper);\r\n  color: var(--dshpp-ink);\r\n  border: 1px solid var(--dshpp-line);\r\n  border-radius: 12px;\r\n  padding: 20px 20px 16px;\r\n  box-shadow: 0 16px 40px color-mix(in srgb, var(--dshpp-ink) 18%, transparent);\r\n}\r\n.dshpp-modal h4 {\r\n  margin: 0 0 8px;\r\n  font-family: var(--dshpp-display);\r\n  font-size: 18px;\r\n  font-weight: 500;\r\n}\r\n.dshpp-modal p {\r\n  margin: 0 0 16px;\r\n  font-size: 13.5px;\r\n  line-height: 1.55;\r\n}\r\n.dshpp-modal-ops {\r\n  display: flex;\r\n  justify-content: flex-end;\r\n  gap: 8px;\r\n}\r\n.dshpp-restart-mask {\r\n  position: fixed;\r\n  inset: 0;\r\n  z-index: 12000;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  padding: 24px;\r\n  background: rgba(0, 0, 0, 0.62);\r\n  font-family:\r\n    "Yu Gothic UI", "Hiragino Sans GB", "Source Han Sans SC",\r\n    "Microsoft YaHei UI", system-ui, sans-serif;\r\n}\r\n.dshpp-restart-card {\r\n  width: min(420px, 100%);\r\n  box-sizing: border-box;\r\n  padding: 22px 22px 18px;\r\n  border-radius: 14px;\r\n  background: var(--dsw-alias-bg-layer-1, #fffcf7);\r\n  color: var(--dsw-alias-label-primary, #16140f);\r\n  border: 1px solid var(--dsw-alias-border-l1, #c9c3b6);\r\n  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);\r\n}\r\n.dshpp-restart-card h4 {\r\n  margin: 0 0 10px;\r\n  font-family: inherit;\r\n  font-size: 20px;\r\n  font-weight: 650;\r\n  line-height: 1.35;\r\n  color: inherit;\r\n}\r\n.dshpp-restart-card p {\r\n  margin: 0 0 18px;\r\n  font-size: 16px;\r\n  font-weight: 500;\r\n  line-height: 1.65;\r\n  color: inherit;\r\n}\r\n.dshpp-restart-card .dshpp-modal-ops {\r\n  display: flex;\r\n  justify-content: flex-end;\r\n  gap: 10px;\r\n}\r\n.dshpp-restart-card .dshpp-btn {\r\n  min-height: 38px;\r\n  padding: 0 16px;\r\n  font-size: 15px;\r\n  font-weight: 650;\r\n  color: var(--dsw-alias-label-primary, #16140f);\r\n  background: var(--dsw-alias-bg-layer-2, #fff);\r\n  border: 1px solid var(--dsw-alias-border-l1, #c9c3b6);\r\n}\r\n.dshpp-restart-card .dshpp-btn-primary,\r\n.dshpp-restart-card .dshpp-btn-primary:hover:not(:disabled) {\r\n  color: #fff;\r\n  background: #2f6b4f;\r\n  border-color: #2f6b4f;\r\n}\r\nbody[data-ds-dark-theme] .dshpp-restart-card,\r\n.dshpp-restart-mask[data-theme="dusk"] .dshpp-restart-card {\r\n  background: #1c1e24;\r\n  color: #f4f1ea;\r\n  border-color: #5a5e68;\r\n}\r\nbody[data-ds-dark-theme] .dshpp-restart-card .dshpp-btn,\r\n.dshpp-restart-mask[data-theme="dusk"] .dshpp-restart-card .dshpp-btn {\r\n  color: #f4f1ea;\r\n  background: #2a2d34;\r\n  border-color: #5a5e68;\r\n}\r\nbody[data-ds-dark-theme] .dshpp-restart-card .dshpp-btn-primary,\r\nbody[data-ds-dark-theme]\r\n  .dshpp-restart-card\r\n  .dshpp-btn-primary:hover:not(:disabled),\r\n.dshpp-restart-mask[data-theme="dusk"] .dshpp-restart-card .dshpp-btn-primary,\r\n.dshpp-restart-mask[data-theme="dusk"]\r\n  .dshpp-restart-card\r\n  .dshpp-btn-primary:hover:not(:disabled) {\r\n  color: #fff;\r\n  background: #3d8f68;\r\n  border-color: #3d8f68;\r\n}\r\n.dshpp-notice {\r\n  font-size: 12.5px;\r\n  line-height: 1.4;\r\n}\r\n.dshpp-notice.is-ok {\r\n  color: var(--dshpp-ok);\r\n}\r\n.dshpp-notice.is-bad {\r\n  color: var(--dshpp-bad);\r\n  white-space: pre-wrap;\r\n  overflow-wrap: anywhere;\r\n}\r\n.dshpp-skel {\r\n  height: 12px;\r\n  border-radius: 6px;\r\n  background: linear-gradient(\r\n    90deg,\r\n    var(--dshpp-fill),\r\n    var(--dshpp-line),\r\n    var(--dshpp-fill)\r\n  );\r\n  background-size: 200% 100%;\r\n  animation: dshpp-pulse 1.2s ease-in-out infinite;\r\n}\r\n.dshpp-active {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 10px;\r\n  flex-wrap: wrap;\r\n  padding: 10px 12px;\r\n  margin-bottom: 12px;\r\n  border: 1px solid var(--dshpp-line);\r\n  background: var(--dshpp-bg);\r\n  border-radius: 8px;\r\n}\r\n.dshpp-active b {\r\n  font-family: var(--dshpp-display);\r\n  font-weight: 500;\r\n}\r\n.dshpp-empty {\r\n  padding: 28px 12px;\r\n  font-size: 13px;\r\n  color: var(--dshpp-mute);\r\n  text-align: center;\r\n}\r\n.dshpp-split {\r\n  display: flex;\r\n  flex-direction: column;\r\n  gap: 12px;\r\n}\r\n.dshpp-rulelist {\r\n  display: flex;\r\n  flex-direction: column;\r\n  border: 1px solid var(--dshpp-line);\r\n  border-radius: 8px;\r\n  background: var(--dshpp-bg);\r\n  overflow: hidden;\r\n}\r\n.dshpp-rulebody {\r\n  max-height: 240px;\r\n  overflow: auto;\r\n}\r\n.dshpp-ruleitem {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 12px;\r\n  width: 100%;\r\n  padding: 10px 12px;\r\n  border: 0;\r\n  border-bottom: 1px solid var(--dshpp-line);\r\n  background: transparent;\r\n  color: inherit;\r\n  font: inherit;\r\n  text-align: left;\r\n  cursor: pointer;\r\n}\r\n.dshpp-ruleitem:hover {\r\n  background: var(--dshpp-fill);\r\n}\r\n.dshpp-ruleitem.is-edit {\r\n  background: var(--dshpp-accent-soft);\r\n}\r\n.dshpp-rule-main {\r\n  flex: 1;\r\n  min-width: 0;\r\n}\r\n.dshpp-rule-name {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 8px;\r\n  font-family: var(--dshpp-display);\r\n  font-size: 14px;\r\n  line-height: 1.35;\r\n}\r\n.dshpp-rule-meta {\r\n  display: block;\r\n  margin-top: 3px;\r\n  font-family: var(--dshpp-mono);\r\n  font-size: 11px;\r\n  color: var(--dshpp-mute);\r\n}\r\n.dshpp-rule-ops {\r\n  display: flex;\r\n  flex-direction: row;\r\n  align-items: center;\r\n  gap: 6px;\r\n  flex-shrink: 0;\r\n}\r\n.dshpp-create {\r\n  display: flex;\r\n  flex-direction: column;\r\n  gap: 6px;\r\n  padding: 10px 12px;\r\n  border-top: 1px solid var(--dshpp-line);\r\n  background: var(--dshpp-paper);\r\n}\r\n.dshpp-create-row {\r\n  display: flex;\r\n  gap: 6px;\r\n  align-items: center;\r\n}\r\n.dshpp-create .dshpp-field {\r\n  flex: 1;\r\n  min-width: 0;\r\n  width: auto;\r\n}\r\n.dshpp-editor {\r\n  display: flex;\r\n  flex-direction: column;\r\n  gap: 10px;\r\n  min-width: 0;\r\n  border: 1px solid var(--dshpp-line);\r\n  border-radius: 8px;\r\n  background: var(--dshpp-bg);\r\n  padding: 12px;\r\n  min-height: 320px;\r\n}\r\n.dshpp-editor .dshpp-area {\r\n  flex: 1;\r\n  min-height: 240px;\r\n}\r\n.dshpp-editor-empty {\r\n  flex: 1;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  color: var(--dshpp-mute);\r\n  font-size: 13px;\r\n  min-height: 160px;\r\n}\r\n.dshpp-block {\r\n  padding: 14px 0;\r\n  border-top: 1px solid var(--dshpp-line);\r\n}\r\n.dshpp-block-head {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 10px;\r\n  margin: 0 0 8px;\r\n}\r\n.dshpp-block-head h4 {\r\n  margin: 0;\r\n  font-family: var(--dshpp-display);\r\n  font-size: 14px;\r\n  font-weight: 500;\r\n  flex: 1;\r\n  color: var(--dshpp-ink);\r\n}\r\n.dshpp-block-hint {\r\n  margin: 8px 0 0;\r\n  font-size: 12px;\r\n  line-height: 1.55;\r\n  color: var(--dshpp-mute);\r\n}\r\n.dshpp-policy-row {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 10px;\r\n}\r\n.dshpp-policy-row > label {\r\n  font-size: 12px;\r\n  color: var(--dshpp-mute);\r\n  flex: 0 0 auto;\r\n}\r\n.dshpp-cwd-path {\r\n  margin: 0 0 8px;\r\n  font-family: var(--dshpp-mono);\r\n  font-size: 11px;\r\n  color: var(--dshpp-mute);\r\n  word-break: break-all;\r\n  line-height: 1.5;\r\n}\r\n.dshpp-cwd-list {\r\n  display: flex;\r\n  flex-direction: column;\r\n  border: 1px solid var(--dshpp-line);\r\n  border-radius: 8px;\r\n  background: var(--dshpp-bg);\r\n  overflow: hidden;\r\n}\r\n.dshpp-cwd-item {\r\n  display: flex;\r\n  align-items: flex-start;\r\n  gap: 10px;\r\n  padding: 10px 12px;\r\n  border-bottom: 1px solid var(--dshpp-line);\r\n  cursor: pointer;\r\n  margin: 0;\r\n}\r\n.dshpp-cwd-item:last-child {\r\n  border-bottom: 0;\r\n}\r\n.dshpp-cwd-item:hover {\r\n  background: var(--dshpp-fill);\r\n}\r\n.dshpp-cwd-item.is-on {\r\n  background: var(--dshpp-accent-soft);\r\n}\r\n.dshpp-cwd-item input {\r\n  margin: 3px 0 0;\r\n  flex: 0 0 auto;\r\n}\r\n.dshpp-cwd-main {\r\n  flex: 1;\r\n  min-width: 0;\r\n}\r\n.dshpp-cwd-name {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 8px;\r\n  flex-wrap: wrap;\r\n  font-family: var(--dshpp-display);\r\n  font-size: 13.5px;\r\n  line-height: 1.35;\r\n  color: var(--dshpp-ink);\r\n}\r\n.dshpp-cwd-badge {\r\n  font-family: var(--dshpp-mono);\r\n  font-size: 10px;\r\n  letter-spacing: 0.04em;\r\n  text-transform: uppercase;\r\n  padding: 1px 7px;\r\n  border-radius: 99px;\r\n  border: 1px solid var(--dshpp-line);\r\n  color: var(--dshpp-mute);\r\n  line-height: 1.6;\r\n}\r\n.dshpp-cwd-size {\r\n  font-family: var(--dshpp-mono);\r\n  font-size: 11px;\r\n  color: var(--dshpp-mute);\r\n}\r\n.dshpp-cwd-sub {\r\n  margin-top: 3px;\r\n  font-family: var(--dshpp-mono);\r\n  font-size: 11px;\r\n  color: var(--dshpp-mute);\r\n  word-break: break-all;\r\n}\r\n.dshpp-cwd-prev {\r\n  margin-top: 4px;\r\n  font-size: 11px;\r\n  line-height: 1.5;\r\n  color: var(--dshpp-mute);\r\n  max-height: 34px;\r\n  overflow: hidden;\r\n}\r\n@keyframes dshpp-pulse {\r\n  0% {\r\n    background-position: 200% 0;\r\n  }\r\n  100% {\r\n    background-position: -200% 0;\r\n  }\r\n}\r\n@media (max-width: 640px) {\r\n  .dshpp-metrics {\r\n    grid-template-columns: 1fr;\r\n  }\r\n  .dshpp-ruleitem {\r\n    flex-wrap: wrap;\r\n  }\r\n  .dshpp-rule-ops {\r\n    width: 100%;\r\n    justify-content: flex-end;\r\n  }\r\n}\r\n@media (prefers-reduced-motion: reduce) {\r\n  .dshpp-btn,\r\n  .dshpp-bar > i {\r\n    transition: none;\r\n  }\r\n  .dshpp-skel {\r\n    animation: none;\r\n  }\r\n}\r\nbody:not([data-ds-dark-theme]) .dshpp-auth-modal {\r\n  background: color-mix(\r\n    in srgb,\r\n    var(--dsw-alias-bg-layer-1, #fffcf7) 92%,\r\n    transparent\r\n  );\r\n  color: var(--dsw-alias-label-primary, #1a1916);\r\n  border-color: color-mix(\r\n    in srgb,\r\n    var(--dsw-alias-border-l1, #c9c3b6) 80%,\r\n    transparent\r\n  );\r\n  backdrop-filter: blur(18px) saturate(1.3);\r\n  -webkit-backdrop-filter: blur(18px) saturate(1.3);\r\n}\r\nbody:not([data-ds-dark-theme]) .dshpp-auth-legal {\r\n  background: color-mix(\r\n    in srgb,\r\n    var(--dsw-alias-bg-layer-2, #f3f0e8) 90%,\r\n    transparent\r\n  );\r\n  color: var(--dsw-alias-label-primary, #1a1916);\r\n  border-color: color-mix(\r\n    in srgb,\r\n    var(--dsw-alias-border-l1, #c9c3b6) 80%,\r\n    transparent\r\n  );\r\n}\r\nbody:not([data-ds-dark-theme]) .dshpp-auth-warn {\r\n  background: color-mix(in srgb, #f5e6c8 88%, transparent);\r\n  color: #6b4a10;\r\n}\r\nbody:not([data-ds-dark-theme]) .dshpp-auth-ops button {\r\n  border-color: var(--dsw-alias-border-l1, #c9c3b6);\r\n  color: var(--dsw-alias-label-primary, #1a1916);\r\n  background: color-mix(\r\n    in srgb,\r\n    var(--dsw-alias-bg-layer-1, #fff) 88%,\r\n    transparent\r\n  );\r\n}\r\nbody:not([data-ds-dark-theme]) .dshpp-auth-ops button.primary {\r\n  background: var(--dsw-alias-brand-primary, #3f6b52);\r\n  border-color: var(--dsw-alias-brand-primary, #3f6b52);\r\n  color: #fff;\r\n}\r\n.dshpp-env-dialog {\r\n  position: fixed;\r\n  inset: 0;\r\n  width: min(480px, calc(100% - 32px));\r\n  max-height: calc(100% - 32px);\r\n  margin: auto;\r\n  border: 0;\r\n  padding: 0;\r\n  border-radius: 12px;\r\n  background: transparent;\r\n}\r\n.dshpp-env-dialog::backdrop {\r\n  background: rgba(0, 0, 0, 0.55);\r\n}\r\n.dshpp-env-dialog .dshpp-auth-modal {\r\n  box-sizing: border-box;\r\n  width: 100%;\r\n  overflow: auto;\r\n}\r\n.dshpp-auth-mask {\r\n  position: fixed;\r\n  inset: 0;\r\n  z-index: 10100;\r\n  background: rgba(0, 0, 0, 0.62);\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  padding: 20px;\r\n  pointer-events: auto;\r\n}\r\n.dshpp-auth-modal {\r\n  width: min(680px, 100%);\r\n  max-height: min(88vh, 820px);\r\n  display: flex;\r\n  flex-direction: column;\r\n  gap: 10px;\r\n  padding: 16px;\r\n  border: 1px solid var(--dsw-alias-border-l1, #333);\r\n  border-radius: 12px;\r\n  background: var(--dsw-alias-bg-layer-1, #1a1a1a);\r\n  color: var(--dsw-alias-label-primary, #eee);\r\n}\r\n.dshpp-auth-modal h2 {\r\n  margin: 0;\r\n  font-size: 16px;\r\n  font-weight: 600;\r\n}\r\n.dshpp-auth-warn {\r\n  padding: 8px 10px;\r\n  border-radius: 8px;\r\n  background: #3a2e18;\r\n  color: #f0d48a;\r\n  font-size: 13px;\r\n}\r\n.dshpp-auth-legal {\r\n  overflow: auto;\r\n  height: 300px;\r\n  margin: 0;\r\n  padding: 10px 12px;\r\n  border: 1px solid var(--dsw-alias-border-l1, #333);\r\n  border-radius: 8px;\r\n  background: #121212;\r\n  font-size: 13px;\r\n  line-height: 1.55;\r\n}\r\n.dshpp-auth-legal h3 {\r\n  margin: 14px 0 4px;\r\n  font-size: 13px;\r\n}\r\n.dshpp-auth-legal h3:first-child {\r\n  margin-top: 0;\r\n}\r\n.dshpp-auth-legal p {\r\n  margin: 0 0 8px;\r\n}\r\n.dshpp-auth-checks {\r\n  display: flex;\r\n  flex-direction: column;\r\n  gap: 8px;\r\n  font-size: 13px;\r\n}\r\n.dshpp-auth-checks label {\r\n  display: flex;\r\n  gap: 8px;\r\n  align-items: flex-start;\r\n}\r\n.dshpp-auth-checks label.locked {\r\n  opacity: 0.45;\r\n}\r\n.dshpp-auth-ops {\r\n  display: flex;\r\n  justify-content: flex-end;\r\n  gap: 8px;\r\n}\r\n.dshpp-auth-ops button {\r\n  appearance: none;\r\n  border: 1px solid var(--dsw-alias-border-l1, #444);\r\n  background: transparent;\r\n  color: inherit;\r\n  border-radius: 8px;\r\n  padding: 6px 12px;\r\n  cursor: pointer;\r\n  font: inherit;\r\n}\r\n.dshpp-auth-ops button.primary {\r\n  background: #2a4033;\r\n  border-color: #8fbf9a;\r\n}\r\n.dshpp-auth-ops button:disabled {\r\n  opacity: 0.45;\r\n  cursor: default;\r\n}\r\n.dshpp-icon-btn {\r\n  appearance: none;\r\n  display: inline-flex;\r\n  align-items: center;\r\n  gap: 6px;\r\n  height: 32px;\r\n  padding: 0 10px;\r\n  border: 1px solid\r\n    color-mix(in srgb, var(--dsw-alias-brand-primary, #6dbf8c) 45%, transparent);\r\n  border-radius: 8px;\r\n  background: transparent;\r\n  color: var(--dsw-alias-label-secondary, currentColor);\r\n  cursor: pointer;\r\n  font: 13px/1 inherit;\r\n  white-space: nowrap;\r\n  flex: 0 0 auto;\r\n}\r\n.dshpp-icon-btn:hover {\r\n  border-color: var(--dsw-alias-brand-primary, #6dbf8c);\r\n  background: color-mix(\r\n    in srgb,\r\n    var(--dsw-alias-brand-primary, #6dbf8c) 12%,\r\n    transparent\r\n  );\r\n  color: var(--dsw-alias-label-primary, currentColor);\r\n}\r\n.dshpp-icon-btn.on {\r\n  border-color: var(--dsw-alias-brand-primary, #6dbf8c);\r\n  color: var(--dsw-alias-brand-primary, #6dbf8c);\r\n  background: color-mix(\r\n    in srgb,\r\n    var(--dsw-alias-brand-primary, #6dbf8c) 16%,\r\n    transparent\r\n  );\r\n  box-shadow: 0 0 0 1px\r\n    color-mix(in srgb, var(--dsw-alias-brand-primary, #6dbf8c) 28%, transparent);\r\n}\r\n.dshpp-hbtn {\r\n  appearance: none;\r\n  display: inline-flex;\r\n  flex: 0 0 auto;\r\n  align-items: center;\r\n  gap: 6px;\r\n  border: 1px solid\r\n    color-mix(in srgb, var(--dsw-alias-brand-primary, #6dbf8c) 55%, transparent);\r\n  background: transparent;\r\n  color: var(--dsw-alias-label-secondary, currentColor);\r\n  cursor: pointer;\r\n  font: 12px/1 inherit;\r\n  padding: 5px 10px;\r\n  border-radius: 8px;\r\n  white-space: nowrap;\r\n}\r\n.dshpp-hbtn:hover {\r\n  border-color: var(--dsw-alias-brand-primary, #6dbf8c);\r\n  background: color-mix(\r\n    in srgb,\r\n    var(--dsw-alias-brand-primary, #6dbf8c) 12%,\r\n    transparent\r\n  );\r\n  color: var(--dsw-alias-label-primary, currentColor);\r\n}\r\n.dshpp-hbtn.on {\r\n  border-color: var(--dsw-alias-brand-primary, #6dbf8c);\r\n  color: var(--dsw-alias-brand-primary, #6dbf8c);\r\n  background: color-mix(\r\n    in srgb,\r\n    var(--dsw-alias-brand-primary, #6dbf8c) 18%,\r\n    transparent\r\n  );\r\n  box-shadow: 0 0 0 1px\r\n    color-mix(in srgb, var(--dsw-alias-brand-primary, #6dbf8c) 32%, transparent);\r\n}\r\n.dshpp-live-dot {\r\n  width: 7px;\r\n  height: 7px;\r\n  border-radius: 50%;\r\n  flex: none;\r\n  background: var(--dsw-alias-brand-primary, #6dbf8c);\r\n  box-shadow: 0 0 0 3px\r\n    color-mix(in srgb, var(--dsw-alias-brand-primary, #6dbf8c) 28%, transparent);\r\n}\r\n/* \u73BB\u7483\u8DDF\u968F\u5BBF\u4E3B\u989C\u8272\u3002\u5B57\u91CD\u548C\u5E95\u7684\u4E0D\u900F\u660E\u5EA6\u5206\u5F00\uFF1A\u58F3\u900F\uFF0C\u5B57\u5750\u5728\u66F4\u5B9E\u7684\u4E00\u5C42\u4E0A\u3002 */\r\n\r\n/* Keep the historical IDs addressable by sessions. Collapse a healthy alias\r\n   in Settings only while a usable canonical child is in the same roster. */\r\nul:has(\r\n    > li[data-agent-preset-id^="unrestricted-child-"]\r\n      > button[aria-disabled="false"]\r\n      [title$=" \xB7 \u5B50\u4EFB\u52A1"]\r\n  )\r\n  > li[data-agent-preset-id^="unrestricted-child-"]:has(\r\n    > button[aria-disabled="false"][aria-pressed="false"]\r\n      [title*=" \xB7 \u5B50\u4EFB\u52A1\uFF08\u5386\u53F2\u517C\u5BB9 \xB7 "][title$="\uFF09"]\r\n  ) {\r\n  display: none;\r\n}\r\n\r\nbutton[data-purge-collapsed-alias] {\r\n  display: none !important;\r\n}\r\n';
+var base_default = '.dshpp-root {\n  --dshpp-display:\n    "Songti SC", "Noto Serif SC", "Iowan Old Style", Palatino,\n    "Palatino Linotype", Georgia, serif;\n  --dshpp-sans:\n    "Yu Gothic UI", "Hiragino Sans GB", "Source Han Sans SC", system-ui,\n    sans-serif;\n  --dshpp-mono: "Cascadia Mono", "Sarasa Mono SC", ui-monospace, monospace;\n  --dshpp-ease: cubic-bezier(0.16, 1, 0.3, 1);\n  max-width: 920px;\n  display: flex;\n  flex-direction: column;\n  gap: 18px;\n  padding: 16px;\n  border-radius: 12px;\n  background: var(--dshpp-bg);\n  color: var(--dshpp-ink);\n  font-family: var(--dshpp-sans);\n}\n.dshpp-root {\n  --dshpp-bg: transparent;\n  --dshpp-paper: color-mix(\n    in srgb,\n    var(--dsw-alias-bg-layer-1, #f6f4ef) 74%,\n    transparent\n  );\n  --dshpp-ink: var(--dsw-alias-label-primary, #1a1916);\n  --dshpp-mute: color-mix(\n    in srgb,\n    var(--dsw-alias-label-primary, #1a1916) 74%,\n    var(--dsw-alias-label-secondary, #5c564c)\n  );\n  --dshpp-line: color-mix(\n    in srgb,\n    var(--dsw-alias-border-l1, #c8c2b6) 78%,\n    transparent\n  );\n  --dshpp-fill: color-mix(\n    in srgb,\n    var(--dsw-alias-brand-primary, #6d8f78) 14%,\n    transparent\n  );\n  --dshpp-accent: var(--dsw-alias-brand-primary, #3f6b52);\n  --dshpp-accent-soft: color-mix(\n    in srgb,\n    var(--dsw-alias-brand-primary, #6d8f78) 18%,\n    transparent\n  );\n  --dshpp-ok: #1f7a45;\n  --dshpp-warn: #8a5a12;\n  --dshpp-bad: #9a3434;\n}\n.dshpp-root[data-theme="white"] {\n  color-scheme: light;\n}\n.dshpp-root[data-theme="dusk"] {\n  color-scheme: dark;\n  --dshpp-ok: #8fd0a8;\n  --dshpp-warn: #e4c48a;\n  --dshpp-bad: #f0b4b4;\n}\n.dshpp-toolbar {\n  display: flex;\n  align-items: center;\n  justify-content: flex-end;\n  gap: 8px;\n}\n.dshpp-switch {\n  display: inline-flex;\n  border: 1px solid var(--dshpp-line);\n  border-radius: 999px;\n  overflow: hidden;\n  background: var(--dshpp-paper);\n}\n.dshpp-switch button {\n  appearance: none;\n  border: 0;\n  background: transparent;\n  color: var(--dshpp-mute);\n  font: 12px/1 var(--dshpp-sans);\n  padding: 6px 14px;\n  cursor: pointer;\n}\n.dshpp-switch button.is-on {\n  background: var(--dshpp-accent-soft);\n  color: var(--dshpp-ink);\n}\n.dshpp-switch button:focus-visible {\n  outline: 2px solid var(--dshpp-accent);\n  outline-offset: -2px;\n}\n.dshpp-panel {\n  border: 1px solid var(--dshpp-line);\n  background: var(--dshpp-paper);\n  border-radius: 10px;\n  padding: 18px 18px 16px;\n}\n.dshpp-kicker {\n  font-family: var(--dshpp-mono);\n  font-size: 11px;\n  letter-spacing: 0.14em;\n  text-transform: uppercase;\n  color: var(--dshpp-mute);\n  margin: 0 0 4px;\n}\n.dshpp-title {\n  font-family: var(--dshpp-display);\n  font-size: 20px;\n  font-weight: 500;\n  letter-spacing: 0.02em;\n  line-height: 1.3;\n  margin: 0;\n  color: var(--dshpp-ink);\n}\n.dshpp-head {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 12px;\n  margin-bottom: 14px;\n  flex-wrap: wrap;\n}\n.dshpp-sub {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 8px;\n  margin: 20px 0 10px;\n}\n.dshpp-sub h4 {\n  margin: 0;\n  font-family: var(--dshpp-display);\n  font-size: 15px;\n  font-weight: 500;\n}\n.dshpp-metrics {\n  display: grid;\n  grid-template-columns: repeat(3, minmax(0, 1fr));\n  gap: 8px;\n  margin-bottom: 14px;\n}\n.dshpp-metric {\n  border: 1px solid var(--dshpp-line);\n  background: var(--dshpp-bg);\n  padding: 12px;\n  min-height: 68px;\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  border-radius: 8px;\n}\n.dshpp-metric b {\n  font-family: var(--dshpp-display);\n  font-size: 18px;\n  font-weight: 500;\n  line-height: 1.2;\n}\n.dshpp-metric span {\n  font-size: 11px;\n  color: var(--dshpp-mute);\n}\n.dshpp-bar {\n  height: 3px;\n  border-radius: 99px;\n  background: var(--dshpp-line);\n  overflow: hidden;\n  margin: 8px 0 14px;\n}\n.dshpp-bar > i {\n  display: block;\n  height: 100%;\n  background: var(--dshpp-accent);\n  width: 0;\n  transition: width 0.4s var(--dshpp-ease);\n}\n.dshpp-group {\n  border: 1px solid var(--dshpp-line);\n  margin: 0 0 8px;\n  background: var(--dshpp-bg);\n  border-radius: 8px;\n  overflow: hidden;\n}\n.dshpp-group-h {\n  width: 100%;\n  display: flex;\n  align-items: center;\n  gap: 10px;\n  padding: 9px 12px;\n  border: 0;\n  background: transparent;\n  color: inherit;\n  cursor: pointer;\n  font: inherit;\n  text-align: left;\n}\n.dshpp-group-h:hover {\n  background: var(--dshpp-fill);\n}\n.dshpp-group-h:focus-visible {\n  outline: 2px solid var(--dshpp-accent);\n  outline-offset: -2px;\n}\n.dshpp-group-h strong {\n  font-family: var(--dshpp-display);\n  font-size: 14px;\n  font-weight: 500;\n}\n.dshpp-group-h em {\n  font-style: normal;\n  font-size: 12px;\n  color: var(--dshpp-mute);\n  flex: 1;\n}\n.dshpp-count {\n  font-family: var(--dshpp-mono);\n  font-size: 12px;\n  color: var(--dshpp-mute);\n}\n.dshpp-table {\n  width: 100%;\n  border-collapse: collapse;\n  font-size: 12.5px;\n}\n.dshpp-table th {\n  text-align: left;\n  font-weight: 500;\n  font-size: 11px;\n  letter-spacing: 0.06em;\n  color: var(--dshpp-mute);\n  padding: 7px 12px;\n  border-bottom: 1px solid var(--dshpp-line);\n}\n.dshpp-table td {\n  padding: 8px 12px;\n  border-bottom: 1px solid var(--dshpp-line);\n  vertical-align: middle;\n}\n.dshpp-table tr:last-child td {\n  border-bottom: 0;\n}\n.dshpp-table tr.is-on td {\n  background: var(--dshpp-accent-soft);\n}\n.dshpp-id {\n  font-family: var(--dshpp-mono);\n  opacity: 0.75;\n  width: 42px;\n}\n.dshpp-actions {\n  text-align: right;\n  white-space: nowrap;\n}\n.dshpp-row {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-wrap: wrap;\n}\n.dshpp-row + .dshpp-row {\n  margin-top: 10px;\n}\n.dshpp-pill {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  font-family: var(--dshpp-mono);\n  font-size: 11px;\n  padding: 2px 8px;\n  border: 1px solid var(--dshpp-line);\n  border-radius: 99px;\n  line-height: 1.6;\n  background: var(--dshpp-bg);\n}\n.dshpp-pill::before {\n  content: "";\n  width: 6px;\n  height: 6px;\n  border-radius: 50%;\n  background: currentColor;\n}\n.dshpp-pill.is-ok {\n  color: var(--dshpp-ok);\n  border-color: color-mix(in srgb, var(--dshpp-ok) 30%, var(--dshpp-line));\n}\n.dshpp-pill.is-wait {\n  color: var(--dshpp-warn);\n  border-color: color-mix(in srgb, var(--dshpp-warn) 30%, var(--dshpp-line));\n}\n.dshpp-pill.is-miss {\n  color: var(--dshpp-mute);\n}\n.dshpp-pill.is-bad {\n  color: var(--dshpp-bad);\n}\n.dshpp-btn {\n  appearance: none;\n  font-family: var(--dshpp-sans);\n  font-size: 13px;\n  font-weight: 500;\n  min-height: 34px;\n  padding: 0 14px;\n  border-radius: 8px;\n  border: 1px solid transparent;\n  cursor: pointer;\n  transition:\n    background 0.15s var(--dshpp-ease),\n    opacity 0.15s var(--dshpp-ease);\n}\n.dshpp-btn:disabled {\n  opacity: 0.45;\n  cursor: not-allowed;\n}\n.dshpp-btn:focus-visible {\n  outline: 2px solid var(--dshpp-accent);\n  outline-offset: 2px;\n}\n.dshpp-btn-primary {\n  background: var(--dshpp-accent-soft);\n  color: var(--dshpp-ink);\n  border-color: color-mix(in srgb, var(--dshpp-accent) 35%, var(--dshpp-line));\n}\n.dshpp-btn-primary:hover:not(:disabled) {\n  background: color-mix(in srgb, var(--dshpp-accent) 22%, var(--dshpp-bg));\n}\n.dshpp-btn-ghost {\n  background: transparent;\n  color: var(--dshpp-ink);\n  border-color: var(--dshpp-line);\n}\n.dshpp-btn-danger {\n  background: transparent;\n  color: var(--dshpp-bad);\n  border-color: color-mix(in srgb, var(--dshpp-bad) 40%, var(--dshpp-line));\n}\n.dshpp-btn-solid-danger {\n  background: color-mix(in srgb, var(--dshpp-bad) 16%, var(--dshpp-bg));\n  color: var(--dshpp-bad);\n  border-color: color-mix(in srgb, var(--dshpp-bad) 30%, var(--dshpp-line));\n}\n.dshpp-btn-tiny {\n  min-height: 28px;\n  padding: 0 10px;\n  font-size: 12px;\n}\n.dshpp-field,\n.dshpp-area {\n  width: 100%;\n  box-sizing: border-box;\n  font: 13px/1.55 var(--dshpp-mono);\n  padding: 8px 10px;\n  background: var(--dshpp-bg);\n  color: var(--dshpp-ink);\n  border: 1px solid var(--dshpp-line);\n  border-radius: 8px;\n}\n.dshpp-field {\n  width: auto;\n  min-width: 140px;\n}\n.dshpp-cr-row {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n  flex-wrap: wrap;\n  margin: 8px 0 0;\n  font-size: 13px;\n}\n.dshpp-cr-row label {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  color: var(--dshpp-ink);\n}\n.dshpp-cr-num {\n  width: 64px;\n  min-width: 64px;\n  height: 28px;\n  padding: 0 8px;\n}\n.dshpp-cr-text {\n  width: 120px;\n  min-width: 88px;\n  height: 28px;\n  padding: 0 8px;\n}\n.dshpp-ver {\n  width: 100%;\n  min-width: 0;\n  max-width: none;\n  height: 32px;\n  padding: 0 10px;\n  font-size: 12px;\n}\n.dshpp-rel {\n  margin: 0 0 14px;\n}\n.dshpp-now {\n  display: flex;\n  align-items: baseline;\n  gap: 8px;\n  flex-wrap: wrap;\n  margin: 0 0 4px;\n}\n.dshpp-now-label {\n  font-family: var(--dshpp-mono);\n  font-size: 11px;\n  letter-spacing: 0.12em;\n  text-transform: uppercase;\n  color: var(--dshpp-mute);\n}\n.dshpp-now-ver {\n  font-family: var(--dshpp-display);\n  font-size: 20px;\n  font-weight: 500;\n  letter-spacing: 0.01em;\n}\n.dshpp-now-mark {\n  display: inline-flex;\n  align-items: center;\n  margin-left: 6px;\n  padding: 1px 7px;\n  border-radius: 99px;\n  font-family: var(--dshpp-mono);\n  font-size: 11px;\n  font-style: normal;\n  font-weight: 500;\n  line-height: 1.5;\n  color: var(--dshpp-ok);\n  border: 1px solid color-mix(in srgb, var(--dshpp-ok) 38%, var(--dshpp-line));\n  background: color-mix(in srgb, var(--dshpp-ok) 14%, var(--dshpp-bg));\n}\n.dshpp-editions {\n  display: flex;\n  flex-direction: column;\n  margin: 10px 0 0;\n  border-top: 1px solid var(--dshpp-line);\n}\n.dshpp-edition {\n  display: grid;\n  grid-template-columns: auto minmax(0, 1fr) auto;\n  align-items: center;\n  gap: 10px;\n  padding: 10px 0;\n  border-bottom: 1px solid var(--dshpp-line);\n}\n.dshpp-edition-name {\n  display: inline-flex;\n  align-items: center;\n  gap: 0;\n  font-family: var(--dshpp-display);\n  font-size: 15px;\n  font-weight: 500;\n  white-space: nowrap;\n}\n.dshpp-edition.is-on .dshpp-edition-name {\n  color: var(--dshpp-ink);\n}\n.dshpp-edition:not(.is-on) .dshpp-edition-name {\n  color: var(--dshpp-mute);\n}\n.dshpp-edition .dshpp-btn {\n  min-width: 118px;\n}\n.dshpp-rel .dshpp-notice {\n  display: block;\n  margin-top: 8px;\n  min-height: 16px;\n}\n@media (max-width: 560px) {\n  .dshpp-edition {\n    grid-template-columns: 1fr auto;\n    grid-template-areas: "name btn" "sel sel";\n  }\n  .dshpp-edition-name {\n    grid-area: name;\n  }\n  .dshpp-edition .dshpp-ver {\n    grid-area: sel;\n  }\n  .dshpp-edition .dshpp-btn {\n    grid-area: btn;\n  }\n}\n.dshpp-area {\n  min-height: 220px;\n  resize: vertical;\n}\n.dshpp-field:focus,\n.dshpp-area:focus {\n  outline: none;\n  border-color: var(--dshpp-accent);\n  box-shadow: 0 0 0 3px var(--dshpp-accent-soft);\n}\n.dshpp-field:disabled,\n.dshpp-area:disabled {\n  opacity: 0.5;\n}\n.dshpp-ask {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-wrap: wrap;\n  margin-top: 10px;\n  padding: 10px 12px;\n  border: 1px solid var(--dshpp-line);\n  border-radius: 8px;\n  background: var(--dshpp-bg);\n  font-size: 13px;\n}\n.dshpp-modal-bg {\n  position: fixed;\n  inset: 0;\n  z-index: 80;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 20px;\n  background: color-mix(in srgb, var(--dshpp-ink) 28%, transparent);\n}\n.dshpp-modal {\n  width: min(420px, 100%);\n  background: var(--dshpp-paper);\n  color: var(--dshpp-ink);\n  border: 1px solid var(--dshpp-line);\n  border-radius: 12px;\n  padding: 20px 20px 16px;\n  box-shadow: 0 16px 40px color-mix(in srgb, var(--dshpp-ink) 18%, transparent);\n}\n.dshpp-modal h4 {\n  margin: 0 0 8px;\n  font-family: var(--dshpp-display);\n  font-size: 18px;\n  font-weight: 500;\n}\n.dshpp-modal p {\n  margin: 0 0 16px;\n  font-size: 13.5px;\n  line-height: 1.55;\n}\n.dshpp-modal-ops {\n  display: flex;\n  justify-content: flex-end;\n  gap: 8px;\n}\n.dshpp-restart-mask {\n  position: fixed;\n  inset: 0;\n  z-index: 12000;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 24px;\n  background: rgba(0, 0, 0, 0.62);\n  font-family:\n    "Yu Gothic UI", "Hiragino Sans GB", "Source Han Sans SC",\n    "Microsoft YaHei UI", system-ui, sans-serif;\n}\n.dshpp-restart-card {\n  width: min(420px, 100%);\n  box-sizing: border-box;\n  padding: 22px 22px 18px;\n  border-radius: 14px;\n  background: var(--dsw-alias-bg-layer-1, #fffcf7);\n  color: var(--dsw-alias-label-primary, #16140f);\n  border: 1px solid var(--dsw-alias-border-l1, #c9c3b6);\n  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);\n}\n.dshpp-restart-card h4 {\n  margin: 0 0 10px;\n  font-family: inherit;\n  font-size: 20px;\n  font-weight: 650;\n  line-height: 1.35;\n  color: inherit;\n}\n.dshpp-restart-card p {\n  margin: 0 0 18px;\n  font-size: 16px;\n  font-weight: 500;\n  line-height: 1.65;\n  color: inherit;\n}\n.dshpp-restart-card .dshpp-modal-ops {\n  display: flex;\n  justify-content: flex-end;\n  gap: 10px;\n}\n.dshpp-restart-card .dshpp-btn {\n  min-height: 38px;\n  padding: 0 16px;\n  font-size: 15px;\n  font-weight: 650;\n  color: var(--dsw-alias-label-primary, #16140f);\n  background: var(--dsw-alias-bg-layer-2, #fff);\n  border: 1px solid var(--dsw-alias-border-l1, #c9c3b6);\n}\n.dshpp-restart-card .dshpp-btn-primary,\n.dshpp-restart-card .dshpp-btn-primary:hover:not(:disabled) {\n  color: #fff;\n  background: #2f6b4f;\n  border-color: #2f6b4f;\n}\nbody[data-ds-dark-theme] .dshpp-restart-card,\n.dshpp-restart-mask[data-theme="dusk"] .dshpp-restart-card {\n  background: #1c1e24;\n  color: #f4f1ea;\n  border-color: #5a5e68;\n}\nbody[data-ds-dark-theme] .dshpp-restart-card .dshpp-btn,\n.dshpp-restart-mask[data-theme="dusk"] .dshpp-restart-card .dshpp-btn {\n  color: #f4f1ea;\n  background: #2a2d34;\n  border-color: #5a5e68;\n}\nbody[data-ds-dark-theme] .dshpp-restart-card .dshpp-btn-primary,\nbody[data-ds-dark-theme]\n  .dshpp-restart-card\n  .dshpp-btn-primary:hover:not(:disabled),\n.dshpp-restart-mask[data-theme="dusk"] .dshpp-restart-card .dshpp-btn-primary,\n.dshpp-restart-mask[data-theme="dusk"]\n  .dshpp-restart-card\n  .dshpp-btn-primary:hover:not(:disabled) {\n  color: #fff;\n  background: #3d8f68;\n  border-color: #3d8f68;\n}\n.dshpp-notice {\n  font-size: 12.5px;\n  line-height: 1.4;\n}\n.dshpp-notice.is-ok {\n  color: var(--dshpp-ok);\n}\n.dshpp-notice.is-bad {\n  color: var(--dshpp-bad);\n  white-space: pre-wrap;\n  overflow-wrap: anywhere;\n}\n.dshpp-skel {\n  height: 12px;\n  border-radius: 6px;\n  background: linear-gradient(\n    90deg,\n    var(--dshpp-fill),\n    var(--dshpp-line),\n    var(--dshpp-fill)\n  );\n  background-size: 200% 100%;\n  animation: dshpp-pulse 1.2s ease-in-out infinite;\n}\n.dshpp-active {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n  flex-wrap: wrap;\n  padding: 10px 12px;\n  margin-bottom: 12px;\n  border: 1px solid var(--dshpp-line);\n  background: var(--dshpp-bg);\n  border-radius: 8px;\n}\n.dshpp-active b {\n  font-family: var(--dshpp-display);\n  font-weight: 500;\n}\n.dshpp-empty {\n  padding: 28px 12px;\n  font-size: 13px;\n  color: var(--dshpp-mute);\n  text-align: center;\n}\n.dshpp-split {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n}\n.dshpp-rulelist {\n  display: flex;\n  flex-direction: column;\n  border: 1px solid var(--dshpp-line);\n  border-radius: 8px;\n  background: var(--dshpp-bg);\n  overflow: hidden;\n}\n.dshpp-rulebody {\n  max-height: 240px;\n  overflow: auto;\n}\n.dshpp-ruleitem {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  width: 100%;\n  padding: 10px 12px;\n  border: 0;\n  border-bottom: 1px solid var(--dshpp-line);\n  background: transparent;\n  color: inherit;\n  font: inherit;\n  text-align: left;\n  cursor: pointer;\n}\n.dshpp-ruleitem:hover {\n  background: var(--dshpp-fill);\n}\n.dshpp-ruleitem.is-edit {\n  background: var(--dshpp-accent-soft);\n}\n.dshpp-rule-main {\n  flex: 1;\n  min-width: 0;\n}\n.dshpp-rule-name {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  font-family: var(--dshpp-display);\n  font-size: 14px;\n  line-height: 1.35;\n}\n.dshpp-rule-meta {\n  display: block;\n  margin-top: 3px;\n  font-family: var(--dshpp-mono);\n  font-size: 11px;\n  color: var(--dshpp-mute);\n}\n.dshpp-rule-ops {\n  display: flex;\n  flex-direction: row;\n  align-items: center;\n  gap: 6px;\n  flex-shrink: 0;\n}\n.dshpp-create {\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  padding: 10px 12px;\n  border-top: 1px solid var(--dshpp-line);\n  background: var(--dshpp-paper);\n}\n.dshpp-create-row {\n  display: flex;\n  gap: 6px;\n  align-items: center;\n}\n.dshpp-create .dshpp-field {\n  flex: 1;\n  min-width: 0;\n  width: auto;\n}\n.dshpp-editor {\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n  min-width: 0;\n  border: 1px solid var(--dshpp-line);\n  border-radius: 8px;\n  background: var(--dshpp-bg);\n  padding: 12px;\n  min-height: 320px;\n}\n.dshpp-editor .dshpp-area {\n  flex: 1;\n  min-height: 240px;\n}\n.dshpp-editor-empty {\n  flex: 1;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  color: var(--dshpp-mute);\n  font-size: 13px;\n  min-height: 160px;\n}\n.dshpp-block {\n  padding: 14px 0;\n  border-top: 1px solid var(--dshpp-line);\n}\n.dshpp-block-head {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n  margin: 0 0 8px;\n}\n.dshpp-block-head h4 {\n  margin: 0;\n  font-family: var(--dshpp-display);\n  font-size: 14px;\n  font-weight: 500;\n  flex: 1;\n  color: var(--dshpp-ink);\n}\n.dshpp-block-hint {\n  margin: 8px 0 0;\n  font-size: 12px;\n  line-height: 1.55;\n  color: var(--dshpp-mute);\n}\n.dshpp-policy-row {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n}\n.dshpp-policy-row > label {\n  font-size: 12px;\n  color: var(--dshpp-mute);\n  flex: 0 0 auto;\n}\n.dshpp-cwd-path {\n  margin: 0 0 8px;\n  font-family: var(--dshpp-mono);\n  font-size: 11px;\n  color: var(--dshpp-mute);\n  word-break: break-all;\n  line-height: 1.5;\n}\n.dshpp-cwd-list {\n  display: flex;\n  flex-direction: column;\n  border: 1px solid var(--dshpp-line);\n  border-radius: 8px;\n  background: var(--dshpp-bg);\n  overflow: hidden;\n}\n.dshpp-cwd-item {\n  display: flex;\n  align-items: flex-start;\n  gap: 10px;\n  padding: 10px 12px;\n  border-bottom: 1px solid var(--dshpp-line);\n  cursor: pointer;\n  margin: 0;\n}\n.dshpp-cwd-item:last-child {\n  border-bottom: 0;\n}\n.dshpp-cwd-item:hover {\n  background: var(--dshpp-fill);\n}\n.dshpp-cwd-item.is-on {\n  background: var(--dshpp-accent-soft);\n}\n.dshpp-cwd-item input {\n  margin: 3px 0 0;\n  flex: 0 0 auto;\n}\n.dshpp-cwd-main {\n  flex: 1;\n  min-width: 0;\n}\n.dshpp-cwd-name {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-wrap: wrap;\n  font-family: var(--dshpp-display);\n  font-size: 13.5px;\n  line-height: 1.35;\n  color: var(--dshpp-ink);\n}\n.dshpp-cwd-badge {\n  font-family: var(--dshpp-mono);\n  font-size: 10px;\n  letter-spacing: 0.04em;\n  text-transform: uppercase;\n  padding: 1px 7px;\n  border-radius: 99px;\n  border: 1px solid var(--dshpp-line);\n  color: var(--dshpp-mute);\n  line-height: 1.6;\n}\n.dshpp-cwd-size {\n  font-family: var(--dshpp-mono);\n  font-size: 11px;\n  color: var(--dshpp-mute);\n}\n.dshpp-cwd-sub {\n  margin-top: 3px;\n  font-family: var(--dshpp-mono);\n  font-size: 11px;\n  color: var(--dshpp-mute);\n  word-break: break-all;\n}\n.dshpp-cwd-prev {\n  margin-top: 4px;\n  font-size: 11px;\n  line-height: 1.5;\n  color: var(--dshpp-mute);\n  max-height: 34px;\n  overflow: hidden;\n}\n@keyframes dshpp-pulse {\n  0% {\n    background-position: 200% 0;\n  }\n  100% {\n    background-position: -200% 0;\n  }\n}\n@media (max-width: 640px) {\n  .dshpp-metrics {\n    grid-template-columns: 1fr;\n  }\n  .dshpp-ruleitem {\n    flex-wrap: wrap;\n  }\n  .dshpp-rule-ops {\n    width: 100%;\n    justify-content: flex-end;\n  }\n}\n@media (prefers-reduced-motion: reduce) {\n  .dshpp-btn,\n  .dshpp-bar > i {\n    transition: none;\n  }\n  .dshpp-skel {\n    animation: none;\n  }\n}\nbody:not([data-ds-dark-theme]) .dshpp-auth-modal {\n  background: color-mix(\n    in srgb,\n    var(--dsw-alias-bg-layer-1, #fffcf7) 92%,\n    transparent\n  );\n  color: var(--dsw-alias-label-primary, #1a1916);\n  border-color: color-mix(\n    in srgb,\n    var(--dsw-alias-border-l1, #c9c3b6) 80%,\n    transparent\n  );\n  backdrop-filter: blur(18px) saturate(1.3);\n  -webkit-backdrop-filter: blur(18px) saturate(1.3);\n}\nbody:not([data-ds-dark-theme]) .dshpp-auth-legal {\n  background: color-mix(\n    in srgb,\n    var(--dsw-alias-bg-layer-2, #f3f0e8) 90%,\n    transparent\n  );\n  color: var(--dsw-alias-label-primary, #1a1916);\n  border-color: color-mix(\n    in srgb,\n    var(--dsw-alias-border-l1, #c9c3b6) 80%,\n    transparent\n  );\n}\nbody:not([data-ds-dark-theme]) .dshpp-auth-warn {\n  background: color-mix(in srgb, #f5e6c8 88%, transparent);\n  color: #6b4a10;\n}\nbody:not([data-ds-dark-theme]) .dshpp-auth-ops button {\n  border-color: var(--dsw-alias-border-l1, #c9c3b6);\n  color: var(--dsw-alias-label-primary, #1a1916);\n  background: color-mix(\n    in srgb,\n    var(--dsw-alias-bg-layer-1, #fff) 88%,\n    transparent\n  );\n}\nbody:not([data-ds-dark-theme]) .dshpp-auth-ops button.primary {\n  background: var(--dsw-alias-brand-primary, #3f6b52);\n  border-color: var(--dsw-alias-brand-primary, #3f6b52);\n  color: #fff;\n}\n.dshpp-env-dialog {\n  position: fixed;\n  inset: 0;\n  width: min(480px, calc(100% - 32px));\n  max-height: calc(100% - 32px);\n  margin: auto;\n  border: 0;\n  padding: 0;\n  border-radius: 12px;\n  background: transparent;\n}\n.dshpp-env-dialog::backdrop {\n  background: rgba(0, 0, 0, 0.55);\n}\n.dshpp-env-dialog .dshpp-auth-modal {\n  box-sizing: border-box;\n  width: 100%;\n  overflow: auto;\n}\n.dshpp-auth-mask {\n  position: fixed;\n  inset: 0;\n  z-index: 10100;\n  background: rgba(0, 0, 0, 0.62);\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 20px;\n  pointer-events: auto;\n}\n.dshpp-auth-modal {\n  width: min(680px, 100%);\n  max-height: min(88vh, 820px);\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n  padding: 16px;\n  border: 1px solid var(--dsw-alias-border-l1, #333);\n  border-radius: 12px;\n  background: var(--dsw-alias-bg-layer-1, #1a1a1a);\n  color: var(--dsw-alias-label-primary, #eee);\n}\n.dshpp-auth-modal h2 {\n  margin: 0;\n  font-size: 16px;\n  font-weight: 600;\n}\n.dshpp-auth-warn {\n  padding: 8px 10px;\n  border-radius: 8px;\n  background: #3a2e18;\n  color: #f0d48a;\n  font-size: 13px;\n}\n.dshpp-auth-legal {\n  overflow: auto;\n  height: 300px;\n  margin: 0;\n  padding: 10px 12px;\n  border: 1px solid var(--dsw-alias-border-l1, #333);\n  border-radius: 8px;\n  background: #121212;\n  font-size: 13px;\n  line-height: 1.55;\n}\n.dshpp-auth-legal h3 {\n  margin: 14px 0 4px;\n  font-size: 13px;\n}\n.dshpp-auth-legal h3:first-child {\n  margin-top: 0;\n}\n.dshpp-auth-legal p {\n  margin: 0 0 8px;\n}\n.dshpp-auth-checks {\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n  font-size: 13px;\n}\n.dshpp-auth-checks label {\n  display: flex;\n  gap: 8px;\n  align-items: flex-start;\n}\n.dshpp-auth-checks label.locked {\n  opacity: 0.45;\n}\n.dshpp-auth-ops {\n  display: flex;\n  justify-content: flex-end;\n  gap: 8px;\n}\n.dshpp-auth-ops button {\n  appearance: none;\n  border: 1px solid var(--dsw-alias-border-l1, #444);\n  background: transparent;\n  color: inherit;\n  border-radius: 8px;\n  padding: 6px 12px;\n  cursor: pointer;\n  font: inherit;\n}\n.dshpp-auth-ops button.primary {\n  background: #2a4033;\n  border-color: #8fbf9a;\n}\n.dshpp-auth-ops button:disabled {\n  opacity: 0.45;\n  cursor: default;\n}\n.dshpp-icon-btn {\n  appearance: none;\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  height: 32px;\n  padding: 0 10px;\n  border: 1px solid\n    color-mix(in srgb, var(--dsw-alias-brand-primary, #6dbf8c) 45%, transparent);\n  border-radius: 8px;\n  background: transparent;\n  color: var(--dsw-alias-label-secondary, currentColor);\n  cursor: pointer;\n  font: 13px/1 inherit;\n  white-space: nowrap;\n  flex: 0 0 auto;\n}\n.dshpp-icon-btn:hover {\n  border-color: var(--dsw-alias-brand-primary, #6dbf8c);\n  background: color-mix(\n    in srgb,\n    var(--dsw-alias-brand-primary, #6dbf8c) 12%,\n    transparent\n  );\n  color: var(--dsw-alias-label-primary, currentColor);\n}\n.dshpp-icon-btn.on {\n  border-color: var(--dsw-alias-brand-primary, #6dbf8c);\n  color: var(--dsw-alias-brand-primary, #6dbf8c);\n  background: color-mix(\n    in srgb,\n    var(--dsw-alias-brand-primary, #6dbf8c) 16%,\n    transparent\n  );\n  box-shadow: 0 0 0 1px\n    color-mix(in srgb, var(--dsw-alias-brand-primary, #6dbf8c) 28%, transparent);\n}\n.dshpp-hbtn {\n  appearance: none;\n  display: inline-flex;\n  flex: 0 0 auto;\n  align-items: center;\n  gap: 6px;\n  border: 1px solid\n    color-mix(in srgb, var(--dsw-alias-brand-primary, #6dbf8c) 55%, transparent);\n  background: transparent;\n  color: var(--dsw-alias-label-secondary, currentColor);\n  cursor: pointer;\n  font: 12px/1 inherit;\n  padding: 5px 10px;\n  border-radius: 8px;\n  white-space: nowrap;\n}\n.dshpp-hbtn:hover {\n  border-color: var(--dsw-alias-brand-primary, #6dbf8c);\n  background: color-mix(\n    in srgb,\n    var(--dsw-alias-brand-primary, #6dbf8c) 12%,\n    transparent\n  );\n  color: var(--dsw-alias-label-primary, currentColor);\n}\n.dshpp-hbtn.on {\n  border-color: var(--dsw-alias-brand-primary, #6dbf8c);\n  color: var(--dsw-alias-brand-primary, #6dbf8c);\n  background: color-mix(\n    in srgb,\n    var(--dsw-alias-brand-primary, #6dbf8c) 18%,\n    transparent\n  );\n  box-shadow: 0 0 0 1px\n    color-mix(in srgb, var(--dsw-alias-brand-primary, #6dbf8c) 32%, transparent);\n}\n.dshpp-live-dot {\n  width: 7px;\n  height: 7px;\n  border-radius: 50%;\n  flex: none;\n  background: var(--dsw-alias-brand-primary, #6dbf8c);\n  box-shadow: 0 0 0 3px\n    color-mix(in srgb, var(--dsw-alias-brand-primary, #6dbf8c) 28%, transparent);\n}\n/* \u73BB\u7483\u8DDF\u968F\u5BBF\u4E3B\u989C\u8272\u3002\u5B57\u91CD\u548C\u5E95\u7684\u4E0D\u900F\u660E\u5EA6\u5206\u5F00\uFF1A\u58F3\u900F\uFF0C\u5B57\u5750\u5728\u66F4\u5B9E\u7684\u4E00\u5C42\u4E0A\u3002 */\n\n/* Keep the historical IDs addressable by sessions. Collapse a healthy alias\n   in Settings only while a usable canonical child is in the same roster. */\nul:has(\n    > li[data-agent-preset-id^="unrestricted-child-"]\n      > button[aria-disabled="false"]\n      [title$=" \xB7 \u5B50\u4EFB\u52A1"]\n  )\n  > li[data-agent-preset-id^="unrestricted-child-"]:has(\n    > button[aria-disabled="false"][aria-pressed="false"]\n      [title*=" \xB7 \u5B50\u4EFB\u52A1\uFF08\u5386\u53F2\u517C\u5BB9 \xB7 "][title$="\uFF09"]\n  ) {\n  display: none;\n}\n\nbutton[data-purge-collapsed-alias] {\n  display: none !important;\n}\n';
 
 // src/styles/native.css
-var native_default = '.dshpp-native.dshpp-root {\r\n  --dshpp-display: inherit;\r\n  --dshpp-sans: inherit;\r\n  --dshpp-paper: var(--dsw-alias-bg-base, transparent);\r\n  --dshpp-bg: transparent;\r\n  --dshpp-line: var(--dsw-alias-border-l1, #ddd);\r\n  --dshpp-ink: var(--dsw-alias-label-primary, #171717);\r\n  --dshpp-mute: var(--dsw-alias-label-secondary, #777);\r\n  --dshpp-accent: var(--dsw-alias-brand-primary, #4775ed);\r\n  --dshpp-fill: var(--dsw-alias-interactive-bg-hover, #f3f3f3);\r\n  container: purge-settings / inline-size;\r\n  font: inherit;\r\n  font-size: var(--dsh-content-font-size, 14px);\r\n  width: 100%;\r\n  height: 100%;\r\n  min-height: 0;\r\n  max-width: none;\r\n  padding: 0;\r\n  gap: 0;\r\n  border-radius: 0;\r\n  overflow: hidden;\r\n  box-sizing: border-box;\r\n}\r\n.dshpp-native * {\r\n  box-sizing: border-box;\r\n}\r\n.dshpp-native [hidden] {\r\n  display: none !important;\r\n}\r\n.dshpp-native-head {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n  padding: 20px 20px 12px;\r\n  gap: 12px;\r\n  flex: none;\r\n}\r\n.dshpp-native-head h2 {\r\n  font: inherit;\r\n  font-size: 1.3em;\r\n  font-weight: 600;\r\n  margin: 0;\r\n}\r\n.dshpp-native-head p {\r\n  margin: 4px 0 0;\r\n  font-size: 0.85em;\r\n  color: var(--dshpp-mute);\r\n}\r\n.dshpp-native-badge {\r\n  font-size: 0.8em;\r\n  color: var(--dshpp-mute);\r\n}\r\n.dshpp-native-nav {\r\n  display: flex;\r\n  gap: 4px;\r\n  padding: 0 16px;\r\n  border-bottom: 1px solid var(--dshpp-line);\r\n  flex: none;\r\n  overflow-x: auto;\r\n}\r\n.dshpp-native-nav button {\r\n  font: inherit;\r\n  font-size: 0.92em;\r\n  border: 0;\r\n  border-bottom: 2px solid transparent;\r\n  background: none;\r\n  color: var(--dshpp-mute);\r\n  padding: 10px 8px;\r\n  white-space: nowrap;\r\n  cursor: pointer;\r\n}\r\n.dshpp-native-nav button[aria-pressed="true"] {\r\n  color: var(--dshpp-ink);\r\n  border-bottom-color: var(--dshpp-accent);\r\n}\r\n.dshpp-native-content {\r\n  min-height: 0;\r\n  flex: 1;\r\n  overflow: auto;\r\n  padding: 16px 20px;\r\n  scrollbar-gutter: stable;\r\n  overscroll-behavior: contain;\r\n}\r\n.dshpp-native .dshpp-panel {\r\n  border: 0;\r\n  border-radius: 0;\r\n  padding: 0;\r\n  background: transparent;\r\n  min-width: 0;\r\n}\r\n.dshpp-native\r\n  :is(\r\n    h3,\r\n    h4,\r\n    .dshpp-title,\r\n    .dshpp-group-h strong,\r\n    .dshpp-metric b,\r\n    .dshpp-now-ver,\r\n    .dshpp-edition-name\r\n  ) {\r\n  font-family: inherit;\r\n  font-size: 1em;\r\n  letter-spacing: normal;\r\n  font-weight: 550;\r\n}\r\n.dshpp-native .dshpp-metric b {\r\n  font-size: 1.12em;\r\n}\r\n.dshpp-native .dshpp-head {\r\n  margin-bottom: 12px;\r\n}\r\n.dshpp-native .dshpp-sub {\r\n  margin-top: 0;\r\n  flex-wrap: wrap;\r\n}\r\n.dshpp-native :is(button, input, select, textarea) {\r\n  font-family: inherit;\r\n  box-shadow: none;\r\n  background-image: none;\r\n  max-width: 100%;\r\n}\r\n.dshpp-native .dshpp-btn {\r\n  font-size: 0.9em;\r\n  min-height: 32px;\r\n  border-radius: 7px;\r\n  padding: 6px 10px;\r\n  transform: none;\r\n  box-shadow: none;\r\n}\r\n.dshpp-native .dshpp-btn:hover:not(:disabled) {\r\n  background: var(--dshpp-fill);\r\n  box-shadow: none;\r\n  transform: none;\r\n}\r\n.dshpp-native .dshpp-btn-primary {\r\n  background: var(--dsw-alias-label-primary, #171717);\r\n  color: var(--dsw-alias-bg-base, #fff);\r\n  border-color: transparent;\r\n}\r\n.dshpp-native .dshpp-btn-primary:hover:not(:disabled) {\r\n  opacity: 0.85;\r\n  background: var(--dsw-alias-label-primary, #171717);\r\n}\r\n.dshpp-native :is(button, input, select, textarea):focus-visible {\r\n  outline: 2px solid var(--dshpp-accent);\r\n  outline-offset: 2px;\r\n  box-shadow: none;\r\n}\r\n.dshpp-native .dshpp-area {\r\n  font-family: inherit;\r\n  font-size: 0.92em;\r\n  line-height: 1.6;\r\n  min-height: 260px;\r\n  width: 100%;\r\n  border-radius: 8px;\r\n  background: transparent;\r\n  color: inherit;\r\n}\r\n.dshpp-native .dshpp-field {\r\n  font-size: 0.92em;\r\n  background: transparent;\r\n  color: inherit;\r\n}\r\n.dshpp-native .dshpp-metrics {\r\n  grid-template-columns: repeat(2, minmax(0, 1fr));\r\n  gap: 8px;\r\n}\r\n.dshpp-native .dshpp-metric:nth-child(2) {\r\n  display: none;\r\n}\r\n.dshpp-native .dshpp-metric {\r\n  min-height: 60px;\r\n  padding: 12px;\r\n  background: var(--dshpp-fill);\r\n  border: 0;\r\n}\r\n.dshpp-native .dshpp-metric span {\r\n  font-size: 0.85em;\r\n}\r\n.dshpp-native .dshpp-editions {\r\n  margin: 10px 0;\r\n  border: 0;\r\n}\r\n.dshpp-native summary {\r\n  cursor: pointer;\r\n  color: var(--dshpp-mute);\r\n  padding: 8px 0;\r\n  font-size: 0.9em;\r\n}\r\n.dshpp-native .dshpp-edition {\r\n  grid-template-columns: 1fr auto;\r\n  gap: 8px;\r\n}\r\n.dshpp-native .dshpp-edition-name {\r\n  grid-column: 1/-1;\r\n}\r\n.dshpp-native .dshpp-edition .dshpp-btn {\r\n  min-width: 0;\r\n}\r\n.dshpp-native .dshpp-table {\r\n  table-layout: fixed;\r\n  font-size: 0.83em;\r\n}\r\n.dshpp-native .dshpp-table td {\r\n  word-break: break-word;\r\n  padding: 8px;\r\n}\r\n.dshpp-native .dshpp-table th {\r\n  padding: 8px;\r\n}\r\n.dshpp-native .dshpp-group-h {\r\n  flex-wrap: wrap;\r\n  gap: 6px;\r\n}\r\n.dshpp-native .dshpp-group-h em {\r\n  font-size: 0.85em;\r\n}\r\n.dshpp-native .dshpp-row {\r\n  gap: 8px;\r\n}\r\n.dshpp-native .dshpp-hint {\r\n  font-size: 0.85em !important;\r\n  line-height: 1.6;\r\n  color: var(--dshpp-mute);\r\n}\r\n.dshpp-native .dshpp-more {\r\n  border-top: 1px solid var(--dshpp-line);\r\n  padding-top: 20px;\r\n  margin-top: 24px;\r\n}\r\n.dshpp-native .dshpp-more p {\r\n  font-size: 0.9em;\r\n  line-height: 1.6;\r\n  color: var(--dshpp-mute);\r\n}\r\n.dshpp-native .dshpp-attribution {\r\n  margin-top: 32px;\r\n  font-size: 0.78em !important;\r\n}\r\n\r\n/* \u6F14\u7EC3\u53F0\uFF1A\u65E7\u7248\u8DD1\u5728\u53EF\u62D6\u62FD\u60AC\u6D6E\u7A97\u91CC\uFF0C\u73B0\u5728\u5D4C\u5728\u53F3\u4FA7\u680F\uFF0C\u5FC5\u987B\u81EA\u5DF1\u6491\u5F00\u5E76\u5141\u8BB8\u6EDA\u52A8 */\r\n.dshpp-native-drill {\r\n  width: 100%;\r\n  min-width: 0;\r\n  min-height: 72vh;\r\n  display: flex;\r\n  flex-direction: column;\r\n  gap: 10px;\r\n  padding-bottom: 24px;\r\n  box-sizing: border-box;\r\n}\r\n.dshpp-native-drill > .rt-dock.rt-embedded {\r\n  flex: 1 1 auto;\r\n  min-height: 0;\r\n  min-width: 0;\r\n  width: 100%;\r\n  height: auto;\r\n  overflow: visible;\r\n}\r\n/* \u53F3\u4FA7\u680F\u5F88\u7A84\uFF1A\u5185\u90E8\u6240\u6709 flex \u884C\u90FD\u5F97\u80FD\u6362\u884C\uFF0C\u8F93\u5165\u6846\u4E0D\u80FD\u628A\u5144\u5F1F\u5143\u7D20\u6324\u6210 1ch \u5BBD */\r\n.dshpp-native-drill .rt-dock,\r\n.dshpp-native-drill .rt-dock * {\r\n  box-sizing: border-box;\r\n  min-width: 0;\r\n  word-break: normal;\r\n  overflow-wrap: anywhere;\r\n}\r\n.dshpp-native-drill .rt-dock input,\r\n.dshpp-native-drill .rt-dock textarea,\r\n.dshpp-native-drill .rt-dock select {\r\n  width: 100%;\r\n  max-width: 100%;\r\n}\r\n\r\n/* \u300C\u66F4\u65B0\u901A\u9053\u300D\u4E0E\u300C\u81EA\u52A8\u68C0\u67E5\u66F4\u65B0 / \u6BCF N \u5C0F\u65F6\u300D\u540C\u884C\u5E76\u6392\uFF1A\u9AD8\u5EA6\u3001\u5706\u89D2\u3001\u5B57\u53F7\u5BF9\u9F50 select\u3002\r\n   \u540C\u4E00\u7EC4\u4EF6\u540C\u65F6\u6302\u5728\u63D2\u4EF6\u8BBE\u7F6E\u9875(.dshpp-native)\u548C\u5DE6\u4FA7 Purge \u6574\u9875(.dshpp-page)\uFF0C\r\n   \u4E24\u5904\u6839 class \u4E0D\u540C\uFF0C\u9009\u62E9\u5668\u5FC5\u987B\u90FD\u8986\u76D6\u3002 */\r\n:is(.dshpp-native, .dshpp-page) .dshpp-updch-open {\r\n  min-height: 32px;\r\n  padding: 4px 12px;\r\n  border-radius: 7px;\r\n  font-size: 0.9em;\r\n  white-space: nowrap;\r\n}\r\n/* \u65E7\u7248\u6807\u9898\u884C\u53F3\u5BF9\u9F50\u5E03\u5C40\u4FDD\u7559\u7ED9\u53EF\u80FD\u7684\u5916\u90E8\u8C03\u7528\uFF0C\u4F46\u4E3B\u5165\u53E3\u5DF2\u79FB\u5230\u8BBE\u7F6E\u884C\u3002 */\r\n:is(.dshpp-native, .dshpp-page) .dshpp-updch-head {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n  gap: 8px;\r\n  flex-wrap: wrap;\r\n}\r\n:is(.dshpp-native, .dshpp-page) .dshpp-updch-head h3 {\r\n  margin: 0;\r\n}\r\n/* \u66F4\u65B0\u901A\u9053\u5BF9\u8BDD\u6846\uFF1A\u9762\u677F\u91CC\u6CA1\u6709\u53EF\u9760\u7684 react-dom portal\uFF0C\u7528\u56FA\u5B9A\u5B9A\u4F4D + \u906E\u7F69\u81EA\u5DF1\u5B9E\u73B0 */\r\n:is(.dshpp-native, .dshpp-page) .dshpp-updch-mask {\r\n  position: fixed;\r\n  inset: 0;\r\n  z-index: 12050;\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  padding: 20px;\r\n  background: rgba(0, 0, 0, 0.55);\r\n  pointer-events: auto;\r\n}\r\n:is(.dshpp-native, .dshpp-page) .dshpp-updch-card {\r\n  width: min(440px, 100%);\r\n  max-height: min(88vh, 720px);\r\n  overflow: auto;\r\n  box-sizing: border-box;\r\n  display: flex;\r\n  flex-direction: column;\r\n  gap: 8px;\r\n  padding: 18px;\r\n  border-radius: 12px;\r\n  border: 1px solid var(--dshpp-line);\r\n  background: var(--dsw-alias-bg-layer-1, #fffcf7);\r\n  color: var(--dshpp-ink);\r\n  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);\r\n}\r\n:is(.dshpp-native, .dshpp-page) .dshpp-updch-title {\r\n  margin: 0 0 2px;\r\n  font-family: inherit;\r\n  font-size: 1em;\r\n  font-weight: 600;\r\n}\r\n:is(.dshpp-native, .dshpp-page) .dshpp-updch-label {\r\n  display: flex;\r\n  flex-direction: column;\r\n  gap: 4px;\r\n  font-size: 0.88em;\r\n  color: var(--dshpp-mute);\r\n}\r\n:is(.dshpp-native, .dshpp-page) .dshpp-updch-field {\r\n  width: 100%;\r\n  min-width: 0;\r\n  font-size: 0.92em;\r\n}\r\n:is(.dshpp-native, .dshpp-page) .dshpp-updch-check {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 6px;\r\n  font-size: 0.88em;\r\n  color: var(--dshpp-mute);\r\n}\r\n:is(.dshpp-native, .dshpp-page) .dshpp-updch-ops {\r\n  display: flex;\r\n  justify-content: flex-end;\r\n  gap: 8px;\r\n  margin-top: 4px;\r\n}\r\n\r\n:is(.dshpp-native, .dshpp-page) .dshpp-composer-settings {\r\n  padding-block: 2px 8px;\r\n  margin-bottom: 12px;\r\n  border-bottom: 1px solid var(--dshpp-line);\r\n}\r\n.dshpp-composer-settings h3 {\r\n  margin: 0;\r\n  font: inherit;\r\n  font-weight: 600;\r\n}\r\n.dshpp-setting-row {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n  gap: 12px;\r\n  min-height: 44px;\r\n  cursor: pointer;\r\n}\r\n.dshpp-setting-row input[role="switch"] {\r\n  appearance: none;\r\n  flex: none;\r\n  box-sizing: border-box;\r\n  width: 32px;\r\n  height: 20px;\r\n  margin: 0 2px;\r\n  padding: 2px;\r\n  border: 1px solid var(--dshpp-line);\r\n  border-radius: 12px;\r\n  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.23));\r\n  cursor: pointer;\r\n}\r\n.dshpp-setting-row input::before {\r\n  content: "";\r\n  display: block;\r\n  width: 14px;\r\n  height: 14px;\r\n  border-radius: 50%;\r\n  background: var(--dsw-alias-label-secondary, #777);\r\n}\r\n.dshpp-setting-row input:checked {\r\n  background: var(--dshpp-accent);\r\n  border-color: var(--dshpp-accent);\r\n}\r\n.dshpp-setting-row input:checked::before {\r\n  transform: translateX(12px);\r\n  background: white;\r\n}\r\n.dshpp-setting-row input:focus-visible {\r\n  outline: 2px solid var(--dshpp-accent);\r\n  outline-offset: 3px;\r\n}\r\n.dshpp-setting-row input:disabled {\r\n  opacity: 0.6;\r\n}\r\n@media (forced-colors: active) {\r\n  .dshpp-setting-row input[role="switch"] {\r\n    appearance: auto;\r\n  }\r\n  .dshpp-setting-row input::before {\r\n    content: none;\r\n  }\r\n}\r\n@container purge-settings (max-width: 520px) {\r\n  .dshpp-native-head {\r\n    padding: 14px 12px 8px;\r\n  }\r\n  .dshpp-native-nav {\r\n    padding-inline: 8px;\r\n    gap: 0;\r\n  }\r\n  .dshpp-native-nav button {\r\n    flex: 1 0 auto;\r\n    min-height: 44px;\r\n  }\r\n  .dshpp-native-content {\r\n    padding: 12px;\r\n    scrollbar-gutter: auto;\r\n  }\r\n}\r\n';
+var native_default = '.dshpp-native.dshpp-root {\n  --dshpp-display: inherit;\n  --dshpp-sans: inherit;\n  --dshpp-paper: var(--dsw-alias-bg-base, transparent);\n  --dshpp-bg: transparent;\n  --dshpp-line: var(--dsw-alias-border-l1, #ddd);\n  --dshpp-ink: var(--dsw-alias-label-primary, #171717);\n  --dshpp-mute: var(--dsw-alias-label-secondary, #777);\n  --dshpp-accent: var(--dsw-alias-brand-primary, #4775ed);\n  --dshpp-fill: var(--dsw-alias-interactive-bg-hover, #f3f3f3);\n  container: purge-settings / inline-size;\n  font: inherit;\n  font-size: var(--dsh-content-font-size, 14px);\n  width: 100%;\n  height: 100%;\n  min-height: 0;\n  max-width: none;\n  padding: 0;\n  gap: 0;\n  border-radius: 0;\n  overflow: hidden;\n  box-sizing: border-box;\n}\n.dshpp-native * {\n  box-sizing: border-box;\n}\n.dshpp-native [hidden] {\n  display: none !important;\n}\n.dshpp-native-head {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: 20px 20px 12px;\n  gap: 12px;\n  flex: none;\n}\n.dshpp-native-head h2 {\n  font: inherit;\n  font-size: 1.3em;\n  font-weight: 600;\n  margin: 0;\n}\n.dshpp-native-head p {\n  margin: 4px 0 0;\n  font-size: 0.85em;\n  color: var(--dshpp-mute);\n}\n.dshpp-native-badge {\n  font-size: 0.8em;\n  color: var(--dshpp-mute);\n}\n.dshpp-native-nav {\n  display: flex;\n  gap: 4px;\n  padding: 0 16px;\n  border-bottom: 1px solid var(--dshpp-line);\n  flex: none;\n  overflow-x: auto;\n}\n.dshpp-native-nav button {\n  font: inherit;\n  font-size: 0.92em;\n  border: 0;\n  border-bottom: 2px solid transparent;\n  background: none;\n  color: var(--dshpp-mute);\n  padding: 10px 8px;\n  white-space: nowrap;\n  cursor: pointer;\n}\n.dshpp-native-nav button[aria-pressed="true"] {\n  color: var(--dshpp-ink);\n  border-bottom-color: var(--dshpp-accent);\n}\n.dshpp-native-content {\n  min-height: 0;\n  flex: 1;\n  overflow: auto;\n  padding: 16px 20px;\n  scrollbar-gutter: stable;\n  overscroll-behavior: contain;\n}\n.dshpp-native .dshpp-panel {\n  border: 0;\n  border-radius: 0;\n  padding: 0;\n  background: transparent;\n  min-width: 0;\n}\n.dshpp-native\n  :is(\n    h3,\n    h4,\n    .dshpp-title,\n    .dshpp-group-h strong,\n    .dshpp-metric b,\n    .dshpp-now-ver,\n    .dshpp-edition-name\n  ) {\n  font-family: inherit;\n  font-size: 1em;\n  letter-spacing: normal;\n  font-weight: 550;\n}\n.dshpp-native .dshpp-metric b {\n  font-size: 1.12em;\n}\n.dshpp-native .dshpp-head {\n  margin-bottom: 12px;\n}\n.dshpp-native .dshpp-sub {\n  margin-top: 0;\n  flex-wrap: wrap;\n}\n.dshpp-native :is(button, input, select, textarea) {\n  font-family: inherit;\n  box-shadow: none;\n  background-image: none;\n  max-width: 100%;\n}\n.dshpp-native .dshpp-btn {\n  font-size: 0.9em;\n  min-height: 32px;\n  border-radius: 7px;\n  padding: 6px 10px;\n  transform: none;\n  box-shadow: none;\n}\n.dshpp-native .dshpp-btn:hover:not(:disabled) {\n  background: var(--dshpp-fill);\n  box-shadow: none;\n  transform: none;\n}\n.dshpp-native .dshpp-btn-primary {\n  background: var(--dsw-alias-label-primary, #171717);\n  color: var(--dsw-alias-bg-base, #fff);\n  border-color: transparent;\n}\n.dshpp-native .dshpp-btn-primary:hover:not(:disabled) {\n  opacity: 0.85;\n  background: var(--dsw-alias-label-primary, #171717);\n}\n.dshpp-native :is(button, input, select, textarea):focus-visible {\n  outline: 2px solid var(--dshpp-accent);\n  outline-offset: 2px;\n  box-shadow: none;\n}\n.dshpp-native .dshpp-area {\n  font-family: inherit;\n  font-size: 0.92em;\n  line-height: 1.6;\n  min-height: 260px;\n  width: 100%;\n  border-radius: 8px;\n  background: transparent;\n  color: inherit;\n}\n.dshpp-native .dshpp-field {\n  font-size: 0.92em;\n  background: transparent;\n  color: inherit;\n}\n.dshpp-native .dshpp-metrics {\n  grid-template-columns: repeat(2, minmax(0, 1fr));\n  gap: 8px;\n}\n.dshpp-native .dshpp-metric:nth-child(2) {\n  display: none;\n}\n.dshpp-native .dshpp-metric {\n  min-height: 60px;\n  padding: 12px;\n  background: var(--dshpp-fill);\n  border: 0;\n}\n.dshpp-native .dshpp-metric span {\n  font-size: 0.85em;\n}\n.dshpp-native .dshpp-editions {\n  margin: 10px 0;\n  border: 0;\n}\n.dshpp-native summary {\n  cursor: pointer;\n  color: var(--dshpp-mute);\n  padding: 8px 0;\n  font-size: 0.9em;\n}\n.dshpp-native .dshpp-edition {\n  grid-template-columns: 1fr auto;\n  gap: 8px;\n}\n.dshpp-native .dshpp-edition-name {\n  grid-column: 1/-1;\n}\n.dshpp-native .dshpp-edition .dshpp-btn {\n  min-width: 0;\n}\n.dshpp-native .dshpp-table {\n  table-layout: fixed;\n  font-size: 0.83em;\n}\n.dshpp-native .dshpp-table td {\n  word-break: break-word;\n  padding: 8px;\n}\n.dshpp-native .dshpp-table th {\n  padding: 8px;\n}\n.dshpp-native .dshpp-group-h {\n  flex-wrap: wrap;\n  gap: 6px;\n}\n.dshpp-native .dshpp-group-h em {\n  font-size: 0.85em;\n}\n.dshpp-native .dshpp-row {\n  gap: 8px;\n}\n.dshpp-native .dshpp-hint {\n  font-size: 0.85em !important;\n  line-height: 1.6;\n  color: var(--dshpp-mute);\n}\n.dshpp-native .dshpp-more {\n  border-top: 1px solid var(--dshpp-line);\n  padding-top: 20px;\n  margin-top: 24px;\n}\n.dshpp-native .dshpp-more p {\n  font-size: 0.9em;\n  line-height: 1.6;\n  color: var(--dshpp-mute);\n}\n.dshpp-native .dshpp-attribution {\n  margin-top: 32px;\n  font-size: 0.78em !important;\n}\n\n/* \u6F14\u7EC3\u53F0\uFF1A\u65E7\u7248\u8DD1\u5728\u53EF\u62D6\u62FD\u60AC\u6D6E\u7A97\u91CC\uFF0C\u73B0\u5728\u5D4C\u5728\u53F3\u4FA7\u680F\uFF0C\u5FC5\u987B\u81EA\u5DF1\u6491\u5F00\u5E76\u5141\u8BB8\u6EDA\u52A8 */\n.dshpp-native-drill {\n  width: 100%;\n  min-width: 0;\n  min-height: 72vh;\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n  padding-bottom: 24px;\n  box-sizing: border-box;\n}\n.dshpp-native-drill > .rt-dock.rt-embedded {\n  flex: 1 1 auto;\n  min-height: 0;\n  min-width: 0;\n  width: 100%;\n  height: auto;\n  overflow: visible;\n}\n/* \u53F3\u4FA7\u680F\u5F88\u7A84\uFF1A\u5185\u90E8\u6240\u6709 flex \u884C\u90FD\u5F97\u80FD\u6362\u884C\uFF0C\u8F93\u5165\u6846\u4E0D\u80FD\u628A\u5144\u5F1F\u5143\u7D20\u6324\u6210 1ch \u5BBD */\n.dshpp-native-drill .rt-dock,\n.dshpp-native-drill .rt-dock * {\n  box-sizing: border-box;\n  min-width: 0;\n  word-break: normal;\n  overflow-wrap: anywhere;\n}\n.dshpp-native-drill .rt-dock input,\n.dshpp-native-drill .rt-dock textarea,\n.dshpp-native-drill .rt-dock select {\n  width: 100%;\n  max-width: 100%;\n}\n\n/* \u300C\u66F4\u65B0\u901A\u9053\u300D\u4E0E\u300C\u81EA\u52A8\u68C0\u67E5\u66F4\u65B0 / \u6BCF N \u5C0F\u65F6\u300D\u540C\u884C\u5E76\u6392\uFF1A\u9AD8\u5EA6\u3001\u5706\u89D2\u3001\u5B57\u53F7\u5BF9\u9F50 select\u3002\n   \u540C\u4E00\u7EC4\u4EF6\u540C\u65F6\u6302\u5728\u63D2\u4EF6\u8BBE\u7F6E\u9875(.dshpp-native)\u548C\u5DE6\u4FA7 Purge \u6574\u9875(.dshpp-page)\uFF0C\n   \u4E24\u5904\u6839 class \u4E0D\u540C\uFF0C\u9009\u62E9\u5668\u5FC5\u987B\u90FD\u8986\u76D6\u3002 */\n:is(.dshpp-native, .dshpp-page) .dshpp-updch-open {\n  min-height: 32px;\n  padding: 4px 12px;\n  border-radius: 7px;\n  font-size: 0.9em;\n  white-space: nowrap;\n}\n/* \u65E7\u7248\u6807\u9898\u884C\u53F3\u5BF9\u9F50\u5E03\u5C40\u4FDD\u7559\u7ED9\u53EF\u80FD\u7684\u5916\u90E8\u8C03\u7528\uFF0C\u4F46\u4E3B\u5165\u53E3\u5DF2\u79FB\u5230\u8BBE\u7F6E\u884C\u3002 */\n:is(.dshpp-native, .dshpp-page) .dshpp-updch-head {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 8px;\n  flex-wrap: wrap;\n}\n:is(.dshpp-native, .dshpp-page) .dshpp-updch-head h3 {\n  margin: 0;\n}\n/* \u66F4\u65B0\u901A\u9053\u5BF9\u8BDD\u6846\uFF1A\u9762\u677F\u91CC\u6CA1\u6709\u53EF\u9760\u7684 react-dom portal\uFF0C\u7528\u56FA\u5B9A\u5B9A\u4F4D + \u906E\u7F69\u81EA\u5DF1\u5B9E\u73B0 */\n:is(.dshpp-native, .dshpp-page) .dshpp-updch-mask {\n  position: fixed;\n  inset: 0;\n  z-index: 12050;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  padding: 20px;\n  background: rgba(0, 0, 0, 0.55);\n  pointer-events: auto;\n}\n:is(.dshpp-native, .dshpp-page) .dshpp-updch-card {\n  width: min(440px, 100%);\n  max-height: min(88vh, 720px);\n  overflow: auto;\n  box-sizing: border-box;\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n  padding: 18px;\n  border-radius: 12px;\n  border: 1px solid var(--dshpp-line);\n  background: var(--dsw-alias-bg-layer-1, #fffcf7);\n  color: var(--dshpp-ink);\n  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);\n}\n:is(.dshpp-native, .dshpp-page) .dshpp-updch-title {\n  margin: 0 0 2px;\n  font-family: inherit;\n  font-size: 1em;\n  font-weight: 600;\n}\n:is(.dshpp-native, .dshpp-page) .dshpp-updch-label {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  font-size: 0.88em;\n  color: var(--dshpp-mute);\n}\n:is(.dshpp-native, .dshpp-page) .dshpp-updch-field {\n  width: 100%;\n  min-width: 0;\n  font-size: 0.92em;\n}\n:is(.dshpp-native, .dshpp-page) .dshpp-updch-check {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  font-size: 0.88em;\n  color: var(--dshpp-mute);\n}\n:is(.dshpp-native, .dshpp-page) .dshpp-updch-ops {\n  display: flex;\n  justify-content: flex-end;\n  gap: 8px;\n  margin-top: 4px;\n}\n\n:is(.dshpp-native, .dshpp-page) .dshpp-composer-settings {\n  padding-block: 2px 8px;\n  margin-bottom: 12px;\n  border-bottom: 1px solid var(--dshpp-line);\n}\n.dshpp-composer-settings h3 {\n  margin: 0;\n  font: inherit;\n  font-weight: 600;\n}\n.dshpp-setting-row {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 12px;\n  min-height: 44px;\n  cursor: pointer;\n}\n.dshpp-setting-row input[role="switch"] {\n  appearance: none;\n  flex: none;\n  box-sizing: border-box;\n  width: 32px;\n  height: 20px;\n  margin: 0 2px;\n  padding: 2px;\n  border: 1px solid var(--dshpp-line);\n  border-radius: 12px;\n  background: var(--dsw-alias-interactive-bg-hover, rgba(127, 127, 127, 0.23));\n  cursor: pointer;\n}\n.dshpp-setting-row input::before {\n  content: "";\n  display: block;\n  width: 14px;\n  height: 14px;\n  border-radius: 50%;\n  background: var(--dsw-alias-label-secondary, #777);\n}\n.dshpp-setting-row input:checked {\n  background: var(--dshpp-accent);\n  border-color: var(--dshpp-accent);\n}\n.dshpp-setting-row input:checked::before {\n  transform: translateX(12px);\n  background: white;\n}\n.dshpp-setting-row input:focus-visible {\n  outline: 2px solid var(--dshpp-accent);\n  outline-offset: 3px;\n}\n.dshpp-setting-row input:disabled {\n  opacity: 0.6;\n}\n@media (forced-colors: active) {\n  .dshpp-setting-row input[role="switch"] {\n    appearance: auto;\n  }\n  .dshpp-setting-row input::before {\n    content: none;\n  }\n}\n@container purge-settings (max-width: 520px) {\n  .dshpp-native-head {\n    padding: 14px 12px 8px;\n  }\n  .dshpp-native-nav {\n    padding-inline: 8px;\n    gap: 0;\n  }\n  .dshpp-native-nav button {\n    flex: 1 0 auto;\n    min-height: 44px;\n  }\n  .dshpp-native-content {\n    padding: 12px;\n    scrollbar-gutter: auto;\n  }\n}\n';
 
 // src/styles/page.css
-var page_default = '/* \u6574\u9875\uFF08\u5DE6\u4FA7\u680F\u5165\u53E3\uFF09\u6837\u5F0F\uFF1A\u6CBF\u7528 DSH \u81EA\u5DF1\u7684\u5B57\u4F53\u3001\u95F4\u8DDD\u4E0E\u4E3B\u9898\u53D8\u91CF\uFF0C\u4E0D\u5F15\u5165\u81EA\u5B9A\u4E49\u5B57\u4F53\u3002 */\r\n.dshpp-page {\r\n  --dshpp-line: var(--dsw-alias-border-l1, rgba(127, 127, 127, 0.22));\r\n  --dshpp-line-strong: var(--dsw-alias-border-l2, rgba(127, 127, 127, 0.4));\r\n  --dshpp-fg: var(--dsw-alias-label-primary, currentColor);\r\n  --dshpp-mute: var(\r\n    --dsw-alias-label-secondary,\r\n    color-mix(in srgb, currentColor 62%, transparent)\r\n  );\r\n  --dshpp-bg: var(--dsw-alias-bg-layer-1, transparent);\r\n  --dshpp-bg-2: var(--dsw-alias-bg-layer-2, rgba(127, 127, 127, 0.06));\r\n  --dshpp-accent: var(--dsw-alias-brand-primary, #4d6bfe);\r\n  --dshpp-ok: var(--dsw-alias-state-success-primary, #1f9d55);\r\n  --dshpp-warn: var(--dsw-alias-state-warn-primary, #b7791f);\r\n  --dshpp-bad: var(--dsw-alias-state-error-primary, #d14343);\r\n  box-sizing: border-box;\r\n  container: purge-page / inline-size;\r\n  width: 100%;\r\n  min-width: 0;\r\n  height: 100%;\r\n  min-height: 0;\r\n  overflow: auto;\r\n  padding: 20px clamp(12px, 3%, 32px) 32px;\r\n  color: var(--dshpp-fg);\r\n  font: inherit;\r\n  font-size: var(--dsh-content-font-size, 14px);\r\n  line-height: 1.55;\r\n  -webkit-font-smoothing: antialiased;\r\n}\r\n.dshpp-page *,\r\n.dshpp-page *::before,\r\n.dshpp-page *::after {\r\n  box-sizing: border-box;\r\n}\r\n\r\n.dshpp-page-head {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 12px;\r\n  min-width: 0;\r\n}\r\n.dshpp-page-glyph {\r\n  display: inline-flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  width: 34px;\r\n  height: 34px;\r\n  border-radius: 10px;\r\n  border: 1px solid var(--dshpp-line);\r\n  background: var(--dshpp-bg-2);\r\n  color: var(--dshpp-accent);\r\n  flex: none;\r\n}\r\n.dshpp-page-title {\r\n  min-width: 0;\r\n}\r\n.dshpp-page-title h1 {\r\n  margin: 0;\r\n  font-size: 1.3em;\r\n  font-weight: 600;\r\n  letter-spacing: 0.01em;\r\n}\r\n.dshpp-page-title p {\r\n  margin: 2px 0 0;\r\n  font-size: 0.86em;\r\n  color: var(--dshpp-mute);\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 8px;\r\n  flex-wrap: wrap;\r\n}\r\n.dshpp-page-ver {\r\n  padding: 1px 6px;\r\n  border-radius: 999px;\r\n  border: 1px solid var(--dshpp-line);\r\n  font-size: 0.92em;\r\n}\r\n\r\n/* \u9876\u90E8\u4E00\u884C\u72B6\u6001\u6458\u8981\uFF1A\u4E0D\u7528\u5361\u7247\uFF0C\u8DDF DSH \u7684 subtitle \u884C\u4E00\u81F4 */\r\n.dshpp-strip {\r\n  display: flex;\r\n  flex-wrap: wrap;\r\n  gap: 6px 18px;\r\n  margin: 0;\r\n  padding: 0 0 12px;\r\n  border-bottom: 1px solid var(--dshpp-line);\r\n  font-size: 0.86em;\r\n  color: var(--dshpp-mute);\r\n}\r\n.dshpp-strip-item {\r\n  display: inline-flex;\r\n  align-items: center;\r\n  gap: 5px;\r\n  min-width: 0;\r\n}\r\n.dshpp-strip-item b {\r\n  color: var(--dshpp-fg);\r\n  font-weight: 600;\r\n}\r\n.dshpp-dot {\r\n  width: 7px;\r\n  height: 7px;\r\n  border-radius: 50%;\r\n  background: var(--dshpp-mute);\r\n  flex: none;\r\n}\r\n.dshpp-dot.is-ok {\r\n  background: var(--dshpp-ok);\r\n}\r\n.dshpp-dot.is-warn {\r\n  background: var(--dshpp-warn);\r\n}\r\n.dshpp-dot.is-bad {\r\n  background: var(--dshpp-bad);\r\n}\r\n\r\n/* \u9875\u7B7E\uFF1A\u4E0B\u5212\u7EBF\u5F0F\uFF0C\u8DDF DSH \u8BBE\u7F6E\u9875\u7684 tab \u4E00\u81F4 */\r\n.dshpp-page-tabs {\r\n  display: flex;\r\n  gap: 2px;\r\n  margin: 10px 0 0;\r\n  border-bottom: 1px solid var(--dshpp-line);\r\n  overflow-x: auto;\r\n  scrollbar-width: none;\r\n}\r\n.dshpp-page-tabs::-webkit-scrollbar {\r\n  display: none;\r\n}\r\n.dshpp-page-tabs button {\r\n  appearance: none;\r\n  border: 0;\r\n  background: transparent;\r\n  color: var(--dshpp-mute);\r\n  font: inherit;\r\n  font-size: 1em;\r\n  padding: 10px 12px;\r\n  border-bottom: 2px solid transparent;\r\n  margin-bottom: -1px;\r\n  cursor: pointer;\r\n  white-space: nowrap;\r\n}\r\n.dshpp-page-tabs button:hover {\r\n  color: var(--dshpp-fg);\r\n}\r\n.dshpp-page-tabs button[aria-selected="true"] {\r\n  color: var(--dshpp-fg);\r\n  border-bottom-color: var(--dshpp-accent);\r\n  font-weight: 600;\r\n}\r\n\r\n.dshpp-page-body {\r\n  padding-top: 18px;\r\n  display: flex;\r\n  flex-direction: column;\r\n  gap: 16px;\r\n  min-width: 0;\r\n}\r\n.dshpp-sec {\r\n  display: flex;\r\n  flex-direction: column;\r\n  gap: 16px;\r\n  min-width: 0;\r\n}\r\n.dshpp-sec[hidden] {\r\n  display: none;\r\n}\r\n\r\n/* \u5361\u7247\uFF1ADSH \u7684 layer-1 \u9762\u677F */\r\n.dshpp-page .dshpp-card,\r\n.dshpp-page section.dshpp-panel {\r\n  border: 1px solid var(--dshpp-line);\r\n  border-radius: var(--dsw-radius-md, 10px);\r\n  background: var(--dshpp-bg);\r\n  padding: 16px 18px;\r\n  margin: 0;\r\n  min-width: 0;\r\n}\r\n.dshpp-page .dshpp-card > h3:first-child,\r\n.dshpp-page section.dshpp-panel > h3:first-child {\r\n  margin: 0 0 12px;\r\n  font-size: 1em;\r\n  font-weight: 600;\r\n}\r\n.dshpp-page .dshpp-panel {\r\n  display: flex;\r\n  flex-direction: column;\r\n  gap: 12px;\r\n}\r\n\r\n/* \u5B57\u6BB5\u884C\uFF1A\u5DE6\u6807\u9898\u53F3\u63A7\u4EF6\uFF1B\u7A84\u5C4F\u81EA\u52A8\u6362\u884C */\r\n.dshpp-page .dshpp-field {\r\n  display: grid;\r\n  grid-template-columns: minmax(120px, 190px) 1fr;\r\n  gap: 8px 14px;\r\n  align-items: center;\r\n}\r\n.dshpp-page .dshpp-field > .dshpp-field-label {\r\n  display: inline-flex;\r\n  align-items: center;\r\n  gap: 6px;\r\n  font-size: 0.92em;\r\n  color: var(--dshpp-fg);\r\n}\r\n.dshpp-page .dshpp-field > .dshpp-field-body {\r\n  min-width: 0;\r\n}\r\n@container purge-page (max-width: 640px) {\r\n  .dshpp-page .dshpp-field {\r\n    grid-template-columns: 1fr;\r\n  }\r\n}\r\n\r\n.dshpp-page .dshpp-muted,\r\n.dshpp-page .dshpp-hint {\r\n  color: var(--dshpp-mute) !important;\r\n  font-size: 0.86em !important;\r\n  line-height: 1.6;\r\n  margin: 0;\r\n}\r\n\r\n.dshpp-page .dshpp-row {\r\n  display: flex;\r\n  flex-wrap: wrap;\r\n  gap: 10px;\r\n  align-items: center;\r\n  min-width: 0;\r\n}\r\n.dshpp-page input,\r\n.dshpp-page select,\r\n.dshpp-page textarea {\r\n  font: inherit;\r\n  color: var(--dshpp-fg);\r\n  background: var(--dshpp-bg-2);\r\n  border: 1px solid var(--dshpp-line);\r\n  border-radius: 8px;\r\n  padding: 7px 10px;\r\n  max-width: 100%;\r\n}\r\n.dshpp-page input:focus-visible,\r\n.dshpp-page select:focus-visible,\r\n.dshpp-page textarea:focus-visible {\r\n  outline: 2px solid color-mix(in srgb, var(--dshpp-accent) 55%, transparent);\r\n  outline-offset: 1px;\r\n}\r\n.dshpp-page textarea {\r\n  width: 100%;\r\n  min-height: 320px;\r\n  resize: vertical;\r\n  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;\r\n  font-size: 0.86em;\r\n  line-height: 1.6;\r\n}\r\n\r\n.dshpp-page .dshpp-btn {\r\n  font: inherit;\r\n  font-size: 0.9em;\r\n  border-radius: 8px;\r\n  padding: 6px 12px;\r\n  border: 1px solid var(--dshpp-line);\r\n  background: var(--dshpp-bg-2);\r\n  color: var(--dshpp-fg);\r\n  cursor: pointer;\r\n  white-space: nowrap;\r\n}\r\n.dshpp-page .dshpp-btn:hover:not(:disabled) {\r\n  border-color: var(--dshpp-line-strong);\r\n}\r\n.dshpp-page .dshpp-btn:disabled {\r\n  opacity: 0.45;\r\n  cursor: not-allowed;\r\n}\r\n/* \u4E3B\u6309\u94AE\uFF1A\u4E0D\u8981\u7528 brand-primary \u5F53\u5E95\u8272\u2014\u2014\u6DF1\u8272\u6A21\u5F0F\u4E0B\u5B83\u662F\u9AD8\u4EAE\u6587\u5B57\u8272\uFF0C\r\n   \u76F4\u63A5\u94FA\u6210\u80CC\u666F\u5C31\u6210\u4E86"\u767D\u5E95\u767D\u5B57"\u7684\u65B9\u5757\u3002\u8FD9\u91CC\u7528\u56FA\u5B9A\u7684\u5B9E\u5FC3\u7EFF + \u767D\u5B57\u3002 */\r\n.dshpp-page {\r\n  --dshpp-solid: #2f6b4f;\r\n  --dshpp-solid-hover: #3a8260;\r\n  --dshpp-solid-danger: #a63b3b;\r\n  --dshpp-solid-danger-hover: #bd4747;\r\n}\r\n.dshpp-page .dshpp-btn-primary {\r\n  background: var(--dshpp-solid);\r\n  border-color: var(--dshpp-solid);\r\n  color: #fff;\r\n  font-weight: 600;\r\n}\r\n.dshpp-page .dshpp-btn-primary:hover:not(:disabled) {\r\n  background: var(--dshpp-solid-hover);\r\n  border-color: var(--dshpp-solid-hover);\r\n}\r\n.dshpp-page .dshpp-btn-solid-danger {\r\n  background: var(--dshpp-solid-danger);\r\n  border-color: var(--dshpp-solid-danger);\r\n  color: #fff;\r\n}\r\n.dshpp-page .dshpp-btn-solid-danger:hover:not(:disabled) {\r\n  background: var(--dshpp-solid-danger-hover);\r\n  border-color: var(--dshpp-solid-danger-hover);\r\n}\r\n.dshpp-page .dshpp-btn-danger {\r\n  color: var(--dshpp-bad);\r\n  border-color: color-mix(in srgb, var(--dshpp-bad) 40%, transparent);\r\n}\r\n.dshpp-page .dshpp-btn-tiny {\r\n  padding: 3px 8px;\r\n  font-size: 0.82em;\r\n}\r\n\r\n.dshpp-page .dshpp-pill {\r\n  display: inline-flex;\r\n  align-items: center;\r\n  padding: 1px 8px;\r\n  border-radius: 999px;\r\n  font-size: 0.8em;\r\n  border: 1px solid var(--dshpp-line);\r\n  color: var(--dshpp-mute);\r\n}\r\n.dshpp-page .dshpp-pill.is-ok {\r\n  color: var(--dshpp-ok);\r\n  border-color: color-mix(in srgb, var(--dshpp-ok) 35%, transparent);\r\n}\r\n.dshpp-page .dshpp-pill.is-wait {\r\n  color: var(--dshpp-warn);\r\n  border-color: color-mix(in srgb, var(--dshpp-warn) 35%, transparent);\r\n}\r\n.dshpp-page .dshpp-pill.is-bad {\r\n  color: var(--dshpp-bad);\r\n  border-color: color-mix(in srgb, var(--dshpp-bad) 40%, transparent);\r\n}\r\n\r\n.dshpp-page .dshpp-table {\r\n  width: 100%;\r\n  border-collapse: collapse;\r\n  font-size: 0.86em;\r\n}\r\n.dshpp-page .dshpp-table th,\r\n.dshpp-page .dshpp-table td {\r\n  text-align: left;\r\n  padding: 7px 10px;\r\n  border-bottom: 1px solid var(--dshpp-line);\r\n  vertical-align: top;\r\n  overflow-wrap: anywhere;\r\n}\r\n.dshpp-page .dshpp-table th {\r\n  color: var(--dshpp-mute);\r\n  font-weight: 500;\r\n  font-size: 0.95em;\r\n}\r\n.dshpp-page .dshpp-group-h {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n  gap: 10px;\r\n  width: 100%;\r\n  border: 0;\r\n  background: transparent;\r\n  color: inherit;\r\n  font: inherit;\r\n  padding: 8px 0;\r\n  cursor: pointer;\r\n}\r\n.dshpp-page .dshpp-count {\r\n  color: var(--dshpp-mute);\r\n  font-size: 0.85em;\r\n}\r\n\r\n/* \u6F14\u7EC3\u53F0\u5360\u6EE1\u5269\u4F59\u9AD8\u5EA6 */\r\n.dshpp-page-drill {\r\n  min-height: 60vh;\r\n}\r\n.dshpp-page-drill .rt-dock.rt-embedded {\r\n  width: 100%;\r\n  min-width: 0;\r\n}\r\n\r\n.dshpp-page-foot {\r\n  margin-top: 28px;\r\n  padding-top: 14px;\r\n  border-top: 1px solid var(--dshpp-line);\r\n  font-size: 0.8em;\r\n  color: var(--dshpp-mute);\r\n}\r\n\r\n/* \u540D\u8BCD\u89E3\u91CA\uFF1A\u6807\u9898\u540E\u9762\u7684\u5C0F\u95EE\u53F7 */\r\n.dshpp-help {\r\n  position: relative;\r\n  display: inline-flex;\r\n  align-items: center;\r\n}\r\n.dshpp-help-btn {\r\n  appearance: none;\r\n  border: 0;\r\n  background: transparent;\r\n  color: var(--dshpp-mute);\r\n  font: inherit;\r\n  font-size: 0.85em;\r\n  line-height: 1;\r\n  width: 16px;\r\n  height: 16px;\r\n  border-radius: 50%;\r\n  border: 1px solid var(--dshpp-line);\r\n  cursor: help;\r\n  display: inline-flex;\r\n  align-items: center;\r\n  justify-content: center;\r\n  padding: 0;\r\n}\r\n.dshpp-help-btn:hover,\r\n.dshpp-help-btn[aria-expanded="true"] {\r\n  color: var(--dshpp-fg);\r\n  border-color: var(--dshpp-line-strong);\r\n  background: var(--dshpp-bg-2);\r\n}\r\n.dshpp-tip {\r\n  position: absolute;\r\n  left: 0;\r\n  top: calc(100% + 6px);\r\n  z-index: 2147483000;\r\n  width: max-content;\r\n  max-width: min(340px, 70vw);\r\n  padding: 9px 11px;\r\n  border-radius: 8px;\r\n  border: 1px solid var(--dshpp-line);\r\n  background: var(--dsw-alias-bg-overlay, canvas);\r\n  color: var(--dshpp-fg);\r\n  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);\r\n  font-size: 0.82em;\r\n  line-height: 1.6;\r\n  white-space: normal;\r\n  display: flex;\r\n  flex-direction: column;\r\n  gap: 4px;\r\n}\r\n.dshpp-tip b {\r\n  font-weight: 600;\r\n}\r\n\r\n.dshpp-page .dshpp-warn {\r\n  margin: 10px 0 0;\r\n  padding: 8px 12px;\r\n  border-radius: 8px;\r\n  border: 1px solid color-mix(in srgb, var(--dshpp-warn) 45%, transparent);\r\n  color: var(--dshpp-warn);\r\n  background: color-mix(in srgb, var(--dshpp-warn) 10%, transparent);\r\n  font-size: 0.86em;\r\n}\r\n\r\n/* \u64CD\u4F5C\u6761\uFF1A\u6700\u5E38\u7528\u7684\u300C\u5E94\u7528\u300D\u56FA\u5B9A\u5728\u5185\u5BB9\u533A\u9876\u90E8 */\r\n.dshpp-page .dshpp-actions {\r\n  position: sticky;\r\n  top: 0;\r\n  z-index: 5;\r\n  display: flex;\r\n  flex-wrap: wrap;\r\n  align-items: center;\r\n  gap: 8px;\r\n  padding: 10px 0 12px;\r\n  margin: -4px 0 6px;\r\n  background: linear-gradient(\r\n    var(--dsw-alias-bg-base, canvas) 78%,\r\n    transparent\r\n  );\r\n  backdrop-filter: blur(2px);\r\n  border-bottom: 1px solid var(--dshpp-line);\r\n}\r\n.dshpp-page .dshpp-actions .dshpp-pill {\r\n  margin-left: auto;\r\n}\r\n\r\n/* \u6307\u6807\uFF1A\u4E09\u5217\u7D27\u51D1 */\r\n.dshpp-page .dshpp-metrics {\r\n  display: grid;\r\n  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));\r\n  gap: 10px;\r\n  margin: 4px 0 2px;\r\n}\r\n.dshpp-page .dshpp-metric {\r\n  border: 1px solid var(--dshpp-line);\r\n  border-radius: 10px;\r\n  padding: 10px 12px;\r\n  background: var(--dshpp-bg-2);\r\n  min-width: 0;\r\n}\r\n.dshpp-page .dshpp-metric b {\r\n  display: block;\r\n  font-size: 1.05em;\r\n  font-weight: 600;\r\n  margin-bottom: 2px;\r\n  overflow-wrap: anywhere;\r\n}\r\n.dshpp-page .dshpp-metric span {\r\n  color: var(--dshpp-mute);\r\n  font-size: 0.82em;\r\n}\r\n\r\n/* \u6298\u53E0\u5757\uFF1A\u8865\u4E01\u660E\u7EC6 / \u7EF4\u62A4 / \u81EA\u68C0 */\r\n.dshpp-page .dshpp-fold,\r\n.dshpp-page .dshpp-fold-inline {\r\n  border: 1px solid var(--dshpp-line);\r\n  border-radius: 10px;\r\n  background: var(--dshpp-bg);\r\n  padding: 0 12px;\r\n}\r\n.dshpp-page .dshpp-fold > summary,\r\n.dshpp-page .dshpp-fold-inline > summary {\r\n  cursor: pointer;\r\n  padding: 10px 0;\r\n  font-size: 0.92em;\r\n  color: var(--dshpp-fg);\r\n  list-style: none;\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 8px;\r\n}\r\n.dshpp-page .dshpp-fold > summary::-webkit-details-marker,\r\n.dshpp-page .dshpp-fold-inline > summary::-webkit-details-marker {\r\n  display: none;\r\n}\r\n.dshpp-page .dshpp-fold > summary::before,\r\n.dshpp-page .dshpp-fold-inline > summary::before {\r\n  content: "\u25B8";\r\n  color: var(--dshpp-mute);\r\n  font-size: 0.9em;\r\n  transition: transform 0.12s ease;\r\n}\r\n.dshpp-page .dshpp-fold[open] > summary::before,\r\n.dshpp-page .dshpp-fold-inline[open] > summary::before {\r\n  transform: rotate(90deg);\r\n}\r\n.dshpp-page .dshpp-fold > summary b,\r\n.dshpp-page .dshpp-fold-inline > summary b {\r\n  color: var(--dshpp-mute);\r\n  font-weight: 500;\r\n  margin-left: auto;\r\n}\r\n\r\n/* \u72B6\u6001\u884C\uFF08\u81EA\u68C0 / \u5F3A\u5316\u6BB5\uFF09 */\r\n.dshpp-page .dshpp-line {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 10px;\r\n  flex-wrap: wrap;\r\n  padding: 6px 0;\r\n}\r\n.dshpp-page .dshpp-line + .dshpp-line {\r\n  border-top: 1px solid var(--dshpp-line);\r\n}\r\n.dshpp-page .dshpp-line-main {\r\n  display: inline-flex;\r\n  align-items: center;\r\n  gap: 8px;\r\n  font-size: 0.92em;\r\n  min-width: 0;\r\n}\r\n.dshpp-page .dshpp-line-main b {\r\n  font-weight: 600;\r\n}\r\n.dshpp-page .dshpp-fold-inline {\r\n  border: 0;\r\n  padding: 0;\r\n  background: transparent;\r\n}\r\n.dshpp-page .dshpp-fold-inline > summary {\r\n  padding: 2px 0;\r\n  color: var(--dshpp-mute);\r\n  font-size: 0.86em;\r\n}\r\n.dshpp-page .dshpp-fold-inline[open] {\r\n  flex-basis: 100%;\r\n}\r\n\r\n/* \u9010\u5C42\u81EA\u68C0\uFF1A\u4E24\u5217/\u591A\u5217\u7F51\u683C\uFF0C\u4E0D\u518D\u4E00\u6761\u4E00\u884C */\r\n.dshpp-page .dshpp-checks {\r\n  display: grid;\r\n  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));\r\n  gap: 2px 14px;\r\n  padding: 6px 0 10px;\r\n}\r\n.dshpp-page .dshpp-check {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 6px;\r\n  font-size: 0.84em;\r\n  min-width: 0;\r\n  padding: 2px 0;\r\n}\r\n.dshpp-page .dshpp-check.is-bad {\r\n  color: var(--dshpp-bad);\r\n}\r\n.dshpp-page .dshpp-check-name {\r\n  overflow: hidden;\r\n  text-overflow: ellipsis;\r\n  white-space: nowrap;\r\n  min-width: 0;\r\n}\r\n.dshpp-page .dshpp-check-val {\r\n  margin-left: auto;\r\n  color: var(--dshpp-mute);\r\n  font-variant-numeric: tabular-nums;\r\n}\r\n\r\n/* \u72B6\u6001\u9875 hero\uFF1A\u4E00\u773C\u770B\u5230"\u73B0\u5728\u4EC0\u4E48\u72B6\u6001\u3001\u4E0B\u4E00\u6B65\u70B9\u54EA" */\r\n.dshpp-page .dshpp-hero {\r\n  border: 1px solid var(--dshpp-line);\r\n  border-radius: var(--dsw-radius-md, 10px);\r\n  background: var(--dshpp-bg);\r\n  padding: 16px 18px;\r\n  display: flex;\r\n  flex-direction: column;\r\n  gap: 10px;\r\n}\r\n.dshpp-page .dshpp-hero-state {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 8px;\r\n  font-size: 1.02em;\r\n  min-width: 0;\r\n}\r\n.dshpp-page .dshpp-hero-state b {\r\n  font-weight: 600;\r\n}\r\n.dshpp-page .dshpp-hero-sub {\r\n  margin-left: auto;\r\n  color: var(--dshpp-mute);\r\n  font-size: 0.82em;\r\n}\r\n.dshpp-page .dshpp-hero-actions {\r\n  display: flex;\r\n  flex-wrap: wrap;\r\n  align-items: center;\r\n  gap: 8px;\r\n}\r\n.dshpp-page .dshpp-btn-lead {\r\n  padding: 9px 20px;\r\n  font-size: 0.98em;\r\n  font-weight: 600;\r\n  border-radius: 10px;\r\n}\r\n.dshpp-page .dshpp-hero-hint {\r\n  margin: 0;\r\n  color: var(--dshpp-mute);\r\n  font-size: 0.84em;\r\n  line-height: 1.6;\r\n}\r\n.dshpp-check.is-warn {\r\n  color: var(--dshpp-warn);\r\n}\r\n\r\n.dshpp-page .dshpp-probe-msg {\r\n  margin: 6px 0 0;\r\n  padding: 8px 10px;\r\n  border-radius: 8px;\r\n  border: 1px dashed var(--dshpp-line);\r\n  background: var(--dshpp-bg-2);\r\n  font-size: 0.82em;\r\n  white-space: pre-wrap;\r\n  overflow-wrap: anywhere;\r\n}\r\n\r\n@container purge-page (max-width: 520px) {\r\n  .dshpp-page-head {\r\n    gap: 8px;\r\n  }\r\n  .dshpp-page-tabs {\r\n    gap: 0;\r\n  }\r\n  .dshpp-page-tabs button {\r\n    flex: 1 0 auto;\r\n    padding-inline: 6px;\r\n    min-height: 44px;\r\n  }\r\n  .dshpp-page-body {\r\n    padding-top: 12px;\r\n  }\r\n  .dshpp-sec {\r\n    gap: 12px;\r\n  }\r\n  .dshpp-page :is(.dshpp-card, section.dshpp-panel, .dshpp-hero) {\r\n    padding: 12px;\r\n  }\r\n  .dshpp-strip {\r\n    column-gap: 12px;\r\n  }\r\n  .dshpp-page :is(.dshpp-row, .dshpp-sub, .dshpp-hero-state) {\r\n    flex-wrap: wrap;\r\n  }\r\n  .dshpp-page :is(input, select, textarea) {\r\n    max-width: 100%;\r\n    min-width: 0;\r\n  }\r\n  .dshpp-page .dshpp-table {\r\n    table-layout: fixed;\r\n    overflow-wrap: anywhere;\r\n  }\r\n}\r\n\r\n/* The detail route owns scrolling; the sidebar owns its own viewport. */\r\n.dshpp-detail-settings .dshpp-page {\r\n  height: auto;\r\n  overflow: visible;\r\n  padding-inline: 0;\r\n}\r\n\r\n/* \u2500\u2500 \u72B6\u6001\u9875\u91CD\u6392\uFF081.7.18\uFF09\uFF1A\u5065\u5EB7\u5EA6 / \u8865\u4E01\u7EC4\u5F00\u5173 / \u8FC7\u6EE4 / \u5199\u5165\u6D41\u7A0B \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */\r\n\r\n.dshpp-scan {\r\n  border: 0;\r\n  background: transparent;\r\n  color: var(--dshpp-mute);\r\n  font: inherit;\r\n  font-size: 12px;\r\n  padding: 6px 2px;\r\n  cursor: pointer;\r\n  text-decoration: underline;\r\n  text-underline-offset: 2px;\r\n  white-space: nowrap;\r\n}\r\n.dshpp-scan:hover {\r\n  color: var(--dshpp-fg);\r\n}\r\n.dshpp-scan:disabled {\r\n  cursor: default;\r\n  opacity: 0.55;\r\n}\r\n\r\n.dshpp-health {\r\n  border: 1px solid var(--dshpp-line);\r\n  border-radius: 12px;\r\n  padding: 14px 16px;\r\n  margin-top: 12px;\r\n  background: var(--dshpp-bg);\r\n  min-width: 0;\r\n}\r\n.dshpp-health-top {\r\n  display: flex;\r\n  align-items: baseline;\r\n  gap: 10px;\r\n  flex-wrap: wrap;\r\n}\r\n.dshpp-health-big {\r\n  font-size: 26px;\r\n  font-weight: 660;\r\n  letter-spacing: -0.3px;\r\n  font-variant-numeric: tabular-nums;\r\n}\r\n.dshpp-health-big small {\r\n  font-size: 13px;\r\n  font-weight: 500;\r\n  color: var(--dshpp-mute);\r\n  letter-spacing: 0;\r\n}\r\n.dshpp-health-verdict {\r\n  font-size: 12.5px;\r\n  color: var(--dshpp-mute);\r\n  min-width: 0;\r\n}\r\n.dshpp-bar {\r\n  display: flex;\r\n  height: 7px;\r\n  border-radius: 99px;\r\n  overflow: hidden;\r\n  background: var(--dshpp-bg-2);\r\n  margin: 10px 0 12px;\r\n}\r\n.dshpp-bar i {\r\n  display: block;\r\n  height: 100%;\r\n}\r\n.dshpp-bar .is-ok {\r\n  background: var(--dshpp-ok);\r\n}\r\n.dshpp-bar .is-wait {\r\n  background: var(--dshpp-warn);\r\n}\r\n.dshpp-bar .is-off {\r\n  background: var(--dshpp-mute);\r\n  opacity: 0.45;\r\n}\r\n.dshpp-tiles {\r\n  display: grid;\r\n  grid-template-columns: repeat(4, minmax(0, 1fr));\r\n  gap: 10px;\r\n}\r\n.dshpp-tile {\r\n  border: 1px solid var(--dshpp-line);\r\n  border-radius: 10px;\r\n  padding: 8px 11px;\r\n  background: var(--dshpp-bg-2);\r\n  min-width: 0;\r\n}\r\n.dshpp-tile.is-na {\r\n  border-style: dashed;\r\n}\r\n.dshpp-tile-k {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 4px;\r\n  font-size: 11.5px;\r\n  color: var(--dshpp-mute);\r\n  white-space: nowrap;\r\n}\r\n.dshpp-tile-v {\r\n  margin-top: 2px;\r\n  font-size: 18px;\r\n  font-weight: 640;\r\n  font-variant-numeric: tabular-nums;\r\n}\r\n.dshpp-tile.is-ok .dshpp-tile-v {\r\n  color: var(--dshpp-ok);\r\n}\r\n.dshpp-tile.is-wait .dshpp-tile-v {\r\n  color: var(--dshpp-warn);\r\n}\r\n.dshpp-tile.is-off .dshpp-tile-v,\r\n.dshpp-tile.is-na .dshpp-tile-v {\r\n  color: var(--dshpp-mute);\r\n}\r\n\r\n.dshpp-switches {\r\n  display: grid;\r\n  grid-template-columns: repeat(2, minmax(0, 1fr));\r\n  gap: 12px;\r\n  margin-top: 12px;\r\n}\r\n.dshpp-sw {\r\n  border: 1px solid var(--dshpp-line);\r\n  border-radius: 12px;\r\n  padding: 12px 14px;\r\n  background: var(--dshpp-bg);\r\n  min-width: 0;\r\n}\r\n.dshpp-sw.is-on {\r\n  box-shadow: inset 3px 0 0 var(--dshpp-accent);\r\n}\r\n.dshpp-sw-h {\r\n  display: flex;\r\n  align-items: center;\r\n  justify-content: space-between;\r\n  gap: 10px;\r\n}\r\n.dshpp-sw-t {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 6px;\r\n  font-weight: 600;\r\n  min-width: 0;\r\n}\r\n.dshpp-sw-d {\r\n  margin: 6px 0 8px;\r\n  font-size: 12.5px;\r\n  line-height: 1.5;\r\n  color: var(--dshpp-mute);\r\n}\r\n.dshpp-sw-f {\r\n  display: flex;\r\n  gap: 6px;\r\n  flex-wrap: wrap;\r\n}\r\n.dshpp-chip {\r\n  border: 1px solid var(--dshpp-line);\r\n  border-radius: 99px;\r\n  padding: 2px 8px;\r\n  font-size: 11.5px;\r\n  color: var(--dshpp-mute);\r\n}\r\n.dshpp-chip.is-on {\r\n  color: var(--dshpp-accent);\r\n  border-color: currentColor;\r\n}\r\n.dshpp-track {\r\n  position: relative;\r\n  width: 42px;\r\n  height: 24px;\r\n  flex: none;\r\n  padding: 0;\r\n  border: 1px solid var(--dshpp-line);\r\n  border-radius: 99px;\r\n  background: var(--dshpp-bg-2);\r\n  cursor: pointer;\r\n}\r\n.dshpp-track.is-on {\r\n  background: var(--dshpp-accent);\r\n  border-color: var(--dshpp-accent);\r\n}\r\n.dshpp-track:disabled {\r\n  cursor: default;\r\n  opacity: 0.55;\r\n}\r\n.dshpp-knob {\r\n  position: absolute;\r\n  top: 2px;\r\n  left: 2px;\r\n  width: 18px;\r\n  height: 18px;\r\n  border-radius: 99px;\r\n  background: #fff;\r\n  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);\r\n  transition: transform 0.15s ease;\r\n}\r\n.dshpp-track.is-on .dshpp-knob {\r\n  transform: translateX(18px);\r\n}\r\n.dshpp-sw-note {\r\n  margin: 6px 0 0;\r\n  font-size: 12.5px;\r\n  color: var(--dshpp-ok);\r\n}\r\n.dshpp-sw-note.is-bad {\r\n  color: var(--dshpp-bad);\r\n}\r\n.dshpp-sw-hint {\r\n  margin: 6px 2px 0;\r\n  font-size: 11.5px;\r\n  color: var(--dshpp-mute);\r\n}\r\n\r\n.dshpp-filter {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 6px;\r\n  flex-wrap: wrap;\r\n  margin: 10px 0 8px;\r\n}\r\n.dshpp-fbtn {\r\n  border: 1px solid transparent;\r\n  background: transparent;\r\n  color: var(--dshpp-mute);\r\n  border-radius: 99px;\r\n  padding: 4px 10px;\r\n  min-height: 32px;\r\n  font: inherit;\r\n  font-size: 12.5px;\r\n  cursor: pointer;\r\n}\r\n.dshpp-fbtn:hover {\r\n  background: var(--dshpp-bg-2);\r\n}\r\n.dshpp-fbtn.is-cur {\r\n  color: var(--dshpp-accent);\r\n  border-color: currentColor;\r\n  background: color-mix(in srgb, var(--dshpp-accent) 10%, transparent);\r\n}\r\n.dshpp-fbtn-n {\r\n  margin-left: 5px;\r\n  opacity: 0.7;\r\n  font-variant-numeric: tabular-nums;\r\n}\r\n.dshpp-filter-hint {\r\n  margin-left: auto;\r\n  font-size: 11.5px;\r\n  color: var(--dshpp-mute);\r\n}\r\n\r\n.dshpp-caret {\r\n  width: 12px;\r\n  flex: none;\r\n  color: var(--dshpp-mute);\r\n  font-size: 10px;\r\n}\r\n.dshpp-group-chips {\r\n  margin-left: auto;\r\n  display: flex;\r\n  gap: 4px;\r\n  flex-wrap: wrap;\r\n  justify-content: flex-end;\r\n}\r\n.dshpp-group-notes {\r\n  margin: 0;\r\n  padding: 0 12px 8px 30px;\r\n  font-size: 11.5px;\r\n  color: var(--dshpp-mute);\r\n}\r\n.dshpp-row-note {\r\n  display: block;\r\n  margin-top: 1px;\r\n  font-size: 11px;\r\n  color: var(--dshpp-mute);\r\n}\r\n\r\n.dshpp-flow {\r\n  border: 1px solid var(--dshpp-line);\r\n  border-radius: 12px;\r\n  padding: 13px 15px;\r\n  margin-top: 12px;\r\n  background: var(--dshpp-bg);\r\n}\r\n.dshpp-flow h4 {\r\n  margin: 0 0 10px;\r\n  font-size: 13px;\r\n  font-weight: 600;\r\n}\r\n.dshpp-steps {\r\n  display: grid;\r\n  grid-template-columns: repeat(3, minmax(0, 1fr));\r\n  gap: 12px;\r\n}\r\n.dshpp-step {\r\n  display: flex;\r\n  gap: 9px;\r\n  min-width: 0;\r\n}\r\n.dshpp-step-no {\r\n  width: 20px;\r\n  height: 20px;\r\n  flex: none;\r\n  border: 1px solid var(--dshpp-line);\r\n  border-radius: 99px;\r\n  display: grid;\r\n  place-items: center;\r\n  font-size: 11px;\r\n  color: var(--dshpp-mute);\r\n}\r\n.dshpp-step b {\r\n  display: block;\r\n  font-size: 12.5px;\r\n  font-weight: 600;\r\n}\r\n.dshpp-step span {\r\n  font-size: 11.5px;\r\n  color: var(--dshpp-mute);\r\n}\r\n.dshpp-flow-foot {\r\n  margin: 10px 0 0;\r\n  font-size: 11px;\r\n  color: var(--dshpp-mute);\r\n}\r\n\r\n/* \u7A84\u5C4F\uFF1A\u4E24\u5217 \u2192 \u5355\u5217\uFF0C\u56DB\u683C \u2192 2\xD72\uFF0C\u5F00\u5173\u52A0\u5927\u89E6\u6478\u76EE\u6807 */\r\n@container purge-page (max-width: 640px) {\r\n  .dshpp-health-big {\r\n    font-size: 22px;\r\n  }\r\n  .dshpp-tiles {\r\n    grid-template-columns: repeat(2, minmax(0, 1fr));\r\n  }\r\n  .dshpp-switches {\r\n    grid-template-columns: 1fr;\r\n  }\r\n  .dshpp-steps {\r\n    grid-template-columns: 1fr;\r\n  }\r\n  .dshpp-filter-hint {\r\n    display: none;\r\n  }\r\n  .dshpp-track {\r\n    width: 46px;\r\n    height: 26px;\r\n  }\r\n  .dshpp-knob {\r\n    width: 20px;\r\n    height: 20px;\r\n  }\r\n  .dshpp-track.is-on .dshpp-knob {\r\n    transform: translateX(20px);\r\n  }\r\n  .dshpp-group-notes {\r\n    padding-left: 12px;\r\n  }\r\n  /* \u7A84\u5C4F\uFF1A\u7EC4\u5934\u5141\u8BB8\u6362\u884C\uFF0C\u72B6\u6001\u80F6\u56CA\u72EC\u5360\u4E00\u884C\uFF0C\u5426\u5219\u53EA\u4F1A\u9732\u51FA\u7B2C\u4E00\u4E2A */\r\n  .dshpp-group-h {\r\n    flex-wrap: wrap;\r\n    row-gap: 4px;\r\n  }\r\n  .dshpp-group-chips {\r\n    flex: 1 0 100%;\r\n    margin-left: 0;\r\n    justify-content: flex-start;\r\n  }\r\n  .dshpp-group-h {\r\n    justify-content: flex-start;\r\n    column-gap: 8px;\r\n  }\r\n  .dshpp-group-h .dshpp-count {\r\n    margin-left: auto;\r\n  }\r\n  /* \u4E09\u5217\u8868\u683C\u5728 360px \u4F1A\u9876\u7834\u5BB9\u5668\uFF1A\u56FA\u5B9A\u5217\u5BBD + \u5141\u8BB8\u72B6\u6001\u8BCD\u6362\u884C */\r\n  .dshpp-page .dshpp-table {\r\n    width: 100%;\r\n    table-layout: fixed;\r\n  }\r\n  .dshpp-page .dshpp-table :is(th, td):first-child {\r\n    width: 44px;\r\n  }\r\n  .dshpp-page .dshpp-table :is(th, td):last-child {\r\n    width: 88px;\r\n  }\r\n  .dshpp-page .dshpp-table .dshpp-pill {\r\n    white-space: normal;\r\n    text-align: center;\r\n  }\r\n  .dshpp-sw-d,\r\n  .dshpp-sw-hint,\r\n  .dshpp-group-notes {\r\n    overflow-wrap: anywhere;\r\n  }\r\n}\r\n\r\n@container purge-page (max-width: 400px) {\r\n  .dshpp-tile-k {\r\n    white-space: normal;\r\n  }\r\n  .dshpp-fbtn {\r\n    padding: 4px 8px;\r\n    font-size: 12px;\r\n  }\r\n  .dshpp-sw {\r\n    padding: 11px 12px;\r\n  }\r\n  .dshpp-health {\r\n    padding: 12px;\r\n  }\r\n}\r\n\r\n/* \u8865\u4E01\u660E\u7EC6\u6539\u6210\u5E38\u663E\u533A\u5757\uFF08\u4E0D\u518D\u662F\u6298\u53E0\u58F3\uFF09 */\r\n.dshpp-fold.is-open {\r\n  display: block;\r\n}\r\n.dshpp-fold-t {\r\n  display: flex;\r\n  align-items: baseline;\r\n  gap: 8px;\r\n  margin: 18px 0 6px;\r\n  font-size: 13px;\r\n  font-weight: 600;\r\n}\r\n.dshpp-fold-n {\r\n  color: var(--dshpp-mute);\r\n  font-weight: 500;\r\n  font-size: 12px;\r\n  font-variant-numeric: tabular-nums;\r\n}\r\n\r\n/* \u2500\u2500 \u89C6\u89C9\u5BF9\u9F50\u6837\u7A3F\uFF081.7.18\uFF09\uFF1A\u6570\u5B57\u3001\u95F4\u8DDD\u3001\u5706\u89D2\u3001\u989C\u8272\u7EDF\u4E00\u5230\u540C\u4E00\u5957\u523B\u5EA6 \u2500\u2500\u2500\u2500\u2500\u2500\r\n   DSH \u81EA\u8EAB\u7684 brand \u8272\u662F\u5355\u8272\u9ED1\u767D\uFF0C\u6837\u7A3F\u7528\u7684\u662F\u54C1\u724C\u84DD/\u7EFF\uFF1B\u8FD9\u91CC\u53EA\u5728\u672C\u9875\u8303\u56F4\u5185\r\n   \u8986\u76D6\uFF0C\u907F\u514D\u5F71\u54CD\u9762\u677F\u5176\u5B83\u533A\u5757\u3002 */\r\n.dshpp-page {\r\n  --pg-accent: #2563eb;\r\n  --pg-ok: #15803d;\r\n  --pg-warn: #b45309;\r\n}\r\n\r\n/* \u6807\u9898\u884C\uFF1A\u9875\u9762\u540D + \u64CD\u4F5C\u7EC4 + \u626B\u63CF\u65F6\u95F4 */\r\n.dshpp-status-head {\r\n  display: flex;\r\n  align-items: flex-end;\r\n  justify-content: space-between;\r\n  gap: 14px;\r\n  flex-wrap: wrap;\r\n  margin: 2px 0 16px;\r\n}\r\n.dshpp-status-title {\r\n  margin: 0;\r\n  font-size: 19px;\r\n  font-weight: 650;\r\n  letter-spacing: -0.2px;\r\n}\r\n.dshpp-status-ops {\r\n  display: flex;\r\n  align-items: center;\r\n  gap: 8px;\r\n  flex-wrap: wrap;\r\n}\r\n.dshpp-status-note {\r\n  margin: -8px 0 12px;\r\n  font-size: 12.5px;\r\n  color: var(--dshpp-mute);\r\n}\r\n\r\n/* \u6309\u94AE\uFF1A\u6837\u7A3F\u7684 9px \u5706\u89D2 / 13px \u5B57 / \u4E3B\u6309\u94AE\u53CD\u8272 */\r\n.dshpp-page .dshpp-btn {\r\n  font-size: 13px;\r\n  padding: 7px 13px;\r\n  border-radius: 9px;\r\n  line-height: 1.2;\r\n}\r\n.dshpp-page .dshpp-btn.dshpp-btn-apply {\r\n  background: var(--dshpp-fg);\r\n  border-color: var(--dshpp-fg);\r\n  color: var(--dshpp-bg, #fff);\r\n  font-weight: 560;\r\n}\r\n.dshpp-page .dshpp-btn.dshpp-btn-apply:not(:disabled):hover {\r\n  opacity: 0.88;\r\n}\r\n\r\n/* \u5065\u5EB7\u5EA6\uFF1A\u4E3B\u6570\u5B57\u4E0E\u56DB\u683C */\r\n.dshpp-health {\r\n  padding: 18px 20px;\r\n  border-radius: 12px;\r\n}\r\n.dshpp-health-big {\r\n  font-size: 30px;\r\n  font-weight: 680;\r\n}\r\n.dshpp-health-big small {\r\n  font-size: 15px;\r\n}\r\n.dshpp-tile {\r\n  padding: 10px 12px;\r\n}\r\n.dshpp-tile-k {\r\n  font-size: 11.5px;\r\n}\r\n.dshpp-tile-v {\r\n  font-size: 19px;\r\n  font-weight: 640;\r\n}\r\n\r\n/* \u5F00\u5173\uFF1A\u54C1\u724C\u84DD\u800C\u4E0D\u662F\u5355\u8272\u9ED1 */\r\n.dshpp-sw {\r\n  padding: 15px 17px;\r\n  border-radius: 12px;\r\n}\r\n.dshpp-sw-t {\r\n  font-size: 14px;\r\n}\r\n.dshpp-sw-d {\r\n  font-size: 12.5px;\r\n}\r\n.dshpp-chip {\r\n  font-size: 11.5px;\r\n  padding: 2px 8px;\r\n}\r\n.dshpp-track.is-on {\r\n  background: var(--pg-accent);\r\n  border-color: var(--pg-accent);\r\n}\r\n\r\n/* \u8FC7\u6EE4\u6761\uFF1A\u9009\u4E2D\u6001\u7528\u6837\u7A3F\u7684\u84DD\u8272\u63CF\u8FB9 + \u6D45\u5E95 */\r\n.dshpp-fbtn {\r\n  font-size: 12.5px;\r\n}\r\n.dshpp-fbtn.is-cur {\r\n  color: var(--pg-accent);\r\n  border-color: var(--pg-accent);\r\n  background: color-mix(in srgb, var(--pg-accent) 10%, transparent);\r\n}\r\n\r\n/* \u660E\u7EC6\u8868\uFF1A13px \u6B63\u6587\u300111.5px \u72B6\u6001\u80F6\u56CA */\r\n.dshpp-page .dshpp-table {\r\n  font-size: 13px;\r\n}\r\n.dshpp-page .dshpp-table th {\r\n  font-size: 11.5px;\r\n  letter-spacing: 0.03em;\r\n  padding: 7px 15px;\r\n}\r\n.dshpp-page .dshpp-table td {\r\n  padding: 7px 15px;\r\n}\r\n.dshpp-page .dshpp-pill {\r\n  font-size: 11.5px;\r\n  padding: 2px 8px;\r\n}\r\n.dshpp-caret {\r\n  font-size: 10px;\r\n}\r\n.dshpp-group-notes {\r\n  font-size: 11.5px;\r\n}\r\n\r\n/* \u5199\u5165\u6D41\u7A0B */\r\n.dshpp-flow {\r\n  padding: 16px 18px;\r\n  border-radius: 12px;\r\n}\r\n.dshpp-flow h4 {\r\n  font-size: 13.5px;\r\n}\r\n.dshpp-step b {\r\n  font-size: 13px;\r\n}\r\n.dshpp-step span {\r\n  font-size: 12.5px;\r\n}\r\n\r\n/* \u7EF4\u62A4\u533A\u5934\u90E8\u7684\u7248\u672C\u53F7 */\r\n.dshpp-maint-head {\r\n  display: flex;\r\n  align-items: baseline;\r\n  gap: 10px;\r\n  flex-wrap: wrap;\r\n}\r\n.dshpp-maint-head h3 {\r\n  margin: 0;\r\n}\r\n.dshpp-maint-ver {\r\n  display: inline-flex;\r\n  align-items: center;\r\n  gap: 6px;\r\n  font-size: 12px;\r\n  color: var(--dshpp-mute);\r\n}\r\n.dshpp-maint-ver b {\r\n  font-weight: 600;\r\n  color: var(--pg-ok);\r\n  border: 1px solid color-mix(in srgb, var(--pg-ok) 40%, transparent);\r\n  border-radius: 99px;\r\n  padding: 0 6px;\r\n  font-size: 11px;\r\n}\r\n\r\n/* \u660E\u7EC6\u8868\u7B2C\u4E8C\u884C\uFF1A\u82F1\u6587\u6807\u8BC6\u7B26\uFF08\u5BF9\u9F50\u6837\u7A3F\u7684\u4E24\u884C\u7ED3\u6784\uFF09 */\r\n.dshpp-row-en {\r\n  display: block;\r\n  margin-top: 1px;\r\n  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;\r\n  font-size: 11px;\r\n  color: var(--dshpp-mute);\r\n  letter-spacing: 0.01em;\r\n}\r\n';
+var page_default = '/* \u6574\u9875\uFF08\u5DE6\u4FA7\u680F\u5165\u53E3\uFF09\u6837\u5F0F\uFF1A\u6CBF\u7528 DSH \u81EA\u5DF1\u7684\u5B57\u4F53\u3001\u95F4\u8DDD\u4E0E\u4E3B\u9898\u53D8\u91CF\uFF0C\u4E0D\u5F15\u5165\u81EA\u5B9A\u4E49\u5B57\u4F53\u3002 */\n.dshpp-page {\n  --dshpp-line: var(--dsw-alias-border-l1, rgba(127, 127, 127, 0.22));\n  --dshpp-line-strong: var(--dsw-alias-border-l2, rgba(127, 127, 127, 0.4));\n  --dshpp-fg: var(--dsw-alias-label-primary, currentColor);\n  --dshpp-mute: var(\n    --dsw-alias-label-secondary,\n    color-mix(in srgb, currentColor 62%, transparent)\n  );\n  --dshpp-bg: var(--dsw-alias-bg-layer-1, transparent);\n  --dshpp-bg-2: var(--dsw-alias-bg-layer-2, rgba(127, 127, 127, 0.06));\n  --dshpp-accent: var(--dsw-alias-brand-primary, #4d6bfe);\n  --dshpp-ok: var(--dsw-alias-state-success-primary, #1f9d55);\n  --dshpp-warn: var(--dsw-alias-state-warn-primary, #b7791f);\n  --dshpp-bad: var(--dsw-alias-state-error-primary, #d14343);\n  box-sizing: border-box;\n  container: purge-page / inline-size;\n  width: 100%;\n  min-width: 0;\n  height: 100%;\n  min-height: 0;\n  overflow: auto;\n  padding: 20px clamp(12px, 3%, 32px) 32px;\n  color: var(--dshpp-fg);\n  font: inherit;\n  font-size: var(--dsh-content-font-size, 14px);\n  line-height: 1.55;\n  -webkit-font-smoothing: antialiased;\n}\n.dshpp-page *,\n.dshpp-page *::before,\n.dshpp-page *::after {\n  box-sizing: border-box;\n}\n\n.dshpp-page-head {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  min-width: 0;\n}\n.dshpp-page-glyph {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 34px;\n  height: 34px;\n  border-radius: 10px;\n  border: 1px solid var(--dshpp-line);\n  background: var(--dshpp-bg-2);\n  color: var(--dshpp-accent);\n  flex: none;\n}\n.dshpp-page-title {\n  min-width: 0;\n}\n.dshpp-page-title h1 {\n  margin: 0;\n  font-size: 1.3em;\n  font-weight: 600;\n  letter-spacing: 0.01em;\n}\n.dshpp-page-title p {\n  margin: 2px 0 0;\n  font-size: 0.86em;\n  color: var(--dshpp-mute);\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-wrap: wrap;\n}\n.dshpp-page-ver {\n  padding: 1px 6px;\n  border-radius: 999px;\n  border: 1px solid var(--dshpp-line);\n  font-size: 0.92em;\n}\n\n/* \u9876\u90E8\u4E00\u884C\u72B6\u6001\u6458\u8981\uFF1A\u4E0D\u7528\u5361\u7247\uFF0C\u8DDF DSH \u7684 subtitle \u884C\u4E00\u81F4 */\n.dshpp-strip {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 6px 18px;\n  margin: 0;\n  padding: 0 0 12px;\n  border-bottom: 1px solid var(--dshpp-line);\n  font-size: 0.86em;\n  color: var(--dshpp-mute);\n}\n.dshpp-strip-item {\n  display: inline-flex;\n  align-items: center;\n  gap: 5px;\n  min-width: 0;\n}\n.dshpp-strip-item b {\n  color: var(--dshpp-fg);\n  font-weight: 600;\n}\n.dshpp-dot {\n  width: 7px;\n  height: 7px;\n  border-radius: 50%;\n  background: var(--dshpp-mute);\n  flex: none;\n}\n.dshpp-dot.is-ok {\n  background: var(--dshpp-ok);\n}\n.dshpp-dot.is-warn {\n  background: var(--dshpp-warn);\n}\n.dshpp-dot.is-bad {\n  background: var(--dshpp-bad);\n}\n\n/* \u9875\u7B7E\uFF1A\u4E0B\u5212\u7EBF\u5F0F\uFF0C\u8DDF DSH \u8BBE\u7F6E\u9875\u7684 tab \u4E00\u81F4 */\n.dshpp-page-tabs {\n  display: flex;\n  gap: 2px;\n  margin: 10px 0 0;\n  border-bottom: 1px solid var(--dshpp-line);\n  overflow-x: auto;\n  scrollbar-width: none;\n}\n.dshpp-page-tabs::-webkit-scrollbar {\n  display: none;\n}\n.dshpp-page-tabs button {\n  appearance: none;\n  border: 0;\n  background: transparent;\n  color: var(--dshpp-mute);\n  font: inherit;\n  font-size: 1em;\n  padding: 10px 12px;\n  border-bottom: 2px solid transparent;\n  margin-bottom: -1px;\n  cursor: pointer;\n  white-space: nowrap;\n}\n.dshpp-page-tabs button:hover {\n  color: var(--dshpp-fg);\n}\n.dshpp-page-tabs button[aria-selected="true"] {\n  color: var(--dshpp-fg);\n  border-bottom-color: var(--dshpp-accent);\n  font-weight: 600;\n}\n\n.dshpp-page-body {\n  padding-top: 18px;\n  display: flex;\n  flex-direction: column;\n  gap: 16px;\n  min-width: 0;\n}\n.dshpp-sec {\n  display: flex;\n  flex-direction: column;\n  gap: 16px;\n  min-width: 0;\n}\n.dshpp-sec[hidden] {\n  display: none;\n}\n\n/* \u5361\u7247\uFF1ADSH \u7684 layer-1 \u9762\u677F */\n.dshpp-page .dshpp-card,\n.dshpp-page section.dshpp-panel {\n  border: 1px solid var(--dshpp-line);\n  border-radius: var(--dsw-radius-md, 10px);\n  background: var(--dshpp-bg);\n  padding: 16px 18px;\n  margin: 0;\n  min-width: 0;\n}\n.dshpp-page .dshpp-card > h3:first-child,\n.dshpp-page section.dshpp-panel > h3:first-child {\n  margin: 0 0 12px;\n  font-size: 1em;\n  font-weight: 600;\n}\n.dshpp-page .dshpp-panel {\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n}\n\n/* \u5B57\u6BB5\u884C\uFF1A\u5DE6\u6807\u9898\u53F3\u63A7\u4EF6\uFF1B\u7A84\u5C4F\u81EA\u52A8\u6362\u884C */\n.dshpp-page .dshpp-field {\n  display: grid;\n  grid-template-columns: minmax(120px, 190px) 1fr;\n  gap: 8px 14px;\n  align-items: center;\n}\n.dshpp-page .dshpp-field > .dshpp-field-label {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  font-size: 0.92em;\n  color: var(--dshpp-fg);\n}\n.dshpp-page .dshpp-field > .dshpp-field-body {\n  min-width: 0;\n}\n@container purge-page (max-width: 640px) {\n  .dshpp-page .dshpp-field {\n    grid-template-columns: 1fr;\n  }\n}\n\n.dshpp-page .dshpp-muted,\n.dshpp-page .dshpp-hint {\n  color: var(--dshpp-mute) !important;\n  font-size: 0.86em !important;\n  line-height: 1.6;\n  margin: 0;\n}\n\n.dshpp-page .dshpp-row {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 10px;\n  align-items: center;\n  min-width: 0;\n}\n.dshpp-page input,\n.dshpp-page select,\n.dshpp-page textarea {\n  font: inherit;\n  color: var(--dshpp-fg);\n  background: var(--dshpp-bg-2);\n  border: 1px solid var(--dshpp-line);\n  border-radius: 8px;\n  padding: 7px 10px;\n  max-width: 100%;\n}\n.dshpp-page input:focus-visible,\n.dshpp-page select:focus-visible,\n.dshpp-page textarea:focus-visible {\n  outline: 2px solid color-mix(in srgb, var(--dshpp-accent) 55%, transparent);\n  outline-offset: 1px;\n}\n.dshpp-page textarea {\n  width: 100%;\n  min-height: 320px;\n  resize: vertical;\n  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;\n  font-size: 0.86em;\n  line-height: 1.6;\n}\n\n.dshpp-page .dshpp-btn {\n  font: inherit;\n  font-size: 0.9em;\n  border-radius: 8px;\n  padding: 6px 12px;\n  border: 1px solid var(--dshpp-line);\n  background: var(--dshpp-bg-2);\n  color: var(--dshpp-fg);\n  cursor: pointer;\n  white-space: nowrap;\n}\n.dshpp-page .dshpp-btn:hover:not(:disabled) {\n  border-color: var(--dshpp-line-strong);\n}\n.dshpp-page .dshpp-btn:disabled {\n  opacity: 0.45;\n  cursor: not-allowed;\n}\n/* \u4E3B\u6309\u94AE\uFF1A\u4E0D\u8981\u7528 brand-primary \u5F53\u5E95\u8272\u2014\u2014\u6DF1\u8272\u6A21\u5F0F\u4E0B\u5B83\u662F\u9AD8\u4EAE\u6587\u5B57\u8272\uFF0C\n   \u76F4\u63A5\u94FA\u6210\u80CC\u666F\u5C31\u6210\u4E86"\u767D\u5E95\u767D\u5B57"\u7684\u65B9\u5757\u3002\u8FD9\u91CC\u7528\u56FA\u5B9A\u7684\u5B9E\u5FC3\u7EFF + \u767D\u5B57\u3002 */\n.dshpp-page {\n  --dshpp-solid: #2f6b4f;\n  --dshpp-solid-hover: #3a8260;\n  --dshpp-solid-danger: #a63b3b;\n  --dshpp-solid-danger-hover: #bd4747;\n}\n.dshpp-page .dshpp-btn-primary {\n  background: var(--dshpp-solid);\n  border-color: var(--dshpp-solid);\n  color: #fff;\n  font-weight: 600;\n}\n.dshpp-page .dshpp-btn-primary:hover:not(:disabled) {\n  background: var(--dshpp-solid-hover);\n  border-color: var(--dshpp-solid-hover);\n}\n.dshpp-page .dshpp-btn-solid-danger {\n  background: var(--dshpp-solid-danger);\n  border-color: var(--dshpp-solid-danger);\n  color: #fff;\n}\n.dshpp-page .dshpp-btn-solid-danger:hover:not(:disabled) {\n  background: var(--dshpp-solid-danger-hover);\n  border-color: var(--dshpp-solid-danger-hover);\n}\n.dshpp-page .dshpp-btn-danger {\n  color: var(--dshpp-bad);\n  border-color: color-mix(in srgb, var(--dshpp-bad) 40%, transparent);\n}\n.dshpp-page .dshpp-btn-tiny {\n  padding: 3px 8px;\n  font-size: 0.82em;\n}\n\n.dshpp-page .dshpp-pill {\n  display: inline-flex;\n  align-items: center;\n  padding: 1px 8px;\n  border-radius: 999px;\n  font-size: 0.8em;\n  border: 1px solid var(--dshpp-line);\n  color: var(--dshpp-mute);\n}\n.dshpp-page .dshpp-pill.is-ok {\n  color: var(--dshpp-ok);\n  border-color: color-mix(in srgb, var(--dshpp-ok) 35%, transparent);\n}\n.dshpp-page .dshpp-pill.is-wait {\n  color: var(--dshpp-warn);\n  border-color: color-mix(in srgb, var(--dshpp-warn) 35%, transparent);\n}\n.dshpp-page .dshpp-pill.is-bad {\n  color: var(--dshpp-bad);\n  border-color: color-mix(in srgb, var(--dshpp-bad) 40%, transparent);\n}\n\n.dshpp-page .dshpp-table {\n  width: 100%;\n  border-collapse: collapse;\n  font-size: 0.86em;\n}\n.dshpp-page .dshpp-table th,\n.dshpp-page .dshpp-table td {\n  text-align: left;\n  padding: 7px 10px;\n  border-bottom: 1px solid var(--dshpp-line);\n  vertical-align: top;\n  overflow-wrap: anywhere;\n}\n.dshpp-page .dshpp-table th {\n  color: var(--dshpp-mute);\n  font-weight: 500;\n  font-size: 0.95em;\n}\n.dshpp-page .dshpp-group-h {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 10px;\n  width: 100%;\n  border: 0;\n  background: transparent;\n  color: inherit;\n  font: inherit;\n  padding: 8px 0;\n  cursor: pointer;\n}\n.dshpp-page .dshpp-count {\n  color: var(--dshpp-mute);\n  font-size: 0.85em;\n}\n\n/* \u6F14\u7EC3\u53F0\u5360\u6EE1\u5269\u4F59\u9AD8\u5EA6 */\n.dshpp-page-drill {\n  min-height: 60vh;\n}\n.dshpp-page-drill .rt-dock.rt-embedded {\n  width: 100%;\n  min-width: 0;\n}\n\n.dshpp-page-foot {\n  margin-top: 28px;\n  padding-top: 14px;\n  border-top: 1px solid var(--dshpp-line);\n  font-size: 0.8em;\n  color: var(--dshpp-mute);\n}\n\n/* \u540D\u8BCD\u89E3\u91CA\uFF1A\u6807\u9898\u540E\u9762\u7684\u5C0F\u95EE\u53F7 */\n.dshpp-help {\n  position: relative;\n  display: inline-flex;\n  align-items: center;\n}\n.dshpp-help-btn {\n  appearance: none;\n  border: 0;\n  background: transparent;\n  color: var(--dshpp-mute);\n  font: inherit;\n  font-size: 0.85em;\n  line-height: 1;\n  width: 16px;\n  height: 16px;\n  border-radius: 50%;\n  border: 1px solid var(--dshpp-line);\n  cursor: help;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  padding: 0;\n}\n.dshpp-help-btn:hover,\n.dshpp-help-btn[aria-expanded="true"] {\n  color: var(--dshpp-fg);\n  border-color: var(--dshpp-line-strong);\n  background: var(--dshpp-bg-2);\n}\n.dshpp-tip {\n  position: absolute;\n  left: 0;\n  top: calc(100% + 6px);\n  z-index: 2147483000;\n  width: max-content;\n  max-width: min(340px, 70vw);\n  padding: 9px 11px;\n  border-radius: 8px;\n  border: 1px solid var(--dshpp-line);\n  background: var(--dsw-alias-bg-overlay, canvas);\n  color: var(--dshpp-fg);\n  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);\n  font-size: 0.82em;\n  line-height: 1.6;\n  white-space: normal;\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n}\n.dshpp-tip b {\n  font-weight: 600;\n}\n\n.dshpp-page .dshpp-warn {\n  margin: 10px 0 0;\n  padding: 8px 12px;\n  border-radius: 8px;\n  border: 1px solid color-mix(in srgb, var(--dshpp-warn) 45%, transparent);\n  color: var(--dshpp-warn);\n  background: color-mix(in srgb, var(--dshpp-warn) 10%, transparent);\n  font-size: 0.86em;\n}\n\n/* \u64CD\u4F5C\u6761\uFF1A\u6700\u5E38\u7528\u7684\u300C\u5E94\u7528\u300D\u56FA\u5B9A\u5728\u5185\u5BB9\u533A\u9876\u90E8 */\n.dshpp-page .dshpp-actions {\n  position: sticky;\n  top: 0;\n  z-index: 5;\n  display: flex;\n  flex-wrap: wrap;\n  align-items: center;\n  gap: 8px;\n  padding: 10px 0 12px;\n  margin: -4px 0 6px;\n  background: linear-gradient(\n    var(--dsw-alias-bg-base, canvas) 78%,\n    transparent\n  );\n  backdrop-filter: blur(2px);\n  border-bottom: 1px solid var(--dshpp-line);\n}\n.dshpp-page .dshpp-actions .dshpp-pill {\n  margin-left: auto;\n}\n\n/* \u6307\u6807\uFF1A\u4E09\u5217\u7D27\u51D1 */\n.dshpp-page .dshpp-metrics {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));\n  gap: 10px;\n  margin: 4px 0 2px;\n}\n.dshpp-page .dshpp-metric {\n  border: 1px solid var(--dshpp-line);\n  border-radius: 10px;\n  padding: 10px 12px;\n  background: var(--dshpp-bg-2);\n  min-width: 0;\n}\n.dshpp-page .dshpp-metric b {\n  display: block;\n  font-size: 1.05em;\n  font-weight: 600;\n  margin-bottom: 2px;\n  overflow-wrap: anywhere;\n}\n.dshpp-page .dshpp-metric span {\n  color: var(--dshpp-mute);\n  font-size: 0.82em;\n}\n\n/* \u6298\u53E0\u5757\uFF1A\u8865\u4E01\u660E\u7EC6 / \u7EF4\u62A4 / \u81EA\u68C0 */\n.dshpp-page .dshpp-fold,\n.dshpp-page .dshpp-fold-inline {\n  border: 1px solid var(--dshpp-line);\n  border-radius: 10px;\n  background: var(--dshpp-bg);\n  padding: 0 12px;\n}\n.dshpp-page .dshpp-fold > summary,\n.dshpp-page .dshpp-fold-inline > summary {\n  cursor: pointer;\n  padding: 10px 0;\n  font-size: 0.92em;\n  color: var(--dshpp-fg);\n  list-style: none;\n  display: flex;\n  align-items: center;\n  gap: 8px;\n}\n.dshpp-page .dshpp-fold > summary::-webkit-details-marker,\n.dshpp-page .dshpp-fold-inline > summary::-webkit-details-marker {\n  display: none;\n}\n.dshpp-page .dshpp-fold > summary::before,\n.dshpp-page .dshpp-fold-inline > summary::before {\n  content: "\u25B8";\n  color: var(--dshpp-mute);\n  font-size: 0.9em;\n  transition: transform 0.12s ease;\n}\n.dshpp-page .dshpp-fold[open] > summary::before,\n.dshpp-page .dshpp-fold-inline[open] > summary::before {\n  transform: rotate(90deg);\n}\n.dshpp-page .dshpp-fold > summary b,\n.dshpp-page .dshpp-fold-inline > summary b {\n  color: var(--dshpp-mute);\n  font-weight: 500;\n  margin-left: auto;\n}\n\n/* \u72B6\u6001\u884C\uFF08\u81EA\u68C0 / \u5F3A\u5316\u6BB5\uFF09 */\n.dshpp-page .dshpp-line {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n  flex-wrap: wrap;\n  padding: 6px 0;\n}\n.dshpp-page .dshpp-line + .dshpp-line {\n  border-top: 1px solid var(--dshpp-line);\n}\n.dshpp-page .dshpp-line-main {\n  display: inline-flex;\n  align-items: center;\n  gap: 8px;\n  font-size: 0.92em;\n  min-width: 0;\n}\n.dshpp-page .dshpp-line-main b {\n  font-weight: 600;\n}\n.dshpp-page .dshpp-fold-inline {\n  border: 0;\n  padding: 0;\n  background: transparent;\n}\n.dshpp-page .dshpp-fold-inline > summary {\n  padding: 2px 0;\n  color: var(--dshpp-mute);\n  font-size: 0.86em;\n}\n.dshpp-page .dshpp-fold-inline[open] {\n  flex-basis: 100%;\n}\n\n/* \u9010\u5C42\u81EA\u68C0\uFF1A\u4E24\u5217/\u591A\u5217\u7F51\u683C\uFF0C\u4E0D\u518D\u4E00\u6761\u4E00\u884C */\n.dshpp-page .dshpp-checks {\n  display: grid;\n  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));\n  gap: 2px 14px;\n  padding: 6px 0 10px;\n}\n.dshpp-page .dshpp-check {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  font-size: 0.84em;\n  min-width: 0;\n  padding: 2px 0;\n}\n.dshpp-page .dshpp-check.is-bad {\n  color: var(--dshpp-bad);\n}\n.dshpp-page .dshpp-check-name {\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  min-width: 0;\n}\n.dshpp-page .dshpp-check-val {\n  margin-left: auto;\n  color: var(--dshpp-mute);\n  font-variant-numeric: tabular-nums;\n}\n\n/* \u72B6\u6001\u9875 hero\uFF1A\u4E00\u773C\u770B\u5230"\u73B0\u5728\u4EC0\u4E48\u72B6\u6001\u3001\u4E0B\u4E00\u6B65\u70B9\u54EA" */\n.dshpp-page .dshpp-hero {\n  border: 1px solid var(--dshpp-line);\n  border-radius: var(--dsw-radius-md, 10px);\n  background: var(--dshpp-bg);\n  padding: 16px 18px;\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n}\n.dshpp-page .dshpp-hero-state {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  font-size: 1.02em;\n  min-width: 0;\n}\n.dshpp-page .dshpp-hero-state b {\n  font-weight: 600;\n}\n.dshpp-page .dshpp-hero-sub {\n  margin-left: auto;\n  color: var(--dshpp-mute);\n  font-size: 0.82em;\n}\n.dshpp-page .dshpp-hero-actions {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: center;\n  gap: 8px;\n}\n.dshpp-page .dshpp-btn-lead {\n  padding: 9px 20px;\n  font-size: 0.98em;\n  font-weight: 600;\n  border-radius: 10px;\n}\n.dshpp-page .dshpp-hero-hint {\n  margin: 0;\n  color: var(--dshpp-mute);\n  font-size: 0.84em;\n  line-height: 1.6;\n}\n.dshpp-check.is-warn {\n  color: var(--dshpp-warn);\n}\n\n.dshpp-page .dshpp-probe-msg {\n  margin: 6px 0 0;\n  padding: 8px 10px;\n  border-radius: 8px;\n  border: 1px dashed var(--dshpp-line);\n  background: var(--dshpp-bg-2);\n  font-size: 0.82em;\n  white-space: pre-wrap;\n  overflow-wrap: anywhere;\n}\n\n@container purge-page (max-width: 520px) {\n  .dshpp-page-head {\n    gap: 8px;\n  }\n  .dshpp-page-tabs {\n    gap: 0;\n  }\n  .dshpp-page-tabs button {\n    flex: 1 0 auto;\n    padding-inline: 6px;\n    min-height: 44px;\n  }\n  .dshpp-page-body {\n    padding-top: 12px;\n  }\n  .dshpp-sec {\n    gap: 12px;\n  }\n  .dshpp-page :is(.dshpp-card, section.dshpp-panel, .dshpp-hero) {\n    padding: 12px;\n  }\n  .dshpp-strip {\n    column-gap: 12px;\n  }\n  .dshpp-page :is(.dshpp-row, .dshpp-sub, .dshpp-hero-state) {\n    flex-wrap: wrap;\n  }\n  .dshpp-page :is(input, select, textarea) {\n    max-width: 100%;\n    min-width: 0;\n  }\n  .dshpp-page .dshpp-table {\n    table-layout: fixed;\n    overflow-wrap: anywhere;\n  }\n}\n\n/* The detail route owns scrolling; the sidebar owns its own viewport. */\n.dshpp-detail-settings .dshpp-page {\n  height: auto;\n  overflow: visible;\n  padding-inline: 0;\n}\n\n/* \u2500\u2500 \u72B6\u6001\u9875\u91CD\u6392\uFF081.7.18\uFF09\uFF1A\u5065\u5EB7\u5EA6 / \u8865\u4E01\u7EC4\u5F00\u5173 / \u8FC7\u6EE4 / \u5199\u5165\u6D41\u7A0B \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 */\n\n.dshpp-scan {\n  border: 0;\n  background: transparent;\n  color: var(--dshpp-mute);\n  font: inherit;\n  font-size: 12px;\n  padding: 6px 2px;\n  cursor: pointer;\n  text-decoration: underline;\n  text-underline-offset: 2px;\n  white-space: nowrap;\n}\n.dshpp-scan:hover {\n  color: var(--dshpp-fg);\n}\n.dshpp-scan:disabled {\n  cursor: default;\n  opacity: 0.55;\n}\n\n.dshpp-health {\n  border: 1px solid var(--dshpp-line);\n  border-radius: 12px;\n  padding: 14px 16px;\n  margin-top: 12px;\n  background: var(--dshpp-bg);\n  min-width: 0;\n}\n.dshpp-health-top {\n  display: flex;\n  align-items: baseline;\n  gap: 10px;\n  flex-wrap: wrap;\n}\n.dshpp-health-big {\n  font-size: 26px;\n  font-weight: 660;\n  letter-spacing: -0.3px;\n  font-variant-numeric: tabular-nums;\n}\n.dshpp-health-big small {\n  font-size: 13px;\n  font-weight: 500;\n  color: var(--dshpp-mute);\n  letter-spacing: 0;\n}\n.dshpp-health-verdict {\n  font-size: 12.5px;\n  color: var(--dshpp-mute);\n  min-width: 0;\n}\n.dshpp-bar {\n  display: flex;\n  height: 7px;\n  border-radius: 99px;\n  overflow: hidden;\n  background: var(--dshpp-bg-2);\n  margin: 10px 0 12px;\n}\n.dshpp-bar i {\n  display: block;\n  height: 100%;\n}\n.dshpp-bar .is-ok {\n  background: var(--dshpp-ok);\n}\n.dshpp-bar .is-wait {\n  background: var(--dshpp-warn);\n}\n.dshpp-bar .is-off {\n  background: var(--dshpp-mute);\n  opacity: 0.45;\n}\n.dshpp-tiles {\n  display: grid;\n  grid-template-columns: repeat(4, minmax(0, 1fr));\n  gap: 10px;\n}\n.dshpp-tile {\n  border: 1px solid var(--dshpp-line);\n  border-radius: 10px;\n  padding: 8px 11px;\n  background: var(--dshpp-bg-2);\n  min-width: 0;\n}\n.dshpp-tile.is-na {\n  border-style: dashed;\n}\n.dshpp-tile-k {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  font-size: 11.5px;\n  color: var(--dshpp-mute);\n  white-space: nowrap;\n}\n.dshpp-tile-v {\n  margin-top: 2px;\n  font-size: 18px;\n  font-weight: 640;\n  font-variant-numeric: tabular-nums;\n}\n.dshpp-tile.is-ok .dshpp-tile-v {\n  color: var(--dshpp-ok);\n}\n.dshpp-tile.is-wait .dshpp-tile-v {\n  color: var(--dshpp-warn);\n}\n.dshpp-tile.is-off .dshpp-tile-v,\n.dshpp-tile.is-na .dshpp-tile-v {\n  color: var(--dshpp-mute);\n}\n\n.dshpp-switches {\n  display: grid;\n  grid-template-columns: repeat(2, minmax(0, 1fr));\n  gap: 12px;\n  margin-top: 12px;\n}\n.dshpp-sw {\n  border: 1px solid var(--dshpp-line);\n  border-radius: 12px;\n  padding: 12px 14px;\n  background: var(--dshpp-bg);\n  min-width: 0;\n}\n.dshpp-sw.is-on {\n  box-shadow: inset 3px 0 0 var(--dshpp-accent);\n}\n.dshpp-sw-h {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 10px;\n}\n.dshpp-sw-t {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  font-weight: 600;\n  min-width: 0;\n}\n.dshpp-sw-d {\n  margin: 6px 0 8px;\n  font-size: 12.5px;\n  line-height: 1.5;\n  color: var(--dshpp-mute);\n}\n.dshpp-sw-f {\n  display: flex;\n  gap: 6px;\n  flex-wrap: wrap;\n}\n.dshpp-chip {\n  border: 1px solid var(--dshpp-line);\n  border-radius: 99px;\n  padding: 2px 8px;\n  font-size: 11.5px;\n  color: var(--dshpp-mute);\n}\n.dshpp-chip.is-on {\n  color: var(--dshpp-accent);\n  border-color: currentColor;\n}\n.dshpp-track {\n  position: relative;\n  width: 42px;\n  height: 24px;\n  flex: none;\n  padding: 0;\n  border: 1px solid var(--dshpp-line);\n  border-radius: 99px;\n  background: var(--dshpp-bg-2);\n  cursor: pointer;\n}\n.dshpp-track.is-on {\n  background: var(--dshpp-accent);\n  border-color: var(--dshpp-accent);\n}\n.dshpp-track:disabled {\n  cursor: default;\n  opacity: 0.55;\n}\n.dshpp-knob {\n  position: absolute;\n  top: 2px;\n  left: 2px;\n  width: 18px;\n  height: 18px;\n  border-radius: 99px;\n  background: #fff;\n  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);\n  transition: transform 0.15s ease;\n}\n.dshpp-track.is-on .dshpp-knob {\n  transform: translateX(18px);\n}\n.dshpp-sw-note {\n  margin: 6px 0 0;\n  font-size: 12.5px;\n  color: var(--dshpp-ok);\n}\n.dshpp-sw-note.is-bad {\n  color: var(--dshpp-bad);\n}\n.dshpp-sw-hint {\n  margin: 6px 2px 0;\n  font-size: 11.5px;\n  color: var(--dshpp-mute);\n}\n\n.dshpp-filter {\n  display: flex;\n  align-items: center;\n  gap: 6px;\n  flex-wrap: wrap;\n  margin: 10px 0 8px;\n}\n.dshpp-fbtn {\n  border: 1px solid transparent;\n  background: transparent;\n  color: var(--dshpp-mute);\n  border-radius: 99px;\n  padding: 4px 10px;\n  min-height: 32px;\n  font: inherit;\n  font-size: 12.5px;\n  cursor: pointer;\n}\n.dshpp-fbtn:hover {\n  background: var(--dshpp-bg-2);\n}\n.dshpp-fbtn.is-cur {\n  color: var(--dshpp-accent);\n  border-color: currentColor;\n  background: color-mix(in srgb, var(--dshpp-accent) 10%, transparent);\n}\n.dshpp-fbtn-n {\n  margin-left: 5px;\n  opacity: 0.7;\n  font-variant-numeric: tabular-nums;\n}\n.dshpp-filter-hint {\n  margin-left: auto;\n  font-size: 11.5px;\n  color: var(--dshpp-mute);\n}\n\n.dshpp-caret {\n  width: 12px;\n  flex: none;\n  color: var(--dshpp-mute);\n  font-size: 10px;\n}\n.dshpp-group-chips {\n  margin-left: auto;\n  display: flex;\n  gap: 4px;\n  flex-wrap: wrap;\n  justify-content: flex-end;\n}\n.dshpp-group-notes {\n  margin: 0;\n  padding: 0 12px 8px 30px;\n  font-size: 11.5px;\n  color: var(--dshpp-mute);\n}\n.dshpp-row-note {\n  display: block;\n  margin-top: 1px;\n  font-size: 11px;\n  color: var(--dshpp-mute);\n}\n\n.dshpp-flow {\n  border: 1px solid var(--dshpp-line);\n  border-radius: 12px;\n  padding: 13px 15px;\n  margin-top: 12px;\n  background: var(--dshpp-bg);\n}\n.dshpp-flow h4 {\n  margin: 0 0 10px;\n  font-size: 13px;\n  font-weight: 600;\n}\n.dshpp-steps {\n  display: grid;\n  grid-template-columns: repeat(3, minmax(0, 1fr));\n  gap: 12px;\n}\n.dshpp-step {\n  display: flex;\n  gap: 9px;\n  min-width: 0;\n}\n.dshpp-step-no {\n  width: 20px;\n  height: 20px;\n  flex: none;\n  border: 1px solid var(--dshpp-line);\n  border-radius: 99px;\n  display: grid;\n  place-items: center;\n  font-size: 11px;\n  color: var(--dshpp-mute);\n}\n.dshpp-step b {\n  display: block;\n  font-size: 12.5px;\n  font-weight: 600;\n}\n.dshpp-step span {\n  font-size: 11.5px;\n  color: var(--dshpp-mute);\n}\n.dshpp-flow-foot {\n  margin: 10px 0 0;\n  font-size: 11px;\n  color: var(--dshpp-mute);\n}\n\n/* \u7A84\u5C4F\uFF1A\u4E24\u5217 \u2192 \u5355\u5217\uFF0C\u56DB\u683C \u2192 2\xD72\uFF0C\u5F00\u5173\u52A0\u5927\u89E6\u6478\u76EE\u6807 */\n@container purge-page (max-width: 640px) {\n  .dshpp-health-big {\n    font-size: 22px;\n  }\n  .dshpp-tiles {\n    grid-template-columns: repeat(2, minmax(0, 1fr));\n  }\n  .dshpp-switches {\n    grid-template-columns: 1fr;\n  }\n  .dshpp-steps {\n    grid-template-columns: 1fr;\n  }\n  .dshpp-filter-hint {\n    display: none;\n  }\n  .dshpp-track {\n    width: 46px;\n    height: 26px;\n  }\n  .dshpp-knob {\n    width: 20px;\n    height: 20px;\n  }\n  .dshpp-track.is-on .dshpp-knob {\n    transform: translateX(20px);\n  }\n  .dshpp-group-notes {\n    padding-left: 12px;\n  }\n  /* \u7A84\u5C4F\uFF1A\u7EC4\u5934\u5141\u8BB8\u6362\u884C\uFF0C\u72B6\u6001\u80F6\u56CA\u72EC\u5360\u4E00\u884C\uFF0C\u5426\u5219\u53EA\u4F1A\u9732\u51FA\u7B2C\u4E00\u4E2A */\n  .dshpp-group-h {\n    flex-wrap: wrap;\n    row-gap: 4px;\n  }\n  .dshpp-group-chips {\n    flex: 1 0 100%;\n    margin-left: 0;\n    justify-content: flex-start;\n  }\n  .dshpp-group-h {\n    justify-content: flex-start;\n    column-gap: 8px;\n  }\n  .dshpp-group-h .dshpp-count {\n    margin-left: auto;\n  }\n  /* \u4E09\u5217\u8868\u683C\u5728 360px \u4F1A\u9876\u7834\u5BB9\u5668\uFF1A\u56FA\u5B9A\u5217\u5BBD + \u5141\u8BB8\u72B6\u6001\u8BCD\u6362\u884C */\n  .dshpp-page .dshpp-table {\n    width: 100%;\n    table-layout: fixed;\n  }\n  .dshpp-page .dshpp-table :is(th, td):first-child {\n    width: 44px;\n  }\n  .dshpp-page .dshpp-table :is(th, td):last-child {\n    width: 88px;\n  }\n  .dshpp-page .dshpp-table .dshpp-pill {\n    white-space: normal;\n    text-align: center;\n  }\n  .dshpp-sw-d,\n  .dshpp-sw-hint,\n  .dshpp-group-notes {\n    overflow-wrap: anywhere;\n  }\n}\n\n@container purge-page (max-width: 400px) {\n  .dshpp-tile-k {\n    white-space: normal;\n  }\n  .dshpp-fbtn {\n    padding: 4px 8px;\n    font-size: 12px;\n  }\n  .dshpp-sw {\n    padding: 11px 12px;\n  }\n  .dshpp-health {\n    padding: 12px;\n  }\n}\n\n/* \u8865\u4E01\u660E\u7EC6\u6539\u6210\u5E38\u663E\u533A\u5757\uFF08\u4E0D\u518D\u662F\u6298\u53E0\u58F3\uFF09 */\n.dshpp-fold.is-open {\n  display: block;\n}\n.dshpp-fold-t {\n  display: flex;\n  align-items: baseline;\n  gap: 8px;\n  margin: 18px 0 6px;\n  font-size: 13px;\n  font-weight: 600;\n}\n.dshpp-fold-n {\n  color: var(--dshpp-mute);\n  font-weight: 500;\n  font-size: 12px;\n  font-variant-numeric: tabular-nums;\n}\n\n/* \u2500\u2500 \u89C6\u89C9\u5BF9\u9F50\u6837\u7A3F\uFF081.7.18\uFF09\uFF1A\u6570\u5B57\u3001\u95F4\u8DDD\u3001\u5706\u89D2\u3001\u989C\u8272\u7EDF\u4E00\u5230\u540C\u4E00\u5957\u523B\u5EA6 \u2500\u2500\u2500\u2500\u2500\u2500\n   DSH \u81EA\u8EAB\u7684 brand \u8272\u662F\u5355\u8272\u9ED1\u767D\uFF0C\u6837\u7A3F\u7528\u7684\u662F\u54C1\u724C\u84DD/\u7EFF\uFF1B\u8FD9\u91CC\u53EA\u5728\u672C\u9875\u8303\u56F4\u5185\n   \u8986\u76D6\uFF0C\u907F\u514D\u5F71\u54CD\u9762\u677F\u5176\u5B83\u533A\u5757\u3002 */\n.dshpp-page {\n  --pg-accent: #2563eb;\n  --pg-ok: #15803d;\n  --pg-warn: #b45309;\n}\n\n/* \u6807\u9898\u884C\uFF1A\u9875\u9762\u540D + \u64CD\u4F5C\u7EC4 + \u626B\u63CF\u65F6\u95F4 */\n.dshpp-status-head {\n  display: flex;\n  align-items: flex-end;\n  justify-content: space-between;\n  gap: 14px;\n  flex-wrap: wrap;\n  margin: 2px 0 16px;\n}\n.dshpp-status-title {\n  margin: 0;\n  font-size: 19px;\n  font-weight: 650;\n  letter-spacing: -0.2px;\n}\n.dshpp-status-ops {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  flex-wrap: wrap;\n}\n.dshpp-status-note {\n  margin: -8px 0 12px;\n  font-size: 12.5px;\n  color: var(--dshpp-mute);\n}\n\n/* \u6309\u94AE\uFF1A\u6837\u7A3F\u7684 9px \u5706\u89D2 / 13px \u5B57 / \u4E3B\u6309\u94AE\u53CD\u8272 */\n.dshpp-page .dshpp-btn {\n  font-size: 13px;\n  padding: 7px 13px;\n  border-radius: 9px;\n  line-height: 1.2;\n}\n.dshpp-page .dshpp-btn.dshpp-btn-apply {\n  background: var(--dshpp-fg);\n  border-color: var(--dshpp-fg);\n  color: var(--dshpp-bg, #fff);\n  font-weight: 560;\n}\n.dshpp-page .dshpp-btn.dshpp-btn-apply:not(:disabled):hover {\n  opacity: 0.88;\n}\n\n/* \u5065\u5EB7\u5EA6\uFF1A\u4E3B\u6570\u5B57\u4E0E\u56DB\u683C */\n.dshpp-health {\n  padding: 18px 20px;\n  border-radius: 12px;\n}\n.dshpp-health-big {\n  font-size: 30px;\n  font-weight: 680;\n}\n.dshpp-health-big small {\n  font-size: 15px;\n}\n.dshpp-tile {\n  padding: 10px 12px;\n}\n.dshpp-tile-k {\n  font-size: 11.5px;\n}\n.dshpp-tile-v {\n  font-size: 19px;\n  font-weight: 640;\n}\n\n/* \u5F00\u5173\uFF1A\u54C1\u724C\u84DD\u800C\u4E0D\u662F\u5355\u8272\u9ED1 */\n.dshpp-sw {\n  padding: 15px 17px;\n  border-radius: 12px;\n}\n.dshpp-sw-t {\n  font-size: 14px;\n}\n.dshpp-sw-d {\n  font-size: 12.5px;\n}\n.dshpp-chip {\n  font-size: 11.5px;\n  padding: 2px 8px;\n}\n.dshpp-track.is-on {\n  background: var(--pg-accent);\n  border-color: var(--pg-accent);\n}\n\n/* \u8FC7\u6EE4\u6761\uFF1A\u9009\u4E2D\u6001\u7528\u6837\u7A3F\u7684\u84DD\u8272\u63CF\u8FB9 + \u6D45\u5E95 */\n.dshpp-fbtn {\n  font-size: 12.5px;\n}\n.dshpp-fbtn.is-cur {\n  color: var(--pg-accent);\n  border-color: var(--pg-accent);\n  background: color-mix(in srgb, var(--pg-accent) 10%, transparent);\n}\n\n/* \u660E\u7EC6\u8868\uFF1A13px \u6B63\u6587\u300111.5px \u72B6\u6001\u80F6\u56CA */\n.dshpp-page .dshpp-table {\n  font-size: 13px;\n}\n.dshpp-page .dshpp-table th {\n  font-size: 11.5px;\n  letter-spacing: 0.03em;\n  padding: 7px 15px;\n}\n.dshpp-page .dshpp-table td {\n  padding: 7px 15px;\n}\n.dshpp-page .dshpp-pill {\n  font-size: 11.5px;\n  padding: 2px 8px;\n}\n.dshpp-caret {\n  font-size: 10px;\n}\n.dshpp-group-notes {\n  font-size: 11.5px;\n}\n\n/* \u5199\u5165\u6D41\u7A0B */\n.dshpp-flow {\n  padding: 16px 18px;\n  border-radius: 12px;\n}\n.dshpp-flow h4 {\n  font-size: 13.5px;\n}\n.dshpp-step b {\n  font-size: 13px;\n}\n.dshpp-step span {\n  font-size: 12.5px;\n}\n\n/* \u7EF4\u62A4\u533A\u5934\u90E8\u7684\u7248\u672C\u53F7 */\n.dshpp-maint-head {\n  display: flex;\n  align-items: baseline;\n  gap: 10px;\n  flex-wrap: wrap;\n}\n.dshpp-maint-head h3 {\n  margin: 0;\n}\n.dshpp-maint-ver {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  font-size: 12px;\n  color: var(--dshpp-mute);\n}\n.dshpp-maint-ver b {\n  font-weight: 600;\n  color: var(--pg-ok);\n  border: 1px solid color-mix(in srgb, var(--pg-ok) 40%, transparent);\n  border-radius: 99px;\n  padding: 0 6px;\n  font-size: 11px;\n}\n\n/* \u660E\u7EC6\u8868\u7B2C\u4E8C\u884C\uFF1A\u82F1\u6587\u6807\u8BC6\u7B26\uFF08\u5BF9\u9F50\u6837\u7A3F\u7684\u4E24\u884C\u7ED3\u6784\uFF09 */\n.dshpp-row-en {\n  display: block;\n  margin-top: 1px;\n  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;\n  font-size: 11px;\n  color: var(--dshpp-mute);\n  letter-spacing: 0.01em;\n}\n';
 
 // src/shared/runtime-error.js
 function runtimeRepairDetails(report) {
@@ -9543,18 +9543,6 @@ var zh = {
   "metric.sealed.count": "\u5F85\u89E3\u5F00",
   "metric.lost": "\u8865\u4E01\u5DF2\u4E22\u5931\uFF0C\u8BF7\u91CD\u65B0\u5E94\u7528",
   "metric.lost.count": "\u5DF2\u4E22\u5931",
-  "rewind.settings": "\u4F1A\u8BDD\u5916\u89C2",
-  "rewind.show": "\u663E\u793A\u8F93\u5165\u6846\u56DE\u9000\u6309\u94AE",
-  "rewind.readAgain": "\u91CD\u65B0\u8BFB\u53D6",
-  "rewind.label": "\u56DE\u9000",
-  "rewind.aria": "\u56DE\u9000",
-  "rewind.busy": "\u56DE\u9000\u4E2D\u2026",
-  "rewind.empty": "\u6CA1\u6709\u53EF\u56DE\u9000\u7684\u4E0A\u4E00\u53E5",
-  "rewind.fail": "\u56DE\u9000\u5931\u8D25: {error}",
-  "rewind.once": "\u56DE\u9000\u4E00\u6B21",
-  "rewind.once.hint": "\u628A\u8FD9\u4E00\u8F6E\u53D1\u51FA\u53BB\u7684\u90A3\u53E5\u653E\u56DE\u8F93\u5165\u6846\uFF0C\u5E76\u6E05\u6389\u8FD9\u4E00\u8F6E",
-  "rewind.round": "\u56DE\u9000\u4E0A\u4E00\u8F6E",
-  "rewind.round.hint": "\u628A\u8FD9\u4E00\u8F6E\u53D1\u51FA\u53BB\u7684\u90A3\u53E5\u653E\u56DE\u8F93\u5165\u6846\uFF1B\u5B50\u4EE3\u7406\u4E5F\u53EA\u64A4\u8FD9\u4E00\u8F6E",
   "hooksDeny.title": "Hooks \u62E6\u622A",
   "hooksDeny.bypass": "\u653E\u884C hooks \u7684 deny / ask\uFF08\u8865\u4E01 30 / 31 / 64 / 65\uFF09",
   "hooksDeny.hint": "\u5173\u6389\u540E\uFF0C\u7528\u6237\u81EA\u5DF1\u7684 PreToolUse / UserPromptSubmit / Stop hook \u7684 deny \u4F1A\u6309\u5B98\u65B9\u903B\u8F91\u751F\u6548\u3002\u5B98\u65B9 ask \u5206\u652F\u672C\u8EAB\u662F\u7A7A\u64CD\u4F5C\uFF0C\u5173\u5F00\u5173\u4E0D\u4F1A\u5F39\u51FA\u5BA1\u6279\u6846\u3002\u6539\u5B8C\u540E\u70B9\u300C\u5E94\u7528\u300D\u5E76\u91CD\u542F\u624D\u5199\u8FDB\u5BBF\u4E3B\u3002",
@@ -10008,18 +9996,6 @@ var en = {
   "metric.lost.count": "Lost",
   "status.unlocated": "Not located",
   "metric.unlocated": "This install was not found yet",
-  "rewind.settings": "Conversation appearance",
-  "rewind.show": "Show the rewind button in the composer",
-  "rewind.readAgain": "Try again",
-  "rewind.label": "Undo",
-  "rewind.aria": "Undo",
-  "rewind.busy": "Undoing\u2026",
-  "rewind.empty": "Nothing to undo",
-  "rewind.fail": "Undo failed: {error}",
-  "rewind.once": "Undo once",
-  "rewind.once.hint": "Put this round's message back in the box and drop only this round",
-  "rewind.round": "Undo last round",
-  "rewind.round.hint": "Put this round's message back in the box; subagents drop only this round",
   "hooksDeny.title": "Hook interception",
   "hooksDeny.bypass": "Bypass hook deny / ask (patches 30 / 31 / 64 / 65)",
   "hooksDeny.hint": "When off, your own PreToolUse / UserPromptSubmit / Stop hook deny runs as the official host wrote it. The official ask branch is a no-op; turning this off will not show an approval dialog. Click Apply and restart to write the host files.",
@@ -10210,117 +10186,6 @@ function AuthGate(props) {
           },
           okLabel
         )
-      )
-    )
-  );
-}
-
-// src/state/rewind-visibility.js
-var visible = false;
-var pendingRead;
-var listeners = /* @__PURE__ */ new Set();
-function subscribeRewind(listener) {
-  listeners.add(listener);
-  listener(visible);
-  return () => listeners.delete(listener);
-}
-function publish(value) {
-  visible = value;
-  for (const listener of listeners) listener(value);
-  return value;
-}
-function valueFrom(reply) {
-  if (reply?.ok !== true || typeof reply.rewind !== "boolean")
-    throw new Error(reply?.error || "\u65E0\u6CD5\u8BFB\u53D6\u56DE\u9000\u6309\u94AE\u8BBE\u7F6E");
-  return reply.rewind;
-}
-function readRewindVisibility() {
-  if (pendingRead) return pendingRead;
-  const request = apiJson("/dsh-purge/boost").then(
-    (reply) => pendingRead === request ? publish(valueFrom(reply)) : visible
-  ).finally(() => {
-    if (pendingRead === request) pendingRead = void 0;
-  });
-  pendingRead = request;
-  return request;
-}
-async function saveRewindVisibility(value) {
-  const reply = await apiJson("/dsh-purge/boost", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ rewind: value })
-  });
-  const saved = valueFrom(reply);
-  pendingRead = void 0;
-  return publish(saved);
-}
-
-// src/components/rewind-setting.js
-function RewindSetting() {
-  const t = useT();
-  const [visible2, setVisible] = useState(false);
-  const [ready, setReady] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const [attempt, setAttempt] = useState(0);
-  useEffect(() => {
-    let active = true;
-    const unsubscribe = subscribeRewind(setVisible);
-    readRewindVisibility().then(
-      () => {
-        if (active) setReady(true);
-      },
-      (e) => {
-        if (active) setError(e.message);
-      }
-    );
-    return () => {
-      active = false;
-      unsubscribe();
-    };
-  }, [attempt]);
-  async function change(event) {
-    const checked = event.target.checked;
-    setBusy(true);
-    setError("");
-    try {
-      await saveRewindVisibility(checked);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-  return h(
-    "section",
-    { className: "dshpp-composer-settings" },
-    h("h3", null, t("rewind.settings")),
-    h(
-      "label",
-      { className: "dshpp-setting-row" },
-      t("rewind.show"),
-      h("input", {
-        type: "checkbox",
-        role: "switch",
-        checked: visible2,
-        disabled: !ready || busy,
-        onChange: change
-      })
-    ),
-    error && h(
-      "div",
-      { role: "alert" },
-      error,
-      !ready && h(
-        "button",
-        {
-          type: "button",
-          onClick: () => {
-            setError("");
-            setAttempt(attempt + 1);
-          }
-        },
-        t("rewind.readAgain")
       )
     )
   );
@@ -11063,7 +10928,11 @@ function InjectSettings() {
   const [enabled, setEnabled] = useState(true);
   const [presetsText, setPresetsText] = useState("");
   const [sessionsText, setSessionsText] = useState("");
-  const [layers, setLayers] = useState({ main: true, boost: true, protocol: true });
+  const [layers, setLayers] = useState({
+    main: true,
+    boost: true,
+    protocol: true
+  });
   const [layered, setLayered] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const lastSavedPresets = useRef("");
@@ -11088,7 +10957,10 @@ function InjectSettings() {
       },
       (e) => {
         if (!active) return;
-        setNotice({ kind: "error", text: String(e && e.message ? e.message : e) });
+        setNotice({
+          kind: "error",
+          text: String(e && e.message ? e.message : e)
+        });
       }
     );
     return () => {
@@ -11154,7 +11026,11 @@ function InjectSettings() {
       )
     ),
     h("h4", { style: { margin: "14px 0 6px" } }, t("inject.presets")),
-    h("p", { style: { opacity: 0.75, margin: "0 0 6px", fontSize: "0.9em" } }, t("inject.presetsHint")),
+    h(
+      "p",
+      { style: { opacity: 0.75, margin: "0 0 6px", fontSize: "0.9em" } },
+      t("inject.presetsHint")
+    ),
     h("textarea", {
       className: "dshpp-textarea",
       rows: 2,
@@ -11164,11 +11040,16 @@ function InjectSettings() {
       onChange: (e) => setPresetsText(e.target.value),
       onBlur: () => {
         const next = parseList(presetsText);
-        if (listText(next) !== lastSavedPresets.current) save({ excludePresets: next });
+        if (listText(next) !== lastSavedPresets.current)
+          save({ excludePresets: next });
       }
     }),
     h("h4", { style: { margin: "14px 0 6px" } }, t("inject.sessions")),
-    h("p", { style: { opacity: 0.75, margin: "0 0 6px", fontSize: "0.9em" } }, t("inject.sessionsHint")),
+    h(
+      "p",
+      { style: { opacity: 0.75, margin: "0 0 6px", fontSize: "0.9em" } },
+      t("inject.sessionsHint")
+    ),
     h("textarea", {
       className: "dshpp-textarea",
       rows: 2,
@@ -11178,7 +11059,8 @@ function InjectSettings() {
       onChange: (e) => setSessionsText(e.target.value),
       onBlur: () => {
         const next = parseList(sessionsText);
-        if (listText(next) !== lastSavedSessions.current) save({ excludeSessions: next });
+        if (listText(next) !== lastSavedSessions.current)
+          save({ excludeSessions: next });
       }
     }),
     notice.text ? noticeNode(notice) : null,
@@ -11515,7 +11397,11 @@ function versionChoiceLabel(item, tr) {
 }
 
 // src/components/settings-form.js
-function PurgifySection({ page = "status", onStatus } = {}) {
+function PurgifySection({
+  page = "status",
+  active = true,
+  onStatus
+} = {}) {
   const t = useT();
   const tRef = useRef(t);
   tRef.current = t;
@@ -11741,9 +11627,12 @@ function PurgifySection({ page = "status", onStatus } = {}) {
     },
     [channel, pick, postUpdate, updateInfo]
   );
-  const loadAll = useCallback(() => {
+  const generation = useRef(0);
+  const refreshStatus = useCallback(() => {
+    const ticket = ++generation.current;
     const tr = tRef.current;
     apiJson("/dsh-purge/status").then((d) => {
+      if (ticket !== generation.current) return;
       if (d && d.ok) {
         setState(d);
         try {
@@ -11773,6 +11662,7 @@ function PurgifySection({ page = "status", onStatus } = {}) {
         });
       }
     }).catch((e) => {
+      if (ticket !== generation.current) return;
       setState(unavailableStatus(e));
       setNotice({
         kind: "error",
@@ -11780,6 +11670,28 @@ function PurgifySection({ page = "status", onStatus } = {}) {
         text: tr("err.status", { error: e.message })
       });
     });
+  }, []);
+  useEffect(() => {
+    if (active) refreshStatus();
+    return () => {
+      generation.current++;
+    };
+  }, [active, refreshStatus]);
+  const phase = state?.asar_handoff?.phase;
+  useEffect(() => {
+    if (page !== "status" || !active || ![
+      "starting",
+      "ready",
+      "waiting_for_quit",
+      "waiting_for_unlock",
+      "moving"
+    ].includes(phase))
+      return;
+    const timer = setInterval(refreshStatus, 2e3);
+    return () => clearInterval(timer);
+  }, [page, active, phase, refreshStatus]);
+  useEffect(() => {
+    const tr = tRef.current;
     apiJson("/dsh-purge/update").then((d) => {
       if (!d) return;
       if (d.channel) setChannel(d.channel);
@@ -11819,9 +11731,6 @@ function PurgifySection({ page = "status", onStatus } = {}) {
     }).catch(() => {
     });
   }, []);
-  useEffect(() => {
-    loadAll();
-  }, [loadAll]);
   const rejectNeedPrompt = useCallback((tr) => {
     setAskRestart(false);
     setNotice({ kind: "error", text: tr("need.prompt") });
@@ -11877,7 +11786,7 @@ function PurgifySection({ page = "status", onStatus } = {}) {
                 detail: incompleteApplyDetail(d, tr)
               })
             });
-            loadAll();
+            refreshStatus();
             if (d.restarting || d.needs_full_quit) {
               suppressRestartAsk.current = false;
               setAskRestart(true);
@@ -11891,11 +11800,11 @@ function PurgifySection({ page = "status", onStatus } = {}) {
                 text: "\u8865\u4E01\u5DF2\u5199\u5165\u78C1\u76D8\uFF0C\u5F53\u524D\u8FDB\u7A0B\u5C1A\u672A\u52A0\u8F7D\u3002\u6362\u5305\u52A9\u624B\u7B49\u5F85\u4F60\u5B8C\u6574\u9000\u51FA\uFF08macOS \u7528 \u2318Q\uFF0CWindows \u4ECE\u7CFB\u7EDF\u6258\u76D8\u9000\u51FA\uFF09\u3002\u786E\u8BA4\u6362\u5305\u5B8C\u6210\u540E\u518D\u624B\u52A8\u6253\u5F00 DSH\uFF0C\u4E0D\u4F1A\u81EA\u52A8\u91CD\u542F\u3002"
               });
               setAskRestart(false);
-              loadAll();
+              refreshStatus();
               return;
             }
             setNotice({ kind: "ok", text: tr("ok.done") });
-            loadAll();
+            refreshStatus();
             if (d.restarting || d.needs_full_quit) {
               suppressRestartAsk.current = false;
               setAskRestart(true);
@@ -11905,7 +11814,7 @@ function PurgifySection({ page = "status", onStatus } = {}) {
             return;
           }
           setNotice({ kind: "ok", text: tr("ok.done") });
-          loadAll();
+          refreshStatus();
         }).catch((e) => {
           if (ticket !== actionTicket.current) return;
           setNotice({
@@ -11918,7 +11827,7 @@ function PurgifySection({ page = "status", onStatus } = {}) {
       };
       run();
     },
-    [loadAll, rejectNeedPrompt, state]
+    [refreshStatus, rejectNeedPrompt, state]
   );
   const saveOverride = useCallback(async () => {
     if (promptPending.current) return;
@@ -12240,7 +12149,7 @@ function PurgifySection({ page = "status", onStatus } = {}) {
             {
               type: "button",
               className: "dshpp-scan",
-              onClick: loadAll,
+              onClick: refreshStatus,
               disabled: patchBusy || uninstallBusy,
               title: t("scan.hint")
             },
@@ -12255,7 +12164,7 @@ function PurgifySection({ page = "status", onStatus } = {}) {
       ) : null,
       noticeNode(notice),
       h(PatchHealth, { state: s }),
-      h(PatchGroupSwitches, { state: s, onSaved: loadAll }),
+      h(PatchGroupSwitches, { state: s, onSaved: refreshStatus }),
       h(
         "section",
         { className: "dshpp-fold is-open" },
@@ -12276,7 +12185,7 @@ function PurgifySection({ page = "status", onStatus } = {}) {
         "details",
         null,
         h("summary", null, "\u9AD8\u7EA7\u9009\u9879"),
-        h(HooksDenySection, { onSaved: loadAll })
+        h(HooksDenySection, { onSaved: refreshStatus })
       ),
       askUninstall ? h(
         "div",
@@ -12480,15 +12389,15 @@ function PurgifySection({ page = "status", onStatus } = {}) {
 }
 
 // src/state/session-context.js
-var import_react12 = require("react");
+var import_react11 = require("react");
 var host = null;
-var listeners2 = /* @__PURE__ */ new Set();
+var listeners = /* @__PURE__ */ new Set();
 function notify() {
-  for (const listener of listeners2) listener();
+  for (const listener of listeners) listener();
 }
 function subscribe(listener) {
-  listeners2.add(listener);
-  return () => listeners2.delete(listener);
+  listeners.add(listener);
+  return () => listeners.delete(listener);
 }
 function bindSessionContext(ctx) {
   host = ctx;
@@ -12539,7 +12448,7 @@ function clientCurrentCwd() {
   }
 }
 function useCurrentCwd() {
-  return (0, import_react12.useSyncExternalStore)(subscribe, clientCurrentCwd, () => "");
+  return (0, import_react11.useSyncExternalStore)(subscribe, clientCurrentCwd, () => "");
 }
 
 // src/components/rules.js
@@ -14154,7 +14063,7 @@ function StatusStrip({ info }) {
       "span",
       { className: "dshpp-strip-item" },
       "\u63D2\u4EF6 ",
-      h("b", null, info?.plugin_version || "1.7.20")
+      h("b", null, info?.plugin_version || "1.7.23")
     )
   );
 }
@@ -14216,11 +14125,11 @@ function VersionNotice({ info }) {
     );
   }
   const backend = info?.plugin_version;
-  if (!backend || backend === "1.7.20") return null;
+  if (!backend || backend === "1.7.23") return null;
   return h(
     "p",
     { className: "dshpp-warn", role: "status" },
-    `\u5B98\u65B9\u7248\u672C ${backend}\uFF1B\u754C\u9762 ${"1.7.20"}\u3002\u4E24\u8005\u4E0D\u4E00\u81F4\u65F6\u8BBE\u7F6E\u53EF\u80FD\u4E0D\u751F\u6548\uFF0C\u8BF7\u66F4\u65B0\u5230\u540C\u4E00\u7248\u672C\u540E\u91CD\u542F DSH\u3002`
+    `\u5B98\u65B9\u7248\u672C ${backend}\uFF1B\u754C\u9762 ${"1.7.23"}\u3002\u4E24\u8005\u4E0D\u4E00\u81F4\u65F6\u8BBE\u7F6E\u53EF\u80FD\u4E0D\u751F\u6548\uFF0C\u8BF7\u66F4\u65B0\u5230\u540C\u4E00\u7248\u672C\u540E\u91CD\u542F DSH\u3002`
   );
 }
 function PurgePage() {
@@ -14232,24 +14141,7 @@ function PurgePage() {
     setTab(id);
     setVisited((v) => Object.assign({}, v, { [id]: true }));
   };
-  const loadInfo = () => apiJson("/dsh-purge/status").then(setInfo).catch((error) => setInfo(unavailableStatus(error)));
   const mergeInfo = useCallback((s) => s && setInfo(s), []);
-  useEffect(() => {
-    if (tab === "status") loadInfo();
-  }, [tab]);
-  useEffect(() => {
-    const phase = info?.asar_handoff?.phase;
-    if (![
-      "starting",
-      "ready",
-      "waiting_for_quit",
-      "waiting_for_unlock",
-      "moving"
-    ].includes(phase))
-      return;
-    const timer = setInterval(loadInfo, 2e3);
-    return () => clearInterval(timer);
-  }, [info?.asar_handoff?.phase]);
   const active = TABS.find((row) => row[0] === tab) || TABS[0];
   return h(
     "div",
@@ -14270,7 +14162,7 @@ function PurgePage() {
           true ? h(
             "span",
             { className: "dshpp-page-ver" },
-            "\u793E\u533A\u7248 1.7.20"
+            "\u793E\u533A\u7248 1.7.23"
           ) : null
         )
       )
@@ -14302,7 +14194,11 @@ function PurgePage() {
         "div",
         { hidden: tab !== "status", className: "dshpp-sec" },
         h(StatusStrip, { info }),
-        h(PurgifySection, { page: "status", onStatus: mergeInfo }),
+        h(PurgifySection, {
+          page: "status",
+          active: tab === "status",
+          onStatus: mergeInfo
+        }),
         h(StatusExtras),
         h(CommunityMaintenance, { localVersion: info?.plugin_version || "" })
       ),
@@ -14325,7 +14221,6 @@ function PurgePage() {
       h(
         "div",
         { hidden: tab !== "more", className: "dshpp-sec" },
-        tab === "more" ? h(RewindSetting) : null,
         visited.more ? h(PurgifySection, { page: "more" }) : null
       ),
       tab === "drill" ? h(
@@ -14477,9 +14372,6 @@ function installLegacyVisibility(doc = globalThis.document) {
   return () => style.remove();
 }
 
-// src/components/rewind.js
-var import_react_dom = require("react-dom");
-
 // src/state/rewind-draft.js
 var DRAFT_KEY = "dshp-rewind-draft:";
 var ARM_KEY = "dshp-rewind-arm:";
@@ -14511,16 +14403,6 @@ function getRewindSeenAt() {
 }
 function noteRewindAt(at) {
   if (at) seenAt = at;
-}
-function rewindText(t, key, fallback) {
-  try {
-    if (typeof t === "function") {
-      const value = t(key);
-      if (value && value !== key) return value;
-    }
-  } catch {
-  }
-  return fallback;
 }
 function currentSessionId(sessions) {
   try {
@@ -14824,271 +14706,6 @@ async function openRewoundSession(sessions, sessionId) {
 }
 
 // src/components/rewind.js
-var REWIND_CSS = `
-.dshp-rewind-wrap{position:relative;display:inline-flex}
-.dshp-rewind{appearance:none;display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 8px;border:0;border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary,currentColor);font:12px/1 var(--ds-font-sans,system-ui,sans-serif);cursor:pointer}
-.dshp-rewind:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.12));color:var(--dsw-alias-label-primary,currentColor)}
-.dshp-rewind:disabled{opacity:.4;cursor:default}
-.dshp-rewind svg{display:block}
-.dshp-rewind-menu{position:fixed;z-index:2147483000;box-sizing:border-box;width:max-content;min-width:min(220px,calc(100vw - 16px));max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);overflow:auto;padding:4px;border:0;border-radius:12px;background:var(--dsw-specific-menu,#fff);color:var(--dsw-alias-label-primary,#1a1a1a);--dsw-elevation-stroke-color:var(--dsw-alias-border-l1);box-shadow:var(--dsw-elevation-prominent,0 8px 24px rgba(0,0,0,.16));transform:translateY(-100%)}
-body[data-ds-dark-theme] .dshp-rewind-menu{background:var(--dsw-specific-menu,#32312d);color:var(--dsw-alias-label-primary,#e6e2db);--dsw-elevation-stroke-color:var(--dsw-alias-border-l1,#3f3d38);box-shadow:var(--dsw-elevation-prominent,0 10px 28px rgba(0,0,0,.45))}
-.dshp-rewind-item{display:flex;flex-direction:column;gap:2px;width:100%;padding:8px 10px;border:0;border-radius:8px;background:transparent;color:inherit;text-align:left;cursor:pointer;font:12px/1.3 var(--ds-font-sans,system-ui,sans-serif)}
-.dshp-rewind-item:hover{background:var(--dsw-alias-interactive-bg-hover,rgba(127,127,127,.12))}
-.dshp-rewind-item b{font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary,inherit)}
-.dshp-rewind-item span{color:var(--dsw-alias-label-tertiary,#9a958c);font-size:11px}
-body[data-ds-dark-theme] .dshp-rewind-item span{color:var(--dsw-alias-label-tertiary,#a8a39a)}
-`;
-var RewindMenu = class extends Component {
-  state = { position: null };
-  reposition = () => {
-    const { anchor, menuRef } = this.props;
-    const menu = menuRef.current;
-    if (!anchor || !menu) return;
-    const rect = anchor.getBoundingClientRect();
-    const size = menu.getBoundingClientRect();
-    const win = anchor.ownerDocument.defaultView;
-    const viewport = win.visualViewport;
-    const x = viewport?.offsetLeft ?? 0;
-    const y = viewport?.offsetTop ?? 0;
-    const right = x + (viewport?.width ?? win.innerWidth);
-    const bottom = y + (viewport?.height ?? win.innerHeight);
-    const above = rect.top - 8 - size.height;
-    const left = Math.max(
-      x + 8,
-      Math.min(rect.right - size.width, right - size.width - 8)
-    );
-    const top = Math.max(
-      y + 8,
-      Math.min(
-        above >= y + 8 ? above : rect.bottom + 8,
-        bottom - size.height - 8
-      )
-    );
-    const prev = this.state.position;
-    if (!prev || left !== prev.left || top !== prev.top)
-      this.setState({ position: { left, top } });
-  };
-  componentDidMount() {
-    const win = this.props.anchor?.ownerDocument?.defaultView;
-    if (!win || typeof import_react_dom.createPortal !== "function") return;
-    this.win = win;
-    this.reposition();
-    win.addEventListener("resize", this.reposition);
-    win.addEventListener("scroll", this.reposition, true);
-    win.visualViewport?.addEventListener("resize", this.reposition);
-    win.visualViewport?.addEventListener("scroll", this.reposition);
-    if (win.ResizeObserver) {
-      this.observer = new win.ResizeObserver(this.reposition);
-      this.observer.observe(this.props.anchor);
-      this.observer.observe(this.props.menuRef.current);
-    }
-  }
-  componentWillUnmount() {
-    this.win?.removeEventListener("resize", this.reposition);
-    this.win?.removeEventListener("scroll", this.reposition, true);
-    this.win?.visualViewport?.removeEventListener("resize", this.reposition);
-    this.win?.visualViewport?.removeEventListener("scroll", this.reposition);
-    this.observer?.disconnect();
-  }
-  render() {
-    const { t, menuRef, runRewind, anchor } = this.props;
-    const body = anchor?.ownerDocument?.body;
-    const portal = body && typeof import_react_dom.createPortal === "function";
-    const style = portal ? {
-      ...this.state.position,
-      visibility: this.state.position ? "visible" : "hidden",
-      transform: "none"
-    } : {
-      position: "absolute",
-      right: 0,
-      bottom: "calc(100% + 8px)",
-      transform: "none"
-    };
-    const menu = rewindMenuNode(t, style, menuRef, runRewind);
-    return portal ? (0, import_react_dom.createPortal)(menu, body) : menu;
-  }
-};
-function rewindMenuNode(t, style, menuRef, runRewind) {
-  return h(
-    "div",
-    {
-      className: "dshp-rewind-menu",
-      role: "menu",
-      ref: menuRef,
-      style
-    },
-    h(
-      "button",
-      {
-        type: "button",
-        className: "dshp-rewind-item",
-        onMouseDown: (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        },
-        onClick: (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          runRewind("once");
-        }
-      },
-      h("b", null, rewindText(t, "rewind.once", "\u56DE\u9000\u4E00\u6B21")),
-      h(
-        "span",
-        null,
-        rewindText(
-          t,
-          "rewind.once.hint",
-          "\u628A\u8FD9\u4E00\u8F6E\u53D1\u51FA\u53BB\u7684\u90A3\u53E5\u653E\u56DE\u8F93\u5165\u6846\uFF0C\u5E76\u6E05\u6389\u8FD9\u4E00\u8F6E"
-        )
-      )
-    ),
-    h(
-      "button",
-      {
-        type: "button",
-        className: "dshp-rewind-item",
-        onMouseDown: (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        },
-        onClick: (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          runRewind("round");
-        }
-      },
-      h("b", null, rewindText(t, "rewind.round", "\u56DE\u9000\u4E0A\u4E00\u8F6E")),
-      h(
-        "span",
-        null,
-        rewindText(
-          t,
-          "rewind.round.hint",
-          "\u628A\u8FD9\u4E00\u8F6E\u53D1\u51FA\u53BB\u7684\u90A3\u53E5\u653E\u56DE\u8F93\u5165\u6846\uFF1B\u5B50\u4EE3\u7406\u4E5F\u53EA\u64A4\u8FD9\u4E00\u8F6E"
-        )
-      )
-    )
-  );
-}
-var RewindFallback = class extends Component {
-  constructor(p) {
-    super(p);
-    this.state = { menu: false, busy: false, notice: "" };
-    this.wrap = null;
-    this.menuRef = { current: null };
-    this.onDoc = (event) => {
-      if (this.wrap && this.wrap.contains(event.target)) return;
-      if (this.menuRef.current?.contains(event.target)) return;
-      this.setState({ menu: false });
-    };
-  }
-  componentDidMount() {
-    if (typeof document !== "undefined" && document.addEventListener)
-      document.addEventListener("mousedown", this.onDoc);
-  }
-  componentWillUnmount() {
-    if (typeof document !== "undefined" && document.removeEventListener)
-      document.removeEventListener("mousedown", this.onDoc);
-  }
-  run(mode) {
-    const sessionId = this.props.sessionId || currentSessionId(hostSessions());
-    if (!sessionId || this.state.busy) return;
-    this.setState({ busy: true, menu: false, notice: "" });
-    apiJson("/dsh-purge/rewind", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ sessionId, mode })
-    }).then(async (data) => {
-      if (!data || !data.ok || !data.sessionId || data.cleared === false) {
-        throw new Error(data && data.error || "\u6CA1\u6709\u6E05\u6389\u4E4B\u524D\u53D1\u9001\u7684\u5185\u5BB9");
-      }
-      noteRewindAt(data.at);
-      const text = isPluginDraft(data.text) ? "" : data.text || "";
-      armComposerFill(data.sessionId, text);
-      await openRewoundSession(hostSessions(), data.sessionId);
-      scheduleComposerFill(data.sessionId, text);
-      this.setState({ busy: false });
-    }).catch((e) => {
-      this.setState({
-        busy: false,
-        notice: "\u56DE\u9000\u5931\u8D25: " + String(e && e.message || e)
-      });
-    });
-  }
-  openMenu() {
-    this.setState(({ menu }) => ({ menu: !menu, notice: "" }));
-  }
-  render() {
-    const sessionId = this.props.sessionId || currentSessionId(hostSessions());
-    const t = this.props.t || null;
-    const label = this.state.busy ? "\u56DE\u9000\u4E2D\u2026" : this.state.notice ? this.state.notice.slice(0, 18) : "\u56DE\u9000";
-    return h(
-      "div",
-      {
-        className: "dshp-rewind-wrap",
-        ref: (node) => {
-          this.wrap = node;
-        }
-      },
-      h("style", null, REWIND_CSS),
-      h(
-        "button",
-        {
-          type: "button",
-          className: "dshp-rewind",
-          disabled: this.state.busy || !sessionId,
-          onMouseDown: (e) => e.preventDefault(),
-          onClick: (e) => {
-            e.preventDefault();
-            this.openMenu();
-          }
-        },
-        label
-      ),
-      this.state.menu ? h(RewindMenu, {
-        t,
-        anchor: this.wrap,
-        menuRef: this.menuRef,
-        runRewind: (mode) => this.run(mode)
-      }) : null
-    );
-  }
-};
-var RewindSafe = class extends Component {
-  constructor(p) {
-    super(p);
-    this.state = { failed: false, visible: false };
-  }
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-  componentDidCatch(error) {
-    try {
-      console.error("[dsh-purge] rewind slot:", error);
-    } catch {
-    }
-  }
-  componentDidMount() {
-    this.unsubscribe = subscribeRewind((visible2) => this.setState({ visible: visible2 }));
-    readRewindVisibility().catch(() => {
-      if (false)
-        this.setState({ visible: true });
-    });
-  }
-  componentWillUnmount() {
-    this.unsubscribe?.();
-    this.unsubscribe = null;
-  }
-  render() {
-    return h(
-      import_react.default.Fragment,
-      null,
-      !this.state.failed && h(RewindDraftSync, this.props),
-      this.state.visible ? h(this.state.failed ? RewindFallback : RewindButton, this.props) : null
-    );
-  }
-};
 function RewindDraftSync({ sessionId: slotSession, inputActions }) {
   const sessionId = slotSession || currentSessionId(hostSessions());
   useEffect(() => {
@@ -15101,105 +14718,6 @@ function RewindDraftSync({ sessionId: slotSession, inputActions }) {
     scheduleEchoClear(sessionId, inputActions);
   }, [sessionId, inputActions]);
   return null;
-}
-function RewindButton(props) {
-  const fallbackT = useT();
-  const t = props.t || fallbackT;
-  const sessions = hostSessions();
-  const sessionId = props.sessionId || currentSessionId(sessions);
-  const wrapRef = useRef(null);
-  const menuRef = useRef(null);
-  const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState("");
-  const [menu, setMenu] = useState(false);
-  useEffect(() => {
-    if (!menu) return;
-    if (typeof document === "undefined" || !document.addEventListener)
-      return void 0;
-    const onDoc = (event) => {
-      if (wrapRef.current && wrapRef.current.contains(event.target)) return;
-      if (menuRef.current && menuRef.current.contains(event.target)) return;
-      setMenu(false);
-    };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [menu]);
-  const runRewind = async (mode) => {
-    if (!sessionId || busy) return;
-    setBusy(true);
-    setMenu(false);
-    setNotice("");
-    try {
-      const data = await apiJson("/dsh-purge/rewind", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ sessionId, mode })
-      });
-      if (!data || !data.ok || !data.sessionId || data.cleared === false) {
-        throw new Error(data && data.error || "\u6CA1\u6709\u6E05\u6389\u4E4B\u524D\u53D1\u9001\u7684\u5185\u5BB9");
-      }
-      noteRewindAt(data.at);
-      const text = isPluginDraft(data.text) ? "" : data.text || "";
-      armComposerFill(data.sessionId, text);
-      await openRewoundSession(sessions, data.sessionId);
-      scheduleComposerFill(data.sessionId, text);
-    } catch (e) {
-      const message = rewindText(t, "rewind.fail", "\u56DE\u9000\u5931\u8D25: {error}").replace(
-        "{error}",
-        String(e && e.message || e)
-      );
-      setNotice(message);
-    } finally {
-      setBusy(false);
-    }
-  };
-  const onClick = (event) => {
-    event?.preventDefault?.();
-    event?.stopPropagation?.();
-    if (!sessionId || busy) return;
-    if (menu) {
-      setMenu(false);
-      return;
-    }
-    setNotice("");
-    setMenu(true);
-  };
-  const failLabel = notice ? notice.length > 18 ? notice.slice(0, 18) + "\u2026" : notice : "";
-  const label = busy ? rewindText(t, "rewind.busy", "\u56DE\u9000\u4E2D\u2026") : failLabel || rewindText(t, "rewind.label", "\u56DE\u9000");
-  const title = notice || rewindText(t, "rewind.aria", "\u56DE\u9000");
-  return h(
-    "div",
-    { className: "dshp-rewind-wrap", ref: wrapRef },
-    h("style", null, REWIND_CSS),
-    h(
-      "button",
-      {
-        type: "button",
-        className: "dshp-rewind",
-        title,
-        "aria-label": rewindText(t, "rewind.aria", "\u56DE\u9000"),
-        "aria-expanded": menu ? "true" : "false",
-        disabled: busy || !sessionId,
-        onMouseDown: (e) => e.preventDefault(),
-        onClick
-      },
-      h(
-        "svg",
-        {
-          viewBox: "0 0 16 16",
-          width: "14",
-          height: "14",
-          "aria-hidden": true
-        },
-        h("path", {
-          fill: "currentColor",
-          d: "M7.2 3.2 3.4 7l3.8 3.8V8.6c2.8 0 4.7.7 5.9 2.3-.2-2.8-1.9-5.2-5.9-5.6V3.2z"
-        })
-      ),
-      label
-    ),
-    menu ? h(RewindMenu, { t, anchor: wrapRef.current, menuRef, runRewind }) : null
-  );
 }
 function installRewindWatch(ctx) {
   const sessions = ctx && ctx.sessions || hostSessions();
@@ -15227,18 +14745,18 @@ function installRewindWatch(ctx) {
       window.clearInterval(timer);
   };
 }
-function installRewindUi(ctx) {
+function installRewindDraftSync(ctx) {
   bindRewindHost(ctx);
   ctx.slots.inject(
     "conversation.input.right",
     () => ctx.slots.register(
       {
         name: "conversation.input.right",
-        id: "dsh-purge-rewind",
+        id: "dsh-purge-draft-sync",
         order: 20,
-        inject: (sessionId) => ({ sessionId, t: ctx.locale.bind(NS) })
+        inject: (sessionId) => ({ sessionId })
       },
-      RewindSafe
+      RewindDraftSync
     )
   );
   ctx.effect(() => installRewindWatch(ctx), "dsh-purge: rewind watch");
@@ -15248,7 +14766,7 @@ function installRewindUi(ctx) {
 var rd3 = __toESM(require("react-dom"), 1);
 
 // src/styles/welcome.css
-var welcome_default = "/* The first-run dialog is rendered before any settings page. It must own its\r\n   styles and cannot depend on the optional drill vendor stylesheet. */\r\n.dshpp-welcome-mask {\r\n  position: fixed;\r\n  inset: 0;\r\n  z-index: 2147483000;\r\n  display: grid;\r\n  place-items: center;\r\n  padding: 24px;\r\n  overflow: auto;\r\n  box-sizing: border-box;\r\n  background: rgb(0 0 0 / 35%);\r\n  color: var(--dsw-alias-label-primary, #171717);\r\n  font-family: inherit;\r\n  font-size: 14px;\r\n  line-height: 1.6;\r\n  text-align: left;\r\n}\r\n.dshpp-welcome-card {\r\n  width: min(600px, 100%);\r\n  max-height: calc(100dvh - 48px);\r\n  overflow: auto;\r\n  box-sizing: border-box;\r\n  padding: 24px;\r\n  border: 1px solid var(--dsw-alias-border-l1, #ddd);\r\n  border-radius: 16px;\r\n  background: var(--dsw-alias-bg-layer-1, #fff);\r\n  box-shadow: 0 16px 64px rgb(0 0 0 / 18%);\r\n}\r\n.dshpp-welcome-card h2 {\r\n  margin: 0 0 6px;\r\n  font: inherit;\r\n  font-size: 20px;\r\n  font-weight: 600;\r\n}\r\n.dshpp-welcome-card h3 {\r\n  margin: 16px 0 6px;\r\n  font: inherit;\r\n  font-weight: 600;\r\n}\r\n.dshpp-welcome-lead {\r\n  color: var(--dsw-alias-label-secondary, #666);\r\n}\r\n.dshpp-welcome-warn {\r\n  margin: 16px 0;\r\n  padding: 12px;\r\n  border-radius: 8px;\r\n  background: var(--dsw-alias-bg-layer-2, #f5f5f5);\r\n}\r\n.dshpp-welcome-legal p {\r\n  margin: 10px 0;\r\n}\r\n.dshpp-welcome-legal a {\r\n  color: var(--dsw-alias-label-brand, #436ee8);\r\n  overflow-wrap: anywhere;\r\n}\r\n.dshpp-welcome-check {\r\n  display: flex;\r\n  align-items: flex-start;\r\n  gap: 10px;\r\n  margin-top: 20px;\r\n  cursor: pointer;\r\n}\r\n.dshpp-welcome-check input {\r\n  flex: 0 0 auto;\r\n  width: 16px;\r\n  height: 16px;\r\n  margin: 4px 0 0;\r\n  accent-color: var(--dsw-alias-label-brand, #436ee8);\r\n}\r\n.dshpp-welcome-ops {\r\n  display: flex;\r\n  justify-content: flex-end;\r\n  margin-top: 20px;\r\n}\r\n.dshpp-welcome-ops button {\r\n  min-height: 36px;\r\n  padding: 8px 16px;\r\n  border: 0;\r\n  border-radius: 8px;\r\n  background: var(--dsw-alias-label-primary, #171717);\r\n  color: var(--dsw-alias-bg-base, #fff);\r\n  font: inherit;\r\n  cursor: pointer;\r\n}\r\n.dshpp-welcome-ops button:disabled {\r\n  opacity: 0.4;\r\n  cursor: default;\r\n}\r\n.dshpp-welcome-ops button:focus-visible,\r\n.dshpp-welcome-check input:focus-visible {\r\n  outline: 2px solid var(--dsw-alias-label-brand, #436ee8);\r\n  outline-offset: 3px;\r\n}\r\n@media (max-height: 600px) {\r\n  .dshpp-welcome-mask {\r\n    padding: 12px;\r\n  }\r\n  .dshpp-welcome-card {\r\n    max-height: calc(100dvh - 24px);\r\n    padding: 18px;\r\n  }\r\n}\r\n\r\n/* Phone WebViews can put native navigation over the top-left of the page.\r\n   Reserve its row; keep a single scroll region for long notice text. */\r\n@media (max-width: 600px) and (min-height: 500px) {\r\n  .dshpp-welcome-mask {\r\n    padding: max(76px, env(safe-area-inset-top)) 12px\r\n      max(20px, env(safe-area-inset-bottom));\r\n    grid-template: minmax(0, 1fr) / minmax(0, 1fr);\r\n  }\r\n  .dshpp-welcome-card {\r\n    display: grid;\r\n    grid-template-rows: auto minmax(0, 1fr) auto auto;\r\n    max-height: 100%;\r\n    padding: 16px;\r\n  }\r\n  .dshpp-welcome-copy {\r\n    overflow: auto;\r\n    overscroll-behavior: contain;\r\n  }\r\n  .dshpp-welcome-check,\r\n  .dshpp-welcome-ops {\r\n    margin-top: 10px;\r\n  }\r\n}\r\n";
+var welcome_default = "/* The first-run dialog is rendered before any settings page. It must own its\n   styles and cannot depend on the optional drill vendor stylesheet. */\n.dshpp-welcome-mask {\n  position: fixed;\n  inset: 0;\n  z-index: 2147483000;\n  display: grid;\n  place-items: center;\n  padding: 24px;\n  overflow: auto;\n  box-sizing: border-box;\n  background: rgb(0 0 0 / 35%);\n  color: var(--dsw-alias-label-primary, #171717);\n  font-family: inherit;\n  font-size: 14px;\n  line-height: 1.6;\n  text-align: left;\n}\n.dshpp-welcome-card {\n  width: min(600px, 100%);\n  max-height: calc(100dvh - 48px);\n  overflow: auto;\n  box-sizing: border-box;\n  padding: 24px;\n  border: 1px solid var(--dsw-alias-border-l1, #ddd);\n  border-radius: 16px;\n  background: var(--dsw-alias-bg-layer-1, #fff);\n  box-shadow: 0 16px 64px rgb(0 0 0 / 18%);\n}\n.dshpp-welcome-card h2 {\n  margin: 0 0 6px;\n  font: inherit;\n  font-size: 20px;\n  font-weight: 600;\n}\n.dshpp-welcome-card h3 {\n  margin: 16px 0 6px;\n  font: inherit;\n  font-weight: 600;\n}\n.dshpp-welcome-lead {\n  color: var(--dsw-alias-label-secondary, #666);\n}\n.dshpp-welcome-warn {\n  margin: 16px 0;\n  padding: 12px;\n  border-radius: 8px;\n  background: var(--dsw-alias-bg-layer-2, #f5f5f5);\n}\n.dshpp-welcome-legal p {\n  margin: 10px 0;\n}\n.dshpp-welcome-legal a {\n  color: var(--dsw-alias-label-brand, #436ee8);\n  overflow-wrap: anywhere;\n}\n.dshpp-welcome-check {\n  display: flex;\n  align-items: flex-start;\n  gap: 10px;\n  margin-top: 20px;\n  cursor: pointer;\n}\n.dshpp-welcome-check input {\n  flex: 0 0 auto;\n  width: 16px;\n  height: 16px;\n  margin: 4px 0 0;\n  accent-color: var(--dsw-alias-label-brand, #436ee8);\n}\n.dshpp-welcome-ops {\n  display: flex;\n  justify-content: flex-end;\n  margin-top: 20px;\n}\n.dshpp-welcome-ops button {\n  min-height: 36px;\n  padding: 8px 16px;\n  border: 0;\n  border-radius: 8px;\n  background: var(--dsw-alias-label-primary, #171717);\n  color: var(--dsw-alias-bg-base, #fff);\n  font: inherit;\n  cursor: pointer;\n}\n.dshpp-welcome-ops button:disabled {\n  opacity: 0.4;\n  cursor: default;\n}\n.dshpp-welcome-ops button:focus-visible,\n.dshpp-welcome-check input:focus-visible {\n  outline: 2px solid var(--dsw-alias-label-brand, #436ee8);\n  outline-offset: 3px;\n}\n@media (max-height: 600px) {\n  .dshpp-welcome-mask {\n    padding: 12px;\n  }\n  .dshpp-welcome-card {\n    max-height: calc(100dvh - 24px);\n    padding: 18px;\n  }\n}\n\n/* Phone WebViews can put native navigation over the top-left of the page.\n   Reserve its row; keep a single scroll region for long notice text. */\n@media (max-width: 600px) and (min-height: 500px) {\n  .dshpp-welcome-mask {\n    padding: max(76px, env(safe-area-inset-top)) 12px\n      max(20px, env(safe-area-inset-bottom));\n    grid-template: minmax(0, 1fr) / minmax(0, 1fr);\n  }\n  .dshpp-welcome-card {\n    display: grid;\n    grid-template-rows: auto minmax(0, 1fr) auto auto;\n    max-height: 100%;\n    padding: 16px;\n  }\n  .dshpp-welcome-copy {\n    overflow: auto;\n    overscroll-behavior: contain;\n  }\n  .dshpp-welcome-check,\n  .dshpp-welcome-ops {\n    margin-top: 10px;\n  }\n}\n";
 
 // src/components/welcome.js
 var WELCOME_KEY = "dsh-purge-user-notice-v1";
@@ -15777,7 +15295,7 @@ function PurgeGlyphIcon({ size = 16 } = {}) {
 }
 function DetailSettings({ view } = {}) {
   if (view === "summary")
-    return h("span", null, "Purge \xB7 1.7.20");
+    return h("span", null, "Purge \xB7 1.7.23");
   return h("div", { className: "dshpp-detail-settings" }, h(PurgePage));
 }
 function PanelOverlays() {
@@ -15810,7 +15328,7 @@ function apply(ctx) {
   ctx.effect(startGrantSync, "panel grant sync");
   ctx.inject(
     ["sessions", "uiWorkspace", "conversation"],
-    (host3) => installRewindUi(host3)
+    (host3) => installRewindDraftSync(host3)
   );
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), "panel locale");
   const t = ctx.locale.bind(NS);

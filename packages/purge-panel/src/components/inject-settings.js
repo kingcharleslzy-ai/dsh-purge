@@ -52,7 +52,11 @@ export function InjectSettings() {
   const [enabled, setEnabled] = useState(true);
   const [presetsText, setPresetsText] = useState("");
   const [sessionsText, setSessionsText] = useState("");
-  const [layers, setLayers] = useState({ main: true, boost: true, protocol: true });
+  const [layers, setLayers] = useState({
+    main: true,
+    boost: true,
+    protocol: true,
+  });
   const [layered, setLayered] = useState(false);
   const [attempt, setAttempt] = useState(0);
   // 记录上次成功写入的列表值，避免失焦时无变化也触发 Loader 协调。
@@ -80,7 +84,10 @@ export function InjectSettings() {
       },
       (e) => {
         if (!active) return;
-        setNotice({ kind: "error", text: String(e && e.message ? e.message : e) });
+        setNotice({
+          kind: "error",
+          text: String(e && e.message ? e.message : e),
+        });
       },
     );
     return () => {
@@ -103,7 +110,9 @@ export function InjectSettings() {
     } catch (e) {
       const msg = String(e && e.message ? e.message : e);
       // configEditor 不可用属于宿主能力缺失，不是用户操作错误，单独提示。
-      const hint = /configEditor|unavailable|not found/i.test(msg) ? " " + t("inject.noHost") : "";
+      const hint = /configEditor|unavailable|not found/i.test(msg)
+        ? " " + t("inject.noHost")
+        : "";
       setNotice({ kind: "error", text: msg + hint });
     } finally {
       setBusy(false);
@@ -153,7 +162,11 @@ export function InjectSettings() {
     ),
 
     h("h4", { style: { margin: "14px 0 6px" } }, t("inject.presets")),
-    h("p", { style: { opacity: 0.75, margin: "0 0 6px", fontSize: "0.9em" } }, t("inject.presetsHint")),
+    h(
+      "p",
+      { style: { opacity: 0.75, margin: "0 0 6px", fontSize: "0.9em" } },
+      t("inject.presetsHint"),
+    ),
     h("textarea", {
       className: "dshpp-textarea",
       rows: 2,
@@ -163,12 +176,17 @@ export function InjectSettings() {
       onChange: (e) => setPresetsText(e.target.value),
       onBlur: () => {
         const next = parseList(presetsText);
-        if (listText(next) !== lastSavedPresets.current) save({ excludePresets: next });
+        if (listText(next) !== lastSavedPresets.current)
+          save({ excludePresets: next });
       },
     }),
 
     h("h4", { style: { margin: "14px 0 6px" } }, t("inject.sessions")),
-    h("p", { style: { opacity: 0.75, margin: "0 0 6px", fontSize: "0.9em" } }, t("inject.sessionsHint")),
+    h(
+      "p",
+      { style: { opacity: 0.75, margin: "0 0 6px", fontSize: "0.9em" } },
+      t("inject.sessionsHint"),
+    ),
     h("textarea", {
       className: "dshpp-textarea",
       rows: 2,
@@ -178,7 +196,8 @@ export function InjectSettings() {
       onChange: (e) => setSessionsText(e.target.value),
       onBlur: () => {
         const next = parseList(sessionsText);
-        if (listText(next) !== lastSavedSessions.current) save({ excludeSessions: next });
+        if (listText(next) !== lastSavedSessions.current)
+          save({ excludeSessions: next });
       },
     }),
 

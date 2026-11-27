@@ -1,7 +1,7 @@
 // 注入层配置的读写逻辑：只动白名单字段，非法输入不破坏现有配置。
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mergeInjectConfig, describeInjectConfig, findPluginEntry } from '../lib/inject-config.js';
+import { mergeInjectConfig, describeInjectConfig, findPluginEntry, writeInjectConfig } from '../lib/inject-config.js';
 
 test('mergeInjectConfig：只写白名单字段，其它配置原样保留', () => {
   const current = {
@@ -105,4 +105,33 @@ test('findPluginEntry：按包名命中，跳过 disabled', () => {
 
   const ctxNone = { get: () => ({ entries: () => [dead, other] }) };
   assert.equal(findPluginEntry(ctxNone), undefined);
+});
+
+test('writes only the owner entry; ambiguous, stale and unaddressable entries never write', async () => {
+  const old = { options: { name: 'dsh-purge' } };
+  const own = { options: { name: 'dsh-purge-community' } };
+  for (const entries of [[old, own], [own, old]]) {
+    const edits = [];
+    const editor = {
+      entries: () => entries,
+      async edit(entry, change) {
+        edits.push([entry, change({}, { unrelated: 'inherited-only' })]);
+      },
+    };
+    const ctx = { fiber: { entry: own }, get: k => k === 'loader' ? { entries: () => entries } : editor };
+    const patch = { excludeSessions: ['example'] };
+    assert.equal((await writeInjectConfig(ctx, patch)).ok, true);
+    assert.deepEqual(edits, [[own, patch]]);
+    ctx.fiber.entry = old;
+    assert.equal((await writeInjectConfig(ctx, patch)).ok, true);
+    assert.equal(edits[1][0], old);
+    for (const owner of [null, { options: own.options }]) {
+      ctx.fiber.entry = owner;
+      assert.equal((await writeInjectConfig(ctx, patch)).ok, false);
+    }
+    ctx.fiber.entry = own;
+    editor.entries = () => [];
+    assert.equal((await writeInjectConfig(ctx, patch)).ok, false);
+    assert.equal(edits.length, 2);
+  }
 });

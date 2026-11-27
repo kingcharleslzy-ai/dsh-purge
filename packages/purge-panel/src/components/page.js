@@ -1,12 +1,10 @@
 // Full-page shell for the left sidebar entry. Replaces the old right-sidebar
 // drawer: same components, but laid out like a DSH settings page (host font,
 // host tokens, one column, explanations in "?" tips instead of paragraphs).
-import { h, useState, useEffect, useCallback } from "../shared/react.js";
+import { h, useState, useCallback } from "../shared/react.js";
 import { PURGE_CSS, NATIVE_CSS, PAGE_CSS } from "../styles/index.js";
 import { compatibilityLevelText, useT } from "../shared/locale.js";
-import { RewindSetting } from "./rewind-setting.js";
 import { InjectSettings } from "./inject-settings.js";
-import { apiJson, unavailableStatus } from "../api/client.js";
 import { Btn, HelpTip } from "./primitives.js";
 import { patchEvidence, patchGroupCounts } from "./patch-status.js";
 import { PurgifySection } from "./settings-form.js";
@@ -217,30 +215,7 @@ export function PurgePage() {
     setTab(id);
     setVisited((v) => Object.assign({}, v, { [id]: true }));
   };
-  const loadInfo = () =>
-    apiJson("/dsh-purge/status")
-      .then(setInfo)
-      .catch((error) => setInfo(unavailableStatus(error)));
-  // 子组件的 onStatus 在依赖里，必须是稳定引用，否则每次渲染都会再 setInfo 一次。
   const mergeInfo = useCallback((s) => s && setInfo(s), []);
-  useEffect(() => {
-    if (tab === "status") loadInfo();
-  }, [tab]);
-  useEffect(() => {
-    const phase = info?.asar_handoff?.phase;
-    if (
-      ![
-        "starting",
-        "ready",
-        "waiting_for_quit",
-        "waiting_for_unlock",
-        "moving",
-      ].includes(phase)
-    )
-      return;
-    const timer = setInterval(loadInfo, 2000);
-    return () => clearInterval(timer);
-  }, [info?.asar_handoff?.phase]);
   const active = TABS.find((row) => row[0] === tab) || TABS[0];
   return h(
     "div",
@@ -295,7 +270,11 @@ export function PurgePage() {
         "div",
         { hidden: tab !== "status", className: "dshpp-sec" },
         h(StatusStrip, { info }),
-        h(PurgifySection, { page: "status", onStatus: mergeInfo }),
+        h(PurgifySection, {
+          page: "status",
+          active: tab === "status",
+          onStatus: mergeInfo,
+        }),
         h(StatusExtras),
         h(CommunityMaintenance, { localVersion: info?.plugin_version || "" }),
       ),
@@ -318,7 +297,6 @@ export function PurgePage() {
       h(
         "div",
         { hidden: tab !== "more", className: "dshpp-sec" },
-        __COMMUNITY__ && tab === "more" ? h(RewindSetting) : null,
         visited.more ? h(PurgifySection, { page: "more" }) : null,
       ),
       tab === "drill"
