@@ -26,8 +26,10 @@ for(const plugin of index.plugins){
     const pkg=JSON.parse(readFileSync(path.join(dir,'package.json')));
     assert.equal(pkg.name,plugin.name);assert.equal(pkg.version,release.version);
     assert.ok(statSync(path.join(dir,pkg.dsh.bundle.patch)).isFile());
-    const patch=readFileSync(path.join(profile,'cordis.patch.yml'),'utf8');
-    assert.ok(patch.includes(plugin.name));
+    const manifest=JSON.parse(readFileSync(path.join(profile,'package.json')));
+    assert.ok(manifest.dsh?.profile?.bundles?.includes(plugin.name), 'profile did not register '+plugin.name);
+    const composed=execFileSync(process.execPath,[cli,'--profile','web','--dump-config'],{env,cwd:root,encoding:'utf8',maxBuffer:8*1024*1024});
+    assert.ok(composed.includes(plugin.name),'bundle missing from official configuration dump');
     console.log('PASS fresh market install',plugin.name,pkg.version,release.source.commit);
   } catch(e) { process.exitCode=1;console.error(plugin.name,e.message); } finally {rmSync(root,{recursive:true,force:true,maxRetries:5,retryDelay:100});}
 }
