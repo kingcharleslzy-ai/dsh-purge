@@ -36,7 +36,9 @@ try {
   await writeFile(settings, '{"chosen":"workspace-write"}');
   await writeFile(bak, clean);
   await writeFile(file, old);
-  await assert.rejects(patchStatusDetail(base, []), /restoration pending/);
+  const report = await patchStatusDetail(base, []);
+  assert.equal(report.legacyPermissions.status, "pending");
+  assert.equal(report.legacyPermissions.message, file);
   await backupAll(base);
   assert.equal(await readFile(bak, "utf8"), clean);
   await revertAll(base);

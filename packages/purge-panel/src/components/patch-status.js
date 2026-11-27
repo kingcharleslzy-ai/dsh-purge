@@ -191,12 +191,16 @@ export function PatchHealth({ state }) {
   const counts = patchGroupCounts(evidence.rows);
   const denom = Math.max(counts.denom, 1);
   const pct = (n) => (n / denom) * 100;
-  const verdict = counts.pending
-    ? t("health.verdict.pending", { n: counts.pending })
-    : t("health.verdict.ok");
+  const legacy = state.legacyPermissions;
+  const verdict = legacy
+    ? t("health.legacy." + legacy.status)
+    : counts.pending
+      ? t("health.verdict.pending", { n: counts.pending })
+      : t("health.verdict.ok");
   return h(
     "div",
     { className: "dshpp-health" },
+    legacy && h("p", { role: "status" }, legacy.message),
     h(
       "div",
       { className: "dshpp-health-top" },

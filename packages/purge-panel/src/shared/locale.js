@@ -128,6 +128,8 @@ export const zh = {
     "这台宿主没有对应组件或文件，进了也不进分母。永远 0 工作量。",
   "health.verdict.pending": "有 {n} 条已启用但还没写盘",
   "evidence.summary": "仅有分组摘要",
+  "health.legacy.pending": "旧版权限改动待恢复",
+  "health.legacy.unmatched": "旧版权限改动无法核实",
   "evidence.unknown": "无法核实",
   "health.verdict.ok": "宿主补丁全部就位",
   "groups.unreadable": "读取失败，补丁明细暂不可用；请刷新重试。",
@@ -615,6 +617,8 @@ export const en = {
     "This host has no such component or file. Excluded from the denominator; zero work.",
   "health.verdict.pending": "{n} enabled but not written yet",
   "evidence.summary": "Group summary only",
+  "health.legacy.pending": "Legacy permission restoration pending",
+  "health.legacy.unmatched": "Legacy permission changes could not be verified",
   "evidence.unknown": "Cannot verify",
   "health.verdict.ok": "All host patches in place",
   "groups.unreadable":

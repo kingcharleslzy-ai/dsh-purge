@@ -9250,6 +9250,8 @@ var zh = {
   "health.hint.na": "\u8FD9\u53F0\u5BBF\u4E3B\u6CA1\u6709\u5BF9\u5E94\u7EC4\u4EF6\u6216\u6587\u4EF6\uFF0C\u8FDB\u4E86\u4E5F\u4E0D\u8FDB\u5206\u6BCD\u3002\u6C38\u8FDC 0 \u5DE5\u4F5C\u91CF\u3002",
   "health.verdict.pending": "\u6709 {n} \u6761\u5DF2\u542F\u7528\u4F46\u8FD8\u6CA1\u5199\u76D8",
   "evidence.summary": "\u4EC5\u6709\u5206\u7EC4\u6458\u8981",
+  "health.legacy.pending": "\u65E7\u7248\u6743\u9650\u6539\u52A8\u5F85\u6062\u590D",
+  "health.legacy.unmatched": "\u65E7\u7248\u6743\u9650\u6539\u52A8\u65E0\u6CD5\u6838\u5B9E",
   "evidence.unknown": "\u65E0\u6CD5\u6838\u5B9E",
   "health.verdict.ok": "\u5BBF\u4E3B\u8865\u4E01\u5168\u90E8\u5C31\u4F4D",
   "groups.unreadable": "\u8BFB\u53D6\u5931\u8D25\uFF0C\u8865\u4E01\u660E\u7EC6\u6682\u4E0D\u53EF\u7528\uFF1B\u8BF7\u5237\u65B0\u91CD\u8BD5\u3002",
@@ -9686,6 +9688,8 @@ var en = {
   "health.hint.na": "This host has no such component or file. Excluded from the denominator; zero work.",
   "health.verdict.pending": "{n} enabled but not written yet",
   "evidence.summary": "Group summary only",
+  "health.legacy.pending": "Legacy permission restoration pending",
+  "health.legacy.unmatched": "Legacy permission changes could not be verified",
   "evidence.unknown": "Cannot verify",
   "health.verdict.ok": "All host patches in place",
   "groups.unreadable": "Read failed; patch detail is unavailable. Refresh to retry.",
@@ -10355,10 +10359,12 @@ function PatchHealth({ state }) {
   const counts = patchGroupCounts(evidence.rows);
   const denom = Math.max(counts.denom, 1);
   const pct = (n) => n / denom * 100;
-  const verdict = counts.pending ? t("health.verdict.pending", { n: counts.pending }) : t("health.verdict.ok");
+  const legacy = state.legacyPermissions;
+  const verdict = legacy ? t("health.legacy." + legacy.status) : counts.pending ? t("health.verdict.pending", { n: counts.pending }) : t("health.verdict.ok");
   return h(
     "div",
     { className: "dshpp-health" },
+    legacy && h("p", { role: "status" }, legacy.message),
     h(
       "div",
       { className: "dshpp-health-top" },
