@@ -110,7 +110,6 @@ jobs:
           node scripts/check-update-runtime.mjs
           ELECTRON_RUN_AS_NODE=1 "$PURGE_ELECTRON_EXEC" scripts/check-bootstrap-download-runtime.mjs
       - name: Restore historical permission edits on an official host module
-        if: runner.os == 'macOS' || runner.os == 'Windows'
         shell: bash
         run: |
           set -eu
