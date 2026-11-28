@@ -158,3 +158,13 @@ test('bare lookup still serves deployments without an inject fork',()=>{
     assert.equal(res.status,undefined);
   }
 });
+
+test('a delayed or reloaded owner service uses one subscription and no root fallback',()=>{
+  let attach,count=0;
+  const ctx={root:{connection:{admit:owner}},inject(names,fn){count++;attach=fn;}};
+  const check=(status)=>{const res=response();assert.equal(allowOwnerRequest(ctx,{},res),status===undefined);assert.equal(res.status,status);};
+  check(503);check(503);
+  const detach=attach({connection:{admit:owner}});check(undefined);detach();check(503);
+  attach({connection:{admit:()=>({peer:{principal:{kind:'operator'}}})}});check(403);
+  assert.equal(count,1);
+});

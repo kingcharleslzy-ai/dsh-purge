@@ -597,6 +597,10 @@ test("packaged community diagnostics stay within verified Electron resources", (
   try {
     assert.equal(currentHost(options), "", "write target must not change");
     assert.equal(diagnosticHost(options), host);
+    const nested = path.join(app,"dsh/node_modules/@deepseek-ai");
+    fs.mkdirSync(path.join(nested,"dsh-agent-instructions/lib"),{recursive:true});
+    assert.equal(diagnosticHost(options),nested,"#333 use the complete scope inside the same extraction");
+    fs.rmSync(path.join(app,"dsh"),{recursive:true});
     assert.equal(diagnosticHost({...options,electron:false}), "");
     assert.throws(() => diagnosticHost({...options,diskReader:{...fs,statSync(file){
       if(file === host) throw Object.assign(Error("denied"),{code:"EACCES"});

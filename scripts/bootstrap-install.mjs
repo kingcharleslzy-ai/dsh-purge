@@ -177,17 +177,25 @@ export function desktopCliFromResources(resources, reader = fs) {
     try { return reader.statSync(file).isFile(); }
     catch (error) { if (['ENOENT', 'ENOTDIR'].includes(error.code)) return false; throw error; }
   };
+  const owned = file => {
+    const rel = path.relative(reader.realpathSync(resources), reader.realpathSync(file));
+    if (path.isAbsolute(rel) || rel === '..' || rel.startsWith('..' + path.sep)) throw Error('Bundled DSH CLI escapes its application');
+    return file;
+  };
+  // Prefer an application-owned desktop management entry across all layouts.
+  // A generic package bin can support web profiles but reject desktop even for rollback.
+  for (const layout of ['app.asar', 'app', 'app.asar.unpacked']) {
+    const wrapper = path.join(resources, layout, 'lib/desktop-cli.js');
+    if (exists(wrapper)) return owned(wrapper);
+    for (const scope of ['dsh/node_modules/@deepseek-ai', 'node_modules/@deepseek-ai']) {
+      const hostCli = path.join(resources, layout, scope, 'dsh-desktop-host/lib/cli.js');
+      if (exists(hostCli)) return owned(hostCli);
+    }
+  }
   for (const layout of ['app.asar', 'app.asar.unpacked', 'app']) {
     const root = path.join(resources, layout);
     try { physical.statSync(root); } catch (error) { if (['ENOENT','ENOTDIR'].includes(error.code)) continue; throw error; }
     for (const prefix of ['dsh/node_modules/@deepseek-ai', 'node_modules/@deepseek-ai']) {
-      const legacy = path.join(root, prefix, 'dsh-desktop-host/lib/cli.js');
-      const owned = file => {
-        const rel = path.relative(reader.realpathSync(resources), reader.realpathSync(file));
-        if (path.isAbsolute(rel) || rel === '..' || rel.startsWith('..' + path.sep)) throw Error('Bundled DSH CLI escapes its application');
-        return file;
-      };
-      if (exists(legacy)) return owned(legacy);
       const pkg = path.join(root, prefix, 'dsh'), manifest = path.join(pkg, 'package.json');
       if (!exists(manifest)) continue;
       const meta = JSON.parse(reader.readFileSync(manifest, 'utf8'));

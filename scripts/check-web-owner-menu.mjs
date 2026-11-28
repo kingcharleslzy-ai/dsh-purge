@@ -10,6 +10,7 @@ import {createRequire} from 'node:module';
 import {setTimeout as delay} from 'node:timers/promises';
 
 const prefix=path.resolve(process.argv[2]);
+const ownerOnly=process.argv.includes("--owner-only");
 const require=createRequire(path.join(prefix,'package.json'));
 const {chromium}=require('playwright-core');
 const cli=path.join(prefix,'node_modules','@deepseek-ai','dsh','lib','bin.js');
@@ -29,10 +30,10 @@ export const name='purge-acceptance'; export function apply(ctx){
     await host.workspaceRegistry.create(${JSON.stringify(path.join(dir,'menu-acceptance-workspace'))});
   });
 }`);
-  await symlink(path.join(prefix,'node_modules','dsh-rewind-plugin'),path.join(modules,'dsh-rewind-plugin'),process.platform==='win32'?'junction':'dir');
+  if (!ownerOnly) await symlink(path.join(prefix,'node_modules','dsh-rewind-plugin'),path.join(modules,'dsh-rewind-plugin'),process.platform==='win32'?'junction':'dir');
   await mkdir(path.join(dir,'menu-acceptance-workspace'));
   const patch=path.join(dir,'fixture.yml');
-  await writeFile(patch,'- insert:\n    - id: purge-acceptance\n      name: purge-acceptance\n    - id: dsh-rewind-plugin\n      name: dsh-rewind-plugin\n');
+  await writeFile(patch,'- insert:\n    - id: purge-acceptance\n      name: purge-acceptance\n'+(ownerOnly?'':'    - id: dsh-rewind-plugin\n      name: dsh-rewind-plugin\n'));
   child=spawn(process.execPath,[cli,'--profile','web','--patch',patch,'--no-open','--host','127.0.0.1','--port','0'],{cwd:dir,env:{...process.env,DSH_HOME:home,HOME:dir,USERPROFILE:dir},stdio:['ignore','pipe','pipe']});
   exited=once(child,'exit');
   let output='';
@@ -53,6 +54,10 @@ export const name='purge-acceptance'; export function apply(ctx){
   const ownerStatus=()=>page.evaluate(async()=> (await fetch('/dsh-purge/apply')).status);
   await page.waitForFunction(async()=> (await fetch('/dsh-purge/apply')).status===405);
   assert.equal(await ownerStatus(),405);
+  if(ownerOnly) {
+    assert.equal(await page.evaluate(async()=> (await fetch('/dsh-purge/status')).status),200);
+    console.log('PASS: real host anonymous 401, authenticated owner 200');
+  } else {
   const next=page.getByRole('button',{name:/^(继续|continue)$/i});
   await next.click({timeout:3000}).catch(()=>{});
   await page.getByRole('dialog').getByRole('button',{name:/^(关闭|close)$/i}).click({timeout:3000}).catch(()=>{});
@@ -76,6 +81,7 @@ export const name='purge-acceptance'; export function apply(ctx){
   await menu.getByText('rewind',{exact:true}).waitFor();
   assert.equal(await menu.getByText('purge-rewind',{exact:true}).count(),0);
   console.log('PASS: anonymous 401, owner reaches handler; + and / preserve independent rewind; file chooser opens.');
+  }
 } finally {
   try {await browser?.close();}
   finally {

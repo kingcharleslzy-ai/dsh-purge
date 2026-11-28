@@ -12,6 +12,9 @@ const readmeEn = read("docs/README.en.md");
 const agents = read("AGENTS.md");
 
 const problems = [];
+const lock = JSON.parse(read("package-lock.json"));
+if (lock.version !== version || lock.packages?.[""]?.version !== version)
+  problems.push("package-lock.json 两处根包版本须与 package.json 一致");
 const releaseSummary = `docs/releases/${version}.md`;
 if (!fs.existsSync(releaseSummary)) {
   problems.push(`${releaseSummary} 缺少本版发行摘要`);
