@@ -44,6 +44,11 @@ try {
   for(const index of [0,1,0]){
     run([selected,...args,'add',archives[index]]);
     assert.equal(JSON.parse(fs.readFileSync(path.join(profile,'node_modules/fixture-addon/package.json'))).version,index?'1.0.1':'1.0.0');
+    if (index===1) {
+      const bad=path.join(root,"invalid.tgz");write(bad,"not a tarball");
+      assert.notEqual(run([selected,...args,'add',bad],root,false).status,0);
+      assert.equal(JSON.parse(fs.readFileSync(path.join(profile,'node_modules/fixture-addon/package.json'))).version,'1.0.1');
+    }
     assert.equal(fs.readFileSync(path.join(profile,'cordis.patch.yml'),'utf8'),sentinel);
   }
   console.log('PASS: official CLI refused bare desktop access; wrapper installed, upgraded and restored inert package',process.platform);

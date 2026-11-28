@@ -93,6 +93,9 @@ test('desktop maintenance uses the shell management CLI before a generic package
   write(path.join(pkg,'lib/bin.js'));
   const wrapper=path.join(resources,'app/lib/desktop-cli.js'); write(wrapper);
   for(const resolve of [desktopCliFromResources,bootstrapCli]) assert.equal(resolve(resources),wrapper);
+  const stranger=path.join(fixture(t),'resources');
+  write(path.join(stranger,'app/lib/desktop-cli.js'));
+  for(const resolve of [desktopCliFromResources,bootstrapCli]) assert.throws(()=>resolve(stranger),/Cannot find/);
   const elsewhere=path.join(path.dirname(resources),'elsewhere');write(path.join(elsewhere,'desktop-cli.js'));
   fs.rmSync(path.dirname(wrapper),{recursive:true});fs.symlinkSync(elsewhere,path.dirname(wrapper),process.platform==='win32'?'junction':'dir');
   for(const resolve of [desktopCliFromResources,bootstrapCli]) assert.throws(()=>resolve(resources),/escapes/);

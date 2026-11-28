@@ -184,12 +184,16 @@ export function desktopCliFromResources(resources, reader = fs) {
   };
   // Prefer an application-owned desktop management entry across all layouts.
   // A generic package bin can support web profiles but reject desktop even for rollback.
+  let desktopWrapper;
   for (const layout of ['app.asar', 'app', 'app.asar.unpacked']) {
     const wrapper = path.join(resources, layout, 'lib/desktop-cli.js');
-    if (exists(wrapper)) return owned(wrapper);
+    if (!desktopWrapper && exists(wrapper)) desktopWrapper = owned(wrapper);
     for (const scope of ['dsh/node_modules/@deepseek-ai', 'node_modules/@deepseek-ai']) {
       const hostCli = path.join(resources, layout, scope, 'dsh-desktop-host/lib/cli.js');
-      if (exists(hostCli)) return owned(hostCli);
+      if (exists(hostCli)) {
+        const verified = owned(hostCli);
+        return desktopWrapper || verified;
+      }
     }
   }
   for (const layout of ['app.asar', 'app.asar.unpacked', 'app']) {
@@ -210,7 +214,8 @@ export function desktopCliFromResources(resources, reader = fs) {
       const realRel = path.relative(realRoot, realCli);
       if (path.isAbsolute(realRel) || realRel === '..' || realRel.startsWith('..' + path.sep))
         throw Error('Bundled DSH CLI escapes its package');
-      return owned(cli);
+      const verified = owned(cli);
+      return desktopWrapper || verified;
     }
   }
   throw Error("Cannot find this DSH Desktop's CLI. Specify the installed DSH executable and actual profile; no other installation was selected.");

@@ -76,6 +76,7 @@ try {
   await symlink(basePackage,path.join(scope,"dsh-base"),linkType);
   const alias=path.join(scope,"dsh-sandbox-local");
   await symlink(nativePackage,alias,linkType);
+  await writeFile(path.join(nativePackage,"package.json"),JSON.stringify({name:"@deepseek-ai/dsh-sandbox-local"}));
   const live=path.join(nativePackage,"lib/index.js");
   await writeFile(live,old); await writeFile(live+".dshpurge.bak",clean);
   const evidence=(await patchStatusDetail(scope,[])).legacyPermissions;
