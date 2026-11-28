@@ -7,6 +7,7 @@ import {
   writeFile,
   rm,
   unlink,
+  symlink,
 } from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
@@ -65,6 +66,30 @@ try {
     await readFile(settings, "utf8"),
     '{"chosen":"workspace-write"}',
   );
+  const workspace = path.join(root,"workspace");
+  const scope = path.join(workspace,"apps/cli/node_modules/@deepseek-ai");
+  const nativePackage = path.join(workspace,"packages/sandbox/sandbox-local");
+  const basePackage = path.join(workspace,"packages/bundle/base");
+  await mkdir(path.join(nativePackage,"lib"),{recursive:true});
+  await mkdir(basePackage,{recursive:true}); await mkdir(scope,{recursive:true});
+  const linkType=process.platform==="win32"?"junction":"dir";
+  await symlink(basePackage,path.join(scope,"dsh-base"),linkType);
+  const alias=path.join(scope,"dsh-sandbox-local");
+  await symlink(nativePackage,alias,linkType);
+  await writeFile(path.join(nativePackage,"package.json"),JSON.stringify({name:"@deepseek-ai/dsh-sandbox-local"}));
+  const live=path.join(nativePackage,"lib/index.js");
+  await writeFile(live,old); await writeFile(live+".dshpurge.bak",clean);
+  const evidence=(await patchStatusDetail(scope,[])).legacyPermissions;
+  assert.equal(evidence.status,"pending",evidence.message);
+  await revertAll(scope);
+  assert.equal(await readFile(live,"utf8"),clean);
+  await rm(alias);
+  const outside=path.join(root,"unrelated","dsh-sandbox-local");
+  await mkdir(path.join(outside,"lib"),{recursive:true}); await symlink(outside,alias,linkType);
+  const forbidden=path.join(outside,"lib/index.js");
+  await writeFile(forbidden,old); await writeFile(forbidden+".dshpurge.bak",clean);
+  await assert.rejects(revertAll(scope),/outside allowed/);
+  assert.equal(await readFile(forbidden,"utf8"),old);
   console.log(
     "PASS: official module restored byte-for-byte, second run, missing backup, independent edit, profile intact",
     process.platform,

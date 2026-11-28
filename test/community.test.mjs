@@ -621,12 +621,13 @@ test('missing CLI preflight stops before profile installation or checkpoint muta
  } finally {fs.rmSync(f.home,{recursive:true,force:true});}
 });
 
-test("failed migration restores exact disabled profile and floating dependency", async t => {
+for (const source of ["latest/download/dsh-purge-community.tgz","download/v1.7.21/dsh-purge-community-1.7.21.tgz"])
+test("failed migration restores exact disabled profile and dependency: "+source, async t => {
   const fixture = setup();
   t.after(fixture.close);
   const manifest = path.join(fixture.profile, "package.json");
   const previous = JSON.parse(fs.readFileSync(manifest));
-  previous.dependencies[PACKAGE] = "https://github.com/kingcharleslzy-ai/dsh-purge/releases/latest/download/dsh-purge-community.tgz";
+  previous.dependencies[PACKAGE] = "https://github.com/kingcharleslzy-ai/dsh-purge/releases/"+source;
   previous.dsh.profile.bundles = ["unrelated-plugin"];
   const original = JSON.stringify(previous, null, 2);
   fs.writeFileSync(manifest, original);

@@ -134,3 +134,37 @@ test('authenticated controls retain original dispatch and resolve replacement se
   f.setConnection({admit:owner});
   assert.equal((await f.call('/dsh-purge/apply',{method:'GET'})).status,405);
 });
+
+test('0.2.3 resolves connection.authentication through the calling fiber',()=>{
+  const ownerPeer={peer:{principal:{kind:'owner'}}};
+  const working={admit:()=>ownerPeer};
+  const bare={admit(){throw Error('cannot get property "connection.authentication" without inject');}};
+  const requested=[];
+  const ctx={
+    get(name){return name==='connection'?bare:undefined;},
+    inject(names,callback){requested.push(names);return callback({get:()=>working});},
+  };
+  const res=response();
+  assert.equal(allowOwnerRequest(ctx,{headers:{}},res),true);
+  assert.equal(res.status,undefined);
+  assert.deepEqual(requested,[['connection','connection.authentication']]);
+});
+
+test('bare lookup still serves deployments without an inject fork',()=>{
+  const connection={admit:()=>({peer:{principal:{kind:'owner'}}})};
+  for(const ctx of [{get:()=>connection},{get:()=>connection,inject(){throw Error('no fiber');}},{connection}]){
+    const res=response();
+    assert.equal(allowOwnerRequest(ctx,{headers:{}},res),true);
+    assert.equal(res.status,undefined);
+  }
+});
+
+test('a delayed or reloaded owner service uses one subscription and no root fallback',()=>{
+  let attach,count=0;
+  const ctx={root:{connection:{admit:owner}},inject(names,fn){count++;attach=fn;}};
+  const check=(status)=>{const res=response();assert.equal(allowOwnerRequest(ctx,{},res),status===undefined);assert.equal(res.status,status);};
+  check(503);check(503);
+  const detach=attach({connection:{admit:owner}});check(undefined);detach();check(503);
+  attach({connection:{admit:()=>({peer:{principal:{kind:'operator'}}})}});check(403);
+  assert.equal(count,1);
+});

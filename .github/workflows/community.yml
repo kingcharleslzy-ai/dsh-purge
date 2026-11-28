@@ -62,6 +62,8 @@ jobs:
           prefix="$RUNNER_TEMP/purge-owner-host"
           npm install --prefix "$prefix" --ignore-scripts --no-audit --no-fund @deepseek-ai/dsh@0.2.2-rc.5
           node scripts/check-config-owner.mjs "$prefix"
+          npm install --prefix "$prefix" --ignore-scripts --no-audit --no-fund pnpm@10.32.1
+          node scripts/check-desktop-profile-update.mjs "$prefix"
       - name: Windows PowerShell 5.1 installer wrapper
         if: runner.os == 'Windows'
         shell: powershell
@@ -108,7 +110,6 @@ jobs:
           node scripts/check-update-runtime.mjs
           ELECTRON_RUN_AS_NODE=1 "$PURGE_ELECTRON_EXEC" scripts/check-bootstrap-download-runtime.mjs
       - name: Restore historical permission edits on an official host module
-        if: runner.os == 'macOS' || runner.os == 'Windows'
         shell: bash
         run: |
           set -eu
@@ -244,3 +245,11 @@ jobs:
           node packages/purge-panel/test/settings-entries-browser.mjs
       - name: Native Windows exec promises, WinINET reads and transient TLS response
         run: node --test test/update-proxy-runtime.test.mjs test/update-http.test.mjs
+
+      - name: Real alpha host owner and anonymous admission
+        shell: bash
+        run: |
+          set -eu
+          prefix="$RUNNER_TEMP/purge-alpha-owner"
+          npm install --prefix "$prefix" --ignore-scripts --no-audit --no-fund @deepseek-ai/dsh@0.2.3-alpha.2 playwright-core@1.56.1
+          node scripts/check-web-owner-menu.mjs "$prefix" --owner-only
